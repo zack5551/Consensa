@@ -1,0 +1,62 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Map tokens into Tailwind so utilities only ever use the design system. */
+@theme inline {
+  --color-*: initial;
+  --color-ink: var(--color-ink);
+  --color-ink-2: var(--color-ink-2);
+  --color-paper: var(--color-paper);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-line: var(--color-line);
+  --color-yes: var(--color-yes);
+  --color-yes-soft: var(--color-yes-soft);
+  --color-no: var(--color-no);
+  --color-no-soft: var(--color-no-soft);
+  --color-accent: var(--color-accent);
+  --color-white: #fff;
+  --color-transparent: transparent;
+
+  --text-*: initial;
+  --text-1: var(--font-size-1);
+  --text-1--line-height: 1.4;
+  --text-2: var(--font-size-2);
+  --text-2--line-height: 1.45;
+  --text-3: var(--font-size-3);
+  --text-3--line-height: 1.5;
+  --text-4: var(--font-size-4);
+  --text-4--line-height: 1.3;
+  --text-5: var(--font-size-5);
+  --text-5--line-height: 1.15;
+  --text-6: var(--font-size-6);
+  --text-6--line-height: 1;
+
+  --spacing: 4px;
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+
+  --font-sans: var(--font-manrope), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-3);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .tabular { font-variant-numeric: tabular-nums; }
+}

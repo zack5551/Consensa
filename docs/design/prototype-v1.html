@@ -1,0 +1,430 @@
+<title>Consensa Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a phone-sized app shell on warm paper; PRISM palette: teal (Yes) and violet (No) meet in every crowd bar, Canada red is accent only. */
+:root {
+  --ground: #FAF8F5;
+  --surface: #ffffff;
+  --surface-2: #f3f0eb;
+  --ink: #14213D;
+  --ink-2: #5B6472;
+  --line: #e2ddd5;
+  --yes: #0F766E;
+  --yes-soft: #dcefec;
+  --no: #6D4AA8;
+  --no-soft: #ebe4f5;
+  --accent: #0F766E;
+  --red: #C8102E;
+  --good: #0F766E;
+  --chip: #efebe4;
+  --shadow: 0 1px 2px rgba(20,33,61,.06), 0 8px 28px rgba(20,33,61,.08);
+  --f-display: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0f1626; --surface: #161f33; --surface-2: #1c2740; --ink: #eef0f5; --ink-2: #a3abb9;
+    --line: #2a3550; --yes: #4fc1b5; --yes-soft: #14352f; --no: #a98be0; --no-soft: #2b2342;
+    --accent: #4fc1b5; --red: #f0566c; --good: #4fc1b5; --chip: #222c44;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0f1626; --surface: #161f33; --surface-2: #1c2740; --ink: #eef0f5; --ink-2: #a3abb9;
+  --line: #2a3550; --yes: #4fc1b5; --yes-soft: #14352f; --no: #a98be0; --no-soft: #2b2342;
+  --accent: #4fc1b5; --red: #f0566c; --good: #4fc1b5; --chip: #222c44;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--ground); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 40px; align-items: start; }
+@media (max-width: 860px) { .wrap { grid-template-columns: 1fr; gap: 20px; } .side { order: 2; } }
+.side { min-width: 0; padding-top: 12px; }
+.side h1 { font-family: var(--f-display); font-weight: 800; font-size: 34px; line-height: 1.05; letter-spacing: -.02em; margin: 0 0 10px; text-wrap: balance; }
+.side p { color: var(--ink-2); margin: 0 0 14px; max-width: 46ch; }
+.tag { display: inline-block; font-family: var(--f-data); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; margin-bottom: 14px; }
+.side ol { margin: 0 0 16px; padding-left: 20px; color: var(--ink-2); display: grid; gap: 6px; max-width: 46ch; }
+.side ol button { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.rules { border-top: 1px solid var(--line); padding-top: 12px; font-size: 13px; color: var(--ink-2); max-width: 46ch; }
+
+/* App shell */
+.phone { background: var(--surface); border: 1px solid var(--line); border-radius: 28px; box-shadow: var(--shadow); overflow: hidden; width: 100%; max-width: 400px; justify-self: center; display: flex; flex-direction: column; min-height: 760px; }
+.top { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 10px; gap: 10px; }
+.mark { display: flex; align-items: center; gap: 8px; font-family: var(--f-display); font-weight: 800; font-size: 21px; letter-spacing: -.035em; }
+.mark .dot { color: var(--red); }
+.says, .meta.says, .cmp span.says { color: var(--red); font-weight: 700; }
+.live { display: inline-flex; align-items: center; gap: 5px; color: var(--red); }
+.live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--red); }
+.cta { font-weight: 700; color: var(--ink); }
+.mark svg { width: 26px; height: 26px; flex: none; }
+.lang { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.lang button { font: 600 12px var(--f-data); padding: 5px 10px; border: 0; background: transparent; color: var(--ink-2); cursor: pointer; }
+.lang button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.streak { font-family: var(--f-data); font-size: 12px; color: var(--ink-2); padding: 0 18px 8px; display: flex; justify-content: space-between; gap: 8px; }
+.screen { flex: 1; padding: 6px 18px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.h2 { font-family: var(--f-display); font-weight: 700; font-size: 22px; letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink-2); font-size: 13px; margin: -6px 0 0; }
+
+/* Call cards */
+.card { border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: grid; gap: 10px; background: var(--surface); }
+.card.is-poll { background: var(--surface-2); }
+.cat { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-family: var(--f-data); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.pill { font-family: var(--f-data); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--ink-2); white-space: nowrap; }
+.pill.poll { background: var(--no-soft); color: var(--no); }
+.q { font-weight: 600; font-size: 16px; line-height: 1.3; margin: 0; text-wrap: pretty; }
+.meet { display: grid; gap: 6px; }
+.meet-bar { height: 12px; border-radius: 999px; overflow: hidden; display: flex; background: var(--no); }
+.meet-bar span { background: var(--yes); display: block; height: 100%; }
+.meet-lbl { display: flex; justify-content: space-between; font-family: var(--f-data); font-size: 12px; font-variant-numeric: tabular-nums; }
+.meet-lbl .y { color: var(--yes); font-weight: 600; } .meet-lbl .n { color: var(--no); font-weight: 600; }
+.prov { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.prov div { display: grid; gap: 3px; justify-items: center; font-family: var(--f-data); font-size: 10px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.prov i { display: block; width: 100%; height: 34px; background: var(--no-soft); border-radius: 4px; position: relative; overflow: hidden; }
+.prov i b { position: absolute; left: 0; right: 0; bottom: 0; background: var(--yes); }
+.row { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.btn { font: 600 14px var(--f-body); border-radius: 12px; border: 1px solid var(--ink); background: var(--ink); color: var(--surface); padding: 10px 14px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn:focus-visible, .lang button:focus-visible, .nav button:focus-visible, input:focus-visible, .side ol button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mine { font-family: var(--f-data); font-size: 12px; color: var(--good); }
+.meta { font-size: 12px; color: var(--ink-2); }
+
+/* Make a call */
+.dial { display: grid; justify-items: center; gap: 4px; padding: 8px 0 2px; }
+.dial .num { font-family: var(--f-display); font-weight: 800; font-size: 64px; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; color: var(--yes); }
+.dial .num.lean-no { color: var(--no); }
+.dial .lbl { font-size: 13px; color: var(--ink-2); }
+input[type=range] { width: 100%; accent-color: var(--yes); height: 28px; }
+.ticks { display: flex; justify-content: space-between; font-family: var(--f-data); font-size: 11px; color: var(--ink-2); }
+.cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cmp div { border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 2px; }
+.cmp b { font-family: var(--f-data); font-size: 20px; font-variant-numeric: tabular-nums; }
+.cmp span { font-size: 12px; color: var(--ink-2); }
+.toast { border-radius: 12px; padding: 10px 12px; background: var(--yes-soft); color: var(--ink); font-size: 13px; }
+.quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.quick button { font: 500 12px var(--f-data); border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 10px; cursor: pointer; }
+
+/* Why it moved */
+.chart { width: 100%; height: auto; display: block; }
+.ai { border-left: 3px solid var(--yes); padding: 2px 0 2px 12px; display: grid; gap: 6px; }
+.ai p { margin: 0; font-size: 14px; }
+.ai .who { font-family: var(--f-data); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.srcs { display: flex; gap: 6px; flex-wrap: wrap; }
+.srcs span { font-size: 11px; font-family: var(--f-data); background: var(--chip); color: var(--ink-2); padding: 3px 8px; border-radius: 6px; }
+
+/* Record */
+.score { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.score div { background: var(--surface-2); border-radius: 12px; padding: 10px; display: grid; gap: 2px; }
+.score b { font-family: var(--f-data); font-size: 20px; font-variant-numeric: tabular-nums; }
+.score span { font-size: 11px; color: var(--ink-2); }
+.board { list-style: none; margin: 0; padding: 0; display: grid; }
+.board li { display: grid; grid-template-columns: 26px 1fr auto; gap: 8px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.board li.me { background: var(--yes-soft); border-radius: 8px; border-bottom-color: transparent; padding-inline: 8px; }
+.board .rk { font-family: var(--f-data); font-size: 12px; color: var(--ink-2); }
+.board .sc { font-family: var(--f-data); font-size: 13px; }
+.badge { display: inline-flex; gap: 6px; align-items: center; font-weight: 700; font-size: 13px; color: var(--good); }
+.seg { display: flex; gap: 4px; background: var(--chip); padding: 3px; border-radius: 10px; }
+.seg button { flex: 1; font: 600 12px var(--f-body); border: 0; background: transparent; color: var(--ink-2); padding: 6px; border-radius: 8px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+.foot { font-size: 11px; color: var(--ink-2); text-align: center; padding: 8px 18px 0; }
+.nav { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--surface); }
+.nav button { font: 600 11px var(--f-body); background: none; border: 0; color: var(--ink-2); padding: 10px 4px 12px; display: grid; justify-items: center; gap: 4px; cursor: pointer; }
+.nav button svg { width: 20px; height: 20px; }
+.nav button[aria-current="page"] { color: var(--ink); }
+.nav button[aria-current="page"] svg { color: var(--yes); }
+@media (prefers-reduced-motion: no-preference) { .meet-bar span, .prov i b { transition: width .5s ease, height .5s ease; } }
+</style>
+
+<div class="wrap">
+  <section class="side" aria-label="About this prototype">
+    <span class="tag" id="t-tag">Prototype · sample data</span>
+    <h1 id="t-h1">What Canada thinks happens next.</h1>
+    <p id="t-lede">Consensa (working name) is a free, bilingual forecasting app. Every day, Canadians make five quick calls on the economy, weather, housing and culture. The crowd's answer shows up instantly, split by province, and everyone builds an accuracy record.</p>
+    <ol>
+      <li><button type="button" data-go="today" id="t-s1">Today's calls: the crowd % and the province split</button></li>
+      <li><button type="button" data-go="call" id="t-s2">Make a call: set your probability</button></li>
+      <li><button type="button" data-go="why" id="t-s3">Why it moved: the AI explainer</button></li>
+      <li><button type="button" data-go="record" id="t-s4">Your record: accuracy and leaderboard</button></li>
+    </ol>
+    <p class="rules" id="t-rules">Free to play. No money, no points to buy and no prizes. Results are probabilities, never odds. The AI explains what changed and never recommends a call. Questions, numbers and usernames here are illustrative.</p>
+  </section>
+
+  <main class="phone" aria-label="Consensa app prototype">
+    <div class="top">
+      <div class="mark" aria-label="Consensa">
+        <svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="var(--no)"/><path d="M13 1a12 12 0 0 0 0 24z" fill="var(--yes)"/></svg>
+        <span>consensa<span class="dot">.</span></span>
+      </div>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" id="l-en" aria-pressed="true">EN</button>
+        <button type="button" id="l-fr" aria-pressed="false">FR</button>
+      </div>
+    </div>
+    <div class="streak"><span id="t-streak">🔥 12-day streak</span><span id="t-date">Tue, Oct 27</span></div>
+    <div class="screen" id="screen"></div>
+    <p class="foot" id="t-foot">Free to play · No money · No prizes · 18+</p>
+    <nav class="nav" aria-label="Screens">
+      <button type="button" data-go="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span id="n1">Today</span></button>
+      <button type="button" data-go="call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16"/><circle cx="14" cy="12" r="3.5" fill="currentColor"/></svg><span id="n2">Call</span></button>
+      <button type="button" data-go="why"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg><span id="n3">Why it moved</span></button>
+      <button type="button" data-go="record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/></svg><span id="n4">Record</span></button>
+    </nav>
+  </main>
+</div>
+
+<script>
+(function () {
+  var PROV = ["BC", "AB", "PR", "ON", "QC", "ATL"];
+  var PROV_FR = ["C.-B.", "Alb.", "Pr.", "Ont.", "Qc", "Atl."];
+
+  var CALLS = [
+    { id: "boc", scored: true, yes: 38, prov: [41, 47, 44, 36, 31, 39], forecasters: 18420, closes: { en: "Closes Dec. 9", fr: "Ferme le 9 déc." },
+      cat: { en: "Economy", fr: "Économie" },
+      q: { en: "Will the Bank of Canada cut its policy rate at its December decision?", fr: "La Banque du Canada baissera-t-elle son taux directeur à sa décision de décembre?" } },
+    { id: "snow", scored: true, yes: 41, prov: [33, 38, 36, 49, 42, 35], forecasters: 9310, closes: { en: "Closes Nov. 30", fr: "Ferme le 30 nov." },
+      cat: { en: "Weather", fr: "Météo" },
+      q: { en: "Will Toronto Pearson record 10 cm of snow before November 30?", fr: "L'aéroport Pearson de Toronto recevra-t-il 10 cm de neige avant le 30 novembre?" } },
+    { id: "home", scored: true, yes: 57, prov: [49, 61, 58, 54, 63, 66], forecasters: 11205, closes: { en: "Resolves on CREA's Dec. report", fr: "Résolu selon le rapport de l'ACI en déc." },
+      cat: { en: "Housing", fr: "Logement" },
+      q: { en: "Will Canada's average home price for November be higher than a year earlier?", fr: "Le prix moyen des maisons au Canada en novembre sera-t-il plus élevé qu'un an plus tôt?" } },
+    { id: "juno", scored: true, yes: 18, prov: [12, 10, 11, 14, 39, 15], forecasters: 6740, closes: { en: "Resolves at the 2027 Junos", fr: "Résolu aux Juno 2027" },
+      cat: { en: "Culture", fr: "Culture" },
+      q: { en: "Will a French-language album win Album of the Year at the 2027 Junos?", fr: "Un album en français remportera-t-il l'album de l'année aux Juno 2027?" } },
+    { id: "leafs", scored: false, yes: 64, prov: [52, 49, 55, 78, 47, 66], forecasters: 22980, closes: { en: "Poll · not scored", fr: "Sondage · non évalué" },
+      cat: { en: "Hockey", fr: "Hockey" },
+      q: { en: "Will the Leafs make the 2027 playoffs?", fr: "Les Leafs feront-ils les séries en 2027?" } }
+  ];
+
+  var T = {
+    en: {
+      tag: "Prototype · sample data", h1: "What Canada thinks happens next.",
+      lede: "Consensa (working name) is a free, bilingual forecasting app. Every day, Canadians make five quick calls on the economy, weather, housing and culture. The crowd's answer shows up instantly, split by province, and everyone builds an accuracy record.",
+      s1: "Today's calls: the crowd % and the province split", s2: "Make a call: set your probability", s3: "Why it moved: the AI explainer", s4: "Your record: accuracy and leaderboard",
+      rules: "Free to play. No money, no points to buy and no prizes. Results are probabilities, never odds. The AI explains what changed and never recommends a call. Questions, numbers and usernames here are illustrative.",
+      streak: "🔥 12-day streak", date: "Tue, Oct 27", foot: "Free to play · No money · No prizes · 18+",
+      n1: "Today", n2: "Call", n3: "Why it moved", n4: "Record",
+      todayH: "Today's five", todaySub: "Make your call. See where Canada lands.",
+      yes: "Yes", no: "No", forecasters: "forecasters", poll: "Poll", scored: "Scored", makeCall: "Make your call", vote: "Vote",
+      yourCall: "Your call", provNote: "Canada says: yes, by province",
+      callH: "Make your call", callSub: "How likely is it? Slide to set your probability.",
+      chance: "chance it happens", crowd: "Canada says", you: "You", lock: "Make my call", change: "Change",
+      locked: function (d) { return d === 0 ? "Call saved. You're right in line with the crowd." : "Call saved. You're " + Math.abs(d) + " points " + (d > 0 ? "more" : "less") + " confident than the crowd. It's scored when the Bank of Canada announces its decision."; },
+      quick: ["Very unlikely", "Toss-up", "Likely"],
+      ticks: ["0%", "50%", "100%"],
+      whyH: "Why it moved", whySub: "Bank of Canada December decision · last 14 days",
+      aiWho: "Explainer · written by AI, reviewed by an editor",
+      ai1: "The crowd's chance of a December cut fell from 52% to 38% over two weeks.",
+      ai2: "The biggest drop came after Statistics Canada's monthly jobs report showed more hiring than expected. Many forecasters read that as less pressure to cut. A smaller dip followed the Governor's speech, which repeated that future moves depend on the data.",
+      ai3: "Forecasters in Quebec are the most doubtful at 31%. Alberta is the most expecting a cut at 47%.",
+      aiNote: "This explains what changed. It isn't advice on how to call it.",
+      srcs: ["Statistics Canada · Labour Force Survey", "Bank of Canada · speech", "Crowd data · 18,420 forecasters"],
+      ev1: "Jobs report", ev2: "Speech",
+      recH: "Your record", recSub: "Scored on accuracy, not luck. Lower Brier score is better.",
+      brier: "Your Brier", crowdBrier: "Crowd Brier", resolved: "calls resolved",
+      vu: "✓ Called it! You called the October CPI.",
+      board: "Leaderboard", tabs: ["Ontario", "Canada", "Friends"],
+      calib: "When you say 70%, it happens 68% of the time.", lastWeek: "this month"
+    },
+    fr: {
+      tag: "Prototype · données fictives", h1: "Ce que le Canada prévoit.",
+      lede: "Consensa (nom provisoire) est une appli de prévisions gratuite et bilingue. Chaque jour, les Canadiens font cinq prévisions rapides sur l'économie, la météo, le logement et la culture. La réponse de la foule s'affiche aussitôt, par province, et chacun bâtit son dossier de précision.",
+      s1: "Prévisions du jour : le % de la foule et la carte par province", s2: "Faire une prévision : choisir sa probabilité", s3: "Pourquoi ça a bougé : l'explication par IA", s4: "Votre dossier : précision et classement",
+      rules: "Gratuit. Pas d'argent, pas de points à acheter, pas de prix. Les résultats sont des probabilités, jamais des cotes. L'IA explique ce qui a changé et ne recommande jamais de prévision. Les questions, chiffres et pseudos sont fictifs.",
+      streak: "🔥 Série de 12 jours", date: "mar. 27 oct.", foot: "Gratuit · Sans argent · Sans prix · 18 ans et +",
+      n1: "Aujourd'hui", n2: "Prévoir", n3: "Pourquoi", n4: "Dossier",
+      todayH: "Les cinq du jour", todaySub: "Faites votre prévision. Voyez où le Canada se situe.",
+      yes: "Oui", no: "Non", forecasters: "prévisionnistes", poll: "Sondage", scored: "Évalué", makeCall: "Faire ma prévision", vote: "Voter",
+      yourCall: "Votre prévision", provNote: "Le Canada pense : oui, par province",
+      callH: "Faire ma prévision", callSub: "Quelle est la probabilité? Glissez pour choisir.",
+      chance: "de chances que ça arrive", crowd: "Le Canada pense", you: "Vous", lock: "Confirmer ma prévision", change: "Modifier",
+      locked: function (d) { return d === 0 ? "Prévision confirmée. Vous êtes en ligne avec la foule." : "Prévision confirmée. Vous êtes " + Math.abs(d) + " points " + (d > 0 ? "plus" : "moins") + " confiant que la foule. Elle sera évaluée à l'annonce de la Banque du Canada."; },
+      quick: ["Très peu probable", "50-50", "Probable"],
+      ticks: ["0 %", "50 %", "100 %"],
+      whyH: "Pourquoi ça a bougé", whySub: "Décision de décembre de la Banque du Canada · 14 derniers jours",
+      aiWho: "Explication · rédigée par IA, revue par un éditeur",
+      ai1: "Selon la foule, la probabilité d'une baisse en décembre est passée de 52 % à 38 % en deux semaines.",
+      ai2: "La plus forte baisse a suivi l'Enquête sur la population active de Statistique Canada, qui montrait plus d'embauches que prévu. Bien des prévisionnistes y ont vu moins de pression pour baisser le taux. Un recul plus léger a suivi le discours du gouverneur, qui a répété que les prochaines décisions dépendront des données.",
+      ai3: "Au Québec, on est le plus sceptique (31 %). L'Alberta est la plus convaincue d'une baisse (47 %).",
+      aiNote: "Ceci explique ce qui a changé. Ce n'est pas un conseil de prévision.",
+      srcs: ["Statistique Canada · EPA", "Banque du Canada · discours", "Données de la foule · 18 420 prévisionnistes"],
+      ev1: "Emploi", ev2: "Discours",
+      recH: "Votre dossier", recSub: "Évalué sur la précision, pas la chance. Un score de Brier plus bas est meilleur.",
+      brier: "Votre Brier", crowdBrier: "Brier de la foule", resolved: "prévisions résolues",
+      vu: "✓ Vu juste! Vous aviez prévu l'IPC d'octobre.",
+      board: "Classement", tabs: ["Ontario", "Canada", "Amis"],
+      calib: "Quand vous dites 70 %, ça arrive 68 % du temps.", lastWeek: "ce mois-ci"
+    }
+  };
+
+  var lang = "en", view = "today", myCall = 50, locked = false, boardTab = 0;
+  try { var saved = localStorage.getItem("consensa-lang"); if (saved === "fr" || saved === "en") lang = saved; } catch (e) {}
+
+  var screen = document.getElementById("screen");
+  function t(k) { return T[lang][k]; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fmt(n) { return n.toLocaleString(lang === "fr" ? "fr-CA" : "en-CA"); }
+  function pct(n) { return lang === "fr" ? n + " %" : n + "%"; }
+
+  function meet(yes) {
+    return '<div class="meet"><div class="meet-bar" role="img" aria-label="' + esc(t("yes") + " " + pct(yes) + ", " + t("no") + " " + pct(100 - yes)) + '"><span style="width:' + yes + '%"></span></div>' +
+      '<div class="meet-lbl"><span class="y">' + t("yes") + " " + pct(yes) + '</span><span class="n">' + t("no") + " " + pct(100 - yes) + "</span></div></div>";
+  }
+  function prov(vals) {
+    var names = lang === "fr" ? PROV_FR : PROV;
+    return '<div class="prov" role="img" aria-label="' + esc(t("provNote")) + '">' + vals.map(function (v, i) {
+      return '<div><i><b style="height:' + v + '%"></b></i><span>' + names[i] + "</span><span>" + v + "</span></div>";
+    }).join("") + "</div>";
+  }
+
+  function renderToday() {
+    var html = '<h2 class="h2">' + t("todayH") + '</h2><p class="sub">' + t("todaySub") + "</p>";
+    CALLS.forEach(function (c, i) {
+      var done = i === 1 || i === 2;
+      html += '<article class="card' + (c.scored ? "" : " is-poll") + '">' +
+        '<div class="cat"><span>' + esc(c.cat[lang]) + " · " + esc(c.closes[lang]) + '</span><span class="pill' + (c.scored ? "" : " poll") + '">' + (c.scored ? t("scored") : t("poll")) + "</span></div>" +
+        '<p class="q">' + esc(c.q[lang]) + "</p>" + meet(c.yes) +
+        (i === 0 ? '<div class="meta says">' + t("provNote") + "</div>" + prov(c.prov) : "") +
+        '<div class="row"><span class="meta live">' + fmt(c.forecasters) + " " + t("forecasters") + "</span>" +
+        (done ? '<span class="mine">' + t("yourCall") + ": " + pct(i === 1 ? 55 : 60) + "</span>"
+              : '<button type="button" class="btn' + (i === 0 ? "" : " ghost") + '" data-go="call">' + (c.scored ? t("makeCall") : t("vote")) + "</button>") +
+        "</div></article>";
+    });
+    screen.innerHTML = html;
+  }
+
+  function renderCall() {
+    var c = CALLS[0], d = myCall - c.yes;
+    screen.innerHTML =
+      '<h2 class="h2">' + t("callH") + '</h2><p class="sub">' + t("callSub") + "</p>" +
+      '<article class="card"><div class="cat"><span>' + esc(c.cat[lang]) + " · " + esc(c.closes[lang]) + '</span><span class="pill">' + t("scored") + "</span></div>" +
+      '<p class="q">' + esc(c.q[lang]) + "</p>" +
+      '<div class="dial"><div class="num' + (myCall < 50 ? " lean-no" : "") + '" id="num" aria-live="polite">' + pct(myCall) + '</div><div class="lbl">' + t("chance") + "</div></div>" +
+      '<label for="dial" class="meta" style="position:absolute;left:-9999px">' + t("callH") + "</label>" +
+      '<input type="range" id="dial" min="1" max="99" step="1" value="' + myCall + '"' + (locked ? " disabled" : "") + ">" +
+      '<div class="ticks"><span>' + t("ticks")[0] + "</span><span>" + t("ticks")[1] + "</span><span>" + t("ticks")[2] + "</span></div>" +
+      '<div class="quick">' + [10, 50, 75].map(function (v, i) { return '<button type="button" data-q="' + v + '"' + (locked ? " disabled" : "") + ">" + t("quick")[i] + " · " + pct(v) + "</button>"; }).join("") + "</div>" +
+      '<div class="cmp"><div><span class="says">' + t("crowd") + "</span><b>" + pct(c.yes) + '</b></div><div><span>' + t("you") + '</span><b id="youv">' + pct(myCall) + "</b></div></div>" +
+      meet(c.yes) +
+      (locked ? '<div class="toast" role="status">' + esc(t("locked")(d)) + '</div><div class="row"><button type="button" class="btn ghost" id="unlock">' + t("change") + '</button><button type="button" class="btn" data-go="why">' + t("n3") + " →</button></div>"
+              : '<button type="button" class="btn" id="lock">' + t("lock") + "</button>") +
+      "</article>";
+    var dial = document.getElementById("dial");
+    dial.addEventListener("input", function () {
+      myCall = +dial.value;
+      var num = document.getElementById("num");
+      num.textContent = pct(myCall); num.classList.toggle("lean-no", myCall < 50);
+      document.getElementById("youv").textContent = pct(myCall);
+    });
+    screen.querySelectorAll("[data-q]").forEach(function (b) { b.addEventListener("click", function () { myCall = +b.getAttribute("data-q"); renderCall(); }); });
+    var lock = document.getElementById("lock"); if (lock) lock.addEventListener("click", function () { locked = true; renderCall(); });
+    var un = document.getElementById("unlock"); if (un) un.addEventListener("click", function () { locked = false; renderCall(); });
+  }
+
+  function chartSVG() {
+    var pts = [52, 51, 53, 50, 49, 50, 48, 41, 40, 41, 39, 37, 38, 38];
+    var W = 340, H = 170, L = 34, R = 10, Tp = 12, B = 26;
+    var x = function (i) { return L + i * (W - L - R) / (pts.length - 1); };
+    var y = function (v) { return Tp + (60 - v) * (H - Tp - B) / 40; };
+    var grid = [20, 40, 60].map(function (g) {
+      return '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(g) + '" y2="' + y(g) + '" stroke="var(--line)" stroke-width="1"/>' +
+        '<text x="' + (L - 6) + '" y="' + (y(g) + 4) + '" text-anchor="end" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">' + pct(g) + "</text>";
+    }).join("");
+    var line = pts.map(function (v, i) { return (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1); }).join(" ");
+    var area = line + " L" + x(pts.length - 1).toFixed(1) + " " + y(20) + " L" + x(0).toFixed(1) + " " + y(20) + " Z";
+    var ev = function (i, label) {
+      return '<line x1="' + x(i) + '" x2="' + x(i) + '" y1="' + Tp + '" y2="' + y(20) + '" stroke="var(--ink-2)" stroke-dasharray="3 3" stroke-width="1"/>' +
+        '<text x="' + (x(i) + 4) + '" y="' + (Tp + 10) + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">' + esc(label) + "</text>";
+    };
+    var last = pts.length - 1;
+    var days = lang === "fr" ? ["13 oct.", "20 oct.", "27 oct."] : ["Oct 13", "Oct 20", "Oct 27"];
+    return '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(t("ai1")) + '">' + grid +
+      '<path d="' + area + '" fill="var(--yes-soft)"/>' + ev(7, t("ev1")) + ev(11, t("ev2")) +
+      '<path d="' + line + '" fill="none" stroke="var(--yes)" stroke-width="2.5" stroke-linejoin="round"/>' +
+      '<circle cx="' + x(last) + '" cy="' + y(pts[last]) + '" r="4.5" fill="var(--yes)"/>' +
+      '<text x="' + (x(last) - 6) + '" y="' + (y(pts[last]) - 9) + '" text-anchor="end" font-size="12" font-weight="600" font-family="IBM Plex Mono, monospace" fill="var(--yes)">' + pct(pts[last]) + "</text>" +
+      '<text x="' + x(0) + '" y="' + (H - 6) + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">' + days[0] + "</text>" +
+      '<text x="' + x(7) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">' + days[1] + "</text>" +
+      '<text x="' + x(last) + '" y="' + (H - 6) + '" text-anchor="end" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">' + days[2] + "</text></svg>";
+  }
+
+  function renderWhy() {
+    screen.innerHTML =
+      '<h2 class="h2">' + t("whyH") + '</h2><p class="sub">' + t("whySub") + "</p>" +
+      '<article class="card">' + chartSVG() +
+      '<div class="ai"><span class="who">' + t("aiWho") + "</span><p><strong>" + t("ai1") + "</strong></p><p>" + t("ai2") + "</p><p>" + t("ai3") + '</p><p class="meta">' + t("aiNote") + "</p></div>" +
+      '<div class="meta says">' + t("provNote") + "</div>" + prov(CALLS[0].prov) +
+      '<div class="srcs">' + t("srcs").map(function (s) { return "<span>" + esc(s) + "</span>"; }).join("") + "</div></article>";
+  }
+
+  function renderRecord() {
+    var boards = [
+      [["maple_math", "0.142"], ["leduc_lynx", "0.151"], ["rideau_reader", "0.158"], ["you", "0.176"], ["kingston_k", "0.181"]],
+      [["vu_juste_mtl", "0.128"], ["maple_math", "0.142"], ["halifax_hunch", "0.147"], ["leduc_lynx", "0.151"], ["you", "0.176"]],
+      [["you", "0.176"], ["sam_from_guelph", "0.194"], ["auntie_d", "0.211"], ["coach_rob", "0.236"], ["jules_qc", "0.248"]]
+    ];
+    var ranks = [[1, 2, 3, 214, 215], [1, 2, 3, 4, 1388], [1, 2, 3, 4, 5]];
+    var youLbl = lang === "fr" ? "vous" : "you";
+    var b = boards[boardTab].map(function (r, i) {
+      var me = r[0] === "you";
+      return '<li class="' + (me ? "me" : "") + '"><span class="rk">' + fmt(ranks[boardTab][i]) + "</span><span>" + esc(me ? youLbl : r[0]) + '</span><span class="sc">' + (lang === "fr" ? r[1].replace(".", ",") : r[1]) + "</span></li>";
+    }).join("");
+    var cal = [[10, 12], [30, 27], [50, 53], [70, 68], [90, 86]];
+    var W = 340, H = 120, L = 30, Bm = 20, Tp = 8, R = 8;
+    var cx = function (v) { return L + v * (W - L - R) / 100; }, cy = function (v) { return Tp + (100 - v) * (H - Tp - Bm) / 100; };
+    var calSvg = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(t("calib")) + '">' +
+      '<line x1="' + cx(0) + '" y1="' + cy(0) + '" x2="' + cx(100) + '" y2="' + cy(100) + '" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="4 4"/>' +
+      cal.map(function (p) { return '<circle cx="' + cx(p[0]) + '" cy="' + cy(p[1]) + '" r="5" fill="var(--yes)"/>'; }).join("") +
+      [0, 50, 100].map(function (v) { return '<text x="' + cx(v) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">' + pct(v) + "</text>"; }).join("") +
+      '<text x="' + (L - 6) + '" y="' + (cy(100) + 8) + '" text-anchor="end" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">' + pct(100) + "</text>" +
+      "</svg>";
+    screen.innerHTML =
+      '<h2 class="h2">' + t("recH") + '</h2><p class="sub">' + t("recSub") + "</p>" +
+      '<div class="score"><div><span>' + t("brier") + "</span><b>" + (lang === "fr" ? "0,176" : "0.176") + '</b></div><div><span>' + t("crowdBrier") + "</span><b>" + (lang === "fr" ? "0,204" : "0.204") + '</b></div><div><span>' + t("resolved") + "</span><b>86</b></div></div>" +
+      '<div class="card"><span class="badge">' + t("vu") + "</span>" + calSvg + '<p class="meta" style="margin:0">' + t("calib") + "</p></div>" +
+      '<div class="row"><h3 class="h2" style="font-size:18px">' + t("board") + '</h3><span class="meta">' + t("lastWeek") + "</span></div>" +
+      '<div class="seg" role="group" aria-label="' + esc(t("board")) + '">' + t("tabs").map(function (n, i) { return '<button type="button" data-tab="' + i + '" aria-pressed="' + (i === boardTab) + '">' + n + "</button>"; }).join("") + "</div>" +
+      '<ol class="board">' + b + "</ol>";
+    screen.querySelectorAll("[data-tab]").forEach(function (btn) { btn.addEventListener("click", function () { boardTab = +btn.getAttribute("data-tab"); renderRecord(); }); });
+  }
+
+  var VIEWS = { today: renderToday, call: renderCall, why: renderWhy, record: renderRecord };
+
+  function staticText() {
+    document.documentElement.lang = lang === "fr" ? "fr-CA" : "en-CA";
+    ["tag", "h1", "lede", "s1", "s2", "s3", "s4", "rules", "streak", "date", "foot"].forEach(function (k) { var el = document.getElementById("t-" + k); if (el) el.textContent = t(k); });
+    ["n1", "n2", "n3", "n4"].forEach(function (k) { document.getElementById(k).textContent = t(k); });
+    document.getElementById("l-en").setAttribute("aria-pressed", lang === "en");
+    document.getElementById("l-fr").setAttribute("aria-pressed", lang === "fr");
+  }
+
+  function go(v) {
+    if (!VIEWS[v]) v = "today";
+    view = v;
+    document.querySelectorAll(".nav button").forEach(function (b) {
+      if (b.getAttribute("data-go") === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    });
+    VIEWS[v]();
+    if (location.hash !== "#" + v) { try { history.replaceState(null, "", "#" + v); } catch (e) { location.hash = v; } }
+  }
+
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-go]");
+    if (el) { go(el.getAttribute("data-go")); var p = document.querySelector(".phone"); if (p && p.scrollIntoView && window.innerWidth < 860) p.scrollIntoView({ block: "start" }); }
+  });
+  function setLang(l) { lang = l; try { localStorage.setItem("consensa-lang", l); } catch (e) {} staticText(); go(view); }
+  document.getElementById("l-en").addEventListener("click", function () { setLang("en"); });
+  document.getElementById("l-fr").addEventListener("click", function () { setLang("fr"); });
+  window.addEventListener("hashchange", function () { var h = location.hash.slice(1); if (h !== view) go(h); });
+
+  staticText();
+  go(location.hash.slice(1) || "today");
+})();
+</script>

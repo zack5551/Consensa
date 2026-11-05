@@ -1,0 +1,569 @@
+<title>Consensa Research Brief</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* A scannable brief on warm paper. PRISM palette: teal = yes, violet = no, Canada red as accent only. Ad slots use a dashed amber outline so they read as "placement", never as content. */
+:root {
+  --ground: #FAF8F5; --surface: #ffffff; --surface-2: #f3f0eb;
+  --ink: #14213D; --ink-2: #5B6472; --line: #e2ddd5;
+  --yes: #0F766E; --yes-soft: #dcefec; --no: #6D4AA8; --no-soft: #ebe4f5;
+  --red: #C8102E; --ad: #b26b00; --ad-soft: #fbf1df; --chip: #efebe4;
+  --shadow: 0 1px 2px rgba(20,33,61,.06), 0 10px 30px rgba(20,33,61,.08);
+  --f-body: "Manrope", "Helvetica Neue", Arial, sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0f1626; --surface: #161f33; --surface-2: #1c2740; --ink: #eef0f5; --ink-2: #a3abb9; --line: #2a3550;
+    --yes: #4fc1b5; --yes-soft: #14352f; --no: #a98be0; --no-soft: #2b2342; --red: #f0566c; --ad: #f0b04a; --ad-soft: #2e2615; --chip: #222c44;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0f1626; --surface: #161f33; --surface-2: #1c2740; --ink: #eef0f5; --ink-2: #a3abb9; --line: #2a3550;
+  --yes: #4fc1b5; --yes-soft: #14352f; --no: #a98be0; --no-soft: #2b2342; --red: #f0566c; --ad: #f0b04a; --ad-soft: #2e2615; --chip: #222c44;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); }
+a { color: var(--yes); text-underline-offset: 3px; }
+.num, td.n { font-variant-numeric: tabular-nums; }
+
+/* top bar + section nav */
+.bar { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--ground) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; align-items: center; gap: 18px; height: 56px; }
+.mark { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 20px; letter-spacing: -.035em; white-space: nowrap; }
+.mark svg { width: 24px; height: 24px; }
+.mark .dot { color: var(--red); }
+.toc { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin-left: auto; }
+.toc::-webkit-scrollbar { display: none; }
+.toc a { font-size: 13px; font-weight: 600; color: var(--ink-2); text-decoration: none; padding: 6px 10px; border-radius: 8px; white-space: nowrap; }
+.toc a:hover, .toc a.on { color: var(--ink); background: var(--chip); }
+
+/* hero */
+header.hero { padding: 48px 0 28px; }
+.eyebrow { font-family: var(--f-data); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+h1 { font-weight: 800; font-size: clamp(32px, 5vw, 52px); line-height: 1.04; letter-spacing: -.035em; margin: 10px 0 14px; max-width: 18ch; text-wrap: balance; }
+.lede { font-size: 18px; color: var(--ink-2); max-width: 62ch; margin: 0 0 22px; text-wrap: pretty; }
+.ctas { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 700 14px var(--f-body); border-radius: 12px; padding: 11px 16px; text-decoration: none; border: 1px solid var(--ink); background: var(--ink); color: var(--surface); cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 34px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.stat b { display: block; font-weight: 800; font-size: 30px; letter-spacing: -.03em; line-height: 1.1; }
+.stat span { display: block; font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+.stat small { display: block; font-family: var(--f-data); font-size: 10.5px; color: var(--ink-2); margin-top: 8px; opacity: .85; }
+
+/* sections */
+section { padding: 44px 0 8px; scroll-margin-top: 64px; }
+.sh { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+.sh .k { font-family: var(--f-data); font-size: 12px; color: var(--red); font-weight: 600; }
+h2 { font-weight: 800; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.025em; line-height: 1.15; margin: 0; text-wrap: balance; }
+.take { font-size: 17px; color: var(--ink-2); max-width: 66ch; margin: 6px 0 20px; text-wrap: pretty; }
+.take b { color: var(--ink); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); }
+.card h3 { margin: 0 0 6px; font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+.card p { margin: 0; font-size: 14px; color: var(--ink-2); }
+.tag { display: inline-block; font-family: var(--f-data); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--ink-2); }
+.tag.open { background: var(--yes-soft); color: var(--yes); }
+.tag.red { background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red); }
+.note { font-size: 12.5px; color: var(--ink-2); margin-top: 12px; }
+
+/* view switch */
+.seg { display: inline-flex; background: var(--chip); border-radius: 12px; padding: 4px; gap: 2px; margin-bottom: 16px; }
+.seg button { font: 700 13px var(--f-body); border: 0; background: transparent; color: var(--ink-2); padding: 8px 14px; border-radius: 9px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+.btn:focus-visible, .seg button:focus-visible, .toc a:focus-visible { outline: 2px solid var(--yes); outline-offset: 2px; }
+
+/* mock frames: desktop is drawn at a fixed 1080px and scaled to fit */
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+.fit { width: 100%; overflow: hidden; }
+.desk { width: 1080px; transform-origin: 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.chrome { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.chrome i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.chrome .url { margin-left: 10px; flex: 1; max-width: 420px; font: 12px var(--f-data); color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; }
+.appbar { display: flex; align-items: center; gap: 24px; padding: 12px 22px; border-bottom: 1px solid var(--line); }
+.appbar nav { display: flex; gap: 18px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.appbar nav b { color: var(--ink); }
+.appbar .me { margin-left: auto; font: 12px var(--f-data); color: var(--ink-2); }
+.cols { display: grid; grid-template-columns: 160px 1fr 300px; gap: 22px; padding: 20px 22px 24px; }
+.feed { display: grid; gap: 12px; align-content: start; }
+.feed h4 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.feed .sub { margin: -6px 0 2px; font-size: 13px; color: var(--ink-2); }
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 9px; }
+.q .cat { display: flex; justify-content: space-between; font: 10.5px var(--f-data); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.q p { margin: 0; font-weight: 700; font-size: 15px; line-height: 1.3; }
+.mb { height: 10px; border-radius: 999px; overflow: hidden; display: flex; background: var(--no); }
+.mb span { background: var(--yes); }
+.ml { display: flex; justify-content: space-between; font: 600 11.5px var(--f-data); font-variant-numeric: tabular-nums; }
+.ml .y { color: var(--yes); } .ml .n { color: var(--no); }
+.q .foot { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--ink-2); }
+.live { display: inline-flex; align-items: center; gap: 5px; }
+.live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--red); }
+.mini { font: 700 12px var(--f-body); background: var(--ink); color: var(--surface); border-radius: 9px; padding: 6px 10px; }
+.side { display: grid; gap: 14px; align-content: start; }
+.panel { border: 1px solid var(--line); border-radius: 14px; padding: 12px; font-size: 12.5px; }
+.panel b { display: block; font-size: 13px; margin-bottom: 6px; }
+.panel ol { margin: 0; padding-left: 18px; color: var(--ink-2); display: grid; gap: 4px; }
+
+/* ad slots */
+.ad { position: relative; border: 1.5px dashed var(--ad); background: var(--ad-soft); border-radius: 10px; display: grid; place-items: center; text-align: center; padding: 10px; color: var(--ink); }
+.ad .lbl { position: absolute; top: 6px; left: 8px; font: 600 9.5px var(--f-data); letter-spacing: .08em; text-transform: uppercase; color: var(--ad); }
+.ad .sz { position: absolute; bottom: 6px; right: 8px; font: 9.5px var(--f-data); color: var(--ad); }
+.ad .pin { position: absolute; top: -10px; right: -10px; width: 22px; height: 22px; border-radius: 50%; background: var(--ad); color: var(--surface); font: 700 12px var(--f-body); display: grid; place-items: center; }
+.ad .brand { font-weight: 800; font-size: 15px; letter-spacing: -.01em; }
+.ad .copy { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.ad .go { margin-top: 8px; display: inline-block; font: 700 11px var(--f-body); border: 1px solid var(--ink); border-radius: 8px; padding: 4px 9px; }
+.sky { height: 600px; align-self: start; position: sticky; top: 0; }
+.mpu { height: 250px; }
+.half { height: 600px; }
+.lead { height: 90px; }
+.native { justify-items: start; text-align: left; padding: 26px 14px 14px; }
+.sponsor { border: 1.5px dashed var(--ad); border-radius: 14px; padding: 14px; display: grid; gap: 9px; background: var(--surface); position: relative; }
+.sponsor .lbl { font: 600 9.5px var(--f-data); letter-spacing: .08em; text-transform: uppercase; color: var(--ad); }
+
+/* phone */
+.phonewrap { display: flex; justify-content: center; }
+.phone { width: 360px; max-width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 34px; box-shadow: var(--shadow); padding: 14px 14px 0; position: relative; overflow: hidden; }
+.phone .top { display: flex; justify-content: space-between; align-items: center; padding: 4px 4px 10px; }
+.phone .feed { padding-bottom: 76px; }
+.sticky { position: absolute; left: 14px; right: 14px; bottom: 12px; height: 50px; }
+
+/* legend */
+.legend { display: grid; gap: 10px; }
+.legend .li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.legend .pin { width: 22px; height: 22px; border-radius: 50%; background: var(--ad); color: var(--surface); font: 700 12px var(--f-body); display: grid; place-items: center; }
+.legend b { font-size: 14px; display: block; }
+.legend span { font-size: 13px; color: var(--ink-2); }
+.rulebox { border-left: 3px solid var(--red); padding: 4px 0 4px 12px; font-size: 13px; color: var(--ink-2); }
+.rulebox b { color: var(--ink); }
+
+/* tables + bars */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font: 600 11px var(--f-data); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); padding: 0 10px 8px 0; border-bottom: 1px solid var(--line); }
+td { padding: 11px 10px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td:first-child { font-weight: 700; }
+.tbl { overflow-x: auto; }
+.tbl table { min-width: 680px; }
+.bars { display: grid; gap: 14px; }
+.brow { display: grid; grid-template-columns: 190px 1fr; gap: 12px; align-items: center; }
+.brow .t { font-size: 13.5px; font-weight: 600; }
+.brow .t small { display: block; font-weight: 500; color: var(--ink-2); font-size: 12px; }
+.track { position: relative; height: 26px; background: var(--chip); border-radius: 6px; }
+.range { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
+.rl { position: absolute; top: 50%; transform: translateY(-50%); font: 600 12px var(--f-data); color: var(--ink); white-space: nowrap; }
+.axis { display: grid; grid-template-columns: 190px 1fr; gap: 12px; }
+.axis div { display: flex; justify-content: space-between; font: 10.5px var(--f-data); color: var(--ink-2); }
+.unit { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.unit .stat b { font-size: 26px; }
+.unit .stat.pos b { color: var(--yes); }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; counter-reset: s; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; position: relative; }
+.step::before { counter-increment: s; content: "0" counter(s); font: 600 12px var(--f-data); color: var(--red); }
+.step h3 { margin: 6px 0 4px; font-size: 16px; font-weight: 800; }
+.step p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.step .amt { margin-top: 10px; font: 600 13px var(--f-data); color: var(--ink); }
+.yn { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.yn ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; color: var(--ink-2); }
+.yn .yes h3 { color: var(--yes); } .yn .no h3 { color: var(--no); }
+.qs { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 16px; max-width: 70ch; }
+footer { padding: 44px 0 56px; font-size: 12.5px; color: var(--ink-2); }
+footer p { max-width: 80ch; margin: 0 0 6px; }
+
+.sl { display: grid; gap: 4px; margin-top: 12px; font-size: 13px; color: var(--ink-2); }
+.sl span { display: flex; justify-content: space-between; }
+.sl b { color: var(--ink); font-family: var(--f-data); font-variant-numeric: tabular-nums; }
+.sl input { width: 100%; accent-color: var(--yes); }
+.out { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.out div { background: var(--yes-soft); border-radius: 12px; padding: 12px; }
+.out span { display: block; font-size: 12px; color: var(--ink-2); }
+.out b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--yes); font-variant-numeric: tabular-nums; }
+.chipb { font: 600 12px var(--f-body); border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 4px 10px; cursor: pointer; margin: 2px 2px 0 0; }
+.fitlist { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; color: var(--ink-2); }
+th.n, td.n { text-align: right; white-space: nowrap; }
+.says { color: var(--red); font-weight: 700; font-size: 12px; }
+.pv { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.pv div { display: grid; gap: 2px; justify-items: center; font: 10px var(--f-data); color: var(--ink-2); }
+.pv i { display: block; width: 100%; height: 30px; background: var(--no-soft); border-radius: 4px; position: relative; overflow: hidden; }
+.pv i b { position: absolute; left: 0; right: 0; bottom: 0; background: var(--yes); }
+@media (max-width: 980px) {
+  .stage { grid-template-columns: 1fr; }
+  .stats, .unit { grid-template-columns: 1fr 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; }
+  .grid3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .grid2, .yn, .steps { grid-template-columns: 1fr; }
+  .brow, .axis { grid-template-columns: 1fr; gap: 6px; }
+  .axis > span { display: none; }
+  .lede { font-size: 16px; }
+  .stat b { font-size: 24px; }
+}
+</style>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="mark"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="var(--no)"/><path d="M13 1a12 12 0 0 0 0 24z" fill="var(--yes)"/></svg><span>consensa<span class="dot">.</span></span></div>
+    <nav class="toc" aria-label="Sections">
+      <a href="#look">How it looks</a><a href="#ads">Ad research</a><a href="#market">Market</a><a href="#demand">Demand</a><a href="#money">Economics</a><a href="#path">Path to 1M</a><a href="#worth">Worth</a><a href="#legal">Legal line</a><a href="#qs">Questions</a>
+    </nav>
+  </div>
+</div>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Research brief · October 2026 · working name Consensa</div>
+    <h1>What Canada thinks happens next.</h1>
+    <p class="lede">A free, bilingual prediction app where Canadians make quick probability calls on the economy, weather, housing and culture, and see where the country lands, province by province. Ads pay the bills, and licensed opinion data is the upside. No money changes hands.</p>
+    <div class="ctas">
+      <a class="btn" href="#look">See how it could look</a>
+      <a class="btn ghost" href="https://claude.ai/artifact/14VJBF6KNs5wCQQ2CGX7Ys" target="_blank" rel="noopener">Open the clickable prototype ↗</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b class="num">1.3M</b><span>Canadian adults have already tried a prediction market, despite the blocks</span><small>Angus Reid, May 2026</small></div>
+      <div class="stat"><b class="num">90%</b><span>say they're not interested in betting on one. The free lane is the big one</span><small>Angus Reid, May 2026</small></div>
+      <div class="stat"><b class="num">0</b><span>free, bilingual, Canadian-culture players. Real-money apps are blocked or limited to finance</span><small>Team competitor review</small></div>
+      <div class="stat"><b class="num">CAD 4</b><span>a year earned per monthly user from ads and data, against about CAD 1.50 to serve</span><small>Team estimate, mid case</small></div>
+    </div>
+  </header>
+
+  <section id="look">
+    <div class="sh"><span class="k">01</span><h2>How it could look, with ads on both sides</h2></div>
+    <p class="take"><b>The feed stays clean and the ads sit around it.</b> On desktop, the questions run down the middle, with ad rails on the left and right. On a phone, ads are in-feed cards and one small bottom banner. Every ad is labelled, and none are allowed from gambling brands.</p>
+    <div class="seg" role="group" aria-label="Device">
+      <button type="button" id="v-desk" aria-pressed="true">Desktop</button>
+      <button type="button" id="v-phone" aria-pressed="false">Phone</button>
+    </div>
+    <div class="stage">
+      <div>
+        <div class="fit" id="fit-desk">
+          <div class="desk" id="desk">
+            <div class="chrome"><i></i><i></i><i></i><span class="url">consensa.ca/today</span></div>
+            <div class="appbar">
+              <div class="mark"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="var(--no)"/><path d="M13 1a12 12 0 0 0 0 24z" fill="var(--yes)"/></svg><span>consensa<span class="dot">.</span></span></div>
+              <nav><b>Today</b><span>Explore</span><span>Why it moved</span><span>My record</span></nav>
+              <span class="me">EN · FR &nbsp; 🔥 12-day streak</span>
+            </div>
+            <div class="cols">
+              <div class="ad sky"><span class="pin">1</span><span class="lbl">Ad</span><div><div class="brand">Tamarack Outfitters</div><div class="copy">Winter's early this year.<br>Boots built for -30.</div><span class="go">Shop now</span></div><span class="sz">160 × 600</span></div>
+              <div class="feed" id="feed-desk"></div>
+              <div class="side">
+                <div class="ad mpu"><span class="pin">2</span><span class="lbl">Ad</span><div><div class="brand">Harbourline Credit Union</div><div class="copy">Rate news has you thinking?<br>Talk to an advisor, free.</div><span class="go">Book a chat</span></div><span class="sz">300 × 250</span></div>
+                <div class="panel"><b>Trending in Canada</b><ol><li>BoC December cut: 38%, down 14 pts</li><li>Toronto snow by Nov 30: 41%</li><li>Juno Album of the Year (French): 18%</li></ol></div>
+                <div class="ad" style="height:250px"><span class="pin">3</span><span class="lbl">Ad</span><div><div class="brand">Aurora Mobile</div><div class="copy">Unlimited Canada-wide data.<br>Bring your number.</div><span class="go">See plans</span></div><span class="sz">300 × 250</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phonewrap" id="fit-phone" hidden>
+          <div class="phone">
+            <div class="top"><div class="mark"><svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="12" fill="var(--no)"/><path d="M13 1a12 12 0 0 0 0 24z" fill="var(--yes)"/></svg><span>consensa<span class="dot">.</span></span></div><span class="tag">EN · FR</span></div>
+            <div class="feed" id="feed-phone"></div>
+            <div class="ad sticky"><span class="pin" style="top:-8px;right:-6px">5</span><span class="lbl" style="top:4px">Ad</span><div class="brand" style="font-size:13px">Aurora Mobile · See plans</div><span class="sz" style="bottom:3px">320 × 50</span></div>
+          </div>
+        </div>
+        <p class="note">Sample layout. Advertisers are fictional placeholders, and questions and numbers are illustrative.</p>
+      </div>
+      <div class="legend" aria-label="Ad slots explained">
+        <div class="li"><span class="pin">1</span><div><b>Left rail (skyscraper)</b><span>Stays in view while people scroll the feed. A good fit for national retail and seasonal brands.</span></div></div>
+        <div class="li"><span class="pin">2</span><div><b>Right rail, top</b><span>The most-viewed box on the page. The standard size that every ad network sells, so it fills easily.</span></div></div>
+        <div class="li"><span class="pin">3</span><div><b>Right rail, lower</b><span>A second box under "Trending", seen by people who keep browsing.</span></div></div>
+        <div class="li"><span class="pin">4</span><div><b>Sponsored question set</b><span>A brand presents a themed set of questions, such as "Winter forecasts". It's labelled and scored like any other set, and the sponsor never sets the answer. This is the premium line.</span></div></div>
+        <div class="li"><span class="pin">5</span><div><b>Phone: in-feed card and bottom banner</b><span>One native card every few questions, plus a small sticky banner. Fewer slots than desktop, but more sessions.</span></div></div>
+        <div class="rulebox"><b>Ad rules:</b> no gambling, betting or crypto-trading advertisers. Ads never sit inside a question or its result, and they're always labelled "Ad" / "Publicité". Targeting uses only province and language, never individual answers.</div>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="ads">
+    <div class="sh"><span class="k">02</span><h2>Ad research: what this layout earns</h2></div>
+    <p class="take"><b>In the middle case, ads earn about CAD 2.50 a year per monthly user, within a range of CAD 1.70 to 4.30. That's CAD 1.7M to 4.3M a year at 1M users.</b> The display slots alone cover about CAD 1.70 to 1.90. An Explore feed (more pages per visit) and sponsored question sets make up the rest. Canadian display rates are lower than in the US, which is why data licensing is the real upside.</p>
+
+    <div class="card tbl">
+      <h3>Estimated CPM by slot (CAD, per 1,000 views)</h3>
+      <table style="margin-top:8px">
+        <thead><tr><th>#</th><th>Slot</th><th>Size</th><th class="n">Open network</th><th class="n">Good programmatic</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Left rail</td><td>160 × 600</td><td class="n">1.50–3</td><td class="n">3–5</td><td>Stays on screen while people scroll, but it's an older size that fewer buyers bid on</td></tr>
+          <tr><td>2</td><td>Right rail, top</td><td>300 × 250</td><td class="n">2–4</td><td class="n">4–7</td><td>The size most buyers target, so it fills most reliably</td></tr>
+          <tr><td>3</td><td>Right rail, lower</td><td>300 × 250 or 300 × 600</td><td class="n">1–3</td><td class="n">3–9</td><td>Fewer people scroll down to it. Upgrading to the 300 × 600 half page earns a premium</td></tr>
+          <tr><td>5a</td><td>Phone in-feed card</td><td>Native / 300 × 250</td><td class="n">2–4</td><td class="n">4–6</td><td>It sits right in the feed, so it gets seen and clicked the most on phones</td></tr>
+          <tr><td>5b</td><td>Phone bottom banner</td><td>320 × 50</td><td class="n">0.80–1.50</td><td class="n">1.50–3</td><td>Cheap per view, but it's on screen for the whole session</td></tr>
+          <tr><td>4</td><td>Sponsored question set</td><td>Flat fee</td><td class="n" colspan="2">CAD 15–40 equivalent</td><td>Sold directly to the brand, so it's the premium line. It runs as a monthly package rather than per view</td></tr>
+        </tbody>
+      </table>
+      <p class="note">These ranges are team estimates. They're anchored to Canadian open-network display CPMs of about USD 2 to 8 (<a href="https://affmaven.com/ad-networks-cpm-rates/" target="_blank" rel="noopener">AffMaven, Sep 2026</a>), versus USD 3 to 12 in the US, and to the general industry view that the 300 × 600 earns more than standard sizes (<a href="https://publishers.gourmetads.com/ad-units/300x600" target="_blank" rel="noopener">Gourmet Ads</a>). They should be checked with a real ad network quote before they're relied on.</p>
+    </div>
+
+    <div class="grid2" style="margin-top:14px">
+      <div class="card">
+        <h3>How a page adds up (mid case)</h3>
+        <table style="margin-top:8px">
+          <tbody>
+            <tr><td>Desktop page: slots 1 + 2 + 3</td><td class="n">CAD 3 + 4.50 + 2 = 9.50</td></tr>
+            <tr><td>× fill rate (~85%)</td><td class="n">≈ CAD 8 per 1,000 pages</td></tr>
+            <tr><td>Phone page: slots 5a + 5b</td><td class="n">CAD 4 + 1.80 ≈ 5 after fill</td></tr>
+            <tr><td>Blend (about 60% phone)</td><td class="n">≈ CAD 6, or ≈ 8 with sponsored sets</td></tr>
+            <tr><td>× 20 pages per user per month × 12</td><td class="n">≈ CAD 1.90 per user per year</td></tr>
+            <tr><td>+ Explore feed (about 26 pages a month)</td><td class="n"><b>≈ CAD 2.50 per user per year</b></td></tr>
+          </tbody>
+        </table>
+        <p class="note">The CAD 8 mid page rate and 20 pages per month are MUSE's model. FORGE's bottom-up check comes to about 18 views per month, or about 30 with an Explore feed of charts.</p>
+      </div>
+      <div class="card" id="calc">
+        <h3>Try the numbers</h3>
+        <label class="sl"><span>Monthly users <b id="o-mau"></b></span><input type="range" id="i-mau" min="50" max="4000" step="50" value="1000"></label>
+        <label class="sl"><span>Pages per user per month <b id="o-pv"></b></span><input type="range" id="i-pv" min="5" max="40" step="1" value="26"></label>
+        <label class="sl"><span>Revenue per 1,000 pages (CAD) <b id="o-rpm"></b></span><input type="range" id="i-rpm" min="2" max="20" step="0.5" value="8"></label>
+        <div class="out"><div><span>Ad revenue per year</span><b id="o-rev"></b></div><div><span>Per user per year</span><b id="o-pu"></b></div></div>
+        <p class="note">Presets: <button type="button" class="chipb" data-p="3">Low · CAD 3</button> <button type="button" class="chipb" data-p="8">Mid · CAD 8</button> <button type="button" class="chipb" data-p="15">High · CAD 15 (direct-sold)</button></p>
+      </div>
+    </div>
+
+    <div class="grid3" style="margin-top:14px">
+      <div class="card"><span class="tag open">Good fit</span><ul class="fitlist">
+        <li>Telecom and internet providers</li><li>Banks, credit unions and insurers (everyday products, not trading)</li><li>Retail, outdoor and seasonal brands</li><li>Travel, airlines and auto</li><li>Streaming, media and events</li><li>Restaurants and grocery</li><li>Government and public-service campaigns</li>
+      </ul></div>
+      <div class="card"><span class="tag">Allowed with care</span><ul class="fitlist">
+        <li>Alcohol: only to signed-in adults, geotargeted to each province's drinking age (18 or 19), following the CRTC code that BC applies online (<a href="https://www.lexpert.ca/news/legal-faq/the-essentials-of-advertising-laws-for-alcohol/388256" target="_blank" rel="noopener">Lexpert</a>)</li>
+        <li>Sponsored question sets: the brand presents the set, but the questions are neutral and the brand never decides the result</li>
+        <li>Every ad in French as well as English for Quebec (Bill 96)</li>
+      </ul></div>
+      <div class="card"><span class="tag red">Off-limits</span><ul class="fitlist">
+        <li>Sportsbooks, casinos and lotteries, with no affiliate links (LEX's rule for the free phase, and the federal Senate bill S-211 proposes a national ban on sports-betting ads)</li>
+        <li>Prediction markets and event-contract brokers</li>
+        <li>Crypto trading and payday loans</li>
+        <li>Cannabis (the Cannabis Act tightly restricts promotion)</li>
+        <li>Political and election ads</li>
+        <li>Anything aimed at minors</li>
+      </ul></div>
+    </div>
+    <p class="note">Why this matters for the bigger picture: keeping gambling ads out entirely is what keeps the "this isn't gambling" story clean, and it's also what makes the audience safe to sell to banks, telecoms and government.</p>
+  </section>
+
+  <section id="market">
+    <div class="sh"><span class="k">03</span><h2>The market: a few players, no clear leader</h2></div>
+    <p class="take"><b>Nobody owns this in Canada.</b> The real-money platforms are either blocked or limited to finance, and nobody serves the free, mass-market audience that follows Canadian culture.</p>
+    <div class="card tbl">
+      <table>
+        <thead><tr><th>Player</th><th>Status in Canada</th><th>What it leaves open</th></tr></thead>
+        <tbody>
+          <tr><td>Polymarket</td><td>Restricted in Ontario since 2023. Geofenced out of Alberta, BC and Quebec in 2026</td><td><span class="tag open">Most of the country</span></td></tr>
+          <tr><td>Wealthsimple Predict (Kalshi), Interactive Brokers</td><td>Live, but limited to economic, financial and climate topics. CIRO barred sports and entertainment contracts on Oct 16, 2026</td><td><span class="tag open">Culture, news, sports</span></td></tr>
+          <tr><td>PrizePicks</td><td>Left Canada in April 2026</td><td><span class="tag open">Fantasy-style fans</span></td></tr>
+          <tr><td>Meta "Arena" (reported)</td><td>A free AI prediction app with play currency is said to be in development. Meta hasn't confirmed it</td><td><span class="tag red">Watch</span> We win by being Canadian-native and bilingual</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="demand">
+    <div class="sh"><span class="k">04</span><h2>Canadians want the content, not the betting</h2></div>
+    <p class="take"><b>The curiosity is there, but the appetite for wagering isn't.</b> A free forecasting app reaches the majority that real-money platforms can't.</p>
+    <div class="grid3">
+      <div class="card"><span class="tag">Global volume</span><h3 style="margin-top:10px;font-size:28px" class="num">USD 53B / month</h3><p>Real-money prediction trading worldwide in July 2026. The category is big and growing fast.</p></div>
+      <div class="card"><span class="tag">Canadian reach</span><h3 style="margin-top:10px;font-size:28px">4th largest</h3><p>Canada is Polymarket's fourth-largest desktop audience in the world, despite the blocks.</p></div>
+      <div class="card"><span class="tag red">The gap</span><h3 style="margin-top:10px;font-size:28px">&lt; 1 in 20</h3><p>Canadians who have ever used a prediction market. 41% would rather they weren't allowed. A free app fits that audience.</p></div>
+    </div>
+  </section>
+
+  <section id="money">
+    <div class="sh"><span class="k">05</span><h2>Economics: each user pays back in about 10 months</h2></div>
+    <p class="take"><b>Ads alone get the app to about breakeven, and opinion data is what swings the outcome.</b> These are mid-case team estimates, not quotes.</p>
+    <div class="unit">
+      <div class="stat pos"><b class="num">CAD 4.00</b><span>earned per monthly user per year (ads + data)</span></div>
+      <div class="stat"><b class="num">CAD 1.50</b><span>to serve each user per year (hosting, AI, moderation)</span></div>
+      <div class="stat"><b class="num">CAD 2.00</b><span>to acquire each user when growth is mostly organic</span></div>
+      <div class="stat pos"><b class="num">~10 mo</b><span>payback per user</span></div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="card">
+        <h3>At 1M monthly users, per year</h3>
+        <div class="bars" style="margin-top:14px" id="rev"></div>
+        <p class="note">The sponsorship upside is speculative. Data licensing isn't counted here, and it's the line that swings the result.</p>
+      </div>
+      <div class="card">
+        <h3>Cost to reach 1M users, by growth strategy</h3>
+        <div class="bars" style="margin-top:14px" id="cost"></div>
+        <p class="note">Partner-led growth is the plan. The leaders grew the same way: Kalshi's numbers appear on CNN and CNBC, and Polymarket's data runs in the Wall Street Journal.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="path">
+    <div class="sh"><span class="k">06</span><h2>The path to 1M monthly users</h2></div>
+    <p class="take"><b>The plan is traffic first, then decide on the licence.</b> The amounts are what the market typically raises at each stage.</p>
+    <div class="steps">
+      <div class="step"><h3>Pre-seed</h3><p>Build and launch the bilingual web app. Scored probability calls on culture, news, weather and the economy, with no money anywhere.</p><div class="amt">~CAD 0.9M typical</div></div>
+      <div class="step"><h3>Seed</h3><p>Grow through media partners and embeddable prediction widgets. Start selling sponsored question sets.</p><div class="amt">Partner-led growth</div></div>
+      <div class="step"><h3>1M users</h3><p>Self-sustaining. Ads bring in about CAD 1.7M to 4.3M a year against CAD 1M to 2M in running costs.</p><div class="amt">~Breakeven + data</div></div>
+      <div class="step"><h3>Series A</h3><p>Priced on audience, engagement and data revenue. After that comes a licensed partner, or a sale.</p><div class="amt">CAD 5M to 15M typical</div></div>
+    </div>
+  </section>
+
+  <section id="worth">
+    <div class="sh"><span class="k">07</span><h2>What it could be worth</h2></div>
+    <p class="take"><b>On audience alone, 1M Canadian users points to about CAD 10M to 40M.</b> There are three ways past that: grow to 3M to 4M users, build a real data business, or attract a strategic buyer who pays for the licensed path.</p>
+    <div class="grid2">
+      <div class="card">
+        <h3>Value per monthly user at sale</h3>
+        <div class="bars" style="margin-top:14px" id="comps"></div>
+        <p class="note">The scale is logarithmic. Morning Consult (USD 1B+) and Lucid (USD 1.1B, about 9x revenue) show that opinion data alone can build billion-dollar businesses.</p>
+      </div>
+      <div class="card">
+        <h3>The premium precedent: theScore</h3>
+        <p style="margin-top:6px">A free Canadian sports app that grew to about 4M monthly users, added betting through a licence, and sold to PENN for about USD 2B in 2021. That's the "free audience plus a licensed path" case.</p>
+        <h3 style="margin-top:16px">After 1M: the best route</h3>
+        <p style="margin-top:6px">Partner with, or sell to, a licensed operator or a provincial lottery. They run a separate real-money product, and we supply the audience, the tech and the data. Free points never carry over.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="legal">
+    <div class="sh"><span class="k">08</span><h2>The legal line</h2></div>
+    <p class="take"><b>Play money only, because that's where the law is clear.</b> Canada's securities regulators limit real-money event contracts to economic, financial and climate topics (CSA/CIRO Staff Notice 91-307, Aug 27, 2026, and CIRO's Oct 16 update), and they leave sports and entertainment to provincial gaming law.</p>
+    <div class="yn">
+      <div class="card yes"><h3>The free app always…</h3><ul>
+        <li>Shows probabilities and forecasts ("62% chance")</li>
+        <li>Is 18+, with separate consent for data use, built to Quebec's Law 25</li>
+        <li>Sells data only as anonymized aggregates</li>
+        <li>Uses AI to explain why a forecast moved</li>
+      </ul></div>
+      <div class="card no"><h3>The free app never…</h3><ul>
+        <li>Lets points be bought, sold, cashed out or transferred</li>
+        <li>Uses odds or betting language</li>
+        <li>Lets the AI give picks or tips</li>
+        <li>Promises real money, or runs prizes without a skill-testing element</li>
+      </ul></div>
+    </div>
+    <p class="note">A lawyer will review this before launch. A free 30-minute Law Society referral consult is the first step.</p>
+  </section>
+
+  <section id="qs">
+    <div class="sh"><span class="k">09</span><h2>Where your view would help most</h2></div>
+    <ol class="qs">
+      <li>Who in your circle would you want to see this, and is anything they'd need missing?</li>
+      <li>Would a licensed partner, such as a provincial lottery or an operator, be a better first strategic conversation than a VC?</li>
+      <li>Do you still see Ontario as the right home for the company? It qualifies for Ontario's Interactive Digital Media Tax Credit (35 to 40%, refundable).</li>
+    </ol>
+  </section>
+
+  <footer>
+    <p><b>About these numbers.</b> Survey figures are from the Angus Reid Institute (May 2026). Revenue, cost and per-user figures are team estimates. Comparable valuations are approximate public figures. The Meta "Arena" report is unconfirmed.</p>
+    <p>Consensa is a working name. The questions, advertisers and usernames in the mockups are illustrative.</p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  var Q = [
+    { cat: "Economy · Closes Dec. 9", q: "Will the Bank of Canada cut its policy rate at its December decision?", y: 38, f: "18,420", p: [41, 47, 44, 36, 31, 39] },
+    { cat: "Weather · Closes Nov. 30", q: "Will Toronto Pearson get 10 cm of snow before Nov. 30?", y: 41, f: "9,310" },
+    { cat: "Housing · CREA Dec. report", q: "Will Canada's average home price in November be higher than a year earlier?", y: 57, f: "11,205" },
+    { cat: "Culture · 2027 Junos", q: "Will a French-language album win Album of the Year at the 2027 Junos?", y: 18, f: "6,740" }
+  ];
+  var PV = ["BC", "AB", "Prairies", "ON", "QC", "Atl."];
+  function prov(v) {
+    return '<div class="says">Canada says: yes, by province</div><div class="pv">' + v.map(function (x, i) {
+      return '<div><i><b style="height:' + x + '%"></b></i><span>' + PV[i] + '</span><span>' + x + '</span></div>'; }).join("") + '</div>';
+  }
+  function card(c) {
+    return '<div class="q"><div class="cat"><span>' + c.cat + '</span><span>Scored</span></div><p>' + c.q + '</p>' +
+      '<div class="mb"><span style="width:' + c.y + '%"></span></div><div class="ml"><span class="y">Yes ' + c.y + '%</span><span class="n">No ' + (100 - c.y) + '%</span></div>' + (c.p ? prov(c.p) : '') +
+      '<div class="foot"><span class="live">' + c.f + ' forecasters</span><span class="mini">Make your call</span></div></div>';
+  }
+  var sponsor = '<div class="sponsor"><span class="pin" style="position:absolute;top:-10px;right:-10px;width:22px;height:22px;border-radius:50%;background:var(--ad);color:var(--surface);font:700 12px var(--f-body);display:grid;place-items:center">4</span>' +
+    '<span class="lbl">Sponsored question set · presented by Tamarack Outfitters</span><p style="margin:0;font-weight:800;font-size:15px">Winter forecasts: 5 calls on the first big storm</p>' +
+    '<div class="ml" style="font-weight:500;color:var(--ink-2)"><span>Scored like any other set</span><span>0 of 5 made</span></div></div>';
+  var native = '<div class="ad native"><span class="pin">5</span><span class="lbl">Ad · Publicité</span><div class="brand">Harbourline Credit Union</div><div class="copy">Rate news has you thinking? Talk to an advisor, free.</div><span class="go">Book a chat</span></div>';
+  document.getElementById("feed-desk").innerHTML = '<h4>Today\'s five</h4><p class="sub">Make your call. See where Canada lands.</p>' +
+    card(Q[0]) + card(Q[1]) + sponsor + card(Q[2]) +
+    '<div class="ad lead"><span class="lbl">Ad</span><div><div class="brand">Aurora Mobile</div><div class="copy">Unlimited Canada-wide data</div></div><span class="sz">728 × 90 · optional</span></div>' + card(Q[3]);
+  document.getElementById("feed-phone").innerHTML = '<h4 style="font-size:20px">Today\'s five</h4><p class="sub">Make your call. See where Canada lands.</p>' +
+    card(Q[0]) + card(Q[1]) + native + sponsor;
+
+  // bar charts: [label, sub, lo, hi, colour]
+  function bars(id, rows, max, fmt, log) {
+    var s = function (v) { return log ? Math.log10(v) / Math.log10(max) * 100 : v / max * 100; };
+    document.getElementById(id).innerHTML = rows.map(function (r) {
+      var lo = r[2] == null ? 0 : s(r[2]), hi = s(r[3]);
+      return '<div class="brow"><div class="t">' + r[0] + (r[1] ? '<small>' + r[1] + '</small>' : '') + '</div><div class="track">' +
+        '<div class="range" style="left:' + lo + '%;width:' + Math.max(hi - lo, 1.5) + '%;background:' + r[4] + '"></div>' +
+        '<span class="rl" style="' + (hi > 62 ? 'right:' + (100 - hi + 1.5) + '%;color:#fff' : 'left:calc(' + hi + '% + 6px)') + '">' + fmt(r) + '</span></div></div>';
+    }).join("");
+  }
+  bars("rev", [
+    ["Ads, low case", "display slots only", null, 1.7, "color-mix(in srgb, var(--yes) 55%, transparent)"],
+    ["Ads, mid case", "+ Explore feed", null, 2.5, "var(--yes)"],
+    ["Ads, high case", "+ sponsored sets (speculative)", null, 4.3, "color-mix(in srgb, var(--yes) 70%, var(--no))"],
+    ["Running costs", "lean team + infra", 1, 2, "var(--no)"]
+  ], 4.5, function (r) { return "CAD " + (r[2] ? r[2] + "–" : "") + r[3] + "M"; });
+  bars("cost", [
+    ["Partners + widgets + sharing", "the plan", 3.5, 5, "var(--yes)"],
+    ["Leaning on paid ads", "", 6, 9, "color-mix(in srgb, var(--yes) 45%, var(--no))"],
+    ["Paid ads only", "Canadian install prices", 15, 25, "var(--no)"]
+  ], 25, function (r) { return "CAD " + r[2] + "–" + r[3] + "M"; });
+  bars("comps", [
+    ["theScore", "PENN, 2021", null, 500, "var(--yes)"],
+    ["Chess.com", "2023", null, 25, "color-mix(in srgb, var(--yes) 60%, var(--no))"],
+    ["Wattpad", "2021", null, 7, "var(--no)"]
+  ], 500, function (r) { return "USD " + r[3] + (r[3] === 25 ? "+" : ""); }, true);
+
+
+  // revenue calculator
+  var iM = document.getElementById("i-mau"), iP = document.getElementById("i-pv"), iR = document.getElementById("i-rpm");
+  function money(v) { return v >= 1e6 ? "CAD " + (v / 1e6).toFixed(1) + "M" : "CAD " + Math.round(v / 1e3) + "K"; }
+  function calc() {
+    var mau = +iM.value * 1000, pv = +iP.value, rpm = +iR.value;
+    var rev = mau * pv * 12 * rpm / 1000;
+    document.getElementById("o-mau").textContent = mau >= 1e6 ? (mau / 1e6).toFixed(2).replace(/\.?0+$/, "") + "M" : (mau / 1e3) + "K";
+    document.getElementById("o-pv").textContent = pv;
+    document.getElementById("o-rpm").textContent = rpm.toFixed(2).replace(/\.00$/, "");
+    document.getElementById("o-rev").textContent = money(rev);
+    document.getElementById("o-pu").textContent = "CAD " + (rev / mau).toFixed(2);
+  }
+  [iM, iP, iR].forEach(function (el) { el.addEventListener("input", calc); });
+  [].slice.call(document.querySelectorAll(".chipb")).forEach(function (b) { b.addEventListener("click", function () { iR.value = b.getAttribute("data-p"); calc(); }); });
+  calc();
+
+  // view switch + desktop scale-to-fit
+  var bD = document.getElementById("v-desk"), bP = document.getElementById("v-phone"),
+      fD = document.getElementById("fit-desk"), fP = document.getElementById("fit-phone"), desk = document.getElementById("desk");
+  function fit() {
+    if (fD.hidden) return;
+    var k = Math.min(1, fD.clientWidth / 1080);
+    desk.style.transform = "scale(" + k + ")";
+    fD.style.height = (desk.offsetHeight * k) + "px";
+  }
+  function show(phone) {
+    fD.hidden = phone; fP.hidden = !phone;
+    bD.setAttribute("aria-pressed", String(!phone)); bP.setAttribute("aria-pressed", String(phone));
+    try { localStorage.setItem("consensa-brief-view", phone ? "phone" : "desk"); } catch (e) {}
+    fit();
+  }
+  bD.addEventListener("click", function () { show(false); });
+  bP.addEventListener("click", function () { show(true); });
+  window.addEventListener("resize", fit);
+  var start = false;
+  try { start = localStorage.getItem("consensa-brief-view") === "phone"; } catch (e) {}
+  if (!start && window.innerWidth < 640) start = true;
+  show(start);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
+  // highlight current section in the nav
+  var links = [].slice.call(document.querySelectorAll(".toc a"));
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) links.forEach(function (a) { a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id); }); });
+    }, { rootMargin: "-40% 0px -55% 0px" });
+    document.querySelectorAll("section[id]").forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
