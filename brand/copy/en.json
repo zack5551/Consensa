@@ -32,7 +32,7 @@
     "resolvesOn": "Resolves on {date}",
     "yourCall": "Your call",
     "changeCall": "Change your call",
-    "lockedIn": "Your call is in.",
+    "saved": "Call saved.",
     "provinceLeans": "{province} leans {side}"
   },
   "result": {
@@ -57,9 +57,10 @@
   "errors": {
     "generic": "Something went wrong on our side. Try again in a moment.",
     "offline": "You're offline. Your call will send when you're back.",
-    "closed": "This question has closed, so calls are locked."
+    "closed": "This question has closed."
   },
   "legal": {
+    "noValue": "Free to play. No cash value. No purchase necessary.",
     "noMoney": "Free to play. No money, prizes or points with cash value, ever.",
     "adsLabel": "Ad"
   }
