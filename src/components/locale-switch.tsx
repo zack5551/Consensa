@@ -18,7 +18,7 @@ export function LocaleSwitch({ locale, label, switchTo }: { locale: Locale; labe
         onClick={() => {
           document.cookie = `locale=${other}; path=/; max-age=31536000; samesite=lax`;
         }}
-        className="rounded-pill border border-line px-3 py-1 text-2 font-semibold text-ink transition-colors duration-[var(--duration-fast)] hover:bg-surface-2"
+        className="rounded-full border border-line px-3 py-1 text-body-sm font-semibold text-ink transition-colors duration-[var(--cn-duration-fast)] hover:bg-sunken"
       >
         {switchTo}
       </Link>

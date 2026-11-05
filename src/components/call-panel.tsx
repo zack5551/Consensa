@@ -45,15 +45,15 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays }: Props) {
   const gapText = gap === 0 ? t.sameAsCrowd : fill(gap > 0 ? t.moreThan : t.lessThan, { n: Math.abs(gap) });
 
   return (
-    <section aria-labelledby={`${hintId}-title`} className="rounded-lg border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
-      <h2 id={`${hintId}-title`} className="text-4 font-bold">
+    <section aria-labelledby={`${hintId}-title`} className="rounded-card border border-line bg-surface p-5 shadow-card">
+      <h2 id={`${hintId}-title`} className="text-title-sm font-bold">
         {t.title}
       </h2>
-      <p id={hintId} className="mt-1 text-2 text-ink-2">
+      <p id={hintId} className="mt-1 text-body-sm text-ink-2">
         {t.hint}
       </p>
 
-      <output htmlFor={`${hintId}-slider`} className={`mt-4 block text-center font-mono text-6 font-semibold tabular ${value < 50 ? "text-no" : "text-yes"}`} aria-live="polite">
+      <output htmlFor={`${hintId}-slider`} className={`mt-4 block text-center font-display text-display font-semibold tabular ${value < 50 ? "text-side-b-text" : "text-side-a-text"}`} aria-live="polite">
         {formatPercent(value, locale)}
       </output>
 
@@ -69,7 +69,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays }: Props) {
         aria-describedby={hintId}
         aria-valuetext={formatPercent(value, locale)}
         onChange={(e) => setValue(Number(e.target.value))}
-        className="mt-3 h-8 w-full cursor-pointer accent-[var(--color-yes)] disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-3 h-8 w-full cursor-pointer accent-[var(--cn-side-a)] disabled:cursor-not-allowed disabled:opacity-60"
       />
 
       <div className="mt-2 flex flex-wrap gap-2">
@@ -83,7 +83,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays }: Props) {
             type="button"
             disabled={saved}
             onClick={() => setValue(v)}
-            className="rounded-pill border border-line bg-surface px-3 py-1 font-mono text-1 text-ink hover:bg-surface-2 disabled:opacity-50"
+            className="rounded-full border border-line bg-surface px-3 py-1 text-caption text-ink hover:bg-sunken disabled:opacity-50"
           >
             {label} · {formatPercent(v, locale)}
           </button>
@@ -91,31 +91,31 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays }: Props) {
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-md border border-line p-3">
-          <dt className="text-1 font-bold text-accent">{canadaSays}</dt>
-          <dd className="m-0 font-mono text-4 tabular">{formatPercent(crowd, locale)}</dd>
+        <div className="rounded-control border border-line p-3">
+          <dt className="text-caption font-bold text-canada">{canadaSays}</dt>
+          <dd className="m-0 font-display text-title-sm tabular">{formatPercent(crowd, locale)}</dd>
         </div>
-        <div className="rounded-md border border-line p-3">
-          <dt className="text-1 text-ink-2">{t.you}</dt>
-          <dd className="m-0 font-mono text-4 tabular">{formatPercent(value, locale)}</dd>
+        <div className="rounded-control border border-line p-3">
+          <dt className="text-caption text-ink-2">{t.you}</dt>
+          <dd className="m-0 font-display text-title-sm tabular">{formatPercent(value, locale)}</dd>
         </div>
       </dl>
 
       {saved ? (
         <div className="mt-4 grid gap-3">
-          <p role="status" className="m-0 rounded-md bg-yes-soft p-3 text-2">
+          <p role="status" className="m-0 rounded-control bg-side-a-soft p-3 text-body-sm">
             <strong>{t.saved}.</strong> {gapText} {t.scoredWhen}
           </p>
-          <button type="button" onClick={() => setSaved(false)} className="justify-self-start rounded-md border border-line px-4 py-2 text-2 font-semibold hover:bg-surface-2">
+          <button type="button" onClick={() => setSaved(false)} className="justify-self-start rounded-control border border-line px-4 py-2 text-body-sm font-semibold hover:bg-sunken">
             {t.change}
           </button>
         </div>
       ) : (
-        <button type="button" onClick={save} className="mt-4 w-full rounded-md bg-ink px-4 py-3 text-3 font-bold text-paper hover:opacity-90">
+        <button type="button" onClick={save} className="mt-4 w-full rounded-control bg-ink px-4 py-3 text-body font-bold text-paper hover:opacity-90">
           {t.save}
         </button>
       )}
-      <p className="mt-3 text-1 text-ink-2">{t.demoNote}</p>
+      <p className="mt-3 text-caption text-ink-2">{t.demoNote}</p>
     </section>
   );
 }

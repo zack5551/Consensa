@@ -44,7 +44,7 @@ const fr = {
   },
   call: {
     title: "Votre prévision",
-    hint: "Quelle est la probabilité ? Glissez pour la choisir.",
+    hint: "Quelle est la probabilité? Glissez pour la choisir.",
     sliderLabel: "Votre probabilité que la réponse soit oui",
     quick: { unlikely: "Peu probable", tossUp: "50-50", likely: "Probable" },
     you: "Vous",

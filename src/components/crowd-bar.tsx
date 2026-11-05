@@ -2,12 +2,12 @@
 export function CrowdBar({ yes, yesLabel, noLabel }: { yes: number; yesLabel: string; noLabel: string }) {
   return (
     <div>
-      <div className="flex h-3 overflow-hidden rounded-pill bg-no" aria-hidden="true">
-        <span className="block h-full bg-yes transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)]" style={{ width: `${yes}%` }} />
+      <div className="flex h-3 overflow-hidden rounded-full bg-side-b" aria-hidden="true">
+        <span className="block h-full bg-side-a transition-[width] duration-[var(--cn-duration-reveal)] ease-[var(--cn-ease-out)]" style={{ width: `${yes}%` }} />
       </div>
-      <div className="mt-1 flex justify-between font-mono text-1 font-semibold tabular">
-        <span className="text-yes">{yesLabel}</span>
-        <span className="text-no">{noLabel}</span>
+      <div className="mt-1 flex justify-between text-caption font-semibold tabular">
+        <span className="text-side-a-text">{yesLabel}</span>
+        <span className="text-side-b-text">{noLabel}</span>
       </div>
     </div>
   );

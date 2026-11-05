@@ -21,7 +21,7 @@ const raw = [
     category: "economy",
     question: {
       en: "Will the Bank of Canada cut its policy rate at its December decision?",
-      fr: "La Banque du Canada baissera-t-elle son taux directeur à sa décision de décembre ?",
+      fr: "La Banque du Canada baissera-t-elle son taux directeur à sa décision de décembre?",
     },
     scored: true,
     closesAt: "2026-12-09T14:45:00Z",
@@ -56,7 +56,7 @@ const raw = [
     category: "weather",
     question: {
       en: "Will Toronto Pearson get 10 cm of snow before Nov. 30?",
-      fr: "L’aéroport Pearson de Toronto recevra-t-il 10 cm de neige avant le 30 novembre ?",
+      fr: "L’aéroport Pearson de Toronto recevra-t-il 10 cm de neige avant le 30 novembre?",
     },
     scored: true,
     closesAt: "2026-11-30T04:59:00Z",
@@ -78,7 +78,7 @@ const raw = [
     category: "housing",
     question: {
       en: "Will Canada's average home price in November be higher than a year earlier?",
-      fr: "Le prix moyen des maisons au Canada en novembre sera-t-il plus élevé qu’un an plus tôt ?",
+      fr: "Le prix moyen des maisons au Canada en novembre sera-t-il plus élevé qu’un an plus tôt?",
     },
     scored: true,
     closesAt: "2026-12-14T13:00:00Z",
@@ -100,7 +100,7 @@ const raw = [
     category: "culture",
     question: {
       en: "Will a French-language album win Album of the Year at the 2027 Junos?",
-      fr: "Un album francophone remportera-t-il l’album de l’année aux Juno 2027 ?",
+      fr: "Un album francophone remportera-t-il l’album de l’année aux Juno 2027?",
     },
     scored: true,
     closesAt: "2027-03-28T23:00:00Z",
@@ -122,7 +122,7 @@ const raw = [
     category: "sports",
     question: {
       en: "Do you think the Maple Leafs make the 2027 playoffs?",
-      fr: "Pensez-vous que les Maple Leafs feront les séries de 2027 ?",
+      fr: "Pensez-vous que les Maple Leafs feront les séries de 2027?",
     },
     scored: false,
     closesAt: "2027-04-15T23:00:00Z",

@@ -30,7 +30,7 @@ Full checklist: `docs/legal/consensa-build-guardrails.md`. Read it before touchi
 ## Stack
 
 - Next.js 15 (App Router) + React 19 + TypeScript (strict, `noUncheckedIndexedAccess`). pnpm.
-- Tailwind CSS 4, with design tokens in `src/styles/tokens.css`. Components use tokens only: no raw hex colours or one-off pixel values in components.
+- Tailwind CSS 4 on PRISM's tokens (see Design system). Components use tokens only: no raw hex colours or one-off pixel values.
 - Zod validates every external input (route params, API bodies, data from the source feeds).
 - Vitest for unit tests (`tests/unit`). Playwright + axe for end-to-end and accessibility (`tests/e2e`).
 - Coming next: Supabase (Postgres, ca-central-1), realtime, self-hosted PostHog, Sentry with personal info scrubbed.
@@ -43,12 +43,15 @@ Full checklist: `docs/legal/consensa-build-guardrails.md`. Read it before touchi
 - `src/content/`: sample questions until the database lands. Each question has EN and FR text, an official resolution source and a close date.
 - `src/components/`: UI. A component gets its strings as props or from the dictionary, never inline.
 
-## Design system (from PRISM)
+## Design system (PRISM's brand kit is the source of truth)
 
-- Colours: ink `#14213D`, paper `#FAF8F5`, teal `#0F766E` (yes), violet `#6D4AA8` (no), Canada red `#C8102E` (accent only: logo dot, live badges, the "Canada says" label), slate `#5B6472`. Never party colours or sportsbook neon green.
-- Type: Manrope (words, ExtraBold for the lowercase "consensa" wordmark) and IBM Plex Mono (numbers, tabular figures). Six sizes on the scale, no others.
-- Spacing: a 4px base grid using only the steps in `tokens.css`.
+- **Never redefine tokens.** They live in `brand/tokens/tokens.css` (`--cn-*`), and `brand/tokens/shadcn-theme.css` bridges them to shadcn/Tailwind. `src/styles/globals.css` only maps app utility names onto PRISM's *semantic* tokens. Use semantic tokens, never raw scale steps (`--cn-teal-600`) or hex values.
+- Utilities: `bg-paper`, `bg-surface`, `bg-sunken`, `text-ink`/`ink-2`/`ink-3`, `border-line`, `bg-side-a` (teal = yes), `bg-side-b` (violet = no), `text-canada` (red, a rare pin only: the live dot, the logo point, the "Canada says" label), `rounded-card`, `rounded-control`, `shadow-card`. Type uses `text-caption` … `text-stat`.
+- Fonts: Manrope (`font-display`) for headlines and the numbers that matter. Inter (`font-sans`, the default) for UI. Use `tabular` wherever digits update.
+- Logo: `brand/logo/`. The `Wordmark` component uses the symbol paths. Never recolour the halves, swap their sides, or add a maple leaf.
+- No party colours on neutral questions. No sportsbook look. Design at French length first.
 - Every screen states its one message and one action in a comment at the top of the page file before it's built.
+- The plan and quality bars are in `docs/BUILD_PLAN.md`. The original prototype is in `docs/design/`.
 
 ## Definition of done for any screen
 

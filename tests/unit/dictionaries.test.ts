@@ -25,9 +25,11 @@ describe("EN/FR dictionaries", () => {
     }
   });
 
-  it("use non-breaking spaces before French high punctuation and %", () => {
+  it("follow PRISM's Quebec typography: no space before ? or !, a non-breaking space before : and %", () => {
     for (const [path, value] of leaves(fr)) {
-      expect(value, path).not.toMatch(/ [?!:;%]/);
+      expect(value, path).not.toMatch(/[ \u00A0\u202F][?!]/u);
+      expect(value, path).not.toMatch(/ [:%]/);
+      expect(value, path).not.toMatch(/[^\s\u00A0\u202F][:%]/u);
     }
   });
 });

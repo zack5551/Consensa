@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Manrope } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -9,8 +9,8 @@ import { isLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import "@/styles/globals.css";
 
-const manrope = Manrope({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-manrope", display: "swap" });
-const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex-mono", display: "swap" });
+const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-manrope", display: "swap" });
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter", display: "swap" });
 
 export const dynamicParams = false;
 
@@ -31,8 +31,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf8f5" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1626" },
+    { media: "(prefers-color-scheme: light)", color: "#FAF8F5" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B1324" },
   ],
 };
 
@@ -42,7 +42,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   const t = getDictionary(locale);
 
   return (
-    <html lang={`${locale}-CA`} className={`${manrope.variable} ${plexMono.variable}`}>
+    <html lang={`${locale}-CA`} className={`${manrope.variable} ${inter.variable}`}>
       <body className="min-h-dvh">
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-surface focus:p-3">
           {t.nav.skipToContent}
@@ -59,7 +59,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
           {children}
         </main>
         <footer className="border-t border-line">
-          <div className="mx-auto grid max-w-[1120px] gap-1 px-4 py-6 text-1 text-ink-2">
+          <div className="mx-auto grid max-w-[1120px] gap-1 px-4 py-6 text-caption text-ink-2">
             <p className="m-0 font-semibold text-ink">{t.legal.footer}</p>
             <p className="m-0">{t.legal.noValue}</p>
             <p className="m-0">{t.legal.sample}</p>
