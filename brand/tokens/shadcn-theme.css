@@ -1,0 +1,87 @@
+/* shadcn/ui bridge: maps Consensa tokens onto shadcn variable names (Tailwind v4). Import after tokens.css. Generated. */
+:root {
+  --radius: 0.625rem;
+  --background: #FAF8F5;
+  --foreground: #14213D;
+  --card: #FEFCF9;
+  --card-foreground: #14213D;
+  --popover: #FEFCF9;
+  --popover-foreground: #14213D;
+  --primary: #0F766E;
+  --primary-foreground: #FEFCF9;
+  --secondary: #F2F0ED;
+  --secondary-foreground: #14213D;
+  --muted: #F2F0ED;
+  --muted-foreground: #4D5972;
+  --accent: #F0EAFF;
+  --accent-foreground: #583490;
+  --destructive: #A50022;
+  --border: #E4E2E0;
+  --input: #7A86A0;
+  --ring: #6D4AA8;
+  --chart-1: #0F766E;
+  --chart-2: #6D4AA8;
+  --chart-3: #B45309;
+  --chart-4: #4D5972;
+  --chart-5: #62B9B0;
+}
+.dark, :root[data-theme="dark"] {
+  --background: #0B1324;
+  --foreground: #F4F1EA;
+  --card: #121B2E;
+  --card-foreground: #F4F1EA;
+  --popover: #121B2E;
+  --popover-foreground: #F4F1EA;
+  --primary: #62B9B0;
+  --primary-foreground: #14213D;
+  --secondary: #080E1B;
+  --secondary-foreground: #F4F1EA;
+  --muted: #080E1B;
+  --muted-foreground: #A9B1C2;
+  --accent: #211A3A;
+  --accent-foreground: #CBB7FA;
+  --destructive: #FFAAA6;
+  --border: #26304A;
+  --input: #6E7A96;
+  --ring: #B392F7;
+  --chart-1: #62B9B0;
+  --chart-2: #B392F7;
+  --chart-3: #F0894E;
+  --chart-4: #A9B1C2;
+  --chart-5: #C3E5E0;
+}
+
+@theme inline {
+  --font-sans: var(--cn-font-sans);
+  --font-display: var(--cn-font-display);
+  --font-mono: var(--cn-font-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-side-a: var(--cn-side-a);
+  --color-side-a-soft: var(--cn-side-a-soft);
+  --color-side-b: var(--cn-side-b);
+  --color-side-b-soft: var(--cn-side-b-soft);
+  --color-canada: var(--cn-accent);
+  --color-text-muted: var(--cn-text-muted);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --ease-out: var(--cn-ease-out);
+}

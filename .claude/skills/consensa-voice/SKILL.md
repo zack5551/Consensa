@@ -1,45 +1,45 @@
 ---
 name: consensa-voice
-description: Write or review any Consensa user-facing text in English and Quebec French. Use for every new string, screen, notification, email or error message, and before merging UI changes.
+description: Write or review any user-facing Consensa text (UI strings, errors, emails, notifications, marketing, question wording) in English and Quebec French. Use whenever adding or changing copy in en.json/fr.json, components, or emails.
 ---
 
 # Consensa voice (EN + FR)
 
-Consensa sounds like a smart, friendly Canadian news desk, not a casino. It's calm, clear and a little playful. It always talks about forecasts and probabilities, never about betting.
+The full guide lives in `brand/README.md`, and the base strings are in `brand/copy/en.json` and `brand/copy/fr.json`. These rules are non-negotiable.
 
-## Where strings live
+## Every string ships in both languages
+- Add each key to **both** `en.json` and `fr.json` in the same change, with matching keys and ICU placeholders.
+- Write the French natively in Quebec French (OQLF). Don't translate word for word.
+- French typography: no space before `?` or `!`; a space before `:` and before `%` (`62 %`); a space as the thousands separator (`12 408`); typographic apostrophe `’`; dates written as `le 5 novembre 2026`.
+- Vocabulary: *courriel* (not e-mail), *se connecter*, *prévision*, *bilan*, *série*, *précision*, *Paramètres*.
+- Design for French length. If a French string overflows its component, fix the layout, not the French.
 
-- `src/i18n/dictionaries/en.ts` and `fr.ts`. Both files have the same keys, and `tests/unit/dictionaries.test.ts` fails if they drift.
-- Write the English and the French in the same change. Never leave a French key as an English copy or a TODO.
+## Never betting language (legal position, not style)
+Banned in EN: bet, wager, odds, stake, pick (as a noun for a bet), lock, parlay, slip, payout, cash out, jackpot, win money, invest, profit, returns, trade.
+Banned in FR: pari, parier, mise, cote, enjeu, gain(s), encaisser, combiné, gros lot, investir, profit, rendement.
+Use instead: call / prévision, chance(s) ("62% chance" / "62 % de chances"), Canada says / Le Canada pense, accuracy / précision, streak / série, record / bilan.
+Show probabilities as percentages, never as odds (no "3:1", "+150" or decimal odds).
+Never imply money, prizes or cash value. Keep `legal.noMoney` visible in the footer or on onboarding.
 
-## Vocabulary
+## Tone
+- Like a sharp, friendly Canadian editor: clear, warm, a little wry, never hype.
+- Sentences under 20 words. No fake urgency, guilt or dark patterns ("Don't miss out!", "Only 2 hours left!!").
+- Exclamation marks only in the signature moment: **"Called it!" / "Vu juste!"**. A miss is "Not this time." / "Pas cette fois.", with no shame.
+- Errors say what happened and what to do next, in one or two sentences.
 
-| Use (EN) | Use (FR, Quebec) | Never |
-|---|---|---|
-| Make your call | Faites votre prévision | Place a bet, pick, lock in |
-| Call saved | Prévision enregistrée | Bet placed, locked |
-| 62% chance | 62 % de chances | odds, 62¢, price, 3-to-1 |
-| Canada says | Le Canada pense | the market says, the line |
-| Called it! | Vu juste! | You won, payout, cash |
-| forecasters | prévisionnistes | bettors, traders, players |
-| accuracy, Brier score | précision, score de Brier | profit, P&L, winnings, ROI |
-| Today's five | Les cinq du jour | slate, card, parlay |
-| Why it moved | Pourquoi ça a bougé | tips, picks, sharp money |
-| Free · No money · No prizes · 18+ | Gratuit · Sans argent · Sans prix · 18 ans et + | anything implying points have value |
+## Question wording
+- Make questions neutral, answerable and dated: "Will the Bank of Canada cut its rate at its December 10, 2026 announcement?" / "La Banque du Canada baissera-t-elle son taux lors de son annonce du 10 décembre 2026?"
+- State the resolution source and date. Avoid loaded words. Give both sides equal visual weight (teal = side A, violet = side B).
+- No scored sports questions in v1.
 
-## French rules (Quebec, Office québécois de la langue française usage)
+## Checklist before you finish
+1. Both JSON files updated, with key parity.
+2. A search for every banned word (EN and FR) comes back with nothing.
+3. French typography rules applied.
+4. Every string fits the layout at French length.
 
-- Put a non-breaking space before `%`, `:`, `?`, `!` and `;`, and inside « guillemets ». In code, use ` ` (or ` ` before `?!;`).
-- Write numbers the French way: `18 420` (thin space as the thousands separator) and `3,5 %`. Use `Intl.NumberFormat("fr-CA")` and never hand-format.
-- Dates: `9 déc.` / `9 décembre 2026`. Use `Intl.DateTimeFormat("fr-CA")`.
-- Use Quebec terms: courriel (not e-mail), clavarder, magasiner; fin de semaine (not week-end); infolettre.
-- Address the reader as "vous", never "tu", except in a playful "Vu juste!".
-- Write sentence-case headings in both languages.
-
-## Tone checks before you ship a string
-
-1. Could this line appear on a sportsbook? If so, rewrite it.
-2. Does it promise anything of value (prizes, cash, "points will count")? If so, delete it.
-3. Does the AI explainer tell people what to call? If so, rewrite it to say what changed and why.
-4. Is the French as natural as the English? Read it aloud. If it sounds translated, rewrite it.
-5. Does each screen still have one main message and one main action?
+## In the app code (FORGE)
+- The app's strings live in `src/i18n/dictionaries/en.ts` and `fr.ts`, which start from `brand/copy/*.json`. Both files keep the same keys.
+- `tests/unit/dictionaries.test.ts` checks EN/FR key parity and French typography. `tests/unit/vocabulary.test.ts` checks every user-facing string, and every source identifier, against the banned words above. Run `pnpm test` before you open a PR.
+- Use `Intl.NumberFormat("fr-CA")` and `Intl.DateTimeFormat("fr-CA")` (see `src/lib/format.ts`) for numbers and dates. Never format them by hand.
+- Before you finish a screen, ask: could this line appear on a sportsbook? Does the AI explainer tell people what to call? Does the screen still have one main message and one main action?
