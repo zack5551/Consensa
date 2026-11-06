@@ -5,12 +5,12 @@
  * - Slots: a native card in lists and a rail on desktop; a sticky phone banner only where the shell has room.
  * - Always labelled "Advertisement" / "Publicité".
  * - Never on a question page or its result, never inside the call flow, and an ad never gates a forecast.
- * - Blocked categories at the network: gambling, betting, lotteries, prediction markets, crypto trading.
+ * - Blocked categories at the network: gambling (including sportsbooks), casinos, lotteries, prediction markets, crypto trading.
  * - Until a paid ad fills a slot, it shows a labelled house ad from Consensa.
  */
 export const blockedAdCategories = [
   "gambling",
-  "sports-betting",
+  "sportsbooks",
   "casino",
   "lottery",
   "prediction-markets",
