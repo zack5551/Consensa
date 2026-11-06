@@ -3,7 +3,7 @@
  *
  * Nothing leaves the browser yet. Sending starts in M5, only when all of these are true (CLAUDE.md rule 7, LEX):
  * - the self-hosted PostHog in ca-central-1 (Montreal) is configured (NEXT_PUBLIC_ANALYTICS_HOST),
- * - the person has given analytics consent at signup,
+ * - the person ticked the usage-stats choice at signup (`consents.analytics`, unticked by default per Law 25),
  * - session replay stays off.
  * Events never carry names, emails, free text or exact location. Province is the finest place we keep.
  *

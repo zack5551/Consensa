@@ -24,7 +24,7 @@ type StoredProfile = {
   region: RegionChoice;
   topics: Category[];
   email: string;
-  consents: { terms: true; dataLicensing: boolean; marketing: boolean; at: string };
+  consents: { terms: true; dataLicensing: boolean; analytics: boolean; marketing: boolean; at: string };
 };
 
 const BLOCK_KEY = "consensa:age-blocked";
@@ -46,7 +46,7 @@ function readDraft(): Draft {
 }
 
 /**
- * Onboarding: language → 18+ check → region → topics → account with three separate, unticked consents → done.
+ * Onboarding: language → 18+ check → region → topics → account with four separate, unticked consents → done.
  * Each step is one question with one action. Focus moves to the new step's heading so screen-reader and
  * keyboard users always know where they are. Nothing is sent anywhere until accounts exist (M2).
  */
@@ -261,7 +261,7 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabe
             <Row term={t.done.topics} value={saved.topics.length ? saved.topics.map((c) => categoryNames[c]).join(", ") : t.done.noTopics} />
             <Row
               term={t.done.summary}
-              value={fill(t.done.consents, { data: saved.consents.dataLicensing ? t.done.yes : t.done.no, marketing: saved.consents.marketing ? t.done.yes : t.done.no })}
+              value={fill(t.done.consents, { data: saved.consents.dataLicensing ? t.done.yes : t.done.no, analytics: saved.consents.analytics ? t.done.yes : t.done.no, marketing: saved.consents.marketing ? t.done.yes : t.done.no })}
             />
           </dl>
           <Link href={`/${locale}/today`} className="inline-flex items-center justify-center gap-2 rounded-control bg-ink px-5 py-3 text-body font-bold text-paper hover:opacity-90 sm:justify-self-start">
@@ -367,11 +367,12 @@ function AccountStep({
   locale: Locale;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   back: ReactNode;
-  onDone: (email: string, consents: { dataLicensing: boolean; marketing: boolean }) => void;
+  onDone: (email: string, consents: { dataLicensing: boolean; analytics: boolean; marketing: boolean }) => void;
 }) {
   const [email, setEmail] = useState("");
   const [terms, setTerms] = useState(false);
   const [dataLicensing, setDataLicensing] = useState(false);
+  const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
   const [errors, setErrors] = useState<{ email?: boolean; terms?: boolean }>({});
   const emailRef = useRef<HTMLInputElement>(null);
@@ -385,7 +386,7 @@ function AccountStep({
     setErrors(next);
     if (next.email) return emailRef.current?.focus();
     if (next.terms) return termsRef.current?.focus();
-    onDone(email.trim(), { dataLicensing, marketing });
+    onDone(email.trim(), { dataLicensing, analytics, marketing });
   }
 
   const [beforeTerms, afterTerms = ""] = t.account.terms.split("{terms}");
@@ -452,6 +453,9 @@ function AccountStep({
 
           <Consent id={`${ids}-data`} checked={dataLicensing} onChange={setDataLicensing} tag={t.account.optional}>
             {t.account.dataLicensing}
+          </Consent>
+          <Consent id={`${ids}-stats`} checked={analytics} onChange={setAnalytics} tag={t.account.optional}>
+            {t.account.analytics}
           </Consent>
           <Consent id={`${ids}-mkt`} checked={marketing} onChange={setMarketing} tag={t.account.optional}>
             {t.account.marketing}

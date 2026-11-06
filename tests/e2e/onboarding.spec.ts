@@ -31,7 +31,7 @@ test("an adult goes through onboarding in French with every consent unticked by 
   await page.getByRole("checkbox").first().check();
   await page.getByRole("button", { name: "Créer mon compte" }).click();
   await expect(page.getByRole("heading", { name: "C’est parti." })).toBeVisible();
-  await expect(page.getByText("Résultats anonymes : non · Courriels : non".replace(/ :/g, " :"))).toBeVisible();
+  await expect(page.getByText("Résultats anonymes : non · Statistiques d’usage : non · Courriels : non".replace(/ :/g, " :"))).toBeVisible();
 
   const stored = await page.evaluate(() => window.localStorage.getItem("consensa:profile"));
   expect(stored).not.toBeNull();

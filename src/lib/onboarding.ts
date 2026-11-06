@@ -2,8 +2,8 @@ import { z } from "zod";
 import { provinces } from "@/lib/question";
 
 /**
- * Onboarding rules (LEX guardrails §6): an 18+ gate, and three separate express consents with
- * nothing pre-ticked. Terms are required to continue; data licensing and marketing email are
+ * Onboarding rules (LEX guardrails §6): an 18+ gate, and four separate express consents with
+ * nothing pre-ticked. Terms are required to continue; data licensing, usage analytics and marketing email are
  * optional and never bundled with the terms. Kept framework-free so the same rules can run in the
  * browser now and in the Supabase signup function later.
  */
@@ -50,6 +50,8 @@ export const consentSchema = z.object({
   terms: z.literal(true),
   /** Optional. Answers may be used in anonymous, combined results (aggregates only, minimum cell size). */
   dataLicensing: z.boolean(),
+  /** Optional, off by default (Law 25). Anonymous product analytics on the self-hosted PostHog in Montreal. */
+  analytics: z.boolean(),
   /** Optional. CASL express consent for product email. */
   marketing: z.boolean(),
 });
