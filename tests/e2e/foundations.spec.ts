@@ -33,7 +33,7 @@ test("language toggle keeps you on the same page in the other language", async (
 });
 
 test("making a call saves it and compares with Canada", async ({ page }) => {
-  await page.goto("/en");
+  await page.goto("/en/q/boc-cut-dec-2026");
   await page.getByRole("button", { name: /Toss-up/ }).click();
   await page.getByRole("button", { name: "Make my call" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Call saved");

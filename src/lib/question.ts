@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 export const provinces = ["BC", "AB", "PR", "ON", "QC", "AT"] as const;
+export const categories = ["economy", "weather", "housing", "culture", "science", "sports"] as const;
+export type Category = (typeof categories)[number];
 export type Province = (typeof provinces)[number];
 
 const bilingual = z.object({ en: z.string().min(1), fr: z.string().min(1) });
@@ -8,7 +10,7 @@ const percent = z.number().min(0).max(100);
 
 export const questionSchema = z.object({
   slug: z.string().regex(/^[a-z0-9-]+$/),
-  category: z.enum(["economy", "weather", "housing", "culture", "sports"]),
+  category: z.enum(categories),
   question: bilingual,
   scored: z.boolean(),
   closesAt: z.iso.datetime(),
@@ -16,6 +18,8 @@ export const questionSchema = z.object({
   /** Daily crowd probability (percent), oldest first. The last value is "now". */
   history: z.array(percent).min(2),
   provinces: z.record(z.enum(provinces), percent),
+  /** The crowd's chance among calls made in English vs French: one crowd, two languages. */
+  languages: z.object({ en: percent, fr: percent }).optional(),
   events: z.array(z.object({ dayIndex: z.number().int().nonnegative(), label: bilingual })).default([]),
   why: z
     .object({ body: bilingual, sources: z.array(bilingual).min(1) })
@@ -24,6 +28,10 @@ export const questionSchema = z.object({
     source: z.object({ name: bilingual, url: z.url() }),
     rule: bilingual,
     resolvesAt: z.iso.datetime(),
+    /** Set once the official source has published. `disputed` means the result is under review. */
+    result: z
+      .object({ outcome: z.enum(["yes", "no"]), publishedAt: z.iso.datetime(), disputed: z.boolean().default(false) })
+      .optional(),
   }),
 });
 
@@ -31,4 +39,40 @@ export type Question = z.infer<typeof questionSchema>;
 
 export function crowdNow(q: Question): number {
   return q.history[q.history.length - 1] ?? 0;
+}
+
+export const questionStates = ["open", "closingSoon", "closed", "resolved", "disputed"] as const;
+export type QuestionState = (typeof questionStates)[number];
+
+/** Questions closing within this window show the "closing soon" state. */
+export const CLOSING_SOON_MS = 72 * 60 * 60 * 1000;
+
+/**
+ * Where a question is in its life: open → closing soon → closed (waiting for the official result) → resolved.
+ * A published result that's under review is "disputed" and isn't scored until the review ends.
+ */
+export function questionState(q: Question, now: Date): QuestionState {
+  const result = q.resolution.result;
+  if (result) return result.disputed ? "disputed" : "resolved";
+  const msLeft = Date.parse(q.closesAt) - now.getTime();
+  if (msLeft <= 0) return "closed";
+  if (msLeft <= CLOSING_SOON_MS) return "closingSoon";
+  return "open";
+}
+
+export function isOpen(state: QuestionState): boolean {
+  return state === "open" || state === "closingSoon";
+}
+
+/** Highest and lowest regions, for the province split's text summary. */
+export function provinceExtremes(values: Record<Province, number>): { high: Province; low: Province } {
+  const sorted = [...provinces].sort((a, b) => values[b] - values[a]);
+  return { high: sorted[0]!, low: sorted[sorted.length - 1]! };
+}
+
+/** Whole-point change in the crowd's chance over the last `days` days. */
+export function crowdChange(q: Question, days = 7): number {
+  const now = crowdNow(q);
+  const then = q.history[Math.max(0, q.history.length - 1 - days)] ?? now;
+  return now - then;
 }

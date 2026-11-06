@@ -9,12 +9,14 @@ import { CrowdBar } from "@/components/crowd-bar";
 import { ForecastChart } from "@/components/forecast-chart";
 import { ProvinceSplit } from "@/components/province-split";
 import { QuestionCard } from "@/components/question-card";
+import { StateBadge } from "@/components/state-badge";
+import { StateNote } from "@/components/state-note";
 import { Wordmark } from "@/components/wordmark";
 import { sampleQuestions } from "@/content/sample-questions";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { formatPercent } from "@/lib/format";
-import { crowdNow } from "@/lib/question";
+import { formatLongDate, formatPercent } from "@/lib/format";
+import { crowdNow, questionStates } from "@/lib/question";
 import { fill } from "@/lib/text";
 
 const swatches = [
@@ -92,11 +94,35 @@ export default async function DesignSystemPage({ params }: { params: Promise<{ l
         </ul>
       </section>
 
+      <section aria-labelledby="ds-states" className="grid gap-3">
+        <h2 id="ds-states" className="m-0 text-title-sm font-bold">{t.design.states}</h2>
+        <ul className="m-0 grid list-none gap-3 p-0 md:grid-cols-2">
+          {questionStates.map((s) => (
+            <li key={s} className="grid gap-2 rounded-card border border-line bg-surface p-4">
+              <StateBadge state={s} label={t.states[s]} />
+              {s === "open" ? (
+                <p className="m-0 text-body-sm text-ink-2">{t.today.subtitle}</p>
+              ) : (
+                <StateNote state={s} title={t.states[s]}>
+                  {s === "closingSoon"
+                    ? fill(t.stateNote.closingSoon, { date: formatLongDate(q.closesAt, locale) })
+                    : s === "closed"
+                      ? fill(t.stateNote.closed, { date: formatLongDate(q.resolution.resolvesAt, locale) })
+                      : s === "resolved"
+                        ? fill(t.stateNote.resolved, { answer: t.question.yes.toLowerCase(), crowd: pct(yes) })
+                        : t.stateNote.disputed}
+                </StateNote>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section aria-labelledby="ds-components" className="grid gap-6">
         <h2 id="ds-components" className="m-0 text-title-sm font-bold">{t.design.components}</h2>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           <div className="grid gap-6">
-            <QuestionCard q={q} locale={locale} t={t.question} />
+            <QuestionCard q={q} locale={locale} t={t.question} states={t.states} href={`/${locale}/q/${q.slug}`} />
             <div className="rounded-card border border-line bg-surface p-5">
               <CrowdBar yes={yes} yesLabel={`${t.question.yes} ${pct(yes)}`} noLabel={`${t.question.no} ${pct(100 - yes)}`} />
             </div>
