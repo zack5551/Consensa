@@ -18,3 +18,8 @@ export function formatShortDate(iso: string, locale: Locale): string {
 export function formatLongDate(iso: string, locale: Locale): string {
   return new Intl.DateTimeFormat(intlLocale[locale], { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(iso));
 }
+
+/** "0.142" / "0,142": Brier scores always show three decimals. */
+export function formatBrier(value: number, locale: Locale): string {
+  return new Intl.NumberFormat(intlLocale[locale], { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(value);
+}

@@ -76,3 +76,26 @@ export function crowdChange(q: Question, days = 7): number {
   const then = q.history[Math.max(0, q.history.length - 1 - days)] ?? now;
   return now - then;
 }
+
+/** The crowd's chance when calls closed, scored against the result. Null until a non-disputed result exists. */
+export function crowdBrier(q: Question): number | null {
+  const r = q.resolution.result;
+  if (!r || r.disputed || !q.scored) return null;
+  const p = crowdNow(q) / 100;
+  return (p - (r.outcome === "yes" ? 1 : 0)) ** 2;
+}
+
+/** The crowd's public record across resolved, scored questions. */
+export function crowdRecord(qs: readonly Question[]): { resolved: number; meanBrier: number | null; rightSide: number | null } {
+  const scored = qs.flatMap((q) => {
+    const b = crowdBrier(q);
+    const r = q.resolution.result;
+    return b === null || !r ? [] : [{ b, right: crowdNow(q) !== 50 && (crowdNow(q) > 50) === (r.outcome === "yes") }];
+  });
+  if (scored.length === 0) return { resolved: 0, meanBrier: null, rightSide: null };
+  return {
+    resolved: scored.length,
+    meanBrier: scored.reduce((s, x) => s + x.b, 0) / scored.length,
+    rightSide: Math.round((scored.filter((x) => x.right).length / scored.length) * 100),
+  };
+}
