@@ -15,6 +15,54 @@ const en = {
     skipToContent: "Skip to content",
     language: "Language",
     switchTo: "Français",
+    leaderboard: "Leaderboard",
+    provinces: "Provinces",
+    search: "Search",
+    signIn: "Sign in",
+    getStarted: "Get started",
+    home: "Consensa home",
+    phone: "Sections",
+    short: { today: "Today", board: "Board", provinces: "Provinces", leaderboard: "Rankings", record: "Record" },
+  },
+  shell: {
+    theme: { change: "Theme", system: "Match device", light: "Light", dark: "Dark" },
+    footer: {
+      label: "Footer",
+      about: "How it works",
+      privacy: "Privacy",
+      terms: "Terms",
+      dataInCanada: "Your data stays in Canada, in Montreal.",
+      bilingual: "Made in Canada, in English and French.",
+    },
+  },
+  legalPages: {
+    draft: "This is a plain-language summary. The full text is reviewed by a lawyer before launch.",
+    updated: "Last updated {date}",
+    privacy: {
+      title: "Privacy, in plain language",
+      intro: "Consensa is built to keep as little about you as it can, and to keep it in Canada.",
+      points: {
+        canada: { title: "Your data stays in Canada", body: "Accounts, calls and analytics are stored in Montreal. We don't add trackers that send your data anywhere else." },
+        aggregates: { title: "Only combined numbers leave Consensa", body: "If we share data with partners, it's anonymous totals with a minimum group size. Never your individual calls." },
+        consents: { title: "You choose, one box at a time", body: "Terms, anonymous data use and email are three separate choices. None is ticked for you, and you can change them later." },
+        adults: { title: "For adults", body: "Consensa is for people 18 and over. We ask your date of birth once and keep only the yes or no." },
+        noMoney: { title: "Nothing here is worth money", body: "There are no purchases and no prizes. Your record has no cash value and can't be transferred." },
+        languages: { title: "English and French, equally", body: "This summary, the full policy, our terms and our support are all available in both languages." },
+      },
+    },
+    terms: {
+      title: "Terms, in plain language",
+      intro: "The short version: make honest calls, be respectful, and enjoy seeing where Canada lands.",
+      points: {
+        free: { title: "Free to play", body: "Consensa is free. There's nothing to buy, and no ad or feature ever stands between you and a call." },
+        noValue: { title: "No cash value", body: "Scores, streaks and records have no cash value. They can't be redeemed, transferred or exchanged for anything." },
+        adults: { title: "18 and over", body: "You need to be 18 or older to make calls." },
+        fair: { title: "One person, one account", body: "Make your own calls. Don't automate them or run more than one account." },
+        respect: { title: "Questions, not targets", body: "We don't ask about private lives, crimes or tragedies. Comments must stay respectful." },
+        ai: { title: "AI explains, never advises", body: "“Why it moved” notes are written by AI and reviewed by an editor. They describe what changed, never what to call." },
+        sources: { title: "Official sources settle every question", body: "Each question names its source. If a result is disputed, we review it and publish the outcome." },
+      },
+    },
   },
   legal: {
     noValue: "Free to play. No cash value. No purchase necessary.",
@@ -196,7 +244,12 @@ const en = {
     swatches: { ink: "Ink", ink2: "Slate", paper: "Paper", yes: "Teal · yes", no: "Violet · no", accent: "Canada red · accent only" },
     sampleLine: "What Canada thinks happens next.",
   },
-  notFound: { title: "We couldn't find that page", back: "Back to today's five" },
+  notFound: {
+    title: "We couldn't find that page",
+    body: "The link may be old, or the question may have moved. Everything is still on the Board.",
+    back: "Back to today's five",
+    board: "Browse the Board",
+  },
 } as const;
 
 type Widen<T> = T extends string ? string : { [K in keyof T]: Widen<T[K]> };
