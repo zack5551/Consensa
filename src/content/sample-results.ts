@@ -76,7 +76,7 @@ const raw = [
   {
     slug: "starts-aug-2026",
     category: "housing",
-    question: { en: "Will CMHC report more than 250,000 annualized housing starts for August?", fr: "La SCHL annoncera-t-elle plus de 250 000 mises en chantier annualisées en août?" },
+    question: { en: "Will CMHC report more than 250,000 annualized housing starts for August?", fr: "La SCHL annoncera-t-elle plus de 250 000 mises en chantier annualisées en août?" },
     source: { en: "CMHC · Housing starts", fr: "SCHL · Mises en chantier" },
     resolvedAt: "2026-09-15",
     outcome: 0,
@@ -94,7 +94,7 @@ const raw = [
   {
     slug: "yvr-rain-oct-2026",
     category: "weather",
-    question: { en: "Will Vancouver get more than 150 mm of rain in October?", fr: "Vancouver recevra-t-elle plus de 150 mm de pluie en octobre?" },
+    question: { en: "Will Vancouver get more than 150 mm of rain in October?", fr: "Vancouver recevra-t-elle plus de 150 mm de pluie en octobre?" },
     source: { en: "Environment Canada · Vancouver Intl.", fr: "Environnement Canada · Vancouver Intl." },
     resolvedAt: "2026-11-01",
     outcome: 1,

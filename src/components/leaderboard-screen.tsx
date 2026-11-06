@@ -102,15 +102,20 @@ export function LeaderboardScreen({ locale, t, scope }: { locale: Locale; t: Dic
           <section aria-label={l.podiumLabel}>
             <ol className="m-0 grid list-none gap-3 p-0 sm:grid-cols-3">
               {podium.map((r) => (
-                <li key={r.handle} className={`grid gap-1 rounded-card border bg-surface p-4 shadow-card ${r.rank === 1 ? "border-side-a" : "border-line"}`}>
+                <li
+                  key={r.handle}
+                  className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-card border bg-surface p-4 shadow-card sm:grid-cols-1 sm:items-start ${r.rank === 1 ? "border-side-a" : "border-line"}`}
+                >
                   <span className="font-display text-title font-extrabold tabular text-ink-2">{r.rank}</span>
-                  <Link href={`/${locale}/forecasters/${r.handle}`} className="truncate text-body font-bold hover:underline">
-                    {r.displayName}
-                  </Link>
-                  <span className="text-caption text-ink-2">{t.province.names[r.region]}</span>
-                  <span className="mt-1 font-display text-title-sm font-extrabold text-side-a-text tabular">
+                  <span className="grid min-w-0 gap-0.5">
+                    <Link href={`/${locale}/forecasters/${r.handle}`} className="truncate text-body font-bold hover:underline">
+                      {r.displayName}
+                    </Link>
+                    <span className="text-caption text-ink-2">{t.province.names[r.region]}</span>
+                  </span>
+                  <span className="grid justify-items-end font-display text-title-sm font-extrabold text-side-a-text tabular sm:mt-1 sm:flex sm:items-baseline sm:gap-1">
                     {r.skill === null ? "—" : formatSignedSkill(r.skill, locale)}
-                    <span className="ml-1 font-sans text-caption font-semibold text-ink-2">{l.columns.skill}</span>
+                    <span className="font-sans text-caption font-semibold text-ink-2">{l.columns.skill}</span>
                   </span>
                 </li>
               ))}
