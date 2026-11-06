@@ -90,7 +90,7 @@ Consensa sounds like a sharp, friendly Canadian editor: clear, warm, a little wr
 | question, closes, resolves | invest, profit, returns, trade |
 | **FR:** prévision, chances, bilan, série, précision | **FR:** pari, mise, cote, enjeu, gain, encaisser, combiné |
 
-Every screen says somewhere that Consensa is free, with no money, prizes or points with cash value (`legal.noMoney`). These rules are part of the product's legal position, not just its style.
+Every question screen shows LEX's no-value label (`legal.noValue`: "Free to play. No cash value. No purchase necessary." / « Gratuit. Aucune valeur monétaire. Aucun achat requis. »), and the footer carries `legal.noMoney`. These rules are part of the product's legal position, not just its style.
 
 ## Machine-readable rules
 
