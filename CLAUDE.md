@@ -40,6 +40,7 @@ Full checklist: `docs/legal/consensa-build-guardrails.md`. Read it before touchi
 - `src/app/[locale]/…`: routes. `locale` is `en` or `fr`, and `/` redirects to one of them based on the browser's language.
 - `src/i18n/`: locale config, dictionaries and `getDictionary()`.
 - `src/lib/`: pure logic (scoring, formatting, data types). Keep it framework-free and unit-tested.
+- `src/engine/`: PULSE, the question engine (feeds → stories → bilingual drafts → safety checks → editor queue → auto-resolution). Framework-free and unit-tested. See `docs/engine/README.md`.
 - `src/content/`: sample questions until the database lands. Each question has EN and FR text, an official resolution source and a close date.
 - `src/components/`: UI. A component gets its strings as props or from the dictionary, never inline.
 
@@ -73,5 +74,8 @@ pnpm test:e2e     # Playwright (builds and serves the app)
 ## When something goes wrong
 
 Add a rule to this file so it doesn't happen twice.
+
 - A stale `pnpm start` on port 3100 makes Playwright test the old build (Playwright reuses the server locally). Run `fuser -k 3100/tcp` before `pnpm test:e2e`.
 - Fonts come from `brand/fonts` through `next/font/local` (`src/styles/fonts.ts`). Never use `next/font/google`: its build-time fetch from Google failed CI at random.
+- Banned words (EN and FR) live only in `src/engine/safety/lexicon.json`. Code that needs them, such as the safety screen or the drafting prompt, reads them from there, because the vocabulary test bans them from `.ts` source. Even a word like "wagering" in a comment fails CI.
+- No AI-drafted question or "why it moved" text is published without an editor's approval. The engine only queues; `publishApproved` publishes approved items only.
