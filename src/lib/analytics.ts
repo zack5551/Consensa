@@ -3,7 +3,7 @@
  *
  * Nothing leaves the browser yet. Sending starts in M5, only when all of these are true (CLAUDE.md rule 7, LEX):
  * - the self-hosted PostHog in ca-central-1 (Montreal) is configured (NEXT_PUBLIC_ANALYTICS_HOST),
- * - the person has given analytics consent at signup,
+ * - the person ticked the usage-stats choice at signup (`consents.analytics`, unticked by default per Law 25),
  * - session replay stays off.
  * Events never carry names, emails, free text or exact location. Province is the finest place we keep.
  *
@@ -19,7 +19,10 @@ export const acquisitionSources = ["direct", "search", "social", "share", "embed
 export type AcquisitionSource = (typeof acquisitionSources)[number];
 
 const locale = z.enum(["en", "fr"]);
-const screen = z.enum(["today", "question", "board", "record", "design"]);
+/** Every screen that sends view events. Add a screen here before it ships. */
+export const screens = ["landing", "today", "question", "board", "browse", "search", "record", "leaderboard", "provinces", "welcome", "signIn", "privacy", "terms", "design"] as const;
+export type Screen = (typeof screens)[number];
+const screen = z.enum(screens);
 
 export const eventSchemas = {
   app_opened: z.object({ locale, screen, source: z.enum(acquisitionSources), daysSinceFirstOpen: z.number().int().nonnegative() }),
