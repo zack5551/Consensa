@@ -109,6 +109,18 @@ const fr = {
     waiting: "Elle sera évaluée à la publication du résultat.",
     disputed: "L’évaluation attend la fin de la révision.",
   },
+  embed: {
+    cta: "Faites votre prévision sur Consensa",
+    poweredBy: "Prévision en direct de Consensa",
+    closed: "Les prévisions sont fermées",
+  },
+  ads: {
+    label: "Publicité",
+    house: "De Consensa",
+    houseTitle: "Comment on calcule « Le Canada pense »?",
+    houseBody: "Une personne, une prévision. Voyez comment chaque chiffre est calculé et évalué.",
+    houseCta: "Voir le fonctionnement",
+  },
   why: {
     title: "Pourquoi ça a bougé",
     byline: "Rédigé par l’IA, revu par notre équipe éditoriale",

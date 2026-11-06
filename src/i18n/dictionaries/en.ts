@@ -107,6 +107,18 @@ const en = {
     waiting: "We'll score it when the result is published.",
     disputed: "Scores wait until the review ends.",
   },
+  embed: {
+    cta: "Make your call on Consensa",
+    poweredBy: "Live forecast from Consensa",
+    closed: "Calls have closed",
+  },
+  ads: {
+    label: "Advertisement",
+    house: "From Consensa",
+    houseTitle: "How is “Canada says” made?",
+    houseBody: "One person, one forecast. See how every number is built and scored.",
+    houseCta: "Read how it works",
+  },
   why: {
     title: "Why it moved",
     byline: "Written by AI, reviewed by an editor",
