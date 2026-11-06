@@ -52,3 +52,15 @@ describe("helpers", () => {
     expect(provinceExtremes(base.provinces)).toEqual({ high: "AB", low: "QC" });
   });
 });
+
+describe("crowd record", () => {
+  it("scores the crowd only on resolved, undisputed, scored questions", async () => {
+    const { crowdBrier, crowdRecord } = await import("@/lib/question");
+    expect(crowdBrier(getQuestion("cpi-sept-2026")!)).toBeCloseTo((0.71 - 1) ** 2);
+    expect(crowdBrier(getQuestion("box-office-oct-2026")!)).toBeNull();
+    expect(crowdBrier(getQuestion("boc-cut-dec-2026")!)).toBeNull();
+    const record = crowdRecord(sampleQuestions);
+    expect(record.resolved).toBe(3);
+    expect(record.rightSide).toBe(100);
+  });
+});

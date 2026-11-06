@@ -38,15 +38,6 @@ function mix(total: number): Cells {
 
 const raw = [
   {
-    slug: "boc-hold-oct-2026",
-    category: "economy",
-    question: { en: "Will the Bank of Canada hold its policy rate at its October decision?", fr: "La Banque du Canada maintiendra-t-elle son taux directeur à sa décision d’octobre?" },
-    source: { en: "Bank of Canada", fr: "Banque du Canada" },
-    resolvedAt: "2026-10-28",
-    outcome: 1,
-    regions: cells([71, 74, 72, 69, 66, 70], mix(16200)),
-  },
-  {
     slug: "cpi-aug-2026",
     category: "economy",
     question: { en: "Will August's CPI inflation come in at 2.0% or lower?", fr: "L’inflation de l’IPC d’août sera-t-elle de 2,0 % ou moins?" },

@@ -25,7 +25,7 @@
     "yes": "Oui",
     "no": "Non",
     "chance": "{percent} % de chances",
-    "canadaSays": "Le Canada pense",
+    "canadaSays": "Selon le Canada",
     "calls": "{count, plural, one {# prévision} other {# prévisions}}",
     "closesIn": "Ferme dans {time}",
     "closed": "Fermée",

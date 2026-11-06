@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import type { Locale } from "@/i18n/config";
 import { sourceFromReferrer, track } from "@/lib/analytics";
 
-type Props = { locale: Locale; screen: "today" | "question" | "board" | "record" | "design" | "leaderboard" | "provinces" | "region" | "forecaster"; slug?: string; state?: string };
+type Props = { locale: Locale; screen: "today" | "question" | "board" | "record" | "design" | "methodology" | "resolutions" | "leaderboard" | "provinces" | "region" | "forecaster"; slug?: string; state?: string };
 
 const FIRST_OPEN = "consensa:first-open";
 const LAST_OPEN = "consensa:last-open";
