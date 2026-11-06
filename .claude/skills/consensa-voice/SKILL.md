@@ -17,7 +17,7 @@ The full guide lives in `brand/README.md`, and the base strings are in `brand/co
 ## Never betting language (legal position, not style)
 Banned in EN: bet, wager, odds, stake, pick (as a noun for a bet), lock, parlay, slip, payout, cash out, jackpot, win money, invest, profit, returns, trade.
 Banned in FR: pari, parier, mise, cote, enjeu, gain(s), encaisser, combiné, gros lot, investir, profit, rendement.
-Use instead: call / prévision, chance(s) ("62% chance" / "62 % de chances"), Canada says / Le Canada pense, accuracy / précision, streak / série, record / bilan.
+Use instead: call / prévision, chance(s) ("62% chance" / "62 % de chances"), Canada says / Selon le Canada (past: Le Canada prévoyait; never "Le Canada pense 38 %"), accuracy / précision, streak / série, record / bilan.
 Show probabilities as percentages, never as odds (no "3:1", "+150" or decimal odds).
 Never imply money, prizes or cash value. Every question screen shows `legal.noValue` (LEX's wording, never reworded); keep `legal.noMoney` in the footer. Confirmations say "Call saved." / « Prévision enregistrée. », never "locked".
 

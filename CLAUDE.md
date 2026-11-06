@@ -76,5 +76,6 @@ pnpm test:e2e     # Playwright (builds and serves the app)
 Add a rule to this file so it doesn't happen twice.
 
 - A stale `pnpm start` on port 3100 makes Playwright test the old build (Playwright reuses the server locally). Run `fuser -k 3100/tcp` before `pnpm test:e2e`.
+- Fonts come from `brand/fonts` through `next/font/local` (`src/styles/fonts.ts`). Never use `next/font/google`: its build-time fetch from Google failed CI at random.
 - Banned words (EN and FR) live only in `src/engine/safety/lexicon.json`. Code that needs them, such as the safety screen or the drafting prompt, reads them from there, because the vocabulary test bans them from `.ts` source. Even a word like "wagering" in a comment fails CI.
 - No AI-drafted question or "why it moved" text is published without an editor's approval. The engine only queues; `publishApproved` publishes approved items only.

@@ -220,6 +220,78 @@ const raw = [
       result: { outcome: "yes", publishedAt: "2026-10-21T12:30:00Z" },
     },
   },
+  {
+    slug: "boc-hold-oct-2026",
+    category: "economy",
+    question: {
+      en: "Will the Bank of Canada hold its policy rate at its October 2026 decision?",
+      fr: "La Banque du Canada maintiendra-t-elle son taux directeur à sa décision d’octobre 2026?",
+    },
+    scored: true,
+    closesAt: "2026-10-28T13:45:00Z",
+    forecasters: 15930,
+    history: series(30, [[0, 58], [12, 66], [24, 74], [29, 77]]),
+    provinces: { BC: 75, AB: 79, PR: 76, ON: 78, QC: 74, AT: 77 },
+    languages: { en: 78, fr: 74 },
+    events: [{ dayIndex: 12, label: { en: "CPI release", fr: "Publication de l’IPC" } }],
+    resolution: {
+      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/" },
+      rule: {
+        en: "Resolves YES if the target for the overnight rate is unchanged after the scheduled October 2026 decision.",
+        fr: "Résolue OUI si la cible du taux du financement à un jour reste inchangée après la décision prévue d’octobre 2026.",
+      },
+      resolvesAt: "2026-10-28T14:00:00Z",
+      result: { outcome: "yes", publishedAt: "2026-10-28T14:00:00Z" },
+    },
+  },
+  {
+    slug: "mtl-snow-oct-2026",
+    category: "weather",
+    question: {
+      en: "Will Montréal get its first measurable snow before Nov. 1?",
+      fr: "Montréal recevra-t-elle sa première neige mesurable avant le 1er novembre?",
+    },
+    scored: true,
+    closesAt: "2026-10-25T04:00:00Z",
+    forecasters: 7210,
+    history: series(30, [[0, 35], [18, 41], [29, 44]]),
+    provinces: { BC: 40, AB: 46, PR: 45, ON: 42, QC: 47, AT: 43 },
+    languages: { en: 41, fr: 47 },
+    events: [],
+    resolution: {
+      source: { name: { en: "Environment and Climate Change Canada", fr: "Environnement et Changement climatique Canada" }, url: "https://climate.weather.gc.ca/" },
+      rule: {
+        en: "Resolves YES if Montréal–Trudeau (YUL) records 0.2\u00a0cm of snow or more on any day before Nov. 1, 2026 (ET), in ECCC daily data.",
+        fr: "Résolue OUI si Montréal-Trudeau (YUL) enregistre au moins 0,2\u00a0cm de neige un jour avant le 1er novembre 2026 (HE), selon les données quotidiennes d’ECCC.",
+      },
+      resolvesAt: "2026-11-01T17:00:00Z",
+      result: { outcome: "no", publishedAt: "2026-11-01T17:00:00Z" },
+    },
+  },
+  {
+    slug: "box-office-oct-2026",
+    category: "culture",
+    question: {
+      en: "Will a Canadian film place in the national box-office top five on Thanksgiving weekend?",
+      fr: "Un film canadien se classera-t-il parmi les cinq premiers au box-office national à l’Action de grâce?",
+    },
+    scored: true,
+    closesAt: "2026-10-09T23:00:00Z",
+    forecasters: 3480,
+    history: series(30, [[0, 24], [20, 29], [29, 27]]),
+    provinces: { BC: 25, AB: 22, PR: 24, ON: 27, QC: 36, AT: 26 },
+    languages: { en: 24, fr: 35 },
+    events: [],
+    resolution: {
+      source: { name: { en: "Telefilm Canada · box-office data", fr: "Téléfilm Canada · données du box-office" }, url: "https://telefilm.ca/en/" },
+      rule: {
+        en: "Resolves YES if a Canadian-certified film ranks in the top five for Canada over Oct. 9 to 12, 2026, in the first published weekend figures.",
+        fr: "Résolue OUI si un film certifié canadien se classe parmi les cinq premiers au Canada du 9 au 12 octobre 2026, selon les premiers chiffres publiés.",
+      },
+      resolvesAt: "2026-10-14T16:00:00Z",
+      result: { outcome: "yes", publishedAt: "2026-10-14T16:00:00Z", disputed: true },
+    },
+  },
 ] satisfies ReadonlyArray<unknown>;
 
 /** Validated at import so a bad sample fails the build, not the page. */

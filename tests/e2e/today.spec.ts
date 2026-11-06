@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 for (const locale of ["en", "fr"] as const) {
   test(`today's five in ${locale}: five cards, no accessibility violations, no sideways scroll`, async ({ page }) => {
     await page.goto(`/${locale}/today`);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(locale === "en" ? "Today's five" : "Les cinq du jour");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(locale === "en" ? "Today’s five" : "Les cinq du jour");
     await expect(page.locator("article")).toHaveCount(5);
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
     expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);

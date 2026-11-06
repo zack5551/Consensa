@@ -14,4 +14,5 @@ export function middleware(request: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-export const config = { matcher: ["/((?!_next|api|favicon.ico|.*\\..*).*)"] };
+/** Skips Next internals, files, and the /embed widget (its URL already carries the locale). */
+export const config = { matcher: ["/((?!_next|api|embed|favicon.ico|.*\\..*).*)"] };

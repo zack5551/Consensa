@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AdSlot } from "@/components/ad-slot";
 import { ProvinceSplit } from "@/components/province-split";
 import { QuestionCard } from "@/components/question-card";
 import { ScreenView } from "@/components/screen-view";
@@ -86,11 +87,18 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
       </section>
 
       <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2" aria-label={t.today.title}>
-        {rest.map((q) => (
+        {rest.flatMap((q, i) => [
+          ...(i === 2
+            ? [
+                <li key="ad" className="grid md:col-span-2">
+                  <AdSlot slot="today-native" locale={locale} t={t.ads} />
+                </li>,
+              ]
+            : []),
           <li key={q.slug} className="grid">
             <QuestionCard q={q} locale={locale} t={t.question} states={t.states} state={questionState(q, SAMPLE_NOW)} href={href(q.slug)} />
-          </li>
-        ))}
+          </li>,
+        ])}
       </ul>
 
       <div className="grid justify-items-center gap-3 border-t border-line pt-6 text-center">
