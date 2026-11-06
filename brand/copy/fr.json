@@ -32,7 +32,7 @@
     "resolvesOn": "Résolution le {date}",
     "yourCall": "Votre prévision",
     "changeCall": "Modifier votre prévision",
-    "lockedIn": "Votre prévision est enregistrée.",
+    "saved": "Prévision enregistrée.",
     "provinceLeans": "{province} penche pour {side}"
   },
   "result": {
@@ -57,9 +57,10 @@
   "errors": {
     "generic": "Un problème est survenu de notre côté. Réessayez dans un instant.",
     "offline": "Vous êtes hors ligne. Votre prévision partira dès votre retour.",
-    "closed": "Cette question est fermée : les prévisions sont verrouillées."
+    "closed": "Cette question est fermée."
   },
   "legal": {
+    "noValue": "Gratuit. Aucune valeur monétaire. Aucun achat requis.",
     "noMoney": "Gratuit. Aucun argent, aucun prix, aucun point ayant une valeur monétaire, jamais.",
     "adsLabel": "Publicité"
   }
