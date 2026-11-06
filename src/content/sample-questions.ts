@@ -85,7 +85,7 @@ const raw = [
     slug: "yyz-snow-nov-2026",
     category: "weather",
     question: {
-      en: "Will Toronto Pearson get 10 cm of snow before Nov. 30?",
+      en: "Will Toronto Pearson get 10 cm of snow before Nov. 30?",
       fr: "L’aéroport Pearson de Toronto recevra-t-il 10 cm de neige avant le 30 novembre?",
     },
     scored: true,
