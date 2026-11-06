@@ -3,6 +3,8 @@ type Props = {
   events: ReadonlyArray<{ dayIndex: number; label: string }>;
   title: string;
   summary: string;
+  /** Formats the axis labels for the locale ("50%" / "50 %"). */
+  format?: (v: number) => string;
 };
 
 const GRID = [0, 25, 50, 75, 100] as const;
@@ -11,7 +13,7 @@ const GRID = [0, 25, 50, 75, 100] as const;
  * The crowd's daily probability as a line. Lines are SVG stretched to the box (strokes stay crisp);
  * labels are HTML so they stay readable at phone width. A text summary covers screen readers.
  */
-export function ForecastChart({ history, events, title, summary }: Props) {
+export function ForecastChart({ history, events, title, summary, format = (v) => `${v}%` }: Props) {
   const n = history.length;
   const x = (i: number) => (i / Math.max(1, n - 1)) * 100;
   const y = (v: number) => 100 - v;
@@ -57,10 +59,10 @@ export function ForecastChart({ history, events, title, summary }: Props) {
             );
           })}
         </div>
-        <div className="relative w-9 text-caption text-ink-2" aria-hidden="true">
+        <div className="relative w-10 text-caption text-ink-2" aria-hidden="true">
           {GRID.map((g) => (
             <span key={g} className="absolute -translate-y-1/2 tabular" style={{ top: `${y(g)}%` }}>
-              {g}%
+              {format(g)}
             </span>
           ))}
         </div>

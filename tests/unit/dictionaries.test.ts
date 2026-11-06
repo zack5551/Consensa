@@ -11,6 +11,9 @@ function leaves(obj: unknown): Array<[string, string]> {
   return paths(obj).map((p) => [p, p.split(".").reduce<unknown>((o, k) => (o as Record<string, unknown>)[k], obj) as string]);
 }
 
+/** Strings that are genuinely spelled the same in both languages. */
+const sameInBoth = new Set(["board.count"]);
+
 describe("EN/FR dictionaries", () => {
   it("have exactly the same keys", () => {
     expect(paths(fr).sort()).toEqual(paths(en).sort());
@@ -21,7 +24,7 @@ describe("EN/FR dictionaries", () => {
     for (const [path, value] of leaves(fr)) {
       expect(value.trim(), path).not.toBe("");
       const english = enMap.get(path) ?? "";
-      if (english.length > 12) expect(value, `${path} looks untranslated`).not.toBe(english);
+      if (english.length > 12 && !sameInBoth.has(path)) expect(value, `${path} looks untranslated`).not.toBe(english);
     }
   });
 
