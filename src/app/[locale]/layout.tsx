@@ -29,6 +29,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: { default: t.meta.title, template: `%s · Consensa` },
     description: t.meta.description,
     alternates: { languages: { "en-CA": "/en", "fr-CA": "/fr" } },
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+    openGraph: {
+      type: "website",
+      siteName: "Consensa",
+      locale: `${locale}_CA`,
+      title: t.meta.title,
+      description: t.meta.description,
+      images: [{ url: `/og/${locale}.png`, width: 1200, height: 630, alt: t.meta.title }],
+    },
+    twitter: { card: "summary_large_image", title: t.meta.title, description: t.meta.description, images: [`/og/${locale}.png`] },
   };
 }
 

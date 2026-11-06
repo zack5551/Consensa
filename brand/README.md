@@ -95,3 +95,7 @@ Every question screen shows LEX's no-value label (`legal.noValue`: "Free to play
 ## Machine-readable rules
 
 `.claude/skills/consensa-voice/SKILL.md` gives Claude these voice and wording rules so generated copy follows them.
+
+## App icons and share cards
+
+`brand/scripts/render-app-assets.mjs` renders the app's raster assets from the logo SVGs and brand fonts: `src/app/apple-icon.png` (180 px), `public/icons/icon-{192,512}.png` (also used as the maskable icon, since the symbol sits inside the safe zone), and the bilingual Open Graph cards `public/og/{en,fr}.png` (1200×630). Run `node brand/scripts/render-app-assets.mjs` after any logo or tagline change. Set `NEXT_PUBLIC_SITE_URL` in production so share cards resolve to absolute URLs.
