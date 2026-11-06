@@ -19,7 +19,7 @@ export const acquisitionSources = ["direct", "search", "social", "share", "embed
 export type AcquisitionSource = (typeof acquisitionSources)[number];
 
 const locale = z.enum(["en", "fr"]);
-const screen = z.enum(["today", "question", "board", "record", "design"]);
+const screen = z.enum(["today", "question", "board", "record", "design", "leaderboard", "provinces", "region", "forecaster"]);
 
 export const eventSchemas = {
   app_opened: z.object({ locale, screen, source: z.enum(acquisitionSources), daysSinceFirstOpen: z.number().int().nonnegative() }),
