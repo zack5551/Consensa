@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Manrope } from "next/font/google";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -7,10 +6,9 @@ import { LocaleSwitch } from "@/components/locale-switch";
 import { Wordmark } from "@/components/wordmark";
 import { isLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { inter, manrope } from "@/styles/fonts";
 import "@/styles/globals.css";
 
-const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-manrope", display: "swap" });
-const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-inter", display: "swap" });
 
 export const dynamicParams = false;
 
