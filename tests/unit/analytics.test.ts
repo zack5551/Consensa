@@ -15,7 +15,7 @@ describe("analytics", () => {
   it("drops events that don't match their schema", () => {
     const sent: TrackedEvent[] = [];
     setAnalyticsTransport((e) => sent.push(e));
-    // @ts-expect-error a call is 1–99
+    // a call is 1–99, so this is dropped
     track("call_made", { locale: "en", slug: "x", value: 120, gapToCrowd: 0, scored: true, changed: false });
     expect(sent).toHaveLength(0);
   });

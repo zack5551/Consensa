@@ -11,7 +11,7 @@ test("root redirects to a locale based on the browser language", async ({ browse
 
 for (const locale of ["en", "fr"] as const) {
   test(`design system page renders in ${locale} with no accessibility violations`, async ({ page }) => {
-    await page.goto(`/${locale}`);
+    await page.goto(`/${locale}/design`);
     await expect(page.locator("html")).toHaveAttribute("lang", `${locale}-CA`);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
@@ -26,9 +26,9 @@ for (const locale of ["en", "fr"] as const) {
 }
 
 test("language toggle keeps you on the same page in the other language", async ({ page }) => {
-  await page.goto("/en");
+  await page.goto("/en/design");
   await page.getByRole("link", { name: "Français" }).click();
-  await expect(page).toHaveURL(/\/fr$/);
+  await expect(page).toHaveURL(/\/fr\/design$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Système de design");
 });
 

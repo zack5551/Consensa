@@ -131,6 +131,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
             history={q.history}
             events={q.events.map((e) => ({ dayIndex: e.dayIndex, label: e.label[locale] }))}
             title={t.chart.title}
+            format={pct}
             summary={fill(t.chart.summary, { days: q.history.length, from: pct(first), to: pct(yes) })}
           />
         </section>
