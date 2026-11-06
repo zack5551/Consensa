@@ -121,17 +121,17 @@ const en = {
   },
   why: {
     title: "Why it moved",
-    byline: "Written by AI, reviewed by an editor",
+    byline: "The newsroom’s read on the move",
     note: "This explains what changed. It isn’t advice on how to call it.",
     sources: "Sources",
   },
   methodology: {
     title: "How Consensa works",
-    intro: "Everything behind the numbers, in plain language. If something here isn't clear, it's our job to fix it.",
+    intro: "Everything behind the numbers, in plain language. If something here isn’t clear, it’s our job to fix it.",
     nav: "On this page",
     crowd: {
       title: "How “Canada says” is made",
-      body: "Each person's latest call counts once. Canada says is the average of those calls, so one person can't move it by calling many times. Province and language splits use the same rule within each group.",
+      body: "Each person’s latest call counts once. Canada says is the average of those calls, so one person can’t move it by calling many times. Province and language splits use the same rule within each group.",
       onePerson: "One person, one forecast. Weighted by skill, never by money.",
     },
     scoring: {
@@ -141,7 +141,11 @@ const en = {
       call: "Your call",
       outcome: "What happened",
       score: "Score",
-      polls: "Polls aren't scored. They show what Canada thinks and never count toward a record.",
+      polls: "Polls aren’t scored. They show what Canada thinks and never count toward a record.",
+      scaleTitle: "The Brier scale",
+      scalePerfect: "Perfect",
+      scaleFlip: "Coin flip",
+      scaleWrong: "Always wrong",
     },
     resolution: {
       title: "How questions resolve",
@@ -151,18 +155,18 @@ const en = {
     },
     why: {
       title: "How “Why it moved” is written",
-      body: "When the crowd moves sharply, AI drafts a short note that says what changed and cites its sources. An editor reviews every note before anyone sees it. Notes never say what to call.",
+      body: "When the crowd moves sharply, the newsroom writes a short note that says what changed and cites its sources. AI helps with the draft; an editor checks every word before anyone sees it. Notes never say what to call.",
     },
     record: {
-      title: "The crowd's own record",
+      title: "The crowd’s own record",
       body: "We publish how accurate the crowd has been, so you can judge it for yourself.",
-      brier: "Crowd's average Brier score",
+      brier: "Crowd’s average Brier score",
       resolved: "Resolved questions",
       rightSide: "Crowd on the right side",
     },
     money: {
       title: "No money, ever",
-      body: "Consensa is free. Points and scores can't be bought, sold, exchanged for money, transferred or redeemed. Leaderboards rank accuracy, not points. Ads never appear on a question or its result.",
+      body: "Consensa is free. Points and scores can’t be bought, sold, exchanged for money, transferred or redeemed. Leaderboards rank accuracy, not points. Ads never appear on a question or its result.",
     },
     data: {
       title: "Your data stays in Canada",
@@ -175,7 +179,7 @@ const en = {
     summary: "{n} questions in the log.",
     columns: { question: "Question", status: "Status", answer: "Answer", crowd: "Canada said", brier: "Crowd Brier", source: "Source", date: "Date" },
     pending: "Waiting",
-    reviewNote: "Under review: the result isn't scored until the review ends.",
+    reviewNote: "Under review: the result isn’t scored until the review ends.",
     methodologyLink: "How resolution works",
   },
   resolution: {
@@ -261,7 +265,7 @@ const en = {
     swatches: { ink: "Ink", ink2: "Slate", paper: "Paper", yes: "Teal · yes", no: "Violet · no", accent: "Canada red · accent only" },
     sampleLine: "What Canada thinks happens next.",
   },
-  notFound: { title: "We couldn’t find that page", back: "Back to today’s five" },
+  notFound: { title: "This page didn’t happen.", body: "A mistyped link, a moved question, or a forecast that missed — this page isn’t here. Everything else is.", back: "Back to today’s five", board: "See the Board" },
 } as const;
 
 type Widen<T> = T extends string ? string : { [K in keyof T]: Widen<T[K]> };

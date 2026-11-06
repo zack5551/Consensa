@@ -37,12 +37,12 @@ const raw = [
     languages: { en: 40, fr: 33 },
     events: [
       { dayIndex: 15, label: { en: "Jobs report", fr: "Emploi" } },
-      { dayIndex: 25, label: { en: "Governor's speech", fr: "Discours du gouverneur" } },
+      { dayIndex: 25, label: { en: "Governor’s speech", fr: "Discours du gouverneur" } },
     ],
     why: {
       body: {
-        en: "The crowd's chance of a December cut fell from 53% to 38% over two weeks. The biggest drop came after Statistics Canada's jobs report showed more hiring than expected, which many forecasters read as less pressure to cut. A smaller dip followed the Governor's speech, which repeated that future moves depend on the data.",
-        fr: "Selon la foule, la probabilité d’une baisse en décembre est passée de 53 % à 38 % en deux semaines. La plus forte baisse a suivi l’Enquête sur la population active de Statistique Canada, qui montrait plus d’embauches que prévu. Un recul plus léger a suivi le discours du gouverneur, qui a répété que les prochaines décisions dépendront des données.",
+        en: "The crowd spent the first two weeks near 53% on a December cut. The November jobs report — stronger hiring than expected — pulled it down to 41%: fewer forecasters saw reason to cut. The Governor’s speech, repeating that each decision depends on the data, shaved it to 38%. Now the number is waiting on December 9.",
+        fr: "La foule donnait environ 53 % à une baisse en décembre pendant les deux premières semaines. L’Enquête sur la population active de novembre — plus d’embauches que prévu — l’a fait reculer à 41 % : moins de prévisionnistes voyaient une raison de baisser. Le discours du gouverneur, qui répétait que chaque décision dépend des données, l’a ramenée à 38 %. Le chiffre attend maintenant le 9 décembre.",
       },
       sources: [
         { en: "Statistics Canada · Labour Force Survey", fr: "Statistique Canada · Enquête sur la population active" },
@@ -75,7 +75,7 @@ const raw = [
     resolution: {
       source: { name: { en: "Scotiabank Giller Prize", fr: "Prix Giller Banque Scotia" }, url: "https://scotiabankgillerprize.ca/" },
       rule: {
-        en: "Resolves YES if the 2026 winner is the author's first published book of fiction, as described by the prize.",
+        en: "Resolves YES if the 2026 winner is the author’s first published book of fiction, as described by the prize.",
         fr: "Résolue OUI si l’œuvre gagnante de 2026 est le premier livre de fiction publié de son auteur ou autrice, selon le prix.",
       },
       resolvesAt: "2026-11-17T03:00:00Z",
@@ -108,7 +108,7 @@ const raw = [
     slug: "home-prices-nov-2026",
     category: "housing",
     question: {
-      en: "Will Canada's average home price in November be higher than a year earlier?",
+      en: "Will Canada’s average home price in November be higher than a year earlier?",
       fr: "Le prix moyen des maisons au Canada en novembre sera-t-il plus élevé qu’un an plus tôt?",
     },
     scored: true,
@@ -121,7 +121,7 @@ const raw = [
     resolution: {
       source: { name: { en: "CREA monthly statistics", fr: "Statistiques mensuelles de l’ACI" }, url: "https://stats.crea.ca/en-CA/" },
       rule: {
-        en: "Resolves YES if CREA's actual (not seasonally adjusted) national average price for November 2026 is higher than for November 2025.",
+        en: "Resolves YES if CREA’s actual (not seasonally adjusted) national average price for November 2026 is higher than for November 2025.",
         fr: "Résolue OUI si le prix moyen national réel (non désaisonnalisé) de l’ACI pour novembre 2026 dépasse celui de novembre 2025.",
       },
       resolvesAt: "2026-12-15T14:00:00Z",
@@ -167,7 +167,7 @@ const raw = [
     resolution: {
       source: { name: { en: "Just-for-fun poll (not scored)", fr: "Sondage pour le plaisir (non évalué)" }, url: "https://www.nhl.com/standings" },
       rule: {
-        en: "This is a poll, not a scored forecast. It shows what Canadians think and doesn't count toward anyone's record.",
+        en: "This is a poll, not a scored forecast. It shows what Canadians think and doesn’t count toward anyone’s record.",
         fr: "Ceci est un sondage, pas une prévision évaluée. Il montre ce que pensent les Canadiens et ne compte dans le bilan de personne.",
       },
       resolvesAt: "2027-04-20T04:00:00Z",
@@ -177,7 +177,7 @@ const raw = [
     slug: "jobs-rate-oct-2026",
     category: "economy",
     question: {
-      en: "Will Canada's October unemployment rate be 7.0% or higher?",
+      en: "Will Canada’s October unemployment rate be 7.0% or higher?",
       fr: "Le taux de chômage d’octobre au Canada sera-t-il de 7,0 % ou plus?",
     },
     scored: true,
@@ -200,20 +200,20 @@ const raw = [
     slug: "cpi-sept-2026",
     category: "economy",
     question: {
-      en: "Will September's inflation rate be 2.0% or higher?",
+      en: "Will September’s inflation rate be 2.0% or higher?",
       fr: "Le taux d’inflation de septembre sera-t-il de 2,0 % ou plus?",
     },
     scored: true,
     closesAt: "2026-10-21T12:15:00Z",
     forecasters: 12870,
     history: series(30, [[0, 49], [11, 56], [22, 63], [29, 71]]),
-    provinces: { BC: 68, AB: 74, PR: 70, ON: 72, QC: 69, AT: 73 },
+    provinces: { BC: 64, AB: 78, PR: 69, ON: 74, QC: 66, AT: 71 },
     languages: { en: 71, fr: 70 },
     events: [{ dayIndex: 22, label: { en: "Gas prices up", fr: "Hausse de l’essence" } }],
     resolution: {
       source: { name: { en: "Statistics Canada · Consumer Price Index", fr: "Statistique Canada · Indice des prix à la consommation" }, url: "https://www150.statcan.gc.ca/n1/en/subjects/prices_and_price_indexes/consumer_price_indexes" },
       rule: {
-        en: "Resolves YES if the all-items CPI rose 2.0% or more year over year in September 2026, in Statistics Canada's first release.",
+        en: "Resolves YES if the all-items CPI rose 2.0% or more year over year in September 2026, in Statistics Canada’s first release.",
         fr: "Résolue OUI si l’IPC d’ensemble a augmenté de 2,0 % ou plus sur un an en septembre 2026, selon la première publication de Statistique Canada.",
       },
       resolvesAt: "2026-10-21T12:30:00Z",
@@ -231,7 +231,7 @@ const raw = [
     closesAt: "2026-10-28T13:45:00Z",
     forecasters: 15930,
     history: series(30, [[0, 58], [12, 66], [24, 74], [29, 77]]),
-    provinces: { BC: 75, AB: 79, PR: 76, ON: 78, QC: 74, AT: 77 },
+    provinces: { BC: 71, AB: 82, PR: 74, ON: 79, QC: 66, AT: 73 },
     languages: { en: 78, fr: 74 },
     events: [{ dayIndex: 12, label: { en: "CPI release", fr: "Publication de l’IPC" } }],
     resolution: {
@@ -255,7 +255,7 @@ const raw = [
     closesAt: "2026-10-25T04:00:00Z",
     forecasters: 7210,
     history: series(30, [[0, 35], [18, 41], [29, 44]]),
-    provinces: { BC: 40, AB: 46, PR: 45, ON: 42, QC: 47, AT: 43 },
+    provinces: { BC: 34, AB: 48, PR: 44, ON: 41, QC: 52, AT: 38 },
     languages: { en: 41, fr: 47 },
     events: [],
     resolution: {

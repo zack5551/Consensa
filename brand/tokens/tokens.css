@@ -66,7 +66,7 @@
   --cn-amber-800: #783401;
   --cn-amber-900: #5E2700;
   --cn-amber-950: #481D01;
-  --cn-font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --cn-font-display: Georgia, 'Times New Roman', 'Nimbus Roman', serif;
   --cn-font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --cn-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --cn-text-caption: 0.75rem;
@@ -87,14 +87,14 @@
   --cn-text-title: 1.5rem;
   --cn-leading-title: 2rem;
   --cn-tracking-title: -0.015em;
-  --cn-text-headline: 1.875rem;
-  --cn-leading-headline: 2.375rem;
+  --cn-text-headline: 2rem;
+  --cn-leading-headline: 2.5rem;
   --cn-tracking-headline: -0.02em;
   --cn-text-display-sm: 2.25rem;
   --cn-leading-display-sm: 2.75rem;
   --cn-tracking-display-sm: -0.025em;
-  --cn-text-display: 3rem;
-  --cn-leading-display: 3.5rem;
+  --cn-text-display: 3.5rem;
+  --cn-leading-display: 3.75rem;
   --cn-tracking-display: -0.03em;
   --cn-text-display-lg: 4rem;
   --cn-leading-display-lg: 4.25rem;

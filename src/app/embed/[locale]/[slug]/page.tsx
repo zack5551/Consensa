@@ -44,11 +44,11 @@ export default async function EmbedPage({ params }: { params: Params }) {
 
   return (
     <main className="mx-auto grid max-w-[560px] gap-3 rounded-card border border-line bg-surface p-4 text-ink shadow-card">
-      <p className="m-0 flex items-center justify-between gap-2 text-caption text-ink-2">
+      <p className="m-0 flex items-center justify-between gap-2 border-b border-line pb-3 text-caption text-ink-2">
         <Wordmark className="text-body" />
         <span>{t.embed.poweredBy}</span>
       </p>
-      <h1 className="m-0 text-title-sm font-bold leading-snug text-balance">{q.question[locale]}</h1>
+      <h1 className="m-0 font-display text-title-sm font-bold leading-snug text-balance">{q.question[locale]}</h1>
       <p className="m-0 flex flex-wrap items-baseline gap-x-2">
         <span className="text-body-sm font-bold text-canada">{open ? t.question.canadaSays : t.question.canadaSaid}</span>
         <span className="font-display text-headline font-semibold tabular text-side-a-text">{pct(yes)}</span>

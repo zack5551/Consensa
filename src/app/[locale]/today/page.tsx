@@ -55,7 +55,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
           <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{t.today.title}</h1>
           <p className="m-0 text-body text-ink-2">{t.today.subtitle}</p>
         </div>
-        <div className="grid gap-1 rounded-card border border-line bg-surface px-4 py-3 sm:min-w-[240px]">
+        <div className="grid gap-1 border-l-4 border-side-a bg-sunken px-4 py-3 sm:min-w-[240px]">
           <p className="m-0 flex items-center gap-2 font-display text-title-sm font-bold">
             <svg viewBox="0 0 16 16" className="size-4 shrink-0" aria-hidden="true">
               <path d="M8 1c.5 3 4 4.5 4 8.5A4 4 0 0 1 8 14a4 4 0 0 1-4-4.5C4 7 6 6 6 3.5 7 4.5 7.5 5.5 7.5 6.5 8.5 5 8 3 8 1Z" fill="var(--cn-side-a)" />
