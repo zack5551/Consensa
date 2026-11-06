@@ -134,7 +134,7 @@ const raw = [
       source: { name: { en: "Just-for-fun poll (not scored)", fr: "Sondage pour le plaisir (non évalué)" }, url: "https://www.nhl.com/standings" },
       rule: {
         en: "This is a poll, not a scored forecast. It shows what Canadians think and doesn't count toward anyone's record.",
-        fr: "Ceci est un sondage, pas une prévision évaluée. Il montre ce que pensent les Canadiens et ne compte pas dans le dossier de qui que ce soit.",
+        fr: "Ceci est un sondage, pas une prévision évaluée. Il montre ce que pensent les Canadiens et ne compte dans le bilan de personne.",
       },
       resolvesAt: "2027-04-20T04:00:00Z",
     },

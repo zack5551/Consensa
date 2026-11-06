@@ -1,15 +1,15 @@
 import type { Dictionary } from "./en";
 
-/** Quebec French strings. Non-breaking spaces ( ,  ) before % : ? ! ; per OQLF usage. */
+/** Quebec French strings (OQLF): a non-breaking space ( ) before : and %, and between a number and its unit; no space before ? ! ; (Quebec usage). */
 const fr = {
   meta: {
     title: "Consensa : ce que le Canada prévoit",
     description: "Faites des prévisions rapides sur des questions canadiennes et voyez où le Canada se situe, province par province. Gratuit, sans argent, sans prix.",
   },
-  nav: { today: "Aujourd’hui", record: "Mon dossier", skipToContent: "Aller au contenu", language: "Langue", switchTo: "English" },
+  nav: { today: "Aujourd’hui", record: "Mon bilan", skipToContent: "Aller au contenu", language: "Langue", switchTo: "English" },
   legal: {
     noValue: "Gratuit. Aucune valeur monétaire. Aucun achat requis.",
-    footer: "Gratuit · Sans argent · Sans prix · 18 ans et +",
+    footer: "Gratuit · Sans argent · Sans prix · 18 ans et plus",
     sample: "Questions et chiffres fictifs pendant la construction.",
   },
   today: {
@@ -23,7 +23,7 @@ const fr = {
     yes: "Oui",
     no: "Non",
     forecasters: "prévisionnistes",
-    closes: "Ferme le",
+    closes: "Fermeture le",
     closed: "Fermée",
     poll: "Sondage · non évalué",
     scored: "Évaluée",
@@ -37,8 +37,8 @@ const fr = {
     range: { week: "1 sem.", month: "1 mois", all: "Tout" },
   },
   province: {
-    title: "Le Canada pense oui, par province",
-    summary: "Le plus élevé au {high} ({highValue}), le plus bas au {low} ({lowValue}).",
+    title: "Le oui, province par province",
+    summary: "Le plus élevé : {high} ({highValue}). Le plus bas : {low} ({lowValue}).",
     names: { BC: "C.-B.", AB: "Alberta", PR: "Prairies", ON: "Ontario", QC: "Québec", AT: "Atlantique" },
     short: { BC: "C.-B.", AB: "Alb.", PR: "Prairies", ON: "Ont.", QC: "Qc", AT: "Atl." },
   },
@@ -51,16 +51,16 @@ const fr = {
     save: "Confirmer ma prévision",
     saved: "Prévision enregistrée",
     change: "Modifier",
-    sameAsCrowd: "Vous êtes en ligne avec le Canada.",
-    moreThan: "Vous êtes {n} points plus confiant que le Canada.",
-    lessThan: "Vous êtes {n} points moins confiant que le Canada.",
+    sameAsCrowd: "Vous pensez comme le Canada.",
+    moreThan: "Votre prévision est {n} points au-dessus de celle du Canada.",
+    lessThan: "Votre prévision est {n} points en dessous de celle du Canada.",
     scoredWhen: "Elle sera évaluée à la publication du résultat officiel.",
     demoNote: "Les prévisions ne sont pas encore enregistrées dans cet aperçu.",
   },
   why: {
     title: "Pourquoi ça a bougé",
-    byline: "Rédigé par IA, revu par un éditeur",
-    note: "Ceci explique ce qui a changé. Ce n’est pas un conseil de prévision.",
+    byline: "Rédigé par l’IA, revu par notre équipe éditoriale",
+    note: "Ceci explique ce qui a changé. Ce n’est pas un conseil sur ce qu’il faut prévoir.",
     sources: "Sources",
   },
   resolution: {
