@@ -23,3 +23,8 @@ export function formatLongDate(iso: string, locale: Locale): string {
 export function formatBrier(value: number, locale: Locale): string {
   return new Intl.NumberFormat(intlLocale[locale], { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(value);
 }
+
+/** "Friday, November 6" / "vendredi 6 novembre" (UTC). */
+export function formatDayHeading(iso: string, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale[locale], { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(iso));
+}

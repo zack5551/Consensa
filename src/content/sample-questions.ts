@@ -85,7 +85,7 @@ const raw = [
     slug: "yyz-snow-nov-2026",
     category: "weather",
     question: {
-      en: "Will Toronto Pearson get 10 cm of snow before Nov. 30?",
+      en: "Will Toronto Pearson get 10 cm of snow before Nov. 30?",
       fr: "L’aéroport Pearson de Toronto recevra-t-il 10 cm de neige avant le 30 novembre?",
     },
     scored: true,
@@ -178,7 +178,7 @@ const raw = [
     category: "economy",
     question: {
       en: "Will Canada's October unemployment rate be 7.0% or higher?",
-      fr: "Le taux de chômage d’octobre au Canada sera-t-il de 7,0 % ou plus?",
+      fr: "Le taux de chômage d’octobre au Canada sera-t-il de 7,0 % ou plus?",
     },
     scored: true,
     closesAt: "2026-11-05T13:00:00Z",
@@ -191,7 +191,7 @@ const raw = [
       source: { name: { en: "Statistics Canada · Labour Force Survey", fr: "Statistique Canada · Enquête sur la population active" }, url: "https://www150.statcan.gc.ca/n1/dai-quo/ssi/homepage/rel-com/indicator-eng.htm" },
       rule: {
         en: "Resolves YES if the seasonally adjusted national unemployment rate for October 2026 is 7.0% or higher in the first Labour Force Survey release.",
-        fr: "Résolue OUI si le taux de chômage national désaisonnalisé d’octobre 2026 est de 7,0 % ou plus dans la première publication de l’Enquête sur la population active.",
+        fr: "Résolue OUI si le taux de chômage national désaisonnalisé d’octobre 2026 est de 7,0 % ou plus dans la première publication de l’Enquête sur la population active.",
       },
       resolvesAt: "2026-11-06T13:30:00Z",
     },
@@ -201,7 +201,7 @@ const raw = [
     category: "economy",
     question: {
       en: "Will September's inflation rate be 2.0% or higher?",
-      fr: "Le taux d’inflation de septembre sera-t-il de 2,0 % ou plus?",
+      fr: "Le taux d’inflation de septembre sera-t-il de 2,0 % ou plus?",
     },
     scored: true,
     closesAt: "2026-10-21T12:15:00Z",
@@ -214,7 +214,7 @@ const raw = [
       source: { name: { en: "Statistics Canada · Consumer Price Index", fr: "Statistique Canada · Indice des prix à la consommation" }, url: "https://www150.statcan.gc.ca/n1/en/subjects/prices_and_price_indexes/consumer_price_indexes" },
       rule: {
         en: "Resolves YES if the all-items CPI rose 2.0% or more year over year in September 2026, in Statistics Canada's first release.",
-        fr: "Résolue OUI si l’IPC d’ensemble a augmenté de 2,0 % ou plus sur un an en septembre 2026, selon la première publication de Statistique Canada.",
+        fr: "Résolue OUI si l’IPC d’ensemble a augmenté de 2,0 % ou plus sur un an en septembre 2026, selon la première publication de Statistique Canada.",
       },
       resolvesAt: "2026-10-21T12:30:00Z",
       result: { outcome: "yes", publishedAt: "2026-10-21T12:30:00Z" },
