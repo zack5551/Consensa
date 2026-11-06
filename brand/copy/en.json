@@ -1,0 +1,67 @@
+{
+  "brand": {
+    "name": "Consensa",
+    "tagline": "What Canada thinks happens next.",
+    "cta": "Make your call. See where Canada lands."
+  },
+  "nav": {
+    "home": "Home",
+    "questions": "Questions",
+    "record": "My record",
+    "leaderboard": "Leaderboard",
+    "settings": "Settings",
+    "language": "Français"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Create your account",
+    "email": "Email",
+    "continue": "Continue",
+    "ageGate": "Consensa is for people 18 and over.",
+    "consentData": "I agree that my answers can be used in anonymous, combined results.",
+    "signOut": "Sign out"
+  },
+  "question": {
+    "yes": "Yes",
+    "no": "No",
+    "chance": "{percent}% chance",
+    "canadaSays": "Canada says",
+    "calls": "{count, plural, one {# call} other {# calls}}",
+    "closesIn": "Closes in {time}",
+    "closed": "Closed",
+    "resolvesOn": "Resolves on {date}",
+    "yourCall": "Your call",
+    "changeCall": "Change your call",
+    "saved": "Call saved.",
+    "provinceLeans": "{province} leans {side}"
+  },
+  "result": {
+    "calledIt": "Called it!",
+    "calledItBody": "You were ahead of {percent}% of Canada on this one.",
+    "missed": "Not this time.",
+    "missedBody": "{percent}% of Canada missed it too. Your record still counts it.",
+    "resolvedYes": "Resolved: Yes",
+    "resolvedNo": "Resolved: No"
+  },
+  "record": {
+    "accuracy": "Accuracy",
+    "accuracyHelp": "Lower is better. A perfect forecaster scores 0.",
+    "streak": "Streak",
+    "rank": "Top {percent}% · {region}",
+    "answered": "{count} questions answered"
+  },
+  "empty": {
+    "noQuestions": "No open questions right now. New ones land every morning.",
+    "noRecord": "Make your first call to start your record."
+  },
+  "errors": {
+    "generic": "Something went wrong on our side. Try again in a moment.",
+    "offline": "You're offline. Your call will send when you're back.",
+    "closed": "This question has closed."
+  },
+  "legal": {
+    "noValue": "Free to play. No cash value. No purchase necessary.",
+    "noMoney": "Free to play. No money, prizes or points with cash value, ever.",
+    "adsLabel": "Ad"
+  }
+}

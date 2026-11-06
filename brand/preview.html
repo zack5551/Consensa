@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consensa brand sheet</title>
+<link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="tokens/tokens.css">
+<style>
+  @font-face { font-family: 'Manrope'; font-weight: 600; font-display: swap; src: url(fonts/manrope-latin-600-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Manrope'; font-weight: 700; font-display: swap; src: url(fonts/manrope-latin-700-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Manrope'; font-weight: 800; font-display: swap; src: url(fonts/manrope-latin-800-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url(fonts/inter-latin-400-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 500; font-display: swap; src: url(fonts/inter-latin-500-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url(fonts/inter-latin-600-normal.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url(fonts/inter-latin-700-normal.woff2) format('woff2'); }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--cn-bg); color: var(--cn-text); font-family: var(--cn-font-sans); font-size: var(--cn-text-body); line-height: var(--cn-leading-body); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: var(--cn-space-6) var(--cn-space-4) var(--cn-space-24); }
+  header.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--cn-space-4); padding-block: var(--cn-space-4); border-bottom: 1px solid var(--cn-border); }
+  header.top img { height: 28px; }
+  .toggles { display: flex; gap: var(--cn-space-2); }
+  .seg { display: inline-flex; padding: 3px; background: var(--cn-surface-sunken); border: 1px solid var(--cn-border); border-radius: var(--cn-radius-full); }
+  .seg button { font: 600 13px/1 var(--cn-font-sans); color: var(--cn-text-muted); background: none; border: 0; padding: 8px 12px; border-radius: var(--cn-radius-full); cursor: pointer; min-height: 32px; }
+  .seg button[aria-pressed="true"] { background: var(--cn-surface); color: var(--cn-text); box-shadow: var(--cn-shadow-sm); }
+  .seg button:focus-visible { outline: 2px solid var(--cn-focus); outline-offset: 2px; }
+  h1, h2, h3 { font-family: var(--cn-font-display); margin: 0; }
+  .hero { padding-block: var(--cn-space-16) var(--cn-space-12); display: grid; gap: var(--cn-space-6); }
+  .eyebrow { font: 600 var(--cn-text-caption)/1 var(--cn-font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--cn-text-muted); }
+  .hero h1 { font-weight: 800; font-size: clamp(2.5rem, 6vw, var(--cn-text-display-lg)); line-height: 1.04; letter-spacing: var(--cn-tracking-display-lg); max-width: 15ch; }
+  .hero p { font-size: var(--cn-text-body-lg); line-height: var(--cn-leading-body-lg); color: var(--cn-text-muted); max-width: 52ch; margin: 0; }
+  section { padding-block: var(--cn-space-12); border-top: 1px solid var(--cn-border); }
+  section > h2 { font-weight: 800; font-size: var(--cn-text-headline); letter-spacing: var(--cn-tracking-headline); margin-bottom: var(--cn-space-2); }
+  section > p.lead { color: var(--cn-text-muted); margin: 0 0 var(--cn-space-8); max-width: 60ch; }
+  .logos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--cn-space-4); }
+  .tile.paper { background: #FAF8F5; border-color: #E4E2E0; }
+  .tile { border: 1px solid var(--cn-border); border-radius: var(--cn-radius-lg); background: var(--cn-surface); padding: var(--cn-space-8); display: grid; place-items: center; min-height: 180px; }
+  .tile.ink { background: #14213D; border-color: #14213D; }
+  .tile img { max-width: 80%; max-height: 72px; }
+  .tile img.sym { height: 88px; }
+  .cap { font-size: var(--cn-text-caption); color: var(--cn-text-subtle); margin-top: var(--cn-space-2); }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--cn-space-4); }
+  .sw { border-radius: var(--cn-radius-lg); overflow: hidden; border: 1px solid var(--cn-border); background: var(--cn-surface); }
+  .sw .chip { height: 96px; display: flex; align-items: flex-end; padding: var(--cn-space-3); font: 600 13px/1 var(--cn-font-mono); color: #fff; }
+  .sw .meta { padding: var(--cn-space-3) var(--cn-space-4) var(--cn-space-4); }
+  .sw .meta b { display: block; font-family: var(--cn-font-display); font-weight: 700; }
+  .sw .meta span { font-size: var(--cn-text-body-sm); color: var(--cn-text-muted); }
+  .ramp { display: grid; grid-template-columns: repeat(11, 1fr); height: 28px; }
+  .type-row { display: grid; grid-template-columns: 140px 1fr; gap: var(--cn-space-4); align-items: baseline; padding-block: var(--cn-space-3); border-bottom: 1px dashed var(--cn-border); }
+  .type-row code { font: 12px/1.4 var(--cn-font-mono); color: var(--cn-text-subtle); }
+  .demo { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--cn-space-6); align-items: start; }
+  .card { background: var(--cn-surface); border: 1px solid var(--cn-border); border-radius: var(--cn-radius-xl); padding: var(--cn-space-6); box-shadow: var(--cn-shadow-md); }
+  .card .tag { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--cn-font-sans); color: var(--cn-text-muted); }
+  .live { width: 8px; height: 8px; border-radius: 50%; background: var(--cn-accent); box-shadow: 0 0 0 0 var(--cn-accent); animation: pulse 2s var(--cn-ease-out) infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cn-accent) 50%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
+  .card h3 { font-weight: 700; font-size: var(--cn-text-title); line-height: var(--cn-leading-title); letter-spacing: var(--cn-tracking-title); margin: var(--cn-space-3) 0 var(--cn-space-5); }
+  .stat { display: flex; justify-content: space-between; align-items: baseline; font-variant-numeric: tabular-nums; }
+  .stat .big { font: 800 var(--cn-text-display-sm)/1 var(--cn-font-display); letter-spacing: -0.03em; }
+  .stat .a { color: var(--cn-side-a-text); } .stat .b { color: var(--cn-side-b-text); }
+  .stat small { display: block; font: 600 12px/1.2 var(--cn-font-sans); color: var(--cn-text-muted); margin-top: 6px; }
+  .bar { position: relative; display: flex; height: 12px; border-radius: var(--cn-radius-full); overflow: hidden; margin: var(--cn-space-4) 0 var(--cn-space-5); gap: 3px; }
+  .bar i { display: block; height: 100%; border-radius: var(--cn-radius-full); transition: flex-basis var(--cn-duration-reveal) var(--cn-ease-out); }
+  .bar .a { background: var(--cn-side-a); } .bar .b { background: var(--cn-side-b); }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cn-space-3); }
+  .choice { font: 700 15px/1 var(--cn-font-sans); min-height: 48px; border-radius: var(--cn-radius-md); border: 1.5px solid; background: transparent; cursor: pointer; transition: background var(--cn-duration-fast) var(--cn-ease-standard), transform var(--cn-duration-fast) var(--cn-ease-standard); }
+  .choice:active { transform: scale(.98); }
+  .choice.a { color: var(--cn-side-a-text); border-color: var(--cn-side-a); } .choice.a:hover { background: var(--cn-side-a-soft); }
+  .choice.b { color: var(--cn-side-b-text); border-color: var(--cn-side-b); } .choice.b:hover { background: var(--cn-side-b-soft); }
+  .choice:focus-visible { outline: 2px solid var(--cn-focus); outline-offset: 2px; }
+  .foot { display: flex; justify-content: space-between; margin-top: var(--cn-space-5); padding-top: var(--cn-space-4); border-top: 1px solid var(--cn-border); font-size: var(--cn-text-body-sm); color: var(--cn-text-muted); }
+  .toast { display: flex; gap: var(--cn-space-4); align-items: center; background: var(--cn-text); color: var(--cn-bg); border-radius: var(--cn-radius-xl); padding: var(--cn-space-5) var(--cn-space-6); box-shadow: var(--cn-shadow-lg); }
+  .toast img { width: 44px; height: 44px; flex: none; }
+  .toast b { display: block; font: 800 var(--cn-text-title)/1.1 var(--cn-font-display); letter-spacing: -0.02em; }
+  .toast span { font-size: var(--cn-text-body-sm); opacity: .8; }
+  .score { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--cn-space-3); margin-top: var(--cn-space-4); }
+  .score div { background: var(--cn-surface-sunken); border-radius: var(--cn-radius-md); padding: var(--cn-space-3); }
+  .score b { display: block; font: 800 22px/1 var(--cn-font-display); font-variant-numeric: tabular-nums; }
+  .score span { font-size: 12px; color: var(--cn-text-muted); }
+  .words { display: grid; grid-template-columns: 1fr 1fr; gap: var(--cn-space-4); }
+  .words ul { margin: 0; padding-left: 1.1em; }
+  .words h3 { font-size: var(--cn-text-title-sm); margin-bottom: var(--cn-space-2); }
+  @media (max-width: 640px) { .type-row { grid-template-columns: 1fr; gap: 4px; } .words { grid-template-columns: 1fr; } header.top img { height: 24px; } }
+  [data-lang="fr"] [data-en], [data-lang="en"] [data-fr] { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap" data-lang="en" id="root">
+  <header class="top">
+    <img id="lockup" src="logo/lockup.svg" alt="Consensa">
+    <div class="toggles">
+      <div class="seg" role="group" aria-label="Language / Langue"><button aria-pressed="true" data-set-lang="en">EN</button><button aria-pressed="false" data-set-lang="fr">FR</button></div>
+      <div class="seg" role="group" aria-label="Theme"><button aria-pressed="true" data-set-theme="light"><span data-en>Light</span><span data-fr>Clair</span></button><button aria-pressed="false" data-set-theme="dark"><span data-en>Dark</span><span data-fr>Sombre</span></button></div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="eyebrow"><span data-en>Brand kit v1 · November 2026</span><span data-fr>Trousse de marque v1 · novembre 2026</span></div>
+    <h1><span data-en>What Canada thinks happens next.</span><span data-fr>Ce que le Canada prévoit.</span></h1>
+    <p><span data-en>Two sides meet in the middle. Consensa turns millions of individual calls into one clear, honest read of the country, in English and in French, with no money anywhere.</span><span data-fr>Deux côtés se rencontrent au centre. Consensa transforme des millions de prévisions en une lecture claire et honnête du pays, en français et en anglais, sans argent nulle part.</span></p>
+  </div>
+
+  <section>
+    <h2><span data-en>Logo</span><span data-fr>Logo</span></h2>
+    <p class="lead"><span data-en>The split circle is two opinions meeting. The red point in the seam is where Canada lands. The wordmark is always lowercase.</span><span data-fr>Le cercle divisé, ce sont deux opinions qui se rencontrent. Le point rouge dans la jointure, c’est là où le Canada se situe. Le logotype est toujours en minuscules.</span></p>
+    <div class="logos">
+      <div><div class="tile paper"><img src="logo/lockup.svg" alt="Consensa lockup"></div><div class="cap">lockup.svg</div></div>
+      <div><div class="tile ink"><img src="logo/lockup-dark.svg" alt="Consensa lockup on ink"></div><div class="cap">lockup-dark.svg</div></div>
+      <div><div class="tile paper"><img class="sym" src="logo/symbol.svg" alt="Consensa symbol"></div><div class="cap">symbol.svg</div></div>
+      <div><div class="tile" style="background:var(--cn-surface-sunken)"><img class="sym" src="logo/app-icon.svg" alt="Consensa app icon" style="border-radius:22%"></div><div class="cap">app-icon.svg</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span data-en>Colour</span><span data-fr>Couleur</span></h2>
+    <p class="lead"><span data-en>Teal and violet are the two sides. Red is Canada, used like a pin, never as a fill. Results never use party colours or sportsbook green.</span><span data-fr>Le sarcelle et le violet sont les deux côtés. Le rouge, c’est le Canada, utilisé comme une épingle, jamais en aplat. Les résultats n’utilisent jamais les couleurs des partis ni le vert des sites de paris.</span></p>
+    <div class="swatches" id="swatches"></div>
+  </section>
+
+  <section>
+    <h2><span data-en>Type</span><span data-fr>Typographie</span></h2>
+    <p class="lead"><span data-en>Manrope for display and numbers that matter. Inter for everything you read. Both carry every French accent.</span><span data-fr>Manrope pour les titres et les chiffres qui comptent. Inter pour tout ce qu’on lit. Les deux portent tous les accents français.</span></p>
+    <div class="type-row"><code>display / Manrope 800</code><div style="font:800 var(--cn-text-display)/var(--cn-leading-display) var(--cn-font-display);letter-spacing:var(--cn-tracking-display)">Vu juste! 62%</div></div>
+    <div class="type-row"><code>headline / Manrope 800</code><div style="font:800 var(--cn-text-headline)/var(--cn-leading-headline) var(--cn-font-display);letter-spacing:var(--cn-tracking-headline)"><span data-en>Will Canada Post strike again before spring?</span><span data-fr>Postes Canada sera-t-elle en grève avant le printemps?</span></div></div>
+    <div class="type-row"><code>title / Manrope 700</code><div style="font:700 var(--cn-text-title)/var(--cn-leading-title) var(--cn-font-display);letter-spacing:var(--cn-tracking-title)"><span data-en>Canada says: probably not</span><span data-fr>Le Canada pense : probablement pas</span></div></div>
+    <div class="type-row"><code>body / Inter 400</code><div><span data-en>Make your call before Friday at noon ET. Your accuracy score updates when the question resolves.</span><span data-fr>Faites votre prévision avant vendredi midi (HE). Votre score de précision se met à jour à la résolution de la question.</span></div></div>
+    <div class="type-row"><code>caption / Inter 600</code><div style="font:600 var(--cn-text-caption)/var(--cn-leading-caption) var(--cn-font-sans);color:var(--cn-text-muted)"><span data-en>12,408 calls · Ontario leads</span><span data-fr>12 408 prévisions · l’Ontario en tête</span></div></div>
+  </section>
+
+  <section>
+    <h2><span data-en>In the product</span><span data-fr>Dans le produit</span></h2>
+    <p class="lead"><span data-en>A question card and the moment a call comes true.</span><span data-fr>Une carte de question et le moment où une prévision se réalise.</span></p>
+    <div class="demo">
+      <article class="card">
+        <div class="tag"><span class="live" aria-hidden="true"></span><span data-en>Economy · closes in 3 days</span><span data-fr>Économie · ferme dans 3 jours</span></div>
+        <h3><span data-en>Will the Bank of Canada cut its rate in December?</span><span data-fr>La Banque du Canada baissera-t-elle son taux en décembre?</span></h3>
+        <div class="stat">
+          <div class="a"><span class="big">62%</span><small><span data-en>Yes</span><span data-fr>Oui</span></small></div>
+          <div class="b" style="text-align:right"><span class="big">38%</span><small><span data-en>No</span><span data-fr>Non</span></small></div>
+        </div>
+        <div class="bar" role="img" aria-label="62% yes, 38% no"><i class="a" style="flex-basis:62%"></i><i class="b" style="flex-basis:38%"></i></div>
+        <div class="choices"><button class="choice a"><span data-en>Yes</span><span data-fr>Oui</span></button><button class="choice b"><span data-en>No</span><span data-fr>Non</span></button></div>
+        <div class="foot"><span data-en>12,408 calls</span><span data-fr>12 408 prévisions</span><span data-en>Quebec leans no</span><span data-fr>Le Québec penche pour non</span></div>
+      </article>
+      <div>
+        <div class="toast" role="status">
+          <img src="logo/symbol-dark.svg" alt="">
+          <div><b><span data-en>Called it!</span><span data-fr>Vu juste!</span></b><span><span data-en>You were ahead of 71% of Canada on this one.</span><span data-fr>Vous étiez en avance sur 71 % du Canada sur celle-ci.</span></span></div>
+        </div>
+        <div class="card" style="margin-top:var(--cn-space-4)">
+          <div class="tag"><span data-en>Your record</span><span data-fr>Votre bilan</span></div>
+          <div class="score">
+            <div><b>0.14</b><span><span data-en>Accuracy (Brier)</span><span data-fr>Précision (Brier)</span></span></div>
+            <div><b>7</b><span><span data-en>Streak</span><span data-fr>Série</span></span></div>
+            <div><b>Top 8%</b><span>Ontario</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span data-en>Words</span><span data-fr>Les mots</span></h2>
+    <p class="lead"><span data-en>We forecast, we never bet. Full voice rules are in brand/README.md.</span><span data-fr>On prévoit, on ne parie jamais. Toutes les règles de ton sont dans brand/README.md.</span></p>
+    <div class="words">
+      <div><h3><span data-en>Say</span><span data-fr>On dit</span></h3><ul><li><span data-en>call, forecast, chance (62% chance)</span><span data-fr>prévision, chance (62 % de chances)</span></li><li><span data-en>Canada says, the crowd</span><span data-fr>Le Canada pense, la foule</span></li><li><span data-en>accuracy, streak, record</span><span data-fr>précision, série, bilan</span></li><li>Vu juste!</li></ul></div>
+      <div><h3><span data-en>Never say</span><span data-fr>On ne dit jamais</span></h3><ul><li><span data-en>bet, wager, odds, stake</span><span data-fr>pari, mise, cote, enjeu</span></li><li><span data-en>pick, lock, parlay, payout</span><span data-fr>choix sûr, combiné, gain, paiement</span></li><li><span data-en>win money, cash out, jackpot</span><span data-fr>gagner de l’argent, encaisser, gros lot</span></li><li><span data-en>invest, profit, returns</span><span data-fr>investir, profit, rendement</span></li></ul></div>
+    </div>
+  </section>
+</div>
+<script>
+  const root = document.getElementById('root');
+  const swatches = [
+    ['Teal', 'Sarcelle', '#0F766E', 'teal', ['Side A', 'Côté A']],
+    ['Violet', 'Violet', '#6D4AA8', 'violet', ['Side B', 'Côté B']],
+    ['Canada red', 'Rouge Canada', '#C8102E', 'red', ['Accent only', 'Accent seulement']],
+    ['Ink', 'Encre', '#14213D', 'ink', ['Text', 'Texte']],
+    ['Paper', 'Papier', '#FAF8F5', 'paper', ['Background', 'Fond']],
+  ];
+  const steps = [50,100,200,300,400,500,600,700,800,900,950];
+  function renderSwatches() {
+    const c = getComputedStyle(document.documentElement); const fr = root.dataset.lang === 'fr';
+    document.getElementById('swatches').innerHTML = swatches.map(([en, frn, v, scale, role]) => {
+      const val = v;
+      const dark = scale === 'paper';
+      const ramp = steps.map(s => `<i style="background:var(--cn-${scale}-${s})" title="${scale}-${s}"></i>`).join('');
+      return `<div class="sw"><div class="chip" style="background:${val};color:${dark ? '#14213D' : '#fff'}">${val}</div><div class="ramp">${ramp}</div><div class="meta"><b>${fr ? frn : en}</b><span>${fr ? role[1] : role[0]}</span></div></div>`;
+    }).join('');
+  }
+  document.querySelectorAll('[data-set-lang]').forEach(b => b.addEventListener('click', () => {
+    root.dataset.lang = b.dataset.setLang; document.documentElement.lang = b.dataset.setLang;
+    document.querySelectorAll('[data-set-lang]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderSwatches();
+  }));
+  document.querySelectorAll('[data-set-theme]').forEach(b => b.addEventListener('click', () => {
+    document.documentElement.dataset.theme = b.dataset.setTheme;
+    document.getElementById('lockup').src = b.dataset.setTheme === 'dark' ? 'logo/lockup-dark.svg' : 'logo/lockup.svg';
+    document.querySelectorAll('[data-set-theme]').forEach(x => x.setAttribute('aria-pressed', x === b)); renderSwatches();
+  }));
+  const q = new URLSearchParams(location.search);
+  if (q.get('lang')) document.querySelector(`[data-set-lang="${q.get('lang')}"]`)?.click();
+  if (q.get('theme')) document.querySelector(`[data-set-theme="${q.get('theme')}"]`)?.click();
+  renderSwatches();
+</script>
+</body>
+</html>

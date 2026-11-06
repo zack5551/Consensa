@@ -1,0 +1,67 @@
+{
+  "brand": {
+    "name": "Consensa",
+    "tagline": "Ce que le Canada prévoit.",
+    "cta": "Faites votre prévision. Voyez où le Canada se situe."
+  },
+  "nav": {
+    "home": "Accueil",
+    "questions": "Questions",
+    "record": "Mon bilan",
+    "leaderboard": "Classement",
+    "settings": "Paramètres",
+    "language": "English"
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "signUp": "Créer votre compte",
+    "email": "Courriel",
+    "continue": "Continuer",
+    "ageGate": "Consensa est réservé aux personnes de 18 ans et plus.",
+    "consentData": "J’accepte que mes réponses servent à des résultats anonymes et regroupés.",
+    "signOut": "Se déconnecter"
+  },
+  "question": {
+    "yes": "Oui",
+    "no": "Non",
+    "chance": "{percent} % de chances",
+    "canadaSays": "Le Canada pense",
+    "calls": "{count, plural, one {# prévision} other {# prévisions}}",
+    "closesIn": "Ferme dans {time}",
+    "closed": "Fermée",
+    "resolvesOn": "Résolution le {date}",
+    "yourCall": "Votre prévision",
+    "changeCall": "Modifier votre prévision",
+    "saved": "Prévision enregistrée.",
+    "provinceLeans": "{province} penche pour {side}"
+  },
+  "result": {
+    "calledIt": "Vu juste!",
+    "calledItBody": "Vous étiez en avance sur {percent} % du Canada sur celle-ci.",
+    "missed": "Pas cette fois.",
+    "missedBody": "{percent} % du Canada s’est trompé aussi. Votre bilan en tient compte.",
+    "resolvedYes": "Résultat : Oui",
+    "resolvedNo": "Résultat : Non"
+  },
+  "record": {
+    "accuracy": "Précision",
+    "accuracyHelp": "Plus c’est bas, mieux c’est. Un prévisionniste parfait obtient 0.",
+    "streak": "Série",
+    "rank": "Top {percent} % · {region}",
+    "answered": "{count} questions répondues"
+  },
+  "empty": {
+    "noQuestions": "Aucune question ouverte pour l’instant. De nouvelles arrivent chaque matin.",
+    "noRecord": "Faites votre première prévision pour lancer votre bilan."
+  },
+  "errors": {
+    "generic": "Un problème est survenu de notre côté. Réessayez dans un instant.",
+    "offline": "Vous êtes hors ligne. Votre prévision partira dès votre retour.",
+    "closed": "Cette question est fermée."
+  },
+  "legal": {
+    "noValue": "Gratuit. Aucune valeur monétaire. Aucun achat requis.",
+    "noMoney": "Gratuit. Aucun argent, aucun prix, aucun point ayant une valeur monétaire, jamais.",
+    "adsLabel": "Publicité"
+  }
+}
