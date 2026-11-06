@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
 import { sampleQuestions } from "@/content/sample-questions";
 
@@ -32,5 +33,11 @@ const rules: [string, RegExp][] = [
 describe("French typography", () => {
   it.each(rules)("no French string has a %s", (_, re) => {
     expect(french.filter((s) => re.test(s))).toEqual([]);
+  });
+});
+
+describe("English typography", () => {
+  it("uses curly apostrophes (’) in every English string", () => {
+    expect(strings(en).filter((s) => s.includes("'"))).toEqual([]);
   });
 });
