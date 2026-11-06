@@ -5,7 +5,7 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
 import { readCall, saveCall } from "@/lib/calls-store";
-import { formatPercent } from "@/lib/format";
+import { formatBrier, formatPercent } from "@/lib/format";
 import type { QuestionState } from "@/lib/question";
 import { brierScore, gapToCrowd } from "@/lib/scoring";
 import { fill } from "@/lib/text";
@@ -151,6 +151,7 @@ function ClosedResult({
   t,
   canadaSays,
   pct,
+  locale,
 }: {
   stored: number | null;
   crowd: number;
@@ -189,7 +190,7 @@ function ClosedResult({
         {verdict && <p className={`m-0 font-display font-extrabold ${hit ? "text-title text-side-a-text" : "text-title-sm"}`}>{verdict}</p>}
         <p className="m-0">{stored === null ? t.noCall : fill(t.yourCall, { value: pct(stored) })}</p>
         {resolved && stored !== null && scored && (
-          <p className="m-0 mt-1 text-ink-2 tabular">{fill(t.score, { score: brierScore(stored / 100, outcome === "yes" ? 1 : 0).toFixed(3) })}</p>
+          <p className="m-0 mt-1 text-ink-2 tabular">{fill(t.score, { score: formatBrier(brierScore(stored / 100, outcome === "yes" ? 1 : 0), locale) })}</p>
         )}
         {state === "closed" && stored !== null && <p className="m-0 mt-1 text-ink-2">{t.waiting}</p>}
         {state === "disputed" && <p className="m-0 mt-1 text-ink-2">{t.disputed}</p>}
