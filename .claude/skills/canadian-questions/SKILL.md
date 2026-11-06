@@ -41,6 +41,17 @@ A Consensa question is a yes/no (or multi-outcome) forecast about a public, chec
 6. **Bilingual:** write the FR version natively (see the `consensa-voice` skill), not as a translation afterthought.
 7. **Closes before the answer leaks:** `closesAt` comes before any official release.
 
+## The engine (PULSE) writes most drafts
+
+`src/engine/` turns trending Canadian news into drafts every 15 minutes, and its drafting prompt (`src/engine/draft/prompt.ts`) condenses this skill. When you change the checklist above, change the prompt and the checks to match:
+
+- Wording and harm rules: `src/engine/safety/lexicon.json` (the only place banned words live).
+- Dates, official sources, "?" and Quebec typography, EN/FR number parity: `src/engine/validate.ts`. Official resolution domains: `resolutionDomains` in `src/engine/sources/registry.ts`.
+- Machine-readable resolvers the engine can settle on its own: `boc-policy-rate` (Bank of Canada Valet V39079), `statcan-vector` (WDS), `eccc-daily-climate` (GeoMet). Anything else is `manual` and an editor settles it.
+- A hand-written question goes through the same checks: build it as a `Draft` and run `screenDraft` and `validateDraft` before adding it to `src/content/`.
+
+Every draft waits in the editor queue. Approve only what you'd defend line by line in both languages; acknowledging a flag means you read it. Design doc: `docs/engine/README.md`.
+
 ## Where ideas come from (refresh weekly)
 
 - The Bank of Canada schedule, StatCan's release calendar, CREA monthly stats, Environment Canada seasonal outlooks.

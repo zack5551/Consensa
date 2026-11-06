@@ -15,6 +15,7 @@ A full Consensa app, built in Claude Code, live and real. It's a free, no-stakes
 | Brand: tokens, logo, fonts, base copy | `brand/` (`brand/README.md` first) | PRISM |
 | Voice, EN + Quebec FR | `.claude/skills/consensa-voice/SKILL.md` | PRISM |
 | Question writing and sources | `.claude/skills/canadian-questions/SKILL.md` | FORGE |
+| Question engine (real-time drafts, review queue, auto-resolution) | `docs/engine/README.md`, `src/engine/` | PULSE |
 | The 4-screen clickable prototype (v1) | `docs/design/prototype-v1.html` (live: https://claude.ai/artifact/14VJBF6KNs5wCQQ2CGX7Ys) | FORGE |
 | Research brief with ad placements | `docs/design/sean-brief-with-ads.html` | FORGE |
 | "Better than Polymarket and Kalshi" | https://claude.ai/artifact/QxMMXm6rGJvPnZa9fDXmQc (summary below) | FORGE |
