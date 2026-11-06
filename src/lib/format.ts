@@ -18,3 +18,8 @@ export function formatShortDate(iso: string, locale: Locale): string {
 export function formatLongDate(iso: string, locale: Locale): string {
   return new Intl.DateTimeFormat(intlLocale[locale], { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(iso));
 }
+
+/** "Friday, November 6" / "vendredi 6 novembre" (UTC). */
+export function formatDayHeading(iso: string, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale[locale], { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(iso));
+}
