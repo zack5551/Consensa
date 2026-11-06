@@ -24,7 +24,7 @@ export function QuestionCard({ q, locale, t, states, state = "open", href, lead 
   const yes = crowdNow(q);
   const open = isOpen(state);
   const action = open ? t.makeYourCall : t.seeResult;
-  const Title = lead ? "h2" : "h3";
+  const Title = "h3";
 
   return (
     <article className={`relative grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card ${href ? "transition-shadow duration-[var(--cn-duration-fast)] hover:border-line-strong" : ""} ${lead ? "sm:p-6" : ""}`}>
