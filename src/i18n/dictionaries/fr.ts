@@ -17,6 +17,54 @@ const fr = {
     skipToContent: "Aller au contenu",
     language: "Langue",
     switchTo: "English",
+    leaderboard: "Classement",
+    provinces: "Provinces",
+    search: "Rechercher",
+    signIn: "Se connecter",
+    getStarted: "Commencer",
+    home: "Accueil Consensa",
+    phone: "Sections",
+    short: { today: "Aujourd’hui", board: "Tableau", provinces: "Provinces", leaderboard: "Classement", record: "Bilan" },
+  },
+  shell: {
+    theme: { change: "Thème", system: "Comme l’appareil", light: "Clair", dark: "Sombre" },
+    footer: {
+      label: "Pied de page",
+      about: "Comment ça marche",
+      privacy: "Confidentialité",
+      terms: "Conditions d’utilisation",
+      dataInCanada: "Vos données restent au Canada, à Montréal.",
+      bilingual: "Fait au Canada, en français et en anglais.",
+    },
+  },
+  legalPages: {
+    draft: "Ceci est un résumé en langage clair. Le texte complet sera revu par un avocat avant le lancement.",
+    updated: "Dernière révision : {date}",
+    privacy: {
+      title: "La confidentialité, en clair",
+      intro: "Consensa est conçu pour garder le moins de renseignements possible sur vous, et pour les garder au Canada.",
+      points: {
+        canada: { title: "Vos données restent au Canada", body: "Les comptes, les prévisions et les statistiques d’usage sont hébergés à Montréal. Nous n’ajoutons aucun traceur qui envoie vos données ailleurs." },
+        aggregates: { title: "Seuls des chiffres combinés sortent de Consensa", body: "Si nous partageons des données avec des partenaires, ce sont des totaux anonymes, avec une taille de groupe minimale. Jamais vos prévisions individuelles." },
+        consents: { title: "Vous choisissez, une case à la fois", body: "Les conditions, l’usage anonyme des données et les courriels sont trois choix distincts. Aucune case n’est cochée d’avance, et vous pouvez changer d’idée plus tard." },
+        adults: { title: "Pour les adultes", body: "Consensa s’adresse aux personnes de 18 ans et plus. Nous demandons votre date de naissance une seule fois et ne gardons que la réponse oui ou non." },
+        noMoney: { title: "Rien ici ne vaut de l’argent", body: "Il n’y a aucun achat ni aucun prix. Votre bilan n’a aucune valeur monétaire et ne peut pas être transféré." },
+        languages: { title: "Le français et l’anglais, à égalité", body: "Ce résumé, la politique complète, nos conditions et notre soutien sont offerts dans les deux langues." },
+      },
+    },
+    terms: {
+      title: "Les conditions, en clair",
+      intro: "En bref : faites des prévisions honnêtes, restez respectueux et amusez-vous à voir où le Canada se situe.",
+      points: {
+        free: { title: "Gratuit", body: "Consensa est gratuit. Il n’y a rien à acheter, et aucune publicité ni fonction ne se place entre vous et une prévision." },
+        noValue: { title: "Aucune valeur monétaire", body: "Les scores, les séries et les bilans n’ont aucune valeur monétaire. Ils ne peuvent être ni échangés, ni transférés, ni convertis en quoi que ce soit." },
+        adults: { title: "18 ans et plus", body: "Il faut avoir 18 ans ou plus pour faire des prévisions." },
+        fair: { title: "Une personne, un compte", body: "Faites vos propres prévisions. Ne les automatisez pas et n’utilisez qu’un seul compte." },
+        respect: { title: "Des questions, pas des cibles", body: "Nous ne posons aucune question sur la vie privée, les crimes ou les tragédies. Les commentaires doivent rester respectueux." },
+        ai: { title: "L’IA explique, sans jamais conseiller", body: "Les notes « Pourquoi ça a bougé » sont rédigées par l’IA et révisées par un membre de l’équipe éditoriale. Elles décrivent ce qui a changé, jamais quoi prévoir." },
+        sources: { title: "Des sources officielles tranchent chaque question", body: "Chaque question nomme sa source. Si un résultat est contesté, nous l’examinons et publions la décision." },
+      },
+    },
   },
   legal: {
     noValue: "Gratuit. Aucune valeur monétaire. Aucun achat requis.",
@@ -263,7 +311,12 @@ const fr = {
     swatches: { ink: "Encre", ink2: "Ardoise", paper: "Papier", yes: "Sarcelle · oui", no: "Violet · non", accent: "Rouge Canada · accent seulement" },
     sampleLine: "Ce que le Canada prévoit.",
   },
-  notFound: { title: "Page introuvable", back: "Retour aux cinq du jour" },
+  notFound: {
+    title: "Page introuvable",
+    body: "Le lien est peut-être ancien, ou la question a changé de place. Tout se trouve encore dans le Tableau.",
+    back: "Retour aux cinq du jour",
+    board: "Parcourir le Tableau",
+  },
 } satisfies Dictionary;
 
 export default fr;

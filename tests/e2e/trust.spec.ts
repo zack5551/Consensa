@@ -30,5 +30,5 @@ test("the resolution log lists results, a pending question and a review", async 
   await page.goto("/en/resolutions");
   await expect(page.getByRole("listitem").filter({ hasText: "September's inflation" })).toContainText("Yes");
   await expect(page.getByRole("listitem").filter({ hasText: "unemployment rate" })).toContainText("Waiting");
-  await expect(page.getByText("Under review: the result isn't scored until the review ends.")).toBeVisible();
+  await expect(page.getByText("Under review: the result isn’t scored until the review ends.")).toBeVisible();
 });
