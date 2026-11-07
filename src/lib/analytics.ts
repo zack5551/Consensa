@@ -20,7 +20,7 @@ export type AcquisitionSource = (typeof acquisitionSources)[number];
 
 const locale = z.enum(["en", "fr"]);
 /** Every screen that sends view events. Add a screen here before it ships. */
-export const screens = ["landing", "today", "question", "board", "browse", "search", "record", "leaderboard", "provinces", "welcome", "signIn", "privacy", "terms", "design", "methodology", "resolutions"] as const;
+export const screens = ["landing", "today", "question", "board", "browse", "search", "record", "leaderboard", "provinces", "welcome", "signIn", "privacy", "terms", "design", "methodology", "resolutions", "region", "forecaster"] as const;
 export type Screen = (typeof screens)[number];
 const screen = z.enum(screens);
 
