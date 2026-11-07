@@ -25,8 +25,8 @@ describe("age gate", () => {
 
 describe("consents", () => {
   it("requires the terms and nothing else", () => {
-    expect(consentSchema.safeParse({ terms: true, dataLicensing: false, marketing: false }).success).toBe(true);
-    expect(consentSchema.safeParse({ terms: false, dataLicensing: true, marketing: true }).success).toBe(false);
+    expect(consentSchema.safeParse({ terms: true, dataLicensing: false, analytics: false, marketing: false }).success).toBe(true);
+    expect(consentSchema.safeParse({ terms: false, dataLicensing: true, analytics: true, marketing: true }).success).toBe(false);
   });
   it("validates a full profile", () => {
     const ok = profileSchema.safeParse({
@@ -35,7 +35,7 @@ describe("consents", () => {
       region: "QC",
       topics: ["economy"],
       email: "lea@example.ca",
-      consents: { terms: true, dataLicensing: false, marketing: false },
+      consents: { terms: true, dataLicensing: false, analytics: false, marketing: false },
     });
     expect(ok.success).toBe(true);
     expect(profileSchema.safeParse({ ...ok.data, email: "not-an-email" }).success).toBe(false);
