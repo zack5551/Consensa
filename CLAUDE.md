@@ -75,3 +75,5 @@ pnpm test:e2e     # Playwright (builds and serves the app)
 Add a rule to this file so it doesn't happen twice.
 - A stale `pnpm start` on port 3100 makes Playwright test the old build (Playwright reuses the server locally). Run `fuser -k 3100/tcp` before `pnpm test:e2e`.
 - Fonts come from `brand/fonts` through `next/font/local` (`src/styles/fonts.ts`). Never use `next/font/google`: its build-time fetch from Google failed CI at random.
+- **French words that trip the vocabulary test (2026-11-06, ORBIT).** `tests/unit/vocabulary.test.ts` blocks *mise(s)* and *cote(s)* everywhere, including innocent phrases. Write « Dernière révision » (not « mise à jour »), « logements commencés » (not « mises en chantier ») and « auditoires » (not « cotes d’écoute »). Don't weaken the test.
+- **No `loading.tsx` at the `[locale]` root (2026-11-06, ORBIT).** A root Suspense boundary streams every page, so `notFound()` returns 200 instead of 404. Put `loading.tsx` only in routes that stream data, and render `LoadingScreen` from `src/components/shell/loading-screen.tsx`.
