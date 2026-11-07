@@ -64,7 +64,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
         </a>
         <SiteHeader locale={locale} t={t} />
         <OfflineNotice message={t.status.offline} />
-        <ShellProvider value={{ locale, status: t.status, notFound: t.notFound }}>
+        <ShellProvider value={{ locale, status: t.status, notFound: t.notFound, methodology: t.methodology }}>
           <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1120px] flex-1 px-4 pb-12 pt-6 outline-none">
             {children}
           </main>

@@ -69,13 +69,13 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
         </header>
 
         <section id="crowd" aria-labelledby="crowd-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="crowd-h" className="m-0 text-title-sm font-bold">{m.crowd.title}</h2>
+          <h2 id="crowd-h" className="m-0 font-display text-title-sm font-bold">{m.crowd.title}</h2>
           <p className="m-0">{m.crowd.body}</p>
           <p className="m-0 rounded-control border-l-4 border-side-a bg-side-a-soft px-4 py-3 font-display font-bold">{m.crowd.onePerson}</p>
         </section>
 
         <section id="scoring" aria-labelledby="scoring-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="scoring-h" className="m-0 text-title-sm font-bold">{m.scoring.title}</h2>
+          <h2 id="scoring-h" className="m-0 font-display text-title-sm font-bold">{m.scoring.title}</h2>
           <p className="m-0">{m.scoring.body}</p>
           <div className="overflow-x-auto rounded-card border border-line bg-surface">
             <table className="w-full border-collapse text-left text-body-sm">
@@ -98,11 +98,24 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
               </tbody>
             </table>
           </div>
+          <div className="grid gap-2" role="img" aria-label={`${m.scoring.scaleTitle}: 0 ${m.scoring.scalePerfect}, ${locale === "fr" ? "0,25" : "0.25"} ${m.scoring.scaleFlip}, ${locale === "fr" ? "1,0" : "1.0"} ${m.scoring.scaleWrong}`}>
+            <p className="m-0 text-body-sm font-bold">{m.scoring.scaleTitle}</p>
+            <div className="relative mx-1.5 h-1.5 rounded-full bg-line">
+              <span className="absolute top-1/2 left-0 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" />
+              <span className="absolute top-1/2 left-1/4 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" />
+              <span className="absolute top-1/2 right-0 size-3.5 translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" />
+            </div>
+            <div className="relative mx-1.5 h-5 text-caption text-ink-2">
+              <span className="absolute left-0">0 · {m.scoring.scalePerfect}</span>
+              <span className="absolute left-1/4 -translate-x-1/2">{locale === "fr" ? "0,25" : "0.25"} · {m.scoring.scaleFlip}</span>
+              <span className="absolute right-0">{locale === "fr" ? "1,0" : "1.0"} · {m.scoring.scaleWrong}</span>
+            </div>
+          </div>
           <p className="m-0 text-body-sm text-ink-2">{m.scoring.polls}</p>
         </section>
 
         <section id="resolution" aria-labelledby="resolution-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="resolution-h" className="m-0 text-title-sm font-bold">{m.resolution.title}</h2>
+          <h2 id="resolution-h" className="m-0 font-display text-title-sm font-bold">{m.resolution.title}</h2>
           <p className="m-0">{m.resolution.body}</p>
           <p className="m-0">{m.resolution.disputes}</p>
           <Link href={`/${locale}/resolutions`} className="justify-self-start font-semibold text-link underline underline-offset-4">
@@ -111,12 +124,12 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
         </section>
 
         <section id="why" aria-labelledby="why-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="why-h" className="m-0 text-title-sm font-bold">{m.why.title}</h2>
+          <h2 id="why-h" className="m-0 font-display text-title-sm font-bold">{m.why.title}</h2>
           <p className="m-0">{m.why.body}</p>
         </section>
 
         <section id="record" aria-labelledby="record-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="record-h" className="m-0 text-title-sm font-bold">{m.record.title}</h2>
+          <h2 id="record-h" className="m-0 font-display text-title-sm font-bold">{m.record.title}</h2>
           <p className="m-0">{m.record.body}</p>
           <dl className="m-0 grid gap-3 sm:grid-cols-3">
             {(
@@ -126,9 +139,9 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
                 [m.record.rightSide, record.rightSide === null ? "—" : formatPercent(record.rightSide, locale)],
               ] as const
             ).map(([label, value]) => (
-              <div key={label} className="rounded-card border border-line bg-surface p-4">
+              <div key={label} className="border-t-2 border-ink bg-sunken px-4 py-3">
                 <dt className="text-caption text-ink-2">{label}</dt>
-                <dd className="m-0 font-display text-title font-bold tabular">{value}</dd>
+                <dd className="m-0 font-display text-headline font-bold tabular">{value}</dd>
               </div>
             ))}
           </dl>
@@ -136,13 +149,13 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
         </section>
 
         <section id="money" aria-labelledby="money-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="money-h" className="m-0 text-title-sm font-bold">{m.money.title}</h2>
+          <h2 id="money-h" className="m-0 font-display text-title-sm font-bold">{m.money.title}</h2>
           <p className="m-0">{m.money.body}</p>
           <p className="m-0 text-body-sm font-semibold">{t.legal.noValue}</p>
         </section>
 
         <section id="data" aria-labelledby="data-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="data-h" className="m-0 text-title-sm font-bold">{m.data.title}</h2>
+          <h2 id="data-h" className="m-0 font-display text-title-sm font-bold">{m.data.title}</h2>
           <p className="m-0">{m.data.body}</p>
         </section>
       </article>

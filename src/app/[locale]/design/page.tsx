@@ -30,8 +30,8 @@ const swatches = [
 ] as const;
 
 const typeScale = [
-  ["text-display", "48", "font-display"],
-  ["text-headline", "30", "font-display"],
+  ["text-display", "56", "font-display"],
+  ["text-headline", "32", "font-display"],
   ["text-title-sm", "20", "font-display"],
   ["text-body-lg", "18", "font-sans"],
   ["text-body", "16", "font-sans"],
@@ -59,7 +59,7 @@ export default async function DesignSystemPage({ params }: { params: Promise<{ l
     <div className="grid gap-12">
       <header className="grid gap-2">
         <Wordmark className="text-headline" />
-        <h1 className="m-0 text-headline font-extrabold tracking-tight">{t.design.title}</h1>
+        <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{t.design.title}</h1>
         <p className="m-0 max-w-[60ch] text-body text-ink-2">{t.design.intro}</p>
       </header>
 

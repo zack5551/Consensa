@@ -27,7 +27,7 @@ export function QuestionCard({ q, locale, t, states, state = "open", href, lead 
   const Title = "h3";
 
   return (
-    <article className={`relative grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card ${href ? "transition-shadow duration-[var(--cn-duration-fast)] hover:border-line-strong" : ""} ${lead ? "sm:p-6" : ""}`}>
+    <article className={`relative grid gap-3 rounded-card border border-line bg-surface p-4 shadow-card ${href ? "transition-shadow duration-[var(--cn-duration-fast)] hover:border-line-strong" : ""} ${lead ? "border-t-4 border-t-canada sm:p-6" : ""}`}>
       <div className="flex flex-wrap items-center justify-between gap-2 text-caption text-ink-2">
         <span className="flex flex-wrap items-center gap-2">
           <StateBadge state={state} label={states[state]} />
@@ -39,7 +39,7 @@ export function QuestionCard({ q, locale, t, states, state = "open", href, lead 
         </span>
         <span className={`rounded-full px-2 py-0.5 ${q.scored ? "bg-sunken" : "bg-side-b-soft text-side-b-text"}`}>{q.scored ? t.scored : t.poll}</span>
       </div>
-      <Title className={`m-0 font-bold leading-snug text-balance ${lead ? "text-title" : "text-title-sm"}`}>
+      <Title className={`m-0 font-display font-bold leading-snug text-balance ${lead ? "text-headline" : "text-title-sm"}`}>
         {href ? (
           <Link href={href} className="after:absolute after:inset-0 after:rounded-card hover:underline focus-visible:underline">
             {q.question[locale]}

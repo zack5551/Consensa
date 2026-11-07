@@ -17,13 +17,13 @@ export function AdSlot({ slot, locale, t }: Props) {
     <aside
       aria-label={t.label}
       data-ad-slot={slot}
-      className={`grid content-start gap-2 rounded-card border border-dashed border-line-strong bg-sunken p-4 ${rail ? "min-h-[600px] w-[300px]" : "min-h-[148px]"}`}
+      className={`grid content-start gap-1 border-y-2 border-ink px-4 py-5 ${rail ? "min-h-[600px] w-[300px]" : "min-h-[148px]"}`}
     >
       <p className="m-0 flex items-center justify-between text-caption font-semibold uppercase tracking-wide text-ink-2">
         <span>{t.label}</span>
         <span className="normal-case tracking-normal">{t.house}</span>
       </p>
-      <p className="m-0 font-display text-body font-bold">{t.houseTitle}</p>
+      <p className="m-0 font-display text-title-sm font-bold">{t.houseTitle}</p>
       <p className="m-0 text-body-sm text-ink-2">{t.houseBody}</p>
       <Link href={`/${locale}/methodology`} className="justify-self-start text-body-sm font-semibold text-link underline underline-offset-4">
         {t.houseCta}

@@ -358,7 +358,7 @@ const fr = {
   },
   why: {
     title: "Pourquoi ça a bougé",
-    byline: "Rédigé par l’IA, revu par notre équipe éditoriale",
+    byline: "Le regard de la rédaction sur ce mouvement",
     note: "Ceci explique ce qui a changé. Ce n’est pas un conseil sur ce qu’il faut prévoir.",
     sources: "Sources",
   },
@@ -379,6 +379,10 @@ const fr = {
       outcome: "Ce qui s’est passé",
       score: "Score",
       polls: "Les sondages ne sont pas évalués. Ils montrent ce que pense le Canada et ne comptent jamais dans un bilan.",
+      scaleTitle: "L’échelle de Brier",
+      scalePerfect: "Parfait",
+      scaleFlip: "Pile ou face",
+      scaleWrong: "Toujours faux",
     },
     resolution: {
       title: "Comment les questions sont résolues",
@@ -388,7 +392,7 @@ const fr = {
     },
     why: {
       title: "Comment on rédige « Pourquoi ça a bougé »",
-      body: "Quand la foule bouge beaucoup, l’IA rédige une courte note qui explique ce qui a changé et cite ses sources. Notre équipe éditoriale relit chaque note avant sa publication. Les notes ne disent jamais quoi prévoir.",
+      body: "Quand la foule bouge beaucoup, la rédaction écrit une courte note qui explique ce qui a changé et cite ses sources. L’IA aide à préparer le brouillon, et un membre de l’équipe éditoriale vérifie chaque mot avant la publication. Les notes ne disent jamais quoi prévoir.",
     },
     record: {
       title: "Le bilan de la foule",
@@ -604,12 +608,7 @@ const fr = {
     swatches: { ink: "Encre", ink2: "Ardoise", paper: "Papier", yes: "Sarcelle · oui", no: "Violet · non", accent: "Rouge Canada · accent seulement" },
     sampleLine: "Ce que le Canada prévoit.",
   },
-  notFound: {
-    title: "Page introuvable",
-    body: "Le lien est peut-être ancien, ou la question a changé de place. Tout se trouve encore dans le Tableau.",
-    back: "Retour aux cinq du jour",
-    board: "Parcourir le Tableau",
-  },
+  notFound: { title: "Cette page n’a pas eu lieu.", body: "Un lien mal tapé, une question déplacée ou une prévision ratée : cette page n’est pas ici. Tout le reste, oui.", back: "Retour aux cinq du jour", board: "Voir le Tableau" },
 } satisfies Dictionary;
 
 export default fr;

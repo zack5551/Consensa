@@ -17,7 +17,7 @@ for (const locale of ["en", "fr"] as const) {
   test(`unknown paths get a real 404 and the branded page in ${locale}`, async ({ page }) => {
     const response = await page.goto(`/${locale}/this-does-not-exist`);
     expect(response?.status()).toBe(404);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(locale === "en" ? "We couldn’t find that page" : "Page introuvable");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(locale === "en" ? "This page didn’t happen." : "Cette page n’a pas eu lieu.");
   });
 }
 

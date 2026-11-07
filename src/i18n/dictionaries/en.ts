@@ -356,7 +356,7 @@ const en = {
   },
   why: {
     title: "Why it moved",
-    byline: "Written by AI, reviewed by an editor",
+    byline: "The newsroom’s read on the move",
     note: "This explains what changed. It isn’t advice on how to call it.",
     sources: "Sources",
   },
@@ -377,6 +377,10 @@ const en = {
       outcome: "What happened",
       score: "Score",
       polls: "Polls aren’t scored. They show what Canada thinks and never count toward a record.",
+      scaleTitle: "The Brier scale",
+      scalePerfect: "Perfect",
+      scaleFlip: "Coin flip",
+      scaleWrong: "Always wrong",
     },
     resolution: {
       title: "How questions resolve",
@@ -386,7 +390,7 @@ const en = {
     },
     why: {
       title: "How “Why it moved” is written",
-      body: "When the crowd moves sharply, AI drafts a short note that says what changed and cites its sources. An editor reviews every note before anyone sees it. Notes never say what to call.",
+      body: "When the crowd moves sharply, the newsroom writes a short note that says what changed and cites its sources. AI helps with the draft; an editor checks every word before anyone sees it. Notes never say what to call.",
     },
     record: {
       title: "The crowd’s own record",
@@ -602,12 +606,7 @@ const en = {
     swatches: { ink: "Ink", ink2: "Slate", paper: "Paper", yes: "Teal · yes", no: "Violet · no", accent: "Canada red · accent only" },
     sampleLine: "What Canada thinks happens next.",
   },
-  notFound: {
-    title: "We couldn’t find that page",
-    body: "The link may be old, or the question may have moved. Everything is still on the Board.",
-    back: "Back to today’s five",
-    board: "Browse the Board",
-  },
+  notFound: { title: "This page didn’t happen.", body: "A mistyped link, a moved question, or a forecast that missed — this page isn’t here. Everything else is.", back: "Back to today’s five", board: "See the Board" },
 } as const;
 
 type Widen<T> = T extends string ? string : { [K in keyof T]: Widen<T[K]> };
