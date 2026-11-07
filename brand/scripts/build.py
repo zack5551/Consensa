@@ -52,8 +52,8 @@ fails = [c for c in checks if c[3] < c[4]]
 # ---------- type, space, etc ----------
 type_scale = {  # size px, line-height, tracking em
  'caption': (12, 16, 0.01), 'body-sm': (14, 20, 0), 'body': (16, 24, 0), 'body-lg': (18, 28, -0.005),
- 'title-sm': (20, 28, -0.01), 'title': (24, 32, -0.015), 'headline': (30, 38, -0.02), 'display-sm': (36, 44, -0.025),
- 'display': (48, 56, -0.03), 'display-lg': (64, 68, -0.035), 'stat': (72, 72, -0.04),
+ 'title-sm': (20, 28, -0.01), 'title': (24, 32, -0.015), 'headline': (32, 40, -0.02), 'display-sm': (36, 44, -0.025),
+ 'display': (56, 60, -0.03), 'display-lg': (64, 68, -0.035), 'stat': (72, 72, -0.04),
 }
 space = {str(k): f'{k*4}px' for k in [0,1,2,3,4,5,6,8,10,12,16,20,24,32]}
 space['0.5'] = '2px'
@@ -64,9 +64,13 @@ shadow_l = {'sm': '0 1px 2px rgba(20,33,61,.06), 0 1px 1px rgba(20,33,61,.04)',
 shadow_d = {'sm': '0 1px 2px rgba(0,0,0,.4)', 'md': '0 6px 16px -4px rgba(0,0,0,.5)', 'lg': '0 20px 48px -12px rgba(0,0,0,.6)'}
 motion = {'duration-fast': '120ms', 'duration-base': '200ms', 'duration-slow': '320ms', 'duration-reveal': '640ms',
           'ease-standard': 'cubic-bezier(.2,0,0,1)', 'ease-out': 'cubic-bezier(.16,1,.3,1)', 'ease-in': 'cubic-bezier(.4,0,1,1)'}
-font = {'display': "'Manrope', ui-sans-serif, system-ui, sans-serif",
+font = {'display': "Georgia, 'Times New Roman', 'Nimbus Roman', serif",
         'sans': "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
         'mono': "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"}
+# Display is a system serif (Georgia), not a hosted file: the GitHub connector cannot push binary
+# font files, so no new woff2 can land from this side. Georgia is Matthew Carter's screen serif —
+# editorial, readable, and already on every Mac, iPhone and Windows machine. When a hosted serif
+# (e.g. Newsreader) lands in brand/fonts, point 'display' at it here and regenerate the tokens.
 # data series for non-party, multi-option questions (party questions use official party colours instead)
 series_l = [P('teal',600), P('violet',600), P('amber',600), P('ink',600), P('teal',400), P('violet',400)]
 series_d = [P('teal',400), P('violet',400), P('amber',400), '#A9B1C2', P('teal',200), P('violet',200)]

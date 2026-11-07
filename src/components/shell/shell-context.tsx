@@ -13,6 +13,7 @@ export type ShellStrings = {
   locale: Locale;
   status: Dictionary["status"];
   notFound: Dictionary["notFound"];
+  methodology: Dictionary["methodology"];
 };
 
 const ShellContext = createContext<ShellStrings | null>(null);

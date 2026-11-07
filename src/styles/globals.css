@@ -49,7 +49,7 @@
   --radius-card: var(--cn-radius-xl);
   --radius-control: var(--cn-radius-md);
   --shadow-card: var(--cn-shadow-md);
-  --font-display: var(--font-manrope), var(--cn-font-display);
+  --font-display: var(--cn-font-display);
   --font-sans: var(--font-inter), var(--cn-font-sans);
 }
 
