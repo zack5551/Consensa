@@ -1,25 +1,12 @@
 import { isOpen, questionSchema, questionState, type Question } from "@/lib/question";
+import { moreSampleQuestions } from "./more-questions";
+import { series } from "./series";
 
 /**
  * The preview's fixed "now", so sample states (closing soon, closed, resolved) render the same on every build.
  * Live data replaces this with the real clock in M3.
  */
 export const SAMPLE_NOW = new Date("2026-11-06T12:00:00Z");
-
-/**
- * Sample questions until the database lands. Numbers are illustrative.
- * History is built from keyframes (day, percent) so the charts look like real crowds, deterministically.
- */
-function series(days: number, keyframes: ReadonlyArray<readonly [number, number]>): number[] {
-  return Array.from({ length: days }, (_, d) => {
-    const next = keyframes.findIndex(([day]) => day >= d);
-    const [d1, v1] = keyframes[Math.max(0, next)] ?? keyframes[keyframes.length - 1]!;
-    const [d0, v0] = keyframes[Math.max(0, next - 1)] ?? [d1, v1];
-    const t = d1 === d0 ? 1 : (d - d0) / (d1 - d0);
-    const wobble = Math.sin(d * 1.7) * 0.8 + Math.sin(d * 0.6) * 0.6;
-    return Math.round(Math.min(99, Math.max(1, v0 + (v1 - v0) * t + (d === days - 1 ? 0 : wobble))));
-  });
-}
 
 const raw = [
   {
@@ -292,6 +279,7 @@ const raw = [
       result: { outcome: "yes", publishedAt: "2026-10-14T16:00:00Z", disputed: true },
     },
   },
+  ...moreSampleQuestions,
 ] satisfies ReadonlyArray<unknown>;
 
 /** Validated at import so a bad sample fails the build, not the page. */
