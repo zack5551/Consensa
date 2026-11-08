@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const t = getDictionary(locale);
-  return { title: { absolute: t.meta.title }, alternates: { languages: { "en-CA": "/en", "fr-CA": "/fr" } } };
+  return { title: { absolute: t.meta.title }, alternates: { canonical: `/${locale}`, languages: { "en-CA": "/en", "fr-CA": "/fr" } } };
 }
 
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
