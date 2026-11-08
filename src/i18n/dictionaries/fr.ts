@@ -304,6 +304,10 @@ const fr = {
   chart: {
     title: "L’évolution de la prévision",
     summary: "Au cours des {days} derniers jours, la prévision du Canada est passée de {from} à {to}.",
+    swingUp: "Plus grand mouvement : hausse de {change} points en un jour.",
+    swingUpDays: "Plus grand mouvement : hausse de {change} points sur {days} jours.",
+    swingDown: "Plus grand mouvement : baisse de {change} points en un jour.",
+    swingDownDays: "Plus grand mouvement : baisse de {change} points sur {days} jours.",
     range: { week: "1 sem.", month: "1 mois", all: "Tout" },
   },
   province: {
