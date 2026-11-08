@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!isLocale(locale) || !q) return {};
   return {
     title: q.question[locale],
-    alternates: { languages: { "en-CA": `/en/q/${slug}`, "fr-CA": `/fr/q/${slug}` } },
+    alternates: { canonical: `/${locale}/q/${slug}`, languages: { "en-CA": `/en/q/${slug}`, "fr-CA": `/fr/q/${slug}` } },
   };
 }
 
