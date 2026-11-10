@@ -12,7 +12,7 @@ async function pull() {
     console.warn("live questions: CONSENSA_LIVE_QUESTIONS=1 but Supabase isn't set; showing samples only.");
     return [];
   }
-  const url = `${SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/engine_live_questions?select=question&order=updated_at.desc&limit=500`;
+  const url = `${SUPABASE_URL.replace(/\/+$/, "").replace(/\/rest\/v1$/, "")}/rest/v1/engine_live_questions?select=question&order=updated_at.desc&limit=500`;
   const res = await fetch(url, { headers: { apikey: SUPABASE_SECRET_KEY, authorization: `Bearer ${SUPABASE_SECRET_KEY}` } });
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
   const rows = await res.json();

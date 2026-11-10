@@ -36,7 +36,7 @@ describe("SupabaseStore", () => {
       if (!init?.method) return new Response(JSON.stringify([{ id: "q1", status: "approved", item: item() }]));
       return new Response("");
     };
-    const store = new SupabaseStore({ url: "https://x.supabase.co/", secretKey: "sb_secret_0123456789abcdef", fetch: fake, now: () => NOW });
+    const store = new SupabaseStore({ url: "https://x.supabase.co/rest/v1/", secretKey: "sb_secret_0123456789abcdef", fetch: fake, now: () => NOW });
     const [got] = await store.items();
     expect(got?.status).toBe("approved");
     expect(calls[0]?.url).toBe("https://x.supabase.co/rest/v1/engine_queue?select=id,status,item&order=created_at.asc&limit=5000");

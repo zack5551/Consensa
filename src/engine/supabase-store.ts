@@ -56,7 +56,7 @@ export class SupabaseStore implements EngineStore {
   private readonly now: () => Date;
 
   constructor(private readonly cfg: SupabaseConfig) {
-    this.base = `${cfg.url.replace(/\/+$/, "")}/rest/v1`;
+    this.base = `${cfg.url.replace(/\/+$/, "").replace(/\/rest\/v1$/, "")}/rest/v1`;
     this.fetchFn = cfg.fetch ?? fetch;
     this.editor = cfg.editor ?? "editor";
     this.now = cfg.now ?? (() => new Date());
