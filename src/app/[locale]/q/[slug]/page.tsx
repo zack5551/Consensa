@@ -179,21 +179,23 @@ export default async function QuestionPage({ params }: { params: Params }) {
           )}
         </div>
 
+        {/* Why it moved: an upright, readable note with its sources as footnotes, not chips. */}
         {q.why && (
-          <section aria-labelledby="why-title" className="grid gap-2 border-l-4 border-side-a pl-4">
+          <section aria-labelledby="why-title" className="grid gap-3 border-t-2 border-ink pt-5">
             <h2 id="why-title" className="m-0 font-display text-title-sm font-bold">
               {t.why.title}
             </h2>
-            <p className="m-0 text-caption uppercase tracking-wide text-ink-2">{t.why.byline}</p>
-            <p className="m-0 max-w-[65ch] font-display text-body-lg italic">{q.why.body[locale]}</p>
-            <p className="m-0 text-body-sm italic text-ink-2">{t.why.note}</p>
-            <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label={t.why.sources}>
-              {q.why.sources.map((s) => (
-                <li key={s.en} className="rounded-sm bg-sunken px-2 py-1 text-caption text-ink-2">
-                  {s[locale]}
-                </li>
-              ))}
-            </ul>
+            <p className="m-0 text-caption font-bold uppercase tracking-wide text-ink-2">{t.why.byline}</p>
+            <p className="m-0 max-w-[62ch] text-body-lg leading-relaxed text-ink">{q.why.body[locale]}</p>
+            <div className="grid gap-1 border-t border-line pt-3 text-caption text-ink-2">
+              <p className="m-0 font-bold">{t.why.sources}</p>
+              <ol className="m-0 grid list-decimal gap-0.5 pl-5">
+                {q.why.sources.map((s) => (
+                  <li key={s.en}>{s[locale]}</li>
+                ))}
+              </ol>
+              <p className="m-0 mt-1 italic">{t.why.note}</p>
+            </div>
           </section>
         )}
 
