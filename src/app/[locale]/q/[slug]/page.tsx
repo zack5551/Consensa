@@ -115,16 +115,22 @@ export default async function QuestionPage({ params }: { params: Params }) {
           </StateNote>
         </header>
 
-        <section aria-label={settled ? t.question.canadaSaid : t.question.canadaSays} className={`grid gap-3 rounded-card border border-line p-5 shadow-card ${settled ? "bg-sunken" : "bg-surface"}`}>
-          <p className="m-0 flex flex-wrap items-baseline gap-x-3">
-            <span className="text-body-sm font-bold text-canada">{settled ? t.question.canadaSaid : t.question.canadaSays}</span>
-            <span className="font-display text-display font-semibold tabular text-side-a-text">{pct(yes)}</span>
-            <span className="text-body text-ink-2">{t.question.chance}</span>
-            {result && (
-              <span className="ml-auto rounded-full bg-ink px-3 py-1 text-body-sm font-bold text-paper">
-                {fill(t.resolution.answerIs, { answer })}
-              </span>
-            )}
+        {/* The page's one strong move: a Canada-red rule over the crowd's number, open rather than carded. Settled questions sit on a sunken ground. */}
+        <section
+          aria-label={settled ? t.question.canadaSaid : t.question.canadaSays}
+          className={`grid gap-4 border-t-4 pt-5 ${settled ? "border-ink-3 bg-sunken px-5 pb-5" : "border-canada"}`}
+        >
+          <p className="m-0 grid gap-1">
+            <span className="text-caption font-bold uppercase tracking-wide text-canada">{settled ? t.question.canadaSaid : t.question.canadaSays}</span>
+            <span className="flex flex-wrap items-baseline gap-x-3">
+              <span className="font-display text-display-lg font-bold leading-none tabular text-side-a-text">{pct(yes)}</span>
+              <span className="text-body-lg text-ink-2">{t.question.chance}</span>
+              {result && (
+                <span className="ml-auto self-center rounded-full bg-ink px-3 py-1 text-body-sm font-bold text-paper">
+                  {fill(t.resolution.answerIs, { answer })}
+                </span>
+              )}
+            </span>
           </p>
           <CrowdBar yes={yes} yesLabel={`${t.question.yes} ${pct(yes)}`} noLabel={`${t.question.no} ${pct(100 - yes)}`} />
           <p className="m-0 inline-flex items-center gap-2 text-body-sm text-ink-2">
@@ -154,6 +160,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
               short={t.province.short}
               names={t.province.names}
               format={pct}
+              relative
             />
           </section>
           {q.languages && (
