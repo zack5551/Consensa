@@ -29,7 +29,7 @@ jobs:
 
   e2e:
     name: Playwright + axe (EN/FR, phone + desktop)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Playwright 1.56 cannot install Chromium on ubuntu-latest (26.04)
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
