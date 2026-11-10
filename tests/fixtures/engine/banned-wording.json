@@ -1,0 +1,22 @@
+{
+  "$comment": "Drafts the safety screen must block. Wording is deliberately bad. Lives outside src so the vocabulary test, which scans src, keeps passing.",
+  "en": [
+    "What are the odds the Bank of Canada cuts in December?",
+    "Place your bet: will the Leafs make the playoffs?",
+    "Lock in your call before the jobs report!",
+    "Will the Oilers cover the point spread on Saturday?",
+    "Should you buy a home before the Bank of Canada cuts?",
+    "Will the jackpot roll over again this week?",
+    "Cash out early if snow passes 10 cm?",
+    "Will the payout on the Giller favourite be worth it?",
+    "Is a GIC a good investment before the rate decision?"
+  ],
+  "fr": [
+    "Quelle est la cote des Canadiens ce soir?",
+    "Faites vos paris : la Banque du Canada baissera-t-elle son taux?",
+    "Votre mise sur le chômage de novembre?",
+    "Le gros lot sera-t-il remporté au Québec cette semaine?",
+    "Faut-il acheter une maison avant la baisse des taux?",
+    "Quels gains si la neige dépasse 10 cm?"
+  ]
+}
