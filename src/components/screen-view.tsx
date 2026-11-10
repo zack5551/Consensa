@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 import type { Locale } from "@/i18n/config";
-import { sourceFromReferrer, track } from "@/lib/analytics";
+import { sourceFromReferrer, track, type Screen } from "@/lib/analytics";
 
-type Props = { locale: Locale; screen: "today" | "question" | "board" | "record" | "design" | "methodology" | "resolutions"; slug?: string; state?: string };
+type Props = { locale: Locale; screen: Screen; slug?: string; state?: string };
 
 const FIRST_OPEN = "consensa:first-open";
 const LAST_OPEN = "consensa:last-open";

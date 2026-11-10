@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!isLocale(locale) || !q) return {};
   return {
     title: q.question[locale],
-    alternates: { languages: { "en-CA": `/en/q/${slug}`, "fr-CA": `/fr/q/${slug}` } },
+    alternates: { canonical: `/${locale}/q/${slug}`, languages: { "en-CA": `/en/q/${slug}`, "fr-CA": `/fr/q/${slug}` } },
   };
 }
 
@@ -100,13 +100,13 @@ export default async function QuestionPage({ params }: { params: Params }) {
               </>
             )}
           </div>
-          <h1 className="m-0 text-headline font-extrabold leading-tight tracking-tight text-balance">{q.question[locale]}</h1>
+          <h1 className="m-0 font-display text-headline font-extrabold leading-tight tracking-tight text-balance">{q.question[locale]}</h1>
           <StateNote state={state} title={t.states[state]}>
             {note}
           </StateNote>
         </header>
 
-        <section aria-label={settled ? t.question.canadaSaid : t.question.canadaSays} className="grid gap-3 rounded-card border border-line bg-surface p-5 shadow-card">
+        <section aria-label={settled ? t.question.canadaSaid : t.question.canadaSays} className={`grid gap-3 rounded-card border border-line p-5 shadow-card ${settled ? "bg-sunken" : "bg-surface"}`}>
           <p className="m-0 flex flex-wrap items-baseline gap-x-3">
             <span className="text-body-sm font-bold text-canada">{settled ? t.question.canadaSaid : t.question.canadaSays}</span>
             <span className="font-display text-display font-semibold tabular text-side-a-text">{pct(yes)}</span>
@@ -126,7 +126,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
         <div className="lg:hidden">{panel}</div>
 
-        <section className="rounded-card border border-line bg-surface p-5">
+        <section className="border-t border-line pt-5">
           <ForecastChart
             history={q.history}
             events={q.events.map((e) => ({ dayIndex: e.dayIndex, label: e.label[locale] }))}
@@ -164,11 +164,11 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
         {q.why && (
           <section aria-labelledby="why-title" className="grid gap-2 border-l-4 border-side-a pl-4">
-            <h2 id="why-title" className="m-0 text-title-sm font-bold">
+            <h2 id="why-title" className="m-0 font-display text-title-sm font-bold">
               {t.why.title}
             </h2>
             <p className="m-0 text-caption uppercase tracking-wide text-ink-2">{t.why.byline}</p>
-            <p className="m-0 max-w-[65ch] text-body">{q.why.body[locale]}</p>
+            <p className="m-0 max-w-[65ch] font-display text-body-lg italic">{q.why.body[locale]}</p>
             <p className="m-0 text-body-sm italic text-ink-2">{t.why.note}</p>
             <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label={t.why.sources}>
               {q.why.sources.map((s) => (
@@ -180,8 +180,8 @@ export default async function QuestionPage({ params }: { params: Params }) {
           </section>
         )}
 
-        <section aria-labelledby="res-title" className="grid gap-3 rounded-card border border-line bg-sunken p-5">
-          <h2 id="res-title" className="m-0 text-title-sm font-bold">
+        <section aria-labelledby="res-title" className="grid gap-3 border-t-2 border-ink pt-5">
+          <h2 id="res-title" className="m-0 font-display text-title-sm font-bold">
             {t.resolution.title}
           </h2>
           <p className="m-0 max-w-[65ch] text-body">{q.resolution.rule[locale]}</p>

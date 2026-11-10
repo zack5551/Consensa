@@ -46,17 +46,17 @@ export default async function ResolutionsPage({ params }: { params: Promise<{ lo
         </p>
       </header>
 
-      <ol className="m-0 grid list-none gap-3 p-0">
+      <ol className="m-0 grid list-none p-0">
         {rows.map(({ q, state }) => {
           const r = q.resolution.result;
           const brier = crowdBrier(q);
           return (
-            <li key={q.slug} className="grid gap-3 rounded-card border border-line bg-surface p-4 sm:p-5">
+            <li key={q.slug} className="grid gap-3 border-b border-line py-5 first:border-t">
               <div className="flex flex-wrap items-center gap-2 text-caption text-ink-2">
                 <StateBadge state={state} label={t.states[state]} />
                 <span>{formatLongDate(r?.publishedAt ?? q.resolution.resolvesAt, locale)}</span>
               </div>
-              <h2 className="m-0 text-title-sm font-bold leading-snug text-balance">
+              <h2 className="m-0 font-display text-title-sm font-bold leading-snug text-balance">
                 <Link href={`/${locale}/q/${q.slug}`} className="hover:underline">
                   {q.question[locale]}
                 </Link>

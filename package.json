@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "perf:budget": "node scripts/check-performance-budget.mjs",
     "check": "pnpm typecheck && pnpm lint && pnpm test"
   },
   "dependencies": {

@@ -60,7 +60,8 @@ describe("crowd record", () => {
     expect(crowdBrier(getQuestion("box-office-oct-2026")!)).toBeNull();
     expect(crowdBrier(getQuestion("boc-cut-dec-2026")!)).toBeNull();
     const record = crowdRecord(sampleQuestions);
-    expect(record.resolved).toBe(3);
+    // cpi-sept, boc-hold-oct, mtl-snow, plus boc-cut-oct from the extra questions.
+    expect(record.resolved).toBe(4);
     expect(record.rightSide).toBe(100);
   });
 });

@@ -36,8 +36,12 @@
   --text-title--line-height: var(--cn-leading-title);
   --text-headline: var(--cn-text-headline);
   --text-headline--line-height: var(--cn-leading-headline);
+  --text-display-sm: var(--cn-text-display-sm);
+  --text-display-sm--line-height: var(--cn-leading-display-sm);
   --text-display: var(--cn-text-display);
   --text-display--line-height: var(--cn-leading-display);
+  --text-display-lg: var(--cn-text-display-lg);
+  --text-display-lg--line-height: var(--cn-leading-display-lg);
   --text-stat: var(--cn-text-stat);
   --text-stat--line-height: var(--cn-leading-stat);
 
@@ -45,7 +49,7 @@
   --radius-card: var(--cn-radius-xl);
   --radius-control: var(--cn-radius-md);
   --shadow-card: var(--cn-shadow-md);
-  --font-display: var(--font-manrope), var(--cn-font-display);
+  --font-display: var(--cn-font-display);
   --font-sans: var(--font-inter), var(--cn-font-sans);
 }
 
