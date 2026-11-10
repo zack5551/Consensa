@@ -32,7 +32,7 @@ for (const locale of ["en", "fr"] as const) {
 test("my record leads with skill against Canada, in both languages", async ({ page }) => {
   await page.goto("/en/record");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("My record");
-  await expect(page.locator("#record-headline")).toHaveText(/sharper than Canada/);
+  await expect(page.locator("#record-headline")).toHaveText(/more accurate than Canada/);
   await expect(page.getByRole("heading", { name: "Called it!" })).toBeVisible();
   await page.goto("/fr/record");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mon bilan");
