@@ -1,6 +1,6 @@
 # Consensa build plan
 
-Owner: FORGE (product). Status: **foundations only.** Product screens wait for zack's go.
+Owner: FORGE (product). Status: **M0 foundations and M1 screens shipped.** M2–M6 in progress.
 
 ## Where we're going
 
@@ -19,7 +19,7 @@ A full Consensa app, built in Claude Code, live and real. It's a free, no-stakes
 | The 4-screen clickable prototype (v1) | `docs/design/prototype-v1.html` (live: https://claude.ai/artifact/14VJBF6KNs5wCQQ2CGX7Ys) | FORGE |
 | Research brief with ad placements | `docs/design/sean-brief-with-ads.html` | FORGE |
 | "Better than Polymarket and Kalshi" | https://claude.ai/artifact/QxMMXm6rGJvPnZa9fDXmQc (summary below) | FORGE |
-| Live design system page | `/en` and `/fr` in this app until product screens land | FORGE |
+| Live design system page | `/en/design` and `/fr/design` — the component reference now that the product screens are live | FORGE |
 
 ## Quality bars
 
@@ -63,7 +63,7 @@ The prototype's four screens and its EN/FR toggle carry straight into the build.
 2. **Make your call:** a probability slider with quick-set buttons, a comparison with "Canada says", and a saved state. *Component: `CallPanel`.*
 3. **Why it moved:** the chart with event markers, the AI explainer (written by AI, reviewed by an editor) and source chips. *Component: `ForecastChart`.*
 4. **My record:** Brier score vs. the crowd, a calibration chart, a "Called it! / Vu juste!" moment, and leaderboards (province, Canada, friends).
-5. **Question page** (from the "better" doc): all of the above on one page, plus the resolution card and the no-value label. A first draft is held back until the build starts.
+5. **Question page** (from the "better" doc): all of the above on one page, plus the resolution card and the no-value label.
 
 Ad slots follow `docs/design/sean-brief-with-ads.html`: rails on desktop, one native card plus a sticky banner on phones, always labelled, never on a question or its result, and no gambling or crypto advertisers.
 
@@ -71,22 +71,22 @@ Ad slots follow `docs/design/sean-brief-with-ads.html`: rails on desktop, one na
 
 | | What ships | Done when |
 |---|---|---|
-| **M0 Foundations** (this PR) | CLAUDE.md + LEX guardrails, PRISM brand kit wired in, skills, Next.js + strict TS, EN/FR routing and toggle, design-system components and page, unit tests + Playwright/axe, CI | CI green; the design page passes axe in EN and FR |
-| **M1 Screens on sample data** | Today's five, the question page, make-a-call, why-it-moved, the record screen. All states designed | The definition of done in CLAUDE.md, for every screen |
+| **M0 Foundations** — done | CLAUDE.md + LEX guardrails, PRISM brand kit wired in, skills, Next.js + strict TS, EN/FR routing and toggle, design-system components and page, unit tests + Playwright/axe, CI | CI green; the design page passes axe in EN and FR |
+| **M1 Screens on sample data** — done | Today's five, the question page, make-a-call, why-it-moved, the record screen. All states designed | The definition of done in CLAUDE.md, for every screen |
 | **M2 Accounts + data** | Supabase (ca-central-1): schema, row-level security, auth, 18+ gate, three separate consents, stored calls, no-transfer constraints at the DB level | RLS tests pass; the privacy flow is reviewed by LEX |
 | **M3 Resolution + scoring + realtime** | Auto-resolution from official sources for about 27 templates, a review queue, Brier/calibration jobs, a live crowd %, the public resolution log | Scoring matches the unit-tested library; load test at 50k concurrent |
 | **M4 AI "why it moved"** | Swing detection, an AI draft in EN/FR with sources, an editor approval queue | No unreviewed AI text reaches users; never a tip |
 | **M5 Growth + measurement** | Self-hosted PostHog (Montreal), Sentry (personal info scrubbed), the media embed widget, the ad slots with category blocklists | Funnel (open → call → return) visible; ads pass LEX's list |
 | **M6 Launch readiness** | Privacy impact assessment, lawyer review, Quebec copywriter pass, methodology page, performance and accessibility audit | All "stop and ask LEX" items cleared |
 
+Already shipped toward M6: the methodology page is live, and sitemap, robots.txt and canonical URLs landed (PR #26).
+
 ## Waiting on zack
 
-- **The go-ahead to build screens (M1).** Until then, only foundation work lands.
 - **A Supabase project in ca-central-1** for M2.
-- **Repo visibility:** the repo is currently public. Make it private unless open-sourcing is intended.
+- **Repo visibility:** the repo is public — Zack's decision (Nov 7). Do not re-ask about making it private.
 
 ## Open items between agents
 
-- PRISM's `brand/copy` uses `question.lockedIn` ("Your call is in.") and `errors.closed` ("calls are locked"). "Lock" is on the banned list, so suggest "Call saved." and "This question has closed."
 - `legal.noMoney` (PRISM) and LEX's no-value label differ. CLAUDE.md uses LEX's wording on question screens, and PRISM's line can sit in the footer.
-- The app's strings live in `src/i18n/dictionaries/*.ts` for now. When the M1 screens start, move to ICU messages that start from `brand/copy/*.json`, so there's a single copy source.
+- The app's strings live in `src/i18n/dictionaries/*.ts`. Moving to ICU messages that start from `brand/copy/*.json` is deferred — the dictionaries are the single copy source for now.
