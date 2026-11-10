@@ -26,6 +26,21 @@ test("every question screen shows the no-value label", async ({ page }) => {
   }
 });
 
+test("a question with a big move names the biggest move in the chart summary", async ({ page }) => {
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await expect(page.getByRole("img", { name: /Biggest move: down 14 points over 5 days/ })).toBeVisible();
+});
+
+test("a question with a big move names it in French too", async ({ page }) => {
+  await page.goto("/fr/q/boc-cut-dec-2026");
+  await expect(page.getByRole("img", { name: /Plus grand mouvement\s*:\s*baisse de 14\s+points sur 5\s+jours/ })).toBeVisible();
+});
+
+test("a question with only small moves names no biggest move", async ({ page }) => {
+  await page.goto("/en/q/home-prices-nov-2026");
+  await expect(page.getByRole("img", { name: /Biggest move/ })).toHaveCount(0);
+});
+
 test("a closing-soon question says when it closes", async ({ page }) => {
   await page.goto("/en/q/giller-debut-2026");
   await expect(page.getByText(/This question closes November 8, 2026/)).toBeVisible();

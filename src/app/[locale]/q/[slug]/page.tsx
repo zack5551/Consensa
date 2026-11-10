@@ -19,6 +19,7 @@ import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
 import { crowdNow, provinceExtremes, questionState } from "@/lib/question";
+import { largestSwing } from "@/lib/swing";
 import { fill } from "@/lib/text";
 
 type Params = Promise<{ locale: string; slug: string }>;
@@ -49,6 +50,14 @@ export default async function QuestionPage({ params }: { params: Params }) {
   const yes = crowdNow(q);
   const pct = (v: number) => formatPercent(v, locale);
   const first = q.history[0] ?? yes;
+  const swing = largestSwing(q.history);
+  let chartSummary = fill(t.chart.summary, { days: q.history.length, from: pct(first), to: pct(yes) });
+  if (swing !== null) {
+    const days = swing.endIndex - swing.startIndex;
+    const template =
+      swing.change > 0 ? (days === 1 ? t.chart.swingUp : t.chart.swingUpDays) : days === 1 ? t.chart.swingDown : t.chart.swingDownDays;
+    chartSummary += ` ${fill(template, { change: Math.abs(swing.change), days })}`;
+  }
   const { high, low } = provinceExtremes(q.provinces);
   const result = q.resolution.result;
   const answer = result ? (result.outcome === "yes" ? t.question.yes : t.question.no) : "";
@@ -132,7 +141,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
             events={q.events.map((e) => ({ dayIndex: e.dayIndex, label: e.label[locale] }))}
             title={t.chart.title}
             format={pct}
-            summary={fill(t.chart.summary, { days: q.history.length, from: pct(first), to: pct(yes) })}
+            summary={chartSummary}
           />
         </section>
 

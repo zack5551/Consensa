@@ -302,6 +302,10 @@ const en = {
   chart: {
     title: "How the forecast moved",
     summary: "Over the last {days} days, Canada’s forecast went from {from} to {to}.",
+    swingUp: "Biggest move: up {change} points in a day.",
+    swingUpDays: "Biggest move: up {change} points over {days} days.",
+    swingDown: "Biggest move: down {change} points in a day.",
+    swingDownDays: "Biggest move: down {change} points over {days} days.",
     range: { week: "1W", month: "1M", all: "All" },
   },
   province: {
