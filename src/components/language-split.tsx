@@ -8,7 +8,7 @@ export function LanguageSplit({ en, fr, title, enLabel, frLabel, summary, format
   ] as const;
   return (
     <figure className="m-0">
-      <figcaption className="mb-3 text-body-sm font-bold">{title}</figcaption>
+      <figcaption className="mb-3 text-caption font-bold text-canada">{title}</figcaption>
       <ul className="m-0 grid list-none gap-3 p-0" aria-label={summary}>
         {rows.map(([key, label, value]) => (
           <li key={key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">

@@ -151,8 +151,9 @@ export default async function QuestionPage({ params }: { params: Params }) {
           />
         </section>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <section className="rounded-card border border-line bg-surface p-5">
+        {/* The crowd, split two ways: ruled columns, not cards. */}
+        <div className="grid gap-8 md:grid-cols-2">
+          <section className="border-t-2 border-ink pt-4">
             <ProvinceSplit
               values={q.provinces}
               title={t.province.title}
@@ -164,7 +165,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
             />
           </section>
           {q.languages && (
-            <section className="rounded-card border border-line bg-surface p-5">
+            <section className="border-t-2 border-ink pt-4">
               <LanguageSplit
                 en={q.languages.en}
                 fr={q.languages.fr}
