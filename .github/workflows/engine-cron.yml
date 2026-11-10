@@ -1,0 +1,36 @@
+name: PULSE cycle
+
+# Runs the question engine every 15 minutes by calling the site's cycle endpoint. Free on a public repo.
+# Needs two repository secrets (Settings → Secrets and variables → Actions):
+#   ENGINE_URL          the site's address, e.g. https://consensa.vercel.app
+#   ENGINE_CRON_SECRET  the same value as ENGINE_CRON_SECRET in Vercel
+# Until both exist, every run skips quietly.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: pulse-cycle
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Run one cycle
+        env:
+          ENGINE_URL: ${{ secrets.ENGINE_URL }}
+          ENGINE_CRON_SECRET: ${{ secrets.ENGINE_CRON_SECRET }}
+        run: |
+          if [ -z "$ENGINE_URL" ] || [ -z "$ENGINE_CRON_SECRET" ]; then
+            echo "ENGINE_URL or ENGINE_CRON_SECRET isn't set yet; skipping."
+            exit 0
+          fi
+          status=$(curl -sS -o report.json -w '%{http_code}' --max-time 330 -X POST \
+            -H "Authorization: Bearer $ENGINE_CRON_SECRET" "${ENGINE_URL%/}/api/engine/cycle")
+          echo "HTTP $status"
+          head -c 4000 report.json; echo
+          [ "$status" = "200" ]

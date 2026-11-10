@@ -59,7 +59,11 @@ No key is needed for Google Trends, StatCan, the Bank of Canada or ECCC: they ar
 
 **Cost.** A draft is about 2–3k input tokens (the system prompt is cached) and 1–2k output, so roughly 4–6 US cents on Opus 5.5. The cycle caps drafts at 6 per run and never redrafts a story, so a normal day is a few dozen drafts, about $1–3. `ENGINE_MAX_DRAFTS` lowers the cap.
 
-## Proposed tables (for FORGE's M2 schema)
+## Tables
+
+Live in `supabase/migrations/20261110000000_engine.sql` (the sketch below is the original proposal). Setup steps: `docs/engine/GOING-LIVE.md`.
+
+### Original proposal
 
 All in Supabase ca-central-1, RLS on every table, readable only by the `editor` role except the public log. No table touches points or users.
 

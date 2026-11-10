@@ -1,4 +1,5 @@
 import { isOpen, questionSchema, questionState, type Question } from "@/lib/question";
+import liveQuestions from "./live-questions.json";
 import { moreSampleQuestions } from "./more-questions";
 import { series } from "./series";
 
@@ -282,8 +283,17 @@ const raw = [
   ...moreSampleQuestions,
 ] satisfies ReadonlyArray<unknown>;
 
-/** Validated at import so a bad sample fails the build, not the page. */
-export const sampleQuestions: readonly Question[] = raw.map((q) => questionSchema.parse(q));
+/**
+ * Validated at import so a bad sample fails the build, not the page. Live questions from the engine (written by
+ * scripts/pull-live-questions.mjs at build time, empty unless CONSENSA_LIVE_QUESTIONS=1) come first; a live
+ * question that's invalid or reuses a sample's slug is skipped rather than failing the build.
+ */
+const samples: Question[] = raw.map((q) => questionSchema.parse(q));
+const live: Question[] = (liveQuestions as unknown[]).flatMap((q) => {
+  const parsed = questionSchema.safeParse(q);
+  return parsed.success && !samples.some((s) => s.slug === parsed.data.slug) ? [parsed.data] : [];
+});
+export const sampleQuestions: readonly Question[] = [...live, ...samples];
 
 export function getQuestion(slug: string): Question | undefined {
   return sampleQuestions.find((q) => q.slug === slug);
