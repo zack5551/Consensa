@@ -1,11 +1,12 @@
 /**
- * Where the engine keeps its state. `MemoryStore` serves tests and previews; a Supabase store (ca-central-1, RLS on
- * every table) implements the same interface in M2. The proposed tables are in docs/engine/README.md.
+ * Where the engine keeps its state. `MemoryStore` serves tests and previews; `SupabaseStore` (ca-central-1, RLS on every
+ * table) implements the same interface in production. Tables: supabase/migrations/20261110000000_engine.sql.
  *
  * Append-only by design: there is no delete method. Rejected drafts and old reads stay for the audit trail.
  */
 import type { Comparable } from "@/engine/dedup";
 import type { QueueItem, ResolutionRecord, Signal } from "@/engine/types";
+import type { Question } from "@/lib/question";
 
 export interface EngineStore {
   /** Saves signals not seen before; returns how many were new. */
@@ -25,6 +26,9 @@ export interface EngineStore {
 
   putResolution(record: ResolutionRecord): Promise<void>;
   getResolution(slug: string): Promise<ResolutionRecord | undefined>;
+
+  /** A published question in the site's shape, for the build to read. Overwrites the same slug. */
+  putLiveQuestion(question: Question): Promise<void>;
 }
 
 export class MemoryStore implements EngineStore {
@@ -32,6 +36,7 @@ export class MemoryStore implements EngineStore {
   private drafted = new Map<string, { outcome: string; at: string }>();
   private queue = new Map<string, QueueItem>();
   private resolutions = new Map<string, ResolutionRecord>();
+  readonly liveQuestions = new Map<string, Question>();
 
   /** `live` are questions already on the site (e.g. the sample slate). */
   constructor(private readonly live: readonly Comparable[] = []) {}
@@ -83,5 +88,9 @@ export class MemoryStore implements EngineStore {
 
   async getResolution(slug: string): Promise<ResolutionRecord | undefined> {
     return this.resolutions.get(slug);
+  }
+
+  async putLiveQuestion(question: Question): Promise<void> {
+    this.liveQuestions.set(question.slug, question);
   }
 }
