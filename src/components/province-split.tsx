@@ -20,23 +20,28 @@ type Props = {
   short: Record<Province, string>;
   names: Record<Province, string>;
   format: (v: number) => string;
+  /** Shade tiles across this question's own range, so close values still read apart. */
+  relative?: boolean;
 };
 
-export function ProvinceSplit({ values, title, summary, short, names, format }: Props) {
+export function ProvinceSplit({ values, title, summary, short, names, format, relative = false }: Props) {
+  const all = provinces.map((p) => values[p]);
+  const min = Math.min(...all);
+  const span = Math.max(...all) - min || 1;
   return (
     <figure className="m-0">
       <figcaption className="mb-2 text-caption font-bold text-canada">{title}</figcaption>
       <ul className="grid grid-cols-4 gap-2" aria-label={summary}>
         {provinces.map((p) => {
           const value = values[p];
-          const shade = 4 + (value / 100) * 20;
+          const shade = relative ? 6 + ((value - min) / span) * 34 : 4 + (value / 100) * 20;
           return (
             <li
               key={p}
               className={`grid gap-0.5 rounded-card border border-line px-2 py-2.5 ${placement[p]}`}
               style={{ background: `color-mix(in srgb, var(--cn-side-a) ${shade}%, var(--cn-surface))` }}
             >
-              <abbr title={names[p]} className="text-caption font-semibold text-ink-2 no-underline">
+              <abbr title={names[p]} className={`text-caption font-semibold no-underline ${relative ? "text-ink" : "text-ink-2"}`}>
                 {short[p]}
               </abbr>
               <span className="font-display text-title-sm font-bold tabular text-ink">{format(value)}</span>
