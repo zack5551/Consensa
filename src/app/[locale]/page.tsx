@@ -8,14 +8,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CrowdBar } from "@/components/crowd-bar";
 import { ProvinceSplit } from "@/components/province-split";
-import { QuestionCard } from "@/components/question-card";
 import { ScreenView } from "@/components/screen-view";
 import { Icon } from "@/components/shell/icons";
 import { localeHref } from "@/components/shell/nav-items";
 import { SAMPLE_NOW, sampleQuestions, todaysFive } from "@/content/sample-questions";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { formatCount, formatPercent } from "@/lib/format";
+import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
 import { categories, crowdNow, isOpen, provinceExtremes, provinces, questionState } from "@/lib/question";
 import { fill } from "@/lib/text";
 
@@ -50,56 +49,62 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
     [formatCount(2, locale), l.stats.languages],
   ] as const;
 
+  const kicker = "m-0 text-caption font-bold uppercase tracking-widest";
+  const sectionTitle = "m-0 font-display text-headline font-bold tracking-tight text-balance";
+
   return (
     <div className="grid gap-16 sm:gap-24">
       <ScreenView locale={locale} screen="landing" />
 
-      {/* Hero: the promise on the left, the proof (a live question) on the right. */}
-      <section aria-labelledby="hero-title" className="grid items-center gap-10 pt-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16 lg:pt-8">
-        <div className="grid gap-5">
-          <p className="m-0 inline-flex w-fit items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-caption font-semibold text-ink-2">
-            <span className="size-1.5 rounded-full bg-canada" aria-hidden="true" />
+      {/* Hero: the promise on the left, the proof (the day's lead question) on the right. */}
+      <section aria-labelledby="hero-title" className="grid items-start gap-10 pt-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16 lg:pt-10">
+        <div className="grid gap-6 lg:pt-6">
+          <p className={`${kicker} flex items-center gap-2 text-ink-2`}>
+            <span className="size-1.5 shrink-0 rounded-full bg-canada" aria-hidden="true" />
             {l.eyebrow}
           </p>
-          <h1 id="hero-title" className="m-0 font-display text-display-sm font-extrabold tracking-tight text-balance sm:text-display lg:text-display-lg">
+          <h1 id="hero-title" className="m-0 font-display text-display-sm font-bold tracking-tight text-balance sm:text-display">
             {l.title}
           </h1>
-          <p className="m-0 max-w-[52ch] text-body-lg text-ink-2">{l.lede}</p>
-          <div className="flex flex-wrap gap-3 pt-1">
+          <p className="m-0 max-w-[46ch] text-body-lg text-ink-2">{l.lede}</p>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-1">
             <Link href={href("/today")} className="inline-flex items-center gap-2 rounded-control bg-ink px-5 py-3 text-body font-bold text-paper transition-opacity duration-[var(--cn-duration-fast)] hover:opacity-90">
               {l.primary}
               <Icon name="arrow" className="size-4" />
             </Link>
-            <Link href={href("/board")} className="inline-flex items-center rounded-control border border-line bg-surface px-5 py-3 text-body font-semibold text-ink transition-colors duration-[var(--cn-duration-fast)] hover:bg-sunken">
+            <Link href={href("/board")} className="py-3 text-body font-semibold text-ink underline decoration-line-strong underline-offset-8 transition-colors duration-[var(--cn-duration-fast)] hover:decoration-ink">
               {l.secondary}
             </Link>
           </div>
-          <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
+          <p className="m-0 border-t border-line pt-4 text-caption text-ink-2">{t.legal.noValue}</p>
         </div>
 
-        <article aria-labelledby="showcase-q" className="relative grid gap-5 rounded-card border border-line bg-surface p-5 shadow-card sm:p-6">
-          <p className="m-0 flex items-center gap-2 text-caption font-bold uppercase tracking-wide text-canada">
-            <span className="relative flex size-2" aria-hidden="true">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-canada opacity-60 motion-reduce:animate-none" />
-              <span className="relative inline-flex size-2 rounded-full bg-canada" />
+        {/* The lead: one strong move (red top rule, serif question), no shadow. */}
+        <article aria-labelledby="showcase-q" className="relative grid gap-6 rounded-card border border-line border-t-4 border-t-canada bg-surface p-5 sm:p-8">
+          <p className={`${kicker} flex flex-wrap items-center justify-between gap-x-4 gap-y-1`}>
+            <span className="text-canada">{l.showcaseLabel}</span>
+            <span className="font-semibold text-ink-2 tabular">
+              {t.question.closes} {formatShortDate(lead.closesAt, locale)}
             </span>
-            {l.showcaseLabel}
           </p>
-          <h2 id="showcase-q" className="m-0 text-title font-bold leading-snug text-balance">
+          <h2 id="showcase-q" className="m-0 font-display text-title font-bold text-balance sm:text-headline">
             <Link href={href(`/q/${lead.slug}`)} className="after:absolute after:inset-0 after:rounded-card hover:underline focus-visible:underline">
               {lead.question[locale]}
             </Link>
           </h2>
-          <div className="grid gap-1">
-            <p className="m-0 text-caption font-bold text-canada">{t.question.canadaSays}</p>
-            <p className="m-0 flex items-baseline gap-2">
-              <span className="font-display text-stat font-extrabold tabular text-side-a-text">{pct(leadYes)}</span>
-              <span className="text-body text-ink-2">{t.question.chance}</span>
+          <div className="grid gap-3">
+            <p className="m-0 flex items-baseline gap-3">
+              <span className="font-display text-stat font-bold tabular text-side-a-text">{pct(leadYes)}</span>
+              <span className="grid text-body-sm text-ink-2">
+                <span className="font-bold text-canada">{t.question.canadaSays}</span>
+                {t.question.chance}
+              </span>
               <span className="sr-only">{fill(l.showcaseSays, { value: pct(leadYes) })}</span>
             </p>
+            <CrowdBar yes={leadYes} yesLabel={`${t.question.yes} ${pct(leadYes)}`} noLabel={`${t.question.no} ${pct(100 - leadYes)}`} />
           </div>
-          <CrowdBar yes={leadYes} yesLabel={`${t.question.yes} ${pct(leadYes)}`} noLabel={`${t.question.no} ${pct(100 - leadYes)}`} />
           <ProvinceSplit
+            relative
             values={lead.provinces}
             title={t.province.title}
             summary={fill(t.province.summary, { high: t.province.names[high], highValue: pct(lead.provinces[high]), low: t.province.names[low], lowValue: pct(lead.provinces[low]) })}
@@ -107,7 +112,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
             names={t.province.names}
             format={pct}
           />
-          <p className="m-0 flex items-center justify-between gap-3 border-t border-line pt-4 text-body-sm text-ink-2">
+          <p className="m-0 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-body-sm text-ink-2">
             <span className="tabular">{fill(l.showcaseCount, { n: formatCount(lead.forecasters, locale) })}</span>
             <span className="inline-flex items-center gap-1 font-semibold text-ink" aria-hidden="true">
               {l.showcaseOpen}
@@ -117,66 +122,60 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         </article>
       </section>
 
-      {/* At a glance */}
+      {/* At a glance: big numbers under a rule, not tiles. */}
       <section aria-label={l.stats.label}>
-        <dl className="m-0 grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line lg:grid-cols-4">
+        <dl className="m-0 grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4 lg:gap-x-10">
           {stats.map(([value, label]) => (
-            <div key={label} className="grid gap-1 bg-surface p-5">
+            <div key={label} className="grid content-start gap-1 border-t-2 border-ink pt-3">
               <dt className="order-2 text-body-sm text-ink-2">{label}</dt>
-              <dd className="order-1 m-0 font-display text-headline font-extrabold tabular">{value}</dd>
+              <dd className="order-1 m-0 font-display text-headline font-bold tabular lg:text-display">{value}</dd>
             </div>
           ))}
         </dl>
-        <p className="mt-2 mb-0 text-caption text-ink-2">{t.legal.sample}</p>
+        <p className="mt-4 mb-0 text-caption text-ink-2">{t.legal.sample}</p>
       </section>
 
-      {/* How it works */}
+      {/* How it works: three numbered columns divided by hairlines. */}
       <section id="how" aria-labelledby="how-title" className="grid scroll-mt-20 gap-8">
         <header className="grid gap-2">
-          <h2 id="how-title" className="m-0 font-display text-headline font-extrabold tracking-tight">{l.how.title}</h2>
+          <h2 id="how-title" className={sectionTitle}>{l.how.title}</h2>
           <p className="m-0 text-body-lg text-ink-2">{l.how.lede}</p>
         </header>
-        <ol className="m-0 grid list-none gap-4 p-0 md:grid-cols-3">
+        <ol className="m-0 grid list-none border-y border-line p-0 max-md:divide-y md:grid-cols-3 md:divide-x divide-line">
           {(["call", "see", "record"] as const).map((key, i) => (
-            <li key={key} className="grid content-start gap-3 rounded-card border border-line bg-surface p-6">
-              <StepArt step={i} />
-              <h3 className="m-0 text-title-sm font-bold">
-                <span className="mr-2 font-display text-ink-3 tabular" aria-hidden="true">{i + 1}</span>
-                {l.how.steps[key].title}
-              </h3>
+            <li key={key} className="grid grid-cols-[auto_minmax(0,1fr)] content-start gap-x-5 gap-y-2 py-6 md:grid-cols-1 md:px-8 md:py-8 md:first:pl-0 md:last:pr-0">
+              <span className="row-span-2 font-display text-display leading-none text-ink-3 tabular md:row-span-1 md:pb-3" aria-hidden="true">{i + 1}</span>
+              <h3 className="m-0 font-display text-title-sm font-bold">{l.how.steps[key].title}</h3>
               <p className="m-0 text-body text-ink-2">{l.how.steps[key].body}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      {/* What makes it different */}
-      <section aria-labelledby="diff-title" className="grid gap-8">
-        <header className="grid gap-2">
-          <h2 id="diff-title" className="m-0 font-display text-headline font-extrabold tracking-tight text-balance">{l.different.title}</h2>
+      {/* What makes it different: a ruled list, statement on the left, reason on the right. */}
+      <section aria-labelledby="diff-title" className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-16">
+        <header className="grid content-start gap-3">
+          <h2 id="diff-title" className={sectionTitle}>{l.different.title}</h2>
           <p className="m-0 text-body-lg text-ink-2">{l.different.lede}</p>
         </header>
-        <ul className="m-0 grid list-none gap-x-8 gap-y-6 p-0 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="m-0 grid list-none border-t-2 border-ink p-0">
           {Object.entries(l.different.points).map(([key, point]) => (
-            <li key={key} className="grid content-start gap-2 border-t-2 border-ink pt-4">
-              <h3 className="m-0 text-body-lg font-bold">{point.title}</h3>
+            <li key={key} className="grid gap-x-8 gap-y-1 border-b border-line py-5 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+              <h3 className="m-0 font-display text-title-sm font-bold text-balance">{point.title}</h3>
               <p className="m-0 text-body text-ink-2">{point.body}</p>
             </li>
           ))}
         </ul>
       </section>
 
-      {/* Topics */}
+      {/* Topics: an index, not a row of cards. */}
       <section aria-labelledby="topics-title" className="grid gap-6">
-        <h2 id="topics-title" className="m-0 font-display text-headline font-extrabold tracking-tight">{l.topics.title}</h2>
-        <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 lg:grid-cols-6">
+        <h2 id="topics-title" className={sectionTitle}>{l.topics.title}</h2>
+        <ul className="m-0 grid list-none grid-cols-2 gap-y-6 p-0 sm:grid-cols-3 lg:grid-cols-6">
           {categories.map((c) => (
-            <li key={c}>
-              <Link
-                href={href(`/browse/${c}`)}
-                className="grid h-full gap-1 rounded-card border border-line bg-surface p-4 transition-colors duration-[var(--cn-duration-fast)] hover:border-line-strong hover:bg-sunken"
-              >
-                <span className="text-body font-bold">{t.board.categories[c]}</span>
+            <li key={c} className="border-l border-line-strong">
+              <Link href={href(`/browse/${c}`)} className="group grid h-full gap-0.5 px-4 py-1">
+                <span className="font-display text-title-sm font-bold underline-offset-4 group-hover:underline">{t.board.categories[c]}</span>
                 <span className="text-caption text-ink-2 tabular">{openByTopic[c] === 0 ? l.topics.none : openByTopic[c] === 1 ? l.topics.countOne : fill(l.topics.count, { n: openByTopic[c] })}</span>
               </Link>
             </li>
@@ -184,91 +183,85 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         </ul>
       </section>
 
-      {/* Trending */}
+      {/* Trending: a ranked list with the crowd's number at the end of each row. */}
       {trending.length > 0 && (
         <section aria-labelledby="trending-title" className="grid gap-6">
           <header className="flex flex-wrap items-end justify-between gap-3">
-            <h2 id="trending-title" className="m-0 font-display text-headline font-extrabold tracking-tight">{l.trending.title}</h2>
+            <h2 id="trending-title" className={sectionTitle}>{l.trending.title}</h2>
             <Link href={href("/board")} className="inline-flex items-center gap-1 text-body-sm font-semibold text-link underline-offset-4 hover:underline">
               {l.trending.all}
               <Icon name="arrow" className="size-4" />
             </Link>
           </header>
-          <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-3">
-            {trending.map((q) => (
-              <li key={q.slug} className="grid">
-                <QuestionCard q={q} locale={locale} t={t.question} states={t.states} state={questionState(q, SAMPLE_NOW)} href={href(`/q/${q.slug}`)} />
-              </li>
-            ))}
-          </ul>
+          <ol className="m-0 grid list-none border-t-2 border-ink p-0">
+            {trending.map((q, i) => {
+              const yes = crowdNow(q);
+              return (
+                <li key={q.slug} className="relative grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-4 gap-y-3 border-b border-line py-5 transition-colors duration-[var(--cn-duration-fast)] hover:bg-surface sm:grid-cols-[3rem_minmax(0,1fr)_11rem] sm:items-center sm:gap-x-6 sm:py-6">
+                  <span className="font-display text-headline leading-none text-ink-3 tabular" aria-hidden="true">{i + 1}</span>
+                  <div className="grid gap-1">
+                    <h3 className="m-0 font-display text-title-sm font-bold text-balance sm:text-title">
+                      <Link href={href(`/q/${q.slug}`)} className="after:absolute after:inset-0 hover:underline focus-visible:underline">
+                        {q.question[locale]}
+                      </Link>
+                    </h3>
+                    <p className="m-0 flex flex-wrap gap-x-2 text-body-sm text-ink-2 tabular">
+                      <span className={q.scored ? "" : "text-side-b-text"}>{q.scored ? t.question.scored : t.question.poll}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>
+                        {t.question.closes} {formatShortDate(q.closesAt, locale)}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span>
+                        {formatCount(q.forecasters, locale)} {t.question.forecasters}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="col-start-2 grid gap-2 sm:col-start-3">
+                    <p className="m-0 flex items-baseline gap-2 sm:justify-end">
+                      <span className="font-display text-headline font-bold leading-none tabular text-side-a-text">{pct(yes)}</span>
+                      <span className="text-body-sm text-ink-2">{t.question.chance}</span>
+                    </p>
+                    <span className="flex h-1.5 bg-side-b" aria-hidden="true">
+                      <span className="block h-full bg-side-a" style={{ width: `${yes}%` }} />
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </section>
       )}
 
       {/* FAQ */}
       <section aria-labelledby="faq-title" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-16">
-        <h2 id="faq-title" className="m-0 font-display text-headline font-extrabold tracking-tight">{l.faq.title}</h2>
+        <h2 id="faq-title" className={sectionTitle}>{l.faq.title}</h2>
         <div className="grid divide-y divide-line border-y border-line">
           {Object.entries(l.faq.items).map(([key, item]) => (
-            <details key={key} className="group py-1">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-body-lg font-semibold [&::-webkit-details-marker]:hidden">
+            <details key={key} className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-body-lg font-semibold [&::-webkit-details-marker]:hidden">
                 {item.q}
-                <span className="grid size-8 shrink-0 place-items-center rounded-full border border-line text-ink-2 transition-transform duration-[var(--cn-duration-base)] group-open:rotate-45" aria-hidden="true">
-                  <svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M8 3v10M3 8h10" />
-                  </svg>
-                </span>
+                <svg viewBox="0 0 16 16" className="size-4 shrink-0 text-ink-2 transition-transform duration-[var(--cn-duration-base)] group-open:rotate-45" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" aria-hidden="true">
+                  <path d="M8 2v12M2 8h12" />
+                </svg>
               </summary>
-              <p className="mt-0 mb-4 max-w-[64ch] text-body text-ink-2">{item.a}</p>
+              <p className="mt-0 mb-5 max-w-[64ch] text-body text-ink-2">{item.a}</p>
             </details>
           ))}
         </div>
       </section>
 
-      {/* Closing call to action */}
-      <section aria-labelledby="closing-title" className="grid justify-items-center gap-4 rounded-card bg-ink px-6 py-12 text-center text-paper sm:py-16">
-        <svg viewBox="0 0 100 100" className="size-10" aria-hidden="true">
-          <path fill="var(--cn-side-a)" d="M47 .09A50 50 0 0 0 47 99.91V59.014a9.5 9.5 0 0 1 0-18.028Z" />
-          <path fill="var(--cn-side-b)" d="M53 .09a50 50 0 0 1 0 99.82V59.014a9.5 9.5 0 0 0 0-18.028Z" />
-          <circle fill="var(--cn-accent)" cx="50" cy="50" r="6.5" />
-        </svg>
-        <h2 id="closing-title" className="m-0 font-display text-headline font-extrabold tracking-tight text-balance sm:text-display-sm">{l.closing.title}</h2>
-        <p className="m-0 max-w-[48ch] text-body-lg opacity-80">{l.closing.body}</p>
-        <Link href={href("/today")} className="mt-2 inline-flex items-center gap-2 rounded-control bg-paper px-5 py-3 text-body font-bold text-ink transition-opacity duration-[var(--cn-duration-fast)] hover:opacity-90">
-          {l.closing.action}
-          <Icon name="arrow" className="size-4" />
-        </Link>
+      {/* Closing call to action: a last line under a heavy rule. */}
+      <section aria-labelledby="closing-title" className="grid gap-6 border-t-4 border-ink pt-8 pb-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-end lg:gap-16 lg:pt-12">
+        <h2 id="closing-title" className="m-0 font-display text-display-sm font-bold tracking-tight text-balance sm:text-display">{l.closing.title}</h2>
+        <div className="grid justify-items-start gap-5">
+          <p className="m-0 max-w-[44ch] text-body-lg text-ink-2">{l.closing.body}</p>
+          <Link href={href("/today")} className="inline-flex items-center gap-2 rounded-control bg-ink px-5 py-3 text-body font-bold text-paper transition-opacity duration-[var(--cn-duration-fast)] hover:opacity-90">
+            {l.closing.action}
+            <Icon name="arrow" className="size-4" />
+          </Link>
+        </div>
       </section>
     </div>
-  );
-}
-
-/** Small, decorative illustrations for the three steps, drawn from the brand tokens. */
-function StepArt({ step }: { step: number }) {
-  return (
-    <svg viewBox="0 0 120 48" className="h-12 w-[7.5rem]" aria-hidden="true">
-      {step === 0 && (
-        <>
-          <rect x="4" y="21" width="112" height="6" rx="3" fill="var(--cn-surface-sunken)" />
-          <rect x="4" y="21" width="70" height="6" rx="3" fill="var(--cn-side-a)" />
-          <circle cx="74" cy="24" r="10" fill="var(--cn-surface)" stroke="var(--cn-side-a)" strokeWidth="3" />
-        </>
-      )}
-      {step === 1 && (
-        <>
-          {[30, 38, 34, 26, 20, 28].map((h, i) => (
-            <g key={i}>
-              <rect x={6 + i * 19} y="4" width="13" height="40" rx="3" fill="var(--cn-side-b-soft)" />
-              <rect x={6 + i * 19} y={44 - h} width="13" height={h} rx="3" fill="var(--cn-side-a)" />
-            </g>
-          ))}
-        </>
-      )}
-      {step === 2 && (
-        <>
-          <path d="M4 40 L28 32 L52 34 L76 20 L100 14" fill="none" stroke="var(--cn-side-a)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="100" cy="14" r="6" fill="var(--cn-accent)" />
-        </>
-      )}
-    </svg>
   );
 }
