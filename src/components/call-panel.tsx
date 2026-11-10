@@ -97,7 +97,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
         className="mt-3 h-8 w-full cursor-pointer accent-[var(--cn-side-a)] disabled:cursor-not-allowed disabled:opacity-60"
       />
 
-      <div className="mt-2 flex flex-wrap gap-2">
+      {/* Presets sit on one row at French length: label over number, three equal columns. */}
+      <div className="mt-2 grid grid-cols-3 gap-2">
         {quickSets.map((v) => (
           <button
             key={v}
@@ -105,21 +106,22 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
             disabled={saved}
             aria-pressed={value === v}
             onClick={() => setValue(v)}
-            className="min-h-11 rounded-full border border-line bg-surface px-3 py-1 text-caption text-ink hover:bg-sunken aria-pressed:border-side-a disabled:opacity-50"
+            className="grid min-h-11 content-center rounded-control border border-line bg-surface px-2 py-1.5 text-center text-caption leading-tight text-ink-2 hover:bg-sunken aria-pressed:border-side-a aria-pressed:text-ink disabled:opacity-50"
           >
-            {v === 10 ? t.quick.unlikely : v === 50 ? t.quick.tossUp : t.quick.likely} · {pct(v)}
+            <span>{v === 10 ? t.quick.unlikely : v === 50 ? t.quick.tossUp : t.quick.likely}</span>
+            <span className="font-semibold text-ink tabular">{pct(v)}</span>
           </button>
         ))}
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-control border border-line p-3">
+        <div className="border-t-2 border-canada pt-2">
           <dt className="text-caption font-bold text-canada">{canadaSays}</dt>
-          <dd className="m-0 font-display text-title-sm tabular">{pct(crowd)}</dd>
+          <dd className="m-0 font-display text-title font-bold tabular">{pct(crowd)}</dd>
         </div>
-        <div className="rounded-control border border-line p-3">
-          <dt className="text-caption text-ink-2">{t.you}</dt>
-          <dd className="m-0 font-display text-title-sm tabular">{pct(value)}</dd>
+        <div className="border-t-2 border-ink pt-2">
+          <dt className="text-caption font-bold text-ink-2">{t.you}</dt>
+          <dd className="m-0 font-display text-title font-bold tabular">{pct(value)}</dd>
         </div>
       </dl>
 
@@ -177,13 +179,13 @@ function ClosedResult({
   return (
     <div className="mt-4 grid gap-3">
       <dl className="m-0 grid grid-cols-2 gap-3">
-        <div className="rounded-control border border-line p-3">
+        <div className="border-t-2 border-canada pt-2">
           <dt className="text-caption font-bold text-canada">{canadaSays}</dt>
-          <dd className="m-0 font-display text-title-sm tabular">{pct(crowd)}</dd>
+          <dd className="m-0 font-display text-title font-bold tabular">{pct(crowd)}</dd>
         </div>
-        <div className="rounded-control border border-line p-3">
-          <dt className="text-caption text-ink-2">{t.you}</dt>
-          <dd className="m-0 font-display text-title-sm tabular">{stored === null ? "—" : pct(stored)}</dd>
+        <div className="border-t-2 border-ink pt-2">
+          <dt className="text-caption font-bold text-ink-2">{t.you}</dt>
+          <dd className="m-0 font-display text-title font-bold tabular">{stored === null ? "—" : pct(stored)}</dd>
         </div>
       </dl>
       <div role="status" className={`rounded-control p-3 text-body-sm ${hit ? "bg-side-a-soft" : "bg-sunken"}`}>

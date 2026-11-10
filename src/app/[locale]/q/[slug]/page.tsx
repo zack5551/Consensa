@@ -115,16 +115,22 @@ export default async function QuestionPage({ params }: { params: Params }) {
           </StateNote>
         </header>
 
-        <section aria-label={settled ? t.question.canadaSaid : t.question.canadaSays} className={`grid gap-3 rounded-card border border-line p-5 shadow-card ${settled ? "bg-sunken" : "bg-surface"}`}>
-          <p className="m-0 flex flex-wrap items-baseline gap-x-3">
-            <span className="text-body-sm font-bold text-canada">{settled ? t.question.canadaSaid : t.question.canadaSays}</span>
-            <span className="font-display text-display font-semibold tabular text-side-a-text">{pct(yes)}</span>
-            <span className="text-body text-ink-2">{t.question.chance}</span>
-            {result && (
-              <span className="ml-auto rounded-full bg-ink px-3 py-1 text-body-sm font-bold text-paper">
-                {fill(t.resolution.answerIs, { answer })}
-              </span>
-            )}
+        {/* The page's one strong move: a Canada-red rule over the crowd's number, open rather than carded. Settled questions sit on a sunken ground. */}
+        <section
+          aria-label={settled ? t.question.canadaSaid : t.question.canadaSays}
+          className={`grid gap-4 border-t-4 pt-5 ${settled ? "border-ink-3 bg-sunken px-5 pb-5" : "border-canada"}`}
+        >
+          <p className="m-0 grid gap-1">
+            <span className="text-caption font-bold uppercase tracking-wide text-canada">{settled ? t.question.canadaSaid : t.question.canadaSays}</span>
+            <span className="flex flex-wrap items-baseline gap-x-3">
+              <span className="font-display text-display-lg font-bold leading-none tabular text-side-a-text">{pct(yes)}</span>
+              <span className="text-body-lg text-ink-2">{t.question.chance}</span>
+              {result && (
+                <span className="ml-auto self-center rounded-full bg-ink px-3 py-1 text-body-sm font-bold text-paper">
+                  {fill(t.resolution.answerIs, { answer })}
+                </span>
+              )}
+            </span>
           </p>
           <CrowdBar yes={yes} yesLabel={`${t.question.yes} ${pct(yes)}`} noLabel={`${t.question.no} ${pct(100 - yes)}`} />
           <p className="m-0 inline-flex items-center gap-2 text-body-sm text-ink-2">
@@ -145,8 +151,9 @@ export default async function QuestionPage({ params }: { params: Params }) {
           />
         </section>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <section className="rounded-card border border-line bg-surface p-5">
+        {/* The crowd, split two ways: ruled columns, not cards. */}
+        <div className="grid gap-8 md:grid-cols-2">
+          <section className="border-t-2 border-ink pt-4">
             <ProvinceSplit
               values={q.provinces}
               title={t.province.title}
@@ -154,10 +161,11 @@ export default async function QuestionPage({ params }: { params: Params }) {
               short={t.province.short}
               names={t.province.names}
               format={pct}
+              relative
             />
           </section>
           {q.languages && (
-            <section className="rounded-card border border-line bg-surface p-5">
+            <section className="border-t-2 border-ink pt-4">
               <LanguageSplit
                 en={q.languages.en}
                 fr={q.languages.fr}
@@ -171,21 +179,23 @@ export default async function QuestionPage({ params }: { params: Params }) {
           )}
         </div>
 
+        {/* Why it moved: an upright, readable note with its sources as footnotes, not chips. */}
         {q.why && (
-          <section aria-labelledby="why-title" className="grid gap-2 border-l-4 border-side-a pl-4">
+          <section aria-labelledby="why-title" className="grid gap-3 border-t-2 border-ink pt-5">
             <h2 id="why-title" className="m-0 font-display text-title-sm font-bold">
               {t.why.title}
             </h2>
-            <p className="m-0 text-caption uppercase tracking-wide text-ink-2">{t.why.byline}</p>
-            <p className="m-0 max-w-[65ch] font-display text-body-lg italic">{q.why.body[locale]}</p>
-            <p className="m-0 text-body-sm italic text-ink-2">{t.why.note}</p>
-            <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label={t.why.sources}>
-              {q.why.sources.map((s) => (
-                <li key={s.en} className="rounded-sm bg-sunken px-2 py-1 text-caption text-ink-2">
-                  {s[locale]}
-                </li>
-              ))}
-            </ul>
+            <p className="m-0 text-caption font-bold uppercase tracking-wide text-ink-2">{t.why.byline}</p>
+            <p className="m-0 max-w-[62ch] text-body-lg leading-relaxed text-ink">{q.why.body[locale]}</p>
+            <div className="grid gap-1 border-t border-line pt-3 text-caption text-ink-2">
+              <p className="m-0 font-bold">{t.why.sources}</p>
+              <ol className="m-0 grid list-decimal gap-0.5 pl-5">
+                {q.why.sources.map((s) => (
+                  <li key={s.en}>{s[locale]}</li>
+                ))}
+              </ol>
+              <p className="m-0 mt-1 italic">{t.why.note}</p>
+            </div>
           </section>
         )}
 

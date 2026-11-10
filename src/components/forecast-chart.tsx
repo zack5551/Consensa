@@ -29,9 +29,6 @@ export function ForecastChart({ history, events, title, summary, format = (v) =>
             {GRID.map((g) => (
               <line key={g} x1="0" x2="100" y1={y(g)} y2={y(g)} stroke="var(--cn-border)" vectorEffect="non-scaling-stroke" />
             ))}
-            {events.map((e) => (
-              <line key={e.dayIndex} x1={x(e.dayIndex)} x2={x(e.dayIndex)} y1="0" y2="100" stroke="var(--cn-text-muted)" strokeDasharray="3 3" opacity="0.6" vectorEffect="non-scaling-stroke" />
-            ))}
             <path d={line} fill="none" stroke="var(--cn-side-a)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
           </svg>
           <span
@@ -44,28 +41,18 @@ export function ForecastChart({ history, events, title, summary, format = (v) =>
           >
             {format(last)}
           </span>
-          {events.map((e) => (
+          {/* Each event is a numbered marker pinned to the line; the key below names it, so nothing floats or collides. */}
+          {events.map((e, i) => (
             <span
               key={`dot-${e.dayIndex}`}
-              aria-hidden="true"
-              className="absolute size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-side-a"
+              className="absolute grid size-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-surface bg-ink text-caption leading-none font-bold text-paper tabular"
               style={{ left: `${x(e.dayIndex)}%`, top: `${y(history[e.dayIndex] ?? last)}%` }}
-            />
+            >
+              {i + 1}
+            </span>
           ))}
-          {events.map((e, i) => {
-            const nearEnd = x(e.dayIndex) > 70;
-            return (
-              <span
-                key={e.dayIndex}
-                className={`absolute max-w-[45%] truncate bg-surface px-1 text-caption text-ink-2 ${nearEnd ? "-translate-x-full" : ""}`}
-                style={{ left: `${x(e.dayIndex)}%`, top: `${i * 20}px` }}
-              >
-                {e.label}
-              </span>
-            );
-          })}
         </div>
-        <div className="relative w-10 text-caption text-ink-2" aria-hidden="true">
+        <div className="relative w-10 text-caption text-ink-2">
           {GRID.map((g) => (
             <span key={g} className="absolute -translate-y-1/2 tabular" style={{ top: `${y(g)}%` }}>
               {format(g)}
@@ -73,6 +60,16 @@ export function ForecastChart({ history, events, title, summary, format = (v) =>
           ))}
         </div>
       </div>
+      {events.length > 0 && (
+        <ol className="m-0 mt-3 flex list-none flex-wrap gap-x-5 gap-y-1 p-0 text-caption text-ink-2">
+          {events.map((e, i) => (
+            <li key={e.dayIndex} className="inline-flex items-center gap-1.5">
+              <span className="grid size-4 place-items-center rounded-full bg-ink text-caption leading-none font-bold text-paper tabular">{i + 1}</span>
+              {e.label}
+            </li>
+          ))}
+        </ol>
+      )}
       <p className="sr-only">{summary}</p>
     </figure>
   );
