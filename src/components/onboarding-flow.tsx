@@ -6,7 +6,7 @@ import { Icon } from "@/components/shell/icons";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { browserSupabase } from "@/lib/supabase/browser";
-import type { SignupMetadata } from "@/lib/supabase/config";
+import { CONSENT_VERSION, type SignupMetadata } from "@/lib/supabase/config";
 import { accountsEnabled } from "@/lib/supabase/env";
 import { emailSchema, isAdult, PROFILE_STORAGE_KEY, regionChoices, stepNumber, steps, todayInToronto, type RegionChoice, type Step } from "@/lib/onboarding";
 import { categories, type Category } from "@/lib/question";
@@ -258,6 +258,7 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabe
             if (supabase) {
               // The database refuses the account unless adult and terms are true (see the accounts migration).
               const data: SignupMetadata = {
+                consentVersion: CONSENT_VERSION,
                 locale,
                 adult: true,
                 terms: true,

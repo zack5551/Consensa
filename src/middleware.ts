@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isLocale, negotiateLocale } from "@/i18n/config";
+import { sessionCookieOptions } from "@/lib/supabase/config";
 import { supabasePublic } from "@/lib/supabase/env";
 
 /**
@@ -21,6 +22,7 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(supabasePublic.url, supabasePublic.key, {
+    cookieOptions: sessionCookieOptions,
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (list) => {
