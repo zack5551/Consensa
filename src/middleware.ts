@@ -1,19 +1,23 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isLocale, negotiateLocale } from "@/i18n/config";
+import { initialLocale, isLocale } from "@/i18n/config";
 import { sessionCookieOptions } from "@/lib/supabase/config";
 import { supabasePublic } from "@/lib/supabase/env";
 
 /**
- * Sends locale-less paths to /en or /fr, based on a saved choice or the browser's language. When accounts are on,
+ * Sends locale-less paths to /en or /fr: a saved choice, else French for visitors in Quebec, else the browser's language. When accounts are on,
  * it also refreshes the Supabase session cookie so server pages see who is signed in.
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const first = pathname.split("/")[1] ?? "";
   if (!isLocale(first)) {
-    const saved = request.cookies.get("locale")?.value;
-    const locale = saved && isLocale(saved) ? saved : negotiateLocale(request.headers.get("accept-language"));
+    const locale = initialLocale({
+      saved: request.cookies.get("locale")?.value,
+      acceptLanguage: request.headers.get("accept-language"),
+      country: request.headers.get("x-vercel-ip-country"),
+      region: request.headers.get("x-vercel-ip-country-region"),
+    });
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
     return NextResponse.redirect(url);

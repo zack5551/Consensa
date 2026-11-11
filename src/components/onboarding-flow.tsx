@@ -480,6 +480,12 @@ function AccountStep({
               {t.account.termsRequired}
             </p>
           )}
+          {/* Both versions of the Terms, side by side (Charter of the French Language: French is always on offer). */}
+          <p className="m-0 text-caption">
+            <Link href={`/${locale === "fr" ? "en" : "fr"}/terms`} hrefLang={locale === "fr" ? "en" : "fr"} lang={locale === "fr" ? "en" : "fr"} target="_blank" className="text-link underline underline-offset-2">
+              {t.account.otherTermsLink}
+            </Link>
+          </p>
 
           <Consent id={`${ids}-data`} checked={dataLicensing} onChange={setDataLicensing} tag={t.account.optional}>
             {t.account.dataLicensing}

@@ -23,3 +23,14 @@ export function negotiateLocale(acceptLanguage: string | null): Locale {
   const hit = ranked.find((x) => isLocale(x.lang));
   return hit && isLocale(hit.lang) ? hit.lang : defaultLocale;
 }
+
+/**
+ * The first-visit language. A saved choice always wins. Otherwise a visitor in Quebec gets French first (Charter of
+ * the French Language, Bill 96), whatever the browser says; they can switch at the top of any screen. Everyone else
+ * gets their browser's preference. The region comes from the host's IP lookup header and is never stored.
+ */
+export function initialLocale({ saved, acceptLanguage, country, region }: { saved?: string | null; acceptLanguage: string | null; country?: string | null; region?: string | null }): Locale {
+  if (saved && isLocale(saved)) return saved;
+  if (country?.toUpperCase() === "CA" && region?.toUpperCase() === "QC") return "fr";
+  return negotiateLocale(acceptLanguage);
+}

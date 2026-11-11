@@ -188,6 +188,7 @@ const en = {
       terms: "I agree to the {terms} and have read the {privacy}.",
       termsLink: "terms of use",
       privacyLink: "privacy summary",
+      otherTermsLink: "Conditions d’utilisation en français",
       termsRequired: "Agree to the terms of use to continue.",
       dataLicensing: "My calls can be included in anonymous, combined results that Consensa shares with or licenses to partners such as media and research firms. Never my individual calls.",
       analytics: "Help improve Consensa with anonymous usage stats, stored in Montreal. Off unless I tick it.",

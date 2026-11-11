@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { negotiateLocale } from "@/i18n/config";
+import { initialLocale, negotiateLocale } from "@/i18n/config";
 import { formatCount, formatPercent } from "@/lib/format";
 import { fill } from "@/lib/text";
 
@@ -25,5 +25,20 @@ describe("formatting", () => {
   });
   it("fills placeholders and leaves unknown ones visible", () => {
     expect(fill("{a} and {b}", { a: 1 })).toBe("1 and {b}");
+  });
+});
+
+describe("initialLocale", () => {
+  it("keeps a saved choice", () => {
+    expect(initialLocale({ saved: "en", acceptLanguage: "fr-CA", country: "CA", region: "QC" })).toBe("en");
+  });
+  it("puts French first for visitors in Quebec", () => {
+    expect(initialLocale({ acceptLanguage: "en-CA,en;q=0.9", country: "CA", region: "QC" })).toBe("fr");
+  });
+  it("follows the browser elsewhere", () => {
+    expect(initialLocale({ acceptLanguage: "en-CA", country: "CA", region: "ON" })).toBe("en");
+    expect(initialLocale({ acceptLanguage: "fr-CA", country: "CA", region: "ON" })).toBe("fr");
+    expect(initialLocale({ acceptLanguage: "en-US", country: "US", region: "QC" })).toBe("en");
+    expect(initialLocale({ acceptLanguage: null })).toBe("en");
   });
 });
