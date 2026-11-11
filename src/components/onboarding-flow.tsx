@@ -254,8 +254,8 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabe
             }
             setSaved(profile);
             go("done");
-            const supabase = browserSupabase();
-            if (supabase) {
+            void browserSupabase().then((supabase) => {
+              if (!supabase) return;
               // The database refuses the account unless adult and terms are true (see the accounts migration).
               const data: SignupMetadata = {
                 consentVersion: CONSENT_VERSION,
@@ -272,7 +272,7 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabe
               void supabase.auth
                 .signInWithOtp({ email, options: { shouldCreateUser: true, data, emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/${locale}/today` } })
                 .then(({ error }) => setLinkFailed(error !== null));
-            }
+            });
           }}
         />
       )}
