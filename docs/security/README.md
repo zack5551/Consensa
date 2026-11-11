@@ -55,6 +55,17 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
 - **Logs and backups** (Privacy Policy §8: 90 days for logs and errors, 30 days for backups) are set in the Supabase and
   Vercel dashboards, not in code. Check them before launch.
 
+## Email (CASL)
+
+- The marketing box at sign-up names the sender ("from Consensa"). Add the operator's legal name to it once the
+  company or sole proprietorship is settled, and bump `CONSENT_VERSION`.
+- No marketing email is sent until every message carries: a working one-click unsubscribe, the operator's legal
+  name and mailing address, and a contact. Unsubscribes take effect within 10 business days (we aim for at once),
+  and the sender reads `consent_log` (marketing, not withdrawn) for each send.
+- Sign-in emails carry no promotion.
+- **Launch gate:** public sign-ups don't open until sign-in email goes through Amazon SES in Montréal, or the
+  Privacy Policy names the US sender.
+
 ## Before launch (AEGIS + LEX)
 
 - Privacy impact assessment and the cross-border check for every provider (LEX items 6 and 1).

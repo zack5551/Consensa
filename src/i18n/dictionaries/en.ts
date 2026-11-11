@@ -192,7 +192,7 @@ const en = {
       termsRequired: "Agree to the terms of use to continue.",
       dataLicensing: "My calls can be included in anonymous, combined results that Consensa shares with or licenses to partners such as media and research firms. Never my individual calls.",
       analytics: "Help improve Consensa with anonymous usage stats, stored in Montreal. Off unless I tick it.",
-      marketing: "Send me occasional email about new questions and features. I can unsubscribe at any time.",
+      marketing: "Send me occasional email from Consensa about new questions and features. I can unsubscribe at any time.",
       optional: "Optional",
       submit: "Create my account",
     },

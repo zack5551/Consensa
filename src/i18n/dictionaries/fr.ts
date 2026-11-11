@@ -194,7 +194,7 @@ const fr = {
       termsRequired: "Acceptez les conditions d’utilisation pour continuer.",
       dataLicensing: "Mes prévisions peuvent faire partie de résultats anonymes et combinés que Consensa partage avec des partenaires, comme des médias et des firmes de recherche, ou leur offre sous licence. Jamais mes prévisions individuelles.",
       analytics: "J’accepte que des statistiques d’usage anonymes, hébergées à Montréal, servent à améliorer Consensa. Désactivé si je ne coche pas la case.",
-      marketing: "Envoyez-moi à l’occasion des courriels sur les nouvelles questions et fonctions. Je peux me désabonner en tout temps.",
+      marketing: "Envoyez-moi à l’occasion des courriels de Consensa sur les nouvelles questions et fonctions. Je peux me désabonner en tout temps.",
       optional: "Facultatif",
       submit: "Créer mon compte",
     },
