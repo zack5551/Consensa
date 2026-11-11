@@ -10,7 +10,7 @@ Consensa is a free, no-stakes Canadian prediction and polling app. People make p
 4. **AI explains, never tips.** "Why it moved" copy describes what changed and cites sources. It never says what to call.
 5. **Branch-only.** Never commit to `main`. Work on a branch and open a PR. CI must be green before merge.
 6. **Nothing deleted without asking.** Don't delete files, data, branches or migrations unless zack asked for that specific deletion.
-7. **Data stays in Canada.** Supabase and self-hosted PostHog run in ca-central-1 (Montreal). Never add a tracker, font CDN or analytics script that sends user data elsewhere without a privacy review.
+7. **Data stays in Canada.** Supabase and self-hosted PostHog run in ca-central-1 (Montreal). Never add a tracker, font CDN or analytics script that sends user data elsewhere without a privacy review. Server functions run in Montréal (`yul1`, `vercel.json`). The one approved exception (zack, 2026-11-11): Vercel, a US company, keeps short request logs with IP addresses. The PIA and Vercel's DPA cover it. Any other flow out of Canada needs LEX's check and zack's sign-off.
 8. **No gambling advertisers or links.** No sportsbook, casino, lottery, prediction-market or crypto-trading ads, affiliates or links.
 
 ## Legal guardrails (LEX)
