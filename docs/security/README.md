@@ -65,6 +65,17 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
   who accepted an older version land on the Terms with an accept box; accepting adds a new `terms` row to
   `consent_log`, and declining means deleting the account.
 
+## Election questions (off at launch)
+
+Elections can't be asked today: `categories` in `src/lib/question.ts` has no politics category, and the engine's
+safety screen holds any election draft for an editor (`lexicon.json`, "elections"). Before anyone adds an elections
+category, these must ship in the same PR (LEX, Canada Elections Act ss. 326 and 328(2), and the provincial acts):
+
+- Every election question shows: "Not a scientific poll. People choose to take part; no margin of error." (EN and FR.)
+- A polling-day hold: no new crowd numbers for that question from the start of polling day until every poll in that
+  jurisdiction has closed. The page shows the last numbers from before polling day, labelled with their time.
+- LEX signs off on the wording, and the question is never persuasive.
+
 ## Email (CASL)
 
 - The marketing box at sign-up names the sender ("from Consensa"). Add the operator's legal name to it once the
