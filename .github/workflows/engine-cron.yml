@@ -2,8 +2,10 @@ name: PULSE cycle
 
 # Runs the question engine every 15 minutes by calling the site's cycle endpoint. Free on a public repo.
 # Needs two repository secrets (Settings → Secrets and variables → Actions):
-#   ENGINE_URL          the site's address, e.g. https://consensa.vercel.app
+#   ENGINE_URL          the site's address, e.g. https://consensa-consensa.vercel.app
 #   ENGINE_CRON_SECRET  the same value as ENGINE_CRON_SECRET in Vercel
+# And, while the site is behind Vercel Authentication (Deployment Protection), a third:
+#   VERCEL_AUTOMATION_BYPASS_SECRET  from Vercel → Settings → Deployment Protection → Protection Bypass for Automation
 # Until both exist, every run skips quietly.
 
 on:
@@ -24,12 +26,17 @@ jobs:
         env:
           ENGINE_URL: ${{ secrets.ENGINE_URL }}
           ENGINE_CRON_SECRET: ${{ secrets.ENGINE_CRON_SECRET }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           if [ -z "$ENGINE_URL" ] || [ -z "$ENGINE_CRON_SECRET" ]; then
             echo "ENGINE_URL or ENGINE_CRON_SECRET isn't set yet; skipping."
             exit 0
           fi
-          status=$(curl -sS -o report.json -w '%{http_code}' --max-time 330 -X POST \
+          bypass=()
+          if [ -n "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            bypass=(-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET")
+          fi
+          status=$(curl -sS -o report.json -w '%{http_code}' --max-time 330 -X POST "${bypass[@]}" \
             -H "Authorization: Bearer $ENGINE_CRON_SECRET" "${ENGINE_URL%/}/api/engine/cycle")
           echo "HTTP $status"
           head -c 4000 report.json; echo
