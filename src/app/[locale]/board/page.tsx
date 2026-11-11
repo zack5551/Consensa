@@ -34,12 +34,12 @@ export default async function BoardPage({ params }: { params: Promise<{ locale: 
   const rows = (await withLiveCrowd(sampleQuestions)).map((q) => toBoardRow(q, SAMPLE_NOW));
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-10">
       <ScreenView locale={locale} screen="board" />
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="grid gap-1">
-          <h1 className="m-0 font-display text-headline font-extrabold tracking-tight sm:text-display-sm">{t.board.title}</h1>
-          <p className="m-0 text-body text-ink-2">{t.board.subtitle}</p>
+        <div className="grid gap-3">
+          <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{t.board.title}</h1>
+          <p className="m-0 max-w-[60ch] text-body-lg text-ink-2">{t.board.subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href={`/${locale}/browse`} className="inline-flex min-h-10 items-center rounded-control border border-line px-3 py-2 text-body-sm font-semibold hover:bg-sunken">
