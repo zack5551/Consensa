@@ -54,39 +54,39 @@ export default async function ProvincesPage({ params }: { params: Params }) {
   const worst = accuracy[accuracy.length - 1];
 
   return (
-    <div className="grid gap-10">
+    <div className="grid gap-12">
       <ScreenView locale={locale} screen="provinces" />
-      <header className="grid gap-2">
-        <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{p.title}</h1>
-        <p className="m-0 max-w-[60ch] text-body text-ink-2">{p.subtitle}</p>
+      <header className="grid gap-3">
+        <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{p.title}</h1>
+        <p className="m-0 max-w-[60ch] text-body-lg text-ink-2">{p.subtitle}</p>
         <p className="m-0 text-caption text-ink-2">{t.legal.sample}</p>
       </header>
 
       {bell ? (
-        <section aria-labelledby="bellwether" className="grid gap-1 rounded-card border border-line bg-surface p-5 shadow-card">
+        <section aria-labelledby="bellwether" className="grid gap-2 rounded-card border border-line border-t-4 border-t-canada bg-surface p-5 sm:p-8">
           <h2 id="bellwether" className="m-0 text-caption font-bold uppercase tracking-wide text-canada">
             {p.bellwetherTitle}
           </h2>
-          <p className="m-0 font-display text-title font-extrabold text-balance">{p.headings[bell.region]}</p>
-          <p className="m-0 max-w-[60ch] text-body-sm text-ink-2">
+          <p className="m-0 font-display text-headline font-bold tracking-tight text-balance">{p.headings[bell.region]}</p>
+          <p className="m-0 max-w-[60ch] text-body text-ink-2">
             {fill(p.bellwetherBody, { region: p.headings[bell.region], n: formatOneDecimal(bell.distance, locale) })}
           </p>
         </section>
       ) : null}
 
       <nav aria-label={p.regionsLabel}>
-        <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="m-0 grid list-none grid-cols-1 gap-x-8 border-t-2 border-ink p-0 sm:grid-cols-2 lg:grid-cols-3">
           {regions.map((r) => {
             const d = meanDistance(open, r);
             const acc = accuracyBy.get(r);
             return (
-              <li key={r}>
+              <li key={r} className="border-b border-line">
                 <Link
                   href={`/${locale}/provinces/${regionSlug(r)}`}
-                  className="grid h-full gap-2 rounded-card border border-line bg-surface p-4 transition-colors duration-[var(--cn-duration-fast)] hover:border-line-strong hover:bg-sunken"
+                  className="grid h-full gap-1 py-4 transition-colors duration-[var(--cn-duration-fast)] hover:bg-surface"
                 >
                   <span className="flex items-center justify-between gap-2">
-                    <span className="font-display text-title-sm font-extrabold">{p.headings[r]}</span>
+                    <span className="font-display text-title-sm font-bold">{p.headings[r]}</span>
                     <span className="text-ink-2" aria-hidden="true">
                       →
                     </span>
@@ -100,18 +100,18 @@ export default async function ProvincesPage({ params }: { params: Params }) {
         </ul>
       </nav>
 
-      <section aria-labelledby="splits" className="grid gap-4">
+      <section aria-labelledby="splits" className="grid gap-6">
         <div className="grid gap-1">
-          <h2 id="splits" className="m-0 text-title-sm font-bold">
+          <h2 id="splits" className="m-0 font-display text-headline font-bold tracking-tight text-balance">
             {p.splitsTitle}
           </h2>
-          <p className="m-0 text-body-sm text-ink-2">{p.splitsHelp}</p>
+          <p className="m-0 max-w-[60ch] text-body text-ink-2">{p.splitsHelp}</p>
         </div>
-        <ul className="m-0 grid list-none gap-3 p-0 lg:grid-cols-3">
+        <ul className="m-0 grid list-none gap-8 p-0 lg:grid-cols-3">
           {splits.map(({ q, spread }) => {
             return (
-              <li key={q.slug} className="grid content-start gap-3 rounded-card border border-line bg-surface p-4">
-                <Link href={`/${locale}/q/${q.slug}`} className="text-body-sm font-semibold text-balance hover:underline">
+              <li key={q.slug} className="grid content-start gap-3 border-t-2 border-ink pt-4">
+                <Link href={`/${locale}/q/${q.slug}`} className="font-display text-body-lg font-bold text-balance hover:underline">
                   {q.question[locale]}
                 </Link>
                 <span className="text-caption font-semibold text-ink-2">{fill(p.spread, { n: Math.round(spread) })}</span>
@@ -131,19 +131,19 @@ export default async function ProvincesPage({ params }: { params: Params }) {
         </ul>
       </section>
 
-      <section aria-labelledby="accuracy" className="grid gap-3">
+      <section aria-labelledby="accuracy" className="grid gap-6">
         <div className="grid gap-1">
-          <h2 id="accuracy" className="m-0 text-title-sm font-bold">
+          <h2 id="accuracy" className="m-0 font-display text-headline font-bold tracking-tight text-balance">
             {p.accuracyTitle}
           </h2>
-          <p className="m-0 max-w-[70ch] text-body-sm text-ink-2">{fill(p.accuracyHelp, { n: sampleResults.length })}</p>
+          <p className="m-0 max-w-[60ch] text-body text-ink-2">{fill(p.accuracyHelp, { n: sampleResults.length })}</p>
         </div>
-        <div className="overflow-hidden rounded-card border border-line bg-surface">
+        <div className="overflow-x-auto border-t-2 border-ink">
           <table className="w-full border-collapse text-left text-body-sm">
             <caption className="sr-only">
               {best && worst ? fill(p.accuracySummary, { best: p.headings[best.region], worst: p.headings[worst.region] }) : p.accuracyTitle}
             </caption>
-            <thead className="bg-sunken text-caption text-ink-2">
+            <thead className="text-caption text-ink-2">
               <tr>
                 <th scope="col" className="w-14 px-4 py-2 font-semibold">{p.accuracyColumns.rank}</th>
                 <th scope="col" className="px-2 py-2 font-semibold">{p.accuracyColumns.region}</th>
@@ -154,7 +154,7 @@ export default async function ProvincesPage({ params }: { params: Params }) {
             <tbody>
               {accuracy.map((a) => (
                 <tr key={a.region} className="border-t border-line">
-                  <td className="px-4 py-3 font-display font-extrabold tabular">{a.rank}</td>
+                  <td className="px-4 py-3 font-display text-title-sm font-bold text-ink-3 tabular">{a.rank}</td>
                   <th scope="row" className="px-2 py-3 font-semibold">
                     <Link href={`/${locale}/provinces/${regionSlug(a.region)}`} className="hover:underline">
                       {p.headings[a.region]}
