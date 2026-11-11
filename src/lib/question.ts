@@ -82,6 +82,16 @@ export function crowdChange(q: Question, days = 7): number {
   return now - then;
 }
 
+/**
+ * How the crowd moved over the last week, for the line under "Canada says". Null when the history is shorter than a
+ * week, so a new question never claims a weekly move it hasn't had.
+ */
+export function weekMove(q: Question): { direction: "up" | "down" | "flat"; points: number } | null {
+  if (q.history.length < 8) return null;
+  const change = crowdChange(q, 7);
+  return { direction: change > 0 ? "up" : change < 0 ? "down" : "flat", points: Math.abs(change) };
+}
+
 /** The crowd's chance when calls closed, scored against the result. Null until a non-disputed result exists. */
 export function crowdBrier(q: Question): number | null {
   const r = q.resolution.result;
