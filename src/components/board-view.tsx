@@ -158,35 +158,35 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
       ) : (
         <>
           {/* Desktop and tablet: a real table, scannable by column. */}
-          <div className="hidden overflow-hidden rounded-card border border-line bg-surface md:block">
+          <div className="hidden border-t-2 border-ink md:block">
             <table className="w-full border-collapse text-left">
               <caption className="sr-only">{t.browse.tableCaption}</caption>
               <thead>
                 <tr className="border-b border-line text-caption uppercase tracking-wide text-ink-2">
-                  <th scope="col" className="px-4 py-3 font-semibold">{t.board.columns.question}</th>
+                  <th scope="col" className="py-3 pl-0 pr-4 font-semibold">{t.board.columns.question}</th>
                   <th scope="col" className="px-4 py-3 font-semibold">{t.board.columns.canada}</th>
                   <th scope="col" className="px-4 py-3 font-semibold">{t.board.columns.change}</th>
                   <th scope="col" className="hidden px-4 py-3 text-right font-semibold lg:table-cell">{t.board.columns.forecasters}</th>
-                  <th scope="col" className="px-4 py-3 text-right font-semibold">{t.board.columns.closes}</th>
+                  <th scope="col" className="py-3 pl-4 pr-0 text-right font-semibold">{t.board.columns.closes}</th>
                 </tr>
               </thead>
               <tbody>
                 {shown.map((r) => (
-                  <tr key={r.slug} className="group relative border-b border-line last:border-b-0 hover:bg-sunken">
-                    <th scope="row" className="max-w-[28rem] px-4 py-3 text-left align-top font-normal">
+                  <tr key={r.slug} className="group relative border-b border-line">
+                    <th scope="row" className="max-w-[28rem] py-3 pl-0 pr-4 text-left align-top font-normal">
                       <span className="mb-1 flex flex-wrap items-center gap-2">
                         <StateBadge state={r.state} label={t.states[r.state]} />
                         <span className="text-caption text-ink-2">{t.board.categories[r.category]}</span>
                         {!r.scored && <span className="rounded-full bg-side-b-soft px-2 py-0.5 text-caption text-side-b-text">{t.question.poll}</span>}
                         <YourCallBadge slug={r.slug} template={t.question.yourCall} format={locale} />
                       </span>
-                      <Link href={href(r.slug)} className="text-body font-bold leading-snug text-ink after:absolute after:inset-0 hover:underline focus-visible:underline">
+                      <Link href={href(r.slug)} className="font-display text-body font-bold leading-snug text-balance text-ink after:absolute after:inset-0 hover:underline focus-visible:underline">
                         {r.title[locale]}
                       </Link>
                     </th>
                     <td className="px-4 py-3 align-middle">
                       <span className="flex items-center gap-3">
-                        <span className={`w-14 font-display text-title-sm font-extrabold tabular ${isOpen(r.state) ? "text-ink" : "text-ink-2"}`}>{pct(r.crowd)}</span>
+                        <span className={`w-14 font-display text-title-sm font-bold tabular ${isOpen(r.state) ? "text-ink" : "text-ink-2"}`}>{pct(r.crowd)}</span>
                         <span className="block h-1.5 w-16 overflow-hidden rounded-full bg-side-b" aria-hidden="true">
                           <span className="block h-full bg-side-a" style={{ width: `${r.crowd}%` }} />
                         </span>
@@ -201,7 +201,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
                       </span>
                     </td>
                     <td className="hidden px-4 py-3 text-right align-middle text-body-sm text-ink-2 tabular lg:table-cell">{formatCount(r.forecasters, locale)}</td>
-                    <td className="px-4 py-3 text-right align-middle text-body-sm text-ink-2 tabular">{formatShortDate(r.closesAt, locale)}</td>
+                    <td className="py-3 pl-4 pr-0 text-right align-middle text-body-sm text-ink-2 tabular">{formatShortDate(r.closesAt, locale)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -209,20 +209,20 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
           </div>
 
           {/* Phones: compact rows, same order of information. */}
-          <ul className="m-0 grid list-none divide-y divide-line overflow-hidden rounded-card border border-line bg-surface p-0 md:hidden">
+          <ul className="m-0 grid list-none border-t-2 border-ink p-0 md:hidden">
             {shown.map((r) => (
-              <li key={r.slug} className="relative grid gap-2 p-4">
+              <li key={r.slug} className="relative grid gap-2 border-b border-line py-4">
                 <span className="flex flex-wrap items-center gap-2">
                   <StateBadge state={r.state} label={t.states[r.state]} />
                   <span className="text-caption text-ink-2">{t.board.categories[r.category]}</span>
                   {!r.scored && <span className="rounded-full bg-side-b-soft px-2 py-0.5 text-caption text-side-b-text">{t.question.poll}</span>}
                 </span>
-                <Link href={href(r.slug)} className="text-body font-bold leading-snug text-ink after:absolute after:inset-0">
+                <Link href={href(r.slug)} className="font-display text-body font-bold leading-snug text-balance text-ink after:absolute after:inset-0">
                   {r.title[locale]}
                 </Link>
                 <span className="flex items-center justify-between gap-3">
                   <span className="flex items-baseline gap-2">
-                    <span className="font-display text-title-sm font-extrabold tabular">{pct(r.crowd)}</span>
+                    <span className="font-display text-title-sm font-bold tabular">{pct(r.crowd)}</span>
                     <span className={`text-caption font-semibold tabular ${r.change > 0 ? "text-side-a-text" : r.change < 0 ? "text-side-b-text" : "text-ink-2"}`} aria-label={changeLabel(r.change)}>
                       {changeText(r.change)}
                     </span>

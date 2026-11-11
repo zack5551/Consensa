@@ -58,8 +58,8 @@ export default async function CategoryPage({ params }: { params: Params }) {
         </Link>
       </nav>
       <header className="grid gap-2">
-        <h1 className="m-0 font-display text-headline font-extrabold tracking-tight sm:text-display-sm">{t.board.categories[category]}</h1>
-        <p className="m-0 max-w-[60ch] text-body text-ink-2">{t.browse.topics[category]}</p>
+        <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{t.board.categories[category]}</h1>
+        <p className="m-0 max-w-[60ch] text-body-lg text-ink-2">{t.browse.topics[category]}</p>
         <p className="m-0 flex gap-3 text-caption text-ink-2 tabular">
           <span className="font-semibold text-ink">{open === 1 ? t.browse.openCountOne : fill(t.browse.openCount, { n: formatCount(open, locale) })}</span>
           <span>{fill(t.browse.calls, { n: formatCount(calls, locale) })}</span>
