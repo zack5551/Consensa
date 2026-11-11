@@ -14,6 +14,9 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
 - **Engine tables** (`supabase/migrations/20261110000000_engine.sql`): RLS on with no policies, `anon` and
   `authenticated` revoked, deletes refused. Only the server's secret key reads them.
 - **Feeds are untrusted**: size and item caps, Zod on every item, HTML stripped.
+- **Feed text is never published** (copyright, LEX): pages show at most an outlet's name, a headline and a link to the
+  source. Feed summaries only reach the drafting prompt and the editor's queue. Question text and "Why it moved"
+  notes are our own words, approved by an editor.
 - **Server functions run in Montreal** (`vercel.json`, region `yul1`, next to Supabase in ca-central-1), so sign-in
   and account requests are handled in Canada. Middleware runs at Vercel's edge nearest the visitor (Toronto or
   Montreal for Canadians).
@@ -31,8 +34,8 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
    the schema (no such function exists, and triggers refuse balance edits from clients).
 4. **One person, one call per question:** a unique `(user_id, question_id)` constraint, and calls refuse writes after
    the close date (checked in the database, not only the UI).
-5. **Delete and export** on the account screen. Export is that user's own data as JSON. Delete removes the account
-   and personal data within 30 days and keeps only anonymous aggregates. Both are Law 25 rights.
+5. **Delete and export** on the account screen. Export is that user's own data as JSON. Delete needs a sign-in from the last
+   15 minutes, then removes the account and personal data within 30 days and keeps only anonymous aggregates. Both are Law 25 rights.
 6. **Collect the minimum.** 18+ stored as yes/no only, province not city, no birth date, no phone. Consents stored as
    separate rows with a timestamp and the wording version shown.
 7. **Data stays in Canada.** Supabase in ca-central-1. Any new service that receives personal info (email sender,
@@ -54,6 +57,24 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
   in LEX's breach plan. The register lives in the database, not in this public repo, so no incident details are published.
 - **Logs and backups** (Privacy Policy §8: 90 days for logs and errors, 30 days for backups) are set in the Supabase and
   Vercel dashboards, not in code. Check them before launch.
+
+## Terms changes
+
+- `TERMS_VERSION` (`src/lib/supabase/config.ts`) is the date of the Terms everyone must have accepted. On a material
+  change, set it and `CONSENT_VERSION` to the new date (a test keeps them in order). At their next sign-in, people
+  who accepted an older version land on the Terms with an accept box; accepting adds a new `terms` row to
+  `consent_log`, and declining means deleting the account.
+
+## Email (CASL)
+
+- The marketing box at sign-up names the sender ("from Consensa"). Add the operator's legal name to it once the
+  company or sole proprietorship is settled, and bump `CONSENT_VERSION`.
+- No marketing email is sent until every message carries: a working one-click unsubscribe, the operator's legal
+  name and mailing address, and a contact. Unsubscribes take effect within 10 business days (we aim for at once),
+  and the sender reads `consent_log` (marketing, not withdrawn) for each send.
+- Sign-in emails carry no promotion.
+- **Launch gate:** public sign-ups don't open until sign-in email goes through Amazon SES in Montréal, or the
+  Privacy Policy names the US sender.
 
 ## Before launch (AEGIS + LEX)
 

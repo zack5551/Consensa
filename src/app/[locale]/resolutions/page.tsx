@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ScreenView } from "@/components/screen-view";
+import { SourceCredit } from "@/components/source-credit";
 import { StateBadge } from "@/components/state-badge";
 import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
 import { isLocale, type Locale } from "@/i18n/config";
@@ -83,6 +84,7 @@ export default async function ResolutionsPage({ params }: { params: Promise<{ lo
                   </dd>
                 </div>
               </dl>
+              <SourceCredit url={q.resolution.source.url} t={t.resolution.credit} />
               {state === "disputed" && <p className="m-0 rounded-control bg-side-b-soft px-3 py-2 text-body-sm">{t.log.reviewNote}</p>}
             </li>
           );

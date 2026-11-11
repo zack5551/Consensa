@@ -35,6 +35,13 @@ export function safeNext(next: string | null | undefined, fallback = "/en/today"
 /** The date of the consent wording people see in onboarding. Bump it when that wording changes (AEGIS rule 6). */
 export const CONSENT_VERSION = "2026-11-11";
 
+/**
+ * The date of the Terms people must have accepted. When the Terms change materially, set this to the new date (and
+ * CONSENT_VERSION to at least the same date): everyone who accepted an older version is asked again at their next
+ * sign-in (Terms s. 18). A unit test keeps CONSENT_VERSION from falling behind.
+ */
+export const TERMS_VERSION = "2026-11-11";
+
 export const signupMetadataSchema = z.object({
   consentVersion: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   locale: z.enum(["en", "fr"]),

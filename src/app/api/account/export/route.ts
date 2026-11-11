@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { exportFileName } from "@/lib/account";
+import { rateLimiter } from "@/lib/rate-limit";
 import { noStore, signedIn } from "@/lib/supabase/account-server";
+
+const allowExport = rateLimiter({ limit: 10, windowMs: 60_000 });
 
 /**
  * Download my data (Law 25 portability): everything we hold about you, as JSON. Read with your own session, so
@@ -9,6 +12,7 @@ import { noStore, signedIn } from "@/lib/supabase/account-server";
 export async function GET() {
   const me = await signedIn();
   if (!me.ok) return me.error;
+  if (!allowExport(me.user.id)) return NextResponse.json({ error: "slow down" }, { status: 429, headers: noStore });
   const [profile, calls, consents] = await Promise.all([
     me.supabase.from("profiles").select("locale, region, topics, adult_confirmed_at, created_at, updated_at").maybeSingle(),
     me.supabase.from("calls").select("slug, probability, created_at, updated_at").order("created_at"),

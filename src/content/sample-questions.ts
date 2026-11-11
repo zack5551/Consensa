@@ -178,7 +178,7 @@ const raw = [
     languages: { en: 51, fr: 43 },
     events: [],
     resolution: {
-      source: { name: { en: "Statistics Canada · Labour Force Survey", fr: "Statistique Canada · Enquête sur la population active" }, url: "https://www150.statcan.gc.ca/n1/dai-quo/ssi/homepage/rel-com/indicator-eng.htm" },
+      source: { name: { en: "Statistics Canada · Labour Force Survey", fr: "Statistique Canada · Enquête sur la population active" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701" },
       rule: {
         en: "Resolves YES if the seasonally adjusted national unemployment rate for October 2026 is 7.0% or higher in the first Labour Force Survey release.",
         fr: "Résolue OUI si le taux de chômage national désaisonnalisé d’octobre 2026 est de 7,0 % ou plus dans la première publication de l’Enquête sur la population active.",

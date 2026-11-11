@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LegalSummary } from "@/components/legal-summary";
 import { ScreenView } from "@/components/screen-view";
+import { TermsReview } from "@/components/terms-review";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 
@@ -28,6 +29,7 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
   return (
     <>
       <ScreenView locale={locale} screen="terms" />
+      <TermsReview locale={locale} t={t.termsReview} />
       <LegalSummary locale={locale} title={t.terms.title} intro={t.terms.intro} draft={t.draft} updated={t.updated} updatedOn={UPDATED_ON} points={t.terms.points} />
     </>
   );

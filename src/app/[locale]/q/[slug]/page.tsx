@@ -12,6 +12,7 @@ import { ForecastChart } from "@/components/forecast-chart";
 import { LanguageSplit } from "@/components/language-split";
 import { ProvinceSplit } from "@/components/province-split";
 import { ScreenView } from "@/components/screen-view";
+import { SourceCredit } from "@/components/source-credit";
 import { StateBadge } from "@/components/state-badge";
 import { StateNote } from "@/components/state-note";
 import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
@@ -230,6 +231,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
               </div>
             )}
           </dl>
+          <SourceCredit url={q.resolution.source.url} t={t.resolution.credit} />
           <p className="m-0 text-caption text-ink-2">{t.resolution.log}</p>
         </section>
 
