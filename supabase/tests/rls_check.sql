@@ -71,6 +71,11 @@ do $$ begin
     raise exception 'FAILED: the browser can call crowd_summary';
   exception when insufficient_privilege or undefined_function then null;
   end;
+  begin
+    perform public.purge_expired_consents();
+    raise exception 'FAILED: the browser can purge consents';
+  exception when insufficient_privilege then null;
+  end;
 end $$;
 reset role;
 
@@ -79,6 +84,11 @@ delete from auth.users where id = '00000000-0000-4000-8000-00000000000b';
 do $$ begin
   if not exists (select 1 from public.consent_log where email_hash = public.email_hash('rls-b@example.invalid')) then raise exception 'FAILED: consent records were deleted with the account'; end if;
   if exists (select 1 from public.calls where user_id = '00000000-0000-4000-8000-00000000000b') then raise exception 'FAILED: calls survived account deletion'; end if;
+  if exists (select 1 from public.consent_log where email_hash = public.email_hash('rls-b@example.invalid') and withdrawn_at is null) then raise exception 'FAILED: deleting an account left its consents open'; end if;
+  insert into public.consent_log (email_hash, kind, version, given_at, withdrawn_at)
+    values (public.email_hash('rls-old@example.invalid'), 'marketing', '2022-01-01', now() - interval '5 years', now() - interval '4 years');
+  if public.purge_expired_consents() <> 1 then raise exception 'FAILED: purge should remove exactly the consent that ended over 3 years ago'; end if;
+  if not exists (select 1 from public.consent_log where email_hash = public.email_hash('rls-b@example.invalid')) then raise exception 'FAILED: a recent consent was purged'; end if;
   begin
     delete from public.consent_log;
     raise exception 'FAILED: consent rows can be deleted';
