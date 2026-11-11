@@ -314,6 +314,13 @@ const fr = {
     back: "Retour aux cinq du jour",
     backBoard: "Retour au Tableau",
     yourCall: "Votre prévision : {value}",
+    week: {
+      up: "En hausse de {n} points cette semaine",
+      upOne: "En hausse de 1 point cette semaine",
+      down: "En baisse de {n} points cette semaine",
+      downOne: "En baisse de 1 point cette semaine",
+      flat: "Aucun changement cette semaine",
+    },
   },
   chart: {
     title: "L’évolution de la prévision",

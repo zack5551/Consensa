@@ -41,6 +41,18 @@ test("a question with only small moves names no biggest move", async ({ page }) 
   await expect(page.getByRole("img", { name: /Biggest move/ })).toHaveCount(0);
 });
 
+test("an open question says how Canada moved this week", async ({ page }) => {
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await expect(page.getByText("Down 2 points this week")).toBeVisible();
+  await page.goto("/fr/q/home-prices-nov-2026");
+  await expect(page.getByText(/En hausse de 1\s+point cette semaine/)).toBeVisible();
+});
+
+test("a resolved question shows no weekly move", async ({ page }) => {
+  await page.goto("/en/q/cpi-sept-2026");
+  await expect(page.getByText(/points? this week/)).toHaveCount(0);
+});
+
 test("a closing-soon question says when it closes", async ({ page }) => {
   await page.goto("/en/q/giller-debut-2026");
   await expect(page.getByText(/This question closes November 8, 2026/)).toBeVisible();

@@ -312,6 +312,13 @@ const en = {
     back: "Back to today’s five",
     backBoard: "Back to the Board",
     yourCall: "Your call: {value}",
+    week: {
+      up: "Up {n} points this week",
+      upOne: "Up 1 point this week",
+      down: "Down {n} points this week",
+      downOne: "Down 1 point this week",
+      flat: "No change this week",
+    },
   },
   chart: {
     title: "How the forecast moved",

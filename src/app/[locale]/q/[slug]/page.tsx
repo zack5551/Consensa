@@ -20,7 +20,7 @@ import { withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { crowdNow, questionState } from "@/lib/question";
+import { crowdNow, questionState, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
@@ -67,6 +67,15 @@ export default async function QuestionPage({ params }: { params: Params }) {
   const result = q.resolution.result;
   const answer = result ? (result.outcome === "yes" ? t.question.yes : t.question.no) : "";
   const settled = state === "resolved" || state === "disputed" || state === "closed";
+  // How the crowd moved this week, beside the count. Open questions only: a settled number no longer moves.
+  const move = settled ? null : weekMove(q);
+  const moveText =
+    move &&
+    (move.direction === "flat"
+      ? t.question.week.flat
+      : move.points === 1
+        ? t.question.week[move.direction === "up" ? "upOne" : "downOne"]
+        : fill(t.question.week[move.direction], { n: String(move.points) }));
 
   const note =
     state === "closingSoon"
@@ -142,6 +151,19 @@ export default async function QuestionPage({ params }: { params: Params }) {
           <p className="m-0 inline-flex items-center gap-2 text-body-sm text-ink-2">
             <span className={`size-2 rounded-full ${settled ? "bg-ink-3" : "bg-canada"}`} aria-hidden="true" />
             {formatCount(q.forecasters, locale)} {t.question.forecasters}
+            {move && moveText && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="inline-flex items-center gap-1 tabular">
+                  {move.direction !== "flat" && (
+                    <span aria-hidden="true" className={move.direction === "up" ? "text-side-a-text" : "text-side-b-text"}>
+                      {move.direction === "up" ? "▲" : "▼"}
+                    </span>
+                  )}
+                  {moveText}
+                </span>
+              </>
+            )}
           </p>
         </section>
 

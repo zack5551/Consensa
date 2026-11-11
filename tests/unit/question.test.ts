@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NOW, getQuestion, sampleQuestions, todaysFive } from "@/content/sample-questions";
-import { CLOSING_SOON_MS, crowdChange, provinceExtremes, questionState, type Question } from "@/lib/question";
+import { CLOSING_SOON_MS, crowdChange, provinceExtremes, questionState, weekMove, type Question } from "@/lib/question";
 
 const base = getQuestion("boc-cut-dec-2026")!;
 const at = (iso: string) => new Date(iso);
@@ -46,6 +46,13 @@ describe("helpers", () => {
     const q: Question = { ...base, history: [10, 20, 30, 40, 50, 60, 70, 80, 90] };
     expect(crowdChange(q)).toBe(70);
     expect(crowdChange({ ...base, history: [40, 40] })).toBe(0);
+  });
+
+  it("states the week's move only once a week of history exists", () => {
+    expect(weekMove({ ...base, history: [40, 41, 42, 43, 44, 45, 46] })).toBeNull();
+    expect(weekMove({ ...base, history: [40, 40, 40, 40, 40, 40, 40, 44] })).toEqual({ direction: "up", points: 4 });
+    expect(weekMove({ ...base, history: [50, 50, 50, 50, 50, 50, 50, 49] })).toEqual({ direction: "down", points: 1 });
+    expect(weekMove({ ...base, history: [30, 90, 10, 30, 30, 30, 30, 30] })).toEqual({ direction: "flat", points: 0 });
   });
 
   it("finds the highest and lowest regions", () => {
