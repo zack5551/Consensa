@@ -94,7 +94,7 @@ describe("runCycle on the sample feeds", () => {
     expect(published).toMatchObject({ slug: "boc-cut-dec-2026", approvedBy: "editor-1", drafter: "fixed" });
     expect(published!.resolution.result).toBeUndefined();
 
-    const http = fakeHttp([{ match: /valet/, body: { observations: [{ d: "2026-12-08", [VALET_SERIES]: { v: "2.50" } }, { d: "2026-12-09", [VALET_SERIES]: { v: "2.25" } }] } }]);
+    const http = fakeHttp([{ match: /valet/, body: { observations: [{ d: "2026-12-09", [VALET_SERIES]: { v: "2.50" } }, { d: "2026-12-10", [VALET_SERIES]: { v: "2.25" } }] } }]);
     const at = (iso: string) => ({ ...deps(store), ingest: async () => [], http, now: new Date(iso) });
     expect((await runCycle(at("2026-12-10T01:00:00Z"))).resolutions).toEqual([{ slug: "boc-cut-dec-2026", state: "confirming" }]);
     expect((await runCycle(at("2026-12-10T01:15:00Z"))).resolutions).toEqual([{ slug: "boc-cut-dec-2026", state: "resolved", outcome: "yes" }]);

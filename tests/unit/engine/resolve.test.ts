@@ -9,14 +9,14 @@ const boc = { kind: "boc-policy-rate", decisionDate: "2026-12-09", direction: "c
 const after = new Date("2026-12-10T12:00:00Z");
 
 describe("Bank of Canada resolver (Valet shape as served on 2026-11-06)", () => {
-  it("says YES when the target drops on the decision date", async () => {
-    const http = fakeHttp([{ match: /valet\/observations\/V39079/, body: valet([["2026-12-08", "2.50"], ["2026-12-09", "2.25"], ["2026-12-10", "2.25"]]) }]);
+  it("says YES when the target drops the day after the decision (as Valet shows it)", async () => {
+    const http = fakeHttp([{ match: /valet\/observations\/V39079/, body: valet([["2026-12-08", "2.50"], ["2026-12-09", "2.50"], ["2026-12-10", "2.25"]]) }]);
     const read = await readResolver(boc, http, after);
-    expect(read).toMatchObject({ status: "answer", outcome: "yes", observed: "2.50% → 2.25% (2026-12-09)", margin: 0.25 });
+    expect(read).toMatchObject({ status: "answer", outcome: "yes", observed: "2.50% → 2.25% (2026-12-10)", margin: 0.25 });
   });
 
   it("says NO on a hold, and YES for a 'hold' question", async () => {
-    const http = fakeHttp([{ match: /valet/, body: valet([["2026-12-08", "2.50"], ["2026-12-09", "2.50"]]) }]);
+    const http = fakeHttp([{ match: /valet/, body: valet([["2026-12-09", "2.50"], ["2026-12-10", "2.50"]]) }]);
     expect(await readResolver(boc, http, after)).toMatchObject({ outcome: "no" });
     expect(await readResolver({ ...boc, direction: "hold" }, http, after)).toMatchObject({ outcome: "yes" });
   });

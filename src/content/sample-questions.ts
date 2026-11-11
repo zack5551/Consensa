@@ -1,5 +1,7 @@
 import { isOpen, questionSchema, questionState, type Question } from "@/lib/question";
+import { z } from "zod";
 import liveQuestions from "./live-questions.json";
+import liveResults from "./live-results.json";
 import { moreSampleQuestions } from "./more-questions";
 import { series } from "./series";
 
@@ -288,7 +290,22 @@ const raw = [
  * scripts/pull-live-questions.mjs at build time, empty unless CONSENSA_LIVE_QUESTIONS=1) come first; a live
  * question that's invalid or reuses a sample's slug is skipped rather than failing the build.
  */
-const samples: Question[] = raw.map((q) => questionSchema.parse(q));
+const resultSchema = z.object({ slug: z.string(), outcome: z.enum(["yes", "no"]), publishedAt: z.iso.datetime(), disputed: z.boolean() });
+/**
+ * Automatic results from the engine (see src/engine/site-results.ts), confirmed from official data. They replace a
+ * hand-written result, because the official reading is the record. An invalid entry is skipped.
+ */
+const results = new Map(
+  (liveResults as unknown[]).flatMap((r) => {
+    const parsed = resultSchema.safeParse(r);
+    return parsed.success ? [[parsed.data.slug, parsed.data] as const] : [];
+  }),
+);
+function withResult(q: Question): Question {
+  const r = results.get(q.slug);
+  return r ? { ...q, resolution: { ...q.resolution, result: { outcome: r.outcome, publishedAt: r.publishedAt, disputed: r.disputed } } } : q;
+}
+const samples: Question[] = raw.map((q) => withResult(questionSchema.parse(q)));
 const live: Question[] = (liveQuestions as unknown[]).flatMap((q) => {
   const parsed = questionSchema.safeParse(q);
   return parsed.success && !samples.some((s) => s.slug === parsed.data.slug) ? [parsed.data] : [];
