@@ -53,6 +53,15 @@ test("a resolved question shows no weekly move", async ({ page }) => {
   await expect(page.getByText(/points? this week/)).toHaveCount(0);
 });
 
+test("a resolved question says whether Canada called it, with its record on the topic", async ({ page }) => {
+  await page.goto("/en/q/cpi-sept-2026");
+  await expect(page.getByText("Canada called it. On economy questions, Canada has leaned the right way 3 times out of 3.")).toBeVisible();
+  await page.goto("/fr/q/mtl-snow-oct-2026");
+  await expect(page.getByText("Le Canada a vu juste.", { exact: true })).toBeVisible();
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await expect(page.getByText(/Canada called it|Canada missed this one/)).toHaveCount(0);
+});
+
 test("a closing-soon question says when it closes", async ({ page }) => {
   await page.goto("/en/q/giller-debut-2026");
   await expect(page.getByText(/This question closes November 8, 2026/)).toBeVisible();

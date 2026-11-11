@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NOW, getQuestion, sampleQuestions, todaysFive } from "@/content/sample-questions";
-import { CLOSING_SOON_MS, crowdChange, provinceExtremes, questionState, weekMove, type Question } from "@/lib/question";
+import { CLOSING_SOON_MS, crowdChange, crowdVerdict, provinceExtremes, questionState, topicRecord, weekMove, type Question } from "@/lib/question";
 
 const base = getQuestion("boc-cut-dec-2026")!;
 const at = (iso: string) => new Date(iso);
@@ -53,6 +53,26 @@ describe("helpers", () => {
     expect(weekMove({ ...base, history: [40, 40, 40, 40, 40, 40, 40, 44] })).toEqual({ direction: "up", points: 4 });
     expect(weekMove({ ...base, history: [50, 50, 50, 50, 50, 50, 50, 49] })).toEqual({ direction: "down", points: 1 });
     expect(weekMove({ ...base, history: [30, 90, 10, 30, 30, 30, 30, 30] })).toEqual({ direction: "flat", points: 0 });
+  });
+
+  it("says whether the crowd leaned the right way, only for undisputed scored results", () => {
+    const settle = (history: number[], outcome: "yes" | "no", extra: Partial<Question> = {}, disputed = false): Question => ({
+      ...base,
+      ...extra,
+      history,
+      resolution: { ...base.resolution, result: { outcome, publishedAt: base.resolution.resolvesAt, disputed } },
+    });
+    expect(crowdVerdict(base)).toBeNull();
+    expect(crowdVerdict(settle([50, 70], "yes"))).toBe("right");
+    expect(crowdVerdict(settle([50, 30], "yes"))).toBe("wrong");
+    expect(crowdVerdict(settle([40, 50], "no"))).toBe("split");
+    expect(crowdVerdict(settle([50, 70], "yes", {}, true))).toBeNull();
+    expect(crowdVerdict(settle([50, 70], "yes", { scored: false }))).toBeNull();
+
+    const right = settle([50, 70], "yes");
+    expect(topicRecord(right, [right, right])).toBeNull();
+    expect(topicRecord(right, [right, right, settle([50, 30], "yes"), base])).toEqual({ right: 2, total: 3 });
+    expect(topicRecord(right, [right, right, settle([50, 70], "yes", { category: "weather" })])).toBeNull();
   });
 
   it("finds the highest and lowest regions", () => {

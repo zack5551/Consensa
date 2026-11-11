@@ -312,6 +312,12 @@ const en = {
     back: "Back to today’s five",
     backBoard: "Back to the Board",
     yourCall: "Your call: {value}",
+    verdict: {
+      right: "Canada called it.",
+      wrong: "Canada missed this one.",
+      split: "Canada was split down the middle.",
+      topic: "On {topic} questions, Canada has leaned the right way {right} times out of {total}.",
+    },
     week: {
       up: "Up {n} points this week",
       upOne: "Up 1 point this week",
