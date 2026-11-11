@@ -508,7 +508,7 @@ export const moreSampleQuestions = [
       ],
     },
     resolution: {
-      source: { name: { en: "Statistics Canada", fr: "Statistique Canada" }, url: "https://www150.statcan.gc.ca/n1/en/subjects/labour/labour_force_survey" },
+      source: { name: { en: "Statistics Canada", fr: "Statistique Canada" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701" },
       rule: {
         en: "Resolves YES if any monthly Labour Force Survey release in 2027 shows Canada’s unemployment rate (seasonally adjusted) below 6.0%.",
         fr: "Résolue OUI si une publication mensuelle de l’Enquête sur la population active en 2027 montre un taux de chômage canadien (désaisonnalisé) inférieur à 6,0 %.",
