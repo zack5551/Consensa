@@ -29,7 +29,7 @@ export function readCall(slug: string): number | null {
 
 export function saveCall(slug: string, value: number): void {
   storeCall(slug, value);
-  if (accountsEnabled) void pushCall(slug, value);
+  if (accountsEnabled) pushCall(slug, value);
 }
 
 function storeCall(slug: string, value: number): void {
@@ -65,8 +65,26 @@ export function subscribeCalls(onChange: () => void): () => void {
   };
 }
 
+/** The database takes one change per call every 2 seconds, so quick changes are sent as the latest one. */
+const PUSH_GAP_MS = 2100;
+const lastPush = new Map<string, number>();
+const pending = new Map<string, ReturnType<typeof setTimeout>>();
+
+function pushCall(slug: string, probability: number): void {
+  const timer = pending.get(slug);
+  if (timer !== undefined) clearTimeout(timer);
+  const wait = (lastPush.get(slug) ?? -Infinity) + PUSH_GAP_MS - Date.now();
+  const send = () => {
+    pending.delete(slug);
+    lastPush.set(slug, Date.now());
+    void sendCall(slug, probability);
+  };
+  if (wait <= 0) send();
+  else pending.set(slug, setTimeout(send, wait));
+}
+
 /** Sends one call to the server. Not signed in, or the question has closed: the call stays in this browser. */
-async function pushCall(slug: string, probability: number): Promise<boolean> {
+async function sendCall(slug: string, probability: number): Promise<boolean> {
   try {
     const res = await fetch("/api/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, probability }) });
     return res.ok;
@@ -93,7 +111,7 @@ export async function syncCalls(): Promise<void> {
     for (const [slug, v] of Object.entries(server)) if (typeof v === "number" && valid(v)) storeCall(slug, v);
     for (const slug of localSlugs()) {
       const v = readCall(slug);
-      if (v !== null && !(slug in server)) void pushCall(slug, v);
+      if (v !== null && !(slug in server)) pushCall(slug, v);
     }
   } catch {
     /* offline: try again on the next page load */
