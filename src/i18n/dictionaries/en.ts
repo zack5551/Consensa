@@ -341,6 +341,7 @@ const en = {
     hint: "How likely is it? Slide to set your probability.",
     sliderLabel: "Your probability that the answer is yes",
     quick: { unlikely: "Unlikely", tossUp: "Toss-up", likely: "Likely" },
+    yourRegion: "Your region · {region}",
     you: "You",
     save: "Make my call",
     saved: "Call saved",

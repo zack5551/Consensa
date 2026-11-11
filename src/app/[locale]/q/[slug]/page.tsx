@@ -90,6 +90,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
       scored={q.scored}
       outcome={result?.outcome}
       closedOn={formatLongDate(q.closesAt, locale)}
+      regions={{ values: q.provinces, hidden: q.hiddenProvinces, names: t.province.names }}
     />
   );
 
