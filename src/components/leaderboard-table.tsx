@@ -24,10 +24,10 @@ export function LeaderboardTable({ rows, me, locale, t, label, compact = false }
   const c = t.leaderboard.columns;
   const wide = compact ? "hidden" : "hidden sm:table-cell";
   return (
-    <div className="overflow-hidden rounded-card border border-line bg-surface">
+    <div className="overflow-x-auto border-t-2 border-ink">
       <table className="w-full border-collapse text-left text-body-sm">
         <caption className="sr-only">{label}</caption>
-        <thead className="bg-sunken text-caption text-ink-2">
+        <thead className="text-caption text-ink-2">
           <tr>
             <th scope="col" className="w-14 px-4 py-2 font-semibold">{c.rank}</th>
             <th scope="col" className="px-2 py-2 font-semibold">{c.forecaster}</th>
@@ -52,11 +52,11 @@ export function LeaderboardTable({ rows, me, locale, t, label, compact = false }
                   </tr>
                 ) : null}
                 <tr id={compact ? undefined : row.handle} className={`scroll-mt-20 border-t border-line ${isMe ? "bg-side-a-soft" : ""}`}>
-                  <td className="px-4 py-3 font-display font-extrabold tabular">{row.rank}</td>
+                  <td className="px-4 py-3 font-display text-title-sm font-bold tabular text-ink-3">{row.rank}</td>
                   <th scope="row" className="px-2 py-3 font-normal">
                     <span className="grid gap-0.5">
                       <span className="flex flex-wrap items-center gap-2">
-                        <Link href={`/${locale}/forecasters/${row.handle}`} className="font-semibold text-ink hover:underline">
+                        <Link href={`/${locale}/forecasters/${row.handle}`} className="font-display font-bold text-ink hover:underline">
                           {row.displayName}
                         </Link>
                         {isMe ? <span className="rounded-full bg-ink px-2 py-0.5 text-caption font-bold text-paper">{t.leaderboard.you}</span> : null}

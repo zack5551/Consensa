@@ -62,13 +62,13 @@ export function LeaderboardScreen({ locale, t, scope }: { locale: Locale; t: Dic
     .map((r) => ({ href: `/${locale}/leaderboard/${regionSlug(r)}`, label: t.province.names[r], current: scope.kind === "region" && scope.region === r }));
 
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-12">
       <ScreenView locale={locale} screen="leaderboard" />
       <LeaderboardViewed locale={locale} tab={tab} />
 
-      <header className="grid gap-2">
+      <header className="grid gap-3">
         <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{l.title}</h1>
-        <p className="m-0 max-w-[60ch] text-body text-ink-2">{l.subtitle}</p>
+        <p className="m-0 max-w-[60ch] text-body-lg text-ink-2">{l.subtitle}</p>
         <p className="m-0 text-caption text-ink-2">{l.sampleNote}</p>
       </header>
 
@@ -133,7 +133,7 @@ export function LeaderboardScreen({ locale, t, scope }: { locale: Locale; t: Dic
 
           <LeaderboardTable rows={rows} me={SAMPLE_ME} locale={locale} t={t} label={fill(l.tableLabel, { board: boardName })} />
 
-          <details className="group rounded-card border border-line bg-surface p-4">
+          <details className="group border-y border-line py-4">
             <summary className="cursor-pointer text-body-sm font-bold">{l.methodTitle}</summary>
             <p className="mb-0 mt-2 max-w-[70ch] text-body-sm text-ink-2">{fill(l.methodBody, { min: DEFAULT_MIN_CALLS })}</p>
           </details>
@@ -143,7 +143,7 @@ export function LeaderboardScreen({ locale, t, scope }: { locale: Locale; t: Dic
       {sharpest.length > 0 ? (
         <section aria-labelledby="sharpest" className="grid gap-4">
           <div className="grid gap-1">
-            <h2 id="sharpest" className="m-0 font-display text-title font-bold text-balance">
+            <h2 id="sharpest" className="m-0 font-display text-headline font-bold tracking-tight text-balance">
               {l.sharpestTitle}
             </h2>
             <p className="m-0 max-w-[70ch] text-body-sm text-ink-2">{fill(l.sharpestHelp, { n: SHARPEST_N })}</p>
