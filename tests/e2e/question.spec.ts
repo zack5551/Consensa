@@ -67,3 +67,12 @@ test("a resolved question says Pas cette fois. for a miss, in French", async ({ 
   await page.reload();
   await expect(page.getByRole("status").filter({ hasText: "Pas cette fois." }).first()).toBeVisible();
 });
+
+test("after a call, your own region's number shows beside Canada's", async ({ page }) => {
+  await page.goto("/fr/q/boc-cut-dec-2026");
+  await page.evaluate(() => window.localStorage.setItem("consensa:profile", JSON.stringify({ region: "ON" })));
+  await page.reload();
+  await expect(page.getByText("Votre région · Ontario")).toHaveCount(0);
+  await page.getByRole("button", { name: "Confirmer ma prévision" }).click();
+  await expect(page.getByText("Votre région · Ontario")).toBeVisible();
+});

@@ -43,7 +43,8 @@ jobs:
       # failed twice on 2026-11-11 when Ubuntu's mirror couldn't be resolved, so a failed apt step falls back to
       # the browser alone instead of failing the check before any test runs. The site's fonts are local files.
       - name: Install Chromium
-        run: pnpm exec playwright install --with-deps chromium || pnpm exec playwright install chromium
+        # Cap the apt attempt: on 2026-11-11 its retries took 10 of the job's 20 minutes before falling back.
+        run: timeout 180 pnpm exec playwright install --with-deps chromium || pnpm exec playwright install chromium
       - run: pnpm test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()

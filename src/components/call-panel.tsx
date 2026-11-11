@@ -6,7 +6,8 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
 import { readCall, saveCall } from "@/lib/calls-store";
 import { formatBrier, formatPercent } from "@/lib/format";
-import type { QuestionState } from "@/lib/question";
+import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
+import { provinces, type Province, type QuestionState } from "@/lib/question";
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
 import { accountsEnabled } from "@/lib/supabase/env";
 import { fill } from "@/lib/text";
@@ -22,7 +23,20 @@ type Props = {
   outcome?: "yes" | "no";
   /** Already formatted for the locale, e.g. "October 21, 2026". */
   closedOn?: string;
+  /** This question's region numbers. With the region from onboarding, your own region shows beside Canada. */
+  regions?: { values: Record<Province, number>; hidden?: readonly Province[]; names: Record<Province, string> };
 };
+
+/** The region chosen at onboarding, if this browser has one. */
+function myRegion(): Province | null {
+  try {
+    const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+    const region = raw ? (JSON.parse(raw) as { region?: unknown }).region : null;
+    return typeof region === "string" && (provinces as readonly string[]).includes(region) ? (region as Province) : null;
+  } catch {
+    return null;
+  }
+}
 
 const quickSets = [10, 50, 75] as const;
 
@@ -30,13 +44,18 @@ const quickSets = [10, 50, 75] as const;
  * The one action on a question page: set a probability and save it.
  * Once a question closes, the same panel shows your call and, after the result, "Called it!" or "Not this time."
  */
-export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", scored = true, outcome, closedOn = "" }: Props) {
+export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", scored = true, outcome, closedOn = "", regions }: Props) {
   const [value, setValue] = useState(50);
   const [saved, setSaved] = useState(false);
   const [stored, setStored] = useState<number | null>(null);
+  const [region, setRegion] = useState<Province | null>(null);
   const id = useId();
   const pct = (v: number) => formatPercent(v, locale);
   const accepting = state === "open" || state === "closingSoon";
+
+  useEffect(() => {
+    setRegion(myRegion());
+  }, []);
 
   useEffect(() => {
     const existing = readCall(slug);
@@ -66,6 +85,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
     );
   }
 
+  // Your region's number shows once you've saved a call, so it informs the result, not the call itself.
+  const regionValue = saved && region !== null && regions && !regions.hidden?.includes(region) ? regions.values[region] : null;
   const gap = gapToCrowd(value, crowd);
   const gapText = gap === 0 ? t.sameAsCrowd : fill(gap > 0 ? t.moreThan : t.lessThan, { n: Math.abs(gap) });
   const sideText = value < 50 ? "text-side-b-text" : "text-side-a-text";
@@ -115,11 +136,17 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
         ))}
       </div>
 
-      <dl className="mt-4 grid grid-cols-2 gap-3">
+      <dl className={`mt-4 grid gap-3 ${regionValue === null ? "grid-cols-2" : "grid-cols-3"}`}>
         <div className="border-t-2 border-canada pt-2">
           <dt className="text-caption font-bold text-canada">{canadaSays}</dt>
           <dd className="m-0 font-display text-title font-bold tabular">{pct(crowd)}</dd>
         </div>
+        {regionValue !== null && region !== null && regions ? (
+          <div className="border-t-2 border-line pt-2">
+            <dt className="text-caption font-bold text-ink-2">{fill(t.yourRegion, { region: regions.names[region] })}</dt>
+            <dd className="m-0 font-display text-title font-bold tabular">{pct(regionValue)}</dd>
+          </div>
+        ) : null}
         <div className="border-t-2 border-ink pt-2">
           <dt className="text-caption font-bold text-ink-2">{t.you}</dt>
           <dd className="m-0 font-display text-title font-bold tabular">{pct(value)}</dd>
