@@ -74,6 +74,17 @@ test("every question ends with open questions to call next", async ({ page }) =>
   await expect(page.getByRole("region", { name: "Une autre prévision" }).getByRole("link")).toHaveCount(3);
 });
 
+test("before a call, the panel shows what it would score either way", async ({ page }) => {
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await expect(page.getByText("If the answer is yes, you’d score 0.250. If it’s no, 0.250. Lower is better.").locator("visible=true").first()).toBeVisible();
+  await page.getByRole("button", { name: /^Likely/ }).locator("visible=true").first().click();
+  await expect(page.getByText("If the answer is yes, you’d score 0.063. If it’s no, 0.563. Lower is better.").locator("visible=true").first()).toBeVisible();
+  await page.goto("/fr/q/boc-cut-dec-2026");
+  await expect(page.getByText(/Si la réponse est oui, votre score serait de 0,250\./).locator("visible=true").first()).toBeVisible();
+  await page.goto("/en/q/leafs-playoffs-2027");
+  await expect(page.getByText(/you’d score/)).toHaveCount(0);
+});
+
 test("a closing-soon question says when it closes", async ({ page }) => {
   await page.goto("/en/q/giller-debut-2026");
   await expect(page.getByText(/This question closes November 8, 2026/)).toBeVisible();

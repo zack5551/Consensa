@@ -136,6 +136,13 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
         ))}
       </div>
 
+      {/* What this call would score either way, so the scoring rule is clear before saving. Scored questions only. */}
+      {scored && (
+        <p className="mt-3 mb-0 text-caption text-ink-2 tabular">
+          {fill(t.ifResult, { yes: formatBrier(brierScore(value / 100, 1), locale), no: formatBrier(brierScore(value / 100, 0), locale) })}
+        </p>
+      )}
+
       <dl className={`mt-4 grid gap-3 ${regionValue === null ? "grid-cols-2" : "grid-cols-3"}`}>
         <div className="border-t-2 border-canada pt-2">
           <dt className="text-caption font-bold text-canada">{canadaSays}</dt>

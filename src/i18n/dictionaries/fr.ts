@@ -359,6 +359,7 @@ const fr = {
     hint: "Quelle est la probabilité? Glissez pour la choisir.",
     sliderLabel: "Votre probabilité que la réponse soit oui",
     quick: { unlikely: "Peu probable", tossUp: "Pile ou face", likely: "Probable" },
+    ifResult: "Si la réponse est oui, votre score serait de {yes}. Si c’est non, de {no}. Plus il est bas, mieux c’est.",
     yourRegion: "Votre région · {region}",
     you: "Vous",
     save: "Confirmer ma prévision",
