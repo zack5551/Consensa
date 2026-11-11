@@ -317,6 +317,8 @@ const fr = {
   province: {
     title: "Le oui, province par province",
     summary: "Le plus élevé : {high} ({highValue}). Le plus bas : {low} ({lowValue}).",
+    notEnough: "Pas encore assez de prévisions dans chaque région pour afficher la répartition.",
+    hiddenNote: "— : moins de 5 prévisions dans cette région jusqu’ici. Le chiffre paraît dès que 5 personnes y ont fait leur prévision.",
     names: { BC: "C.-B.", AB: "Alberta", PR: "Prairies", ON: "Ontario", QC: "Québec", AT: "Atlantique" },
     short: { BC: "C.-B.", AB: "Alb.", PR: "Prairies", ON: "Ont.", QC: "Qc", AT: "Atl." },
   },

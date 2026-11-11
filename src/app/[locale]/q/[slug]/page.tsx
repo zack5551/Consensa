@@ -19,8 +19,9 @@ import { withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { crowdNow, provinceExtremes, questionState } from "@/lib/question";
+import { crowdNow, questionState } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
+import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
 
 type Params = Promise<{ locale: string; slug: string }>;
@@ -62,7 +63,6 @@ export default async function QuestionPage({ params }: { params: Params }) {
       swing.change > 0 ? (days === 1 ? t.chart.swingUp : t.chart.swingUpDays) : days === 1 ? t.chart.swingDown : t.chart.swingDownDays;
     chartSummary += ` ${fill(template, { change: Math.abs(swing.change), days })}`;
   }
-  const { high, low } = provinceExtremes(q.provinces);
   const result = q.resolution.result;
   const answer = result ? (result.outcome === "yes" ? t.question.yes : t.question.no) : "";
   const settled = state === "resolved" || state === "disputed" || state === "closed";
@@ -161,7 +161,9 @@ export default async function QuestionPage({ params }: { params: Params }) {
             <ProvinceSplit
               values={q.provinces}
               title={t.province.title}
-              summary={fill(t.province.summary, { high: t.province.names[high], highValue: pct(q.provinces[high]), low: t.province.names[low], lowValue: pct(q.provinces[low]) })}
+              summary={provinceSummary(q, t.province, pct)}
+              hidden={q.hiddenProvinces}
+              hiddenNote={t.province.hiddenNote}
               short={t.province.short}
               names={t.province.names}
               format={pct}

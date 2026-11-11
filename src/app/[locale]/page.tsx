@@ -16,7 +16,8 @@ import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
-import { categories, crowdNow, isOpen, provinceExtremes, provinces, questionState } from "@/lib/question";
+import { categories, crowdNow, isOpen, provinces, questionState } from "@/lib/question";
+import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -43,7 +44,6 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const firstSlug = todaysFive()[0]?.slug;
   const lead = sampleQuestions.find((q) => q.slug === firstSlug) ?? open[0] ?? sampleQuestions[0]!;
   const leadYes = crowdNow(lead);
-  const { high, low } = provinceExtremes(lead.provinces);
   const trending = [...open].filter((q) => q.slug !== lead.slug).sort((a, b) => b.forecasters - a.forecasters).slice(0, 3);
   const totalCalls = open.reduce((sum, q) => sum + q.forecasters, 0);
   const openByTopic = Object.fromEntries(categories.map((c) => [c, open.filter((q) => q.category === c).length])) as Record<(typeof categories)[number], number>;
@@ -113,7 +113,9 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
             relative
             values={lead.provinces}
             title={t.province.title}
-            summary={fill(t.province.summary, { high: t.province.names[high], highValue: pct(lead.provinces[high]), low: t.province.names[low], lowValue: pct(lead.provinces[low]) })}
+            summary={provinceSummary(lead, t.province, pct)}
+            hidden={lead.hiddenProvinces}
+            hiddenNote={t.province.hiddenNote}
             short={t.province.short}
             names={t.province.names}
             format={pct}

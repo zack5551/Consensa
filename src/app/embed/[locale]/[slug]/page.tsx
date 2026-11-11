@@ -13,8 +13,8 @@ import { withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent } from "@/lib/format";
-import { crowdNow, isOpen, provinceExtremes, questionState } from "@/lib/question";
-import { fill } from "@/lib/text";
+import { crowdNow, isOpen, questionState } from "@/lib/question";
+import { provinceSummary } from "@/lib/province-summary";
 
 type Params = Promise<{ locale: string; slug: string }>;
 
@@ -43,7 +43,6 @@ export default async function EmbedPage({ params }: { params: Params }) {
   const yes = crowdNow(q);
   const pct = (v: number) => formatPercent(v, locale);
   const open = isOpen(questionState(q, SAMPLE_NOW));
-  const { high, low } = provinceExtremes(q.provinces);
   const href = `/${locale}/q/${q.slug}?utm_source=embed`;
 
   return (
@@ -62,7 +61,9 @@ export default async function EmbedPage({ params }: { params: Params }) {
       <ProvinceSplit
         values={q.provinces}
         title={t.province.title}
-        summary={fill(t.province.summary, { high: t.province.names[high], highValue: pct(q.provinces[high]), low: t.province.names[low], lowValue: pct(q.provinces[low]) })}
+        summary={provinceSummary(q, t.province, pct)}
+        hidden={q.hiddenProvinces}
+        hiddenNote={t.province.hiddenNote}
         short={t.province.short}
         names={t.province.names}
         format={pct}
