@@ -39,7 +39,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+      # The GitHub runner image already has Chromium's system libraries. Installing extras (fonts) through apt
+      # failed twice on 2026-11-11 when Ubuntu's mirror couldn't be resolved, so a failed apt step falls back to
+      # the browser alone instead of failing the check before any test runs. The site's fonts are local files.
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium || pnpm exec playwright install chromium
       - run: pnpm test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
