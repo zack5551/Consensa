@@ -392,7 +392,7 @@ const en = {
     },
     resolution: {
       title: "How questions resolve",
-      body: "Every scored question names one official source and the exact rule before it opens. Calls close before the source publishes. Most questions resolve automatically from machine-readable data, and an editor checks each result before scores update.",
+      body: "Every scored question names one official source and the exact rule before it opens. Calls close before the source publishes. Most questions resolve automatically from official data once two separate reads agree. Anything that needs judgment goes to an editor.",
       disputes: "If a source corrects itself or a result is unclear, the question goes under review. Scores wait until the review ends, and the decision is published in the log.",
       logLink: "See the public resolution log",
     },

@@ -394,7 +394,7 @@ const fr = {
     },
     resolution: {
       title: "Comment les questions sont résolues",
-      body: "Chaque question évaluée nomme une source officielle et la règle exacte avant d’ouvrir. Les prévisions ferment avant que la source publie. La plupart des questions se résolvent automatiquement à partir de données ouvertes, et un membre de l’équipe éditoriale vérifie chaque résultat avant que les scores soient actualisés.",
+      body: "Chaque question évaluée nomme une source officielle et la règle exacte avant d’ouvrir. Les prévisions ferment avant que la source publie. La plupart des questions se résolvent automatiquement à partir de données officielles, lorsque deux lectures distinctes concordent. Tout cas qui demande du jugement est confié à un membre de l’équipe éditoriale.",
       disputes: "Si une source se corrige ou qu’un résultat est ambigu, la question passe en révision. L’évaluation attend la fin de la révision, et la décision est publiée dans le registre.",
       logLink: "Voir le registre public des résolutions",
     },
