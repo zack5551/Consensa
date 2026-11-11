@@ -14,6 +14,9 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
 - **Engine tables** (`supabase/migrations/20261110000000_engine.sql`): RLS on with no policies, `anon` and
   `authenticated` revoked, deletes refused. Only the server's secret key reads them.
 - **Feeds are untrusted**: size and item caps, Zod on every item, HTML stripped.
+- **Feed text is never published** (copyright, LEX): pages show at most an outlet's name, a headline and a link to the
+  source. Feed summaries only reach the drafting prompt and the editor's queue. Question text and "Why it moved"
+  notes are our own words, approved by an editor.
 - **Server functions run in Montreal** (`vercel.json`, region `yul1`, next to Supabase in ca-central-1), so sign-in
   and account requests are handled in Canada. Middleware runs at Vercel's edge nearest the visitor (Toronto or
   Montreal for Canadians).
