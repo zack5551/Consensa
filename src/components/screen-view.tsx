@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import type { Locale } from "@/i18n/config";
 import { sourceFromReferrer, track, type Screen } from "@/lib/analytics";
+import { syncCalls } from "@/lib/calls-store";
 
 type Props = { locale: Locale; screen: Screen; slug?: string; state?: string };
 
@@ -15,10 +16,12 @@ function today(): string {
 
 /**
  * Sends the screen's view events (see src/lib/analytics.ts). `app_opened` fires once per day per browser,
- * which is what day-7 retention and DAU/MAU are built from. Renders nothing.
+ * which is what day-7 retention and DAU/MAU are built from. Also syncs your calls with your account once per
+ * page load when you're signed in. Renders nothing.
  */
 export function ScreenView({ locale, screen, slug, state }: Props) {
   useEffect(() => {
+    void syncCalls();
     let first = today();
     let last: string | null = null;
     try {

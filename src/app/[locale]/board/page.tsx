@@ -11,6 +11,7 @@ import { BoardView } from "@/components/board-view";
 import { ScreenView } from "@/components/screen-view";
 import { Icon } from "@/components/shell/icons";
 import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { toBoardRow } from "@/lib/board";
@@ -22,12 +23,15 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return { title: t.board.title, description: t.board.subtitle, alternates: { languages: { "en-CA": "/en/board", "fr-CA": "/fr/board" } } };
 }
 
+/** Real crowd numbers refresh every minute (ISR). */
+export const revalidate = 60;
+
 export default async function BoardPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: raw } = await params;
   if (!isLocale(raw)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
-  const rows = sampleQuestions.map((q) => toBoardRow(q, SAMPLE_NOW));
+  const rows = (await withLiveCrowd(sampleQuestions)).map((q) => toBoardRow(q, SAMPLE_NOW));
 
   return (
     <div className="grid gap-6">

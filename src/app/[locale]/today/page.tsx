@@ -16,6 +16,7 @@ import { YourCallBadge } from "@/components/your-call-badge";
 import { ScreenView } from "@/components/screen-view";
 import { TodayProgress } from "@/components/today-progress";
 import { SAMPLE_NOW, todaysFive } from "@/content/sample-questions";
+import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatDayHeading, formatPercent, formatShortDate } from "@/lib/format";
@@ -26,6 +27,9 @@ import { fill } from "@/lib/text";
 function capitalizeFirst(s: string): string {
   return s.charAt(0).toLocaleUpperCase() + s.slice(1);
 }
+
+/** Real crowd numbers refresh every minute (ISR). */
+export const revalidate = 60;
 
 /** Sample streak until accounts store real ones (M2). */
 const SAMPLE_STREAK = 4;
@@ -42,7 +46,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
   if (!isLocale(raw)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
-  const five = todaysFive();
+  const five = await withLiveCrowd(todaysFive());
   const [lead, ...rest] = five;
   if (!lead) notFound();
   const pct = (v: number) => formatPercent(v, locale);

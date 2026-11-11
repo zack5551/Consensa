@@ -11,7 +11,8 @@ import { ProvinceSplit } from "@/components/province-split";
 import { ScreenView } from "@/components/screen-view";
 import { Icon } from "@/components/shell/icons";
 import { localeHref } from "@/components/shell/nav-items";
-import { SAMPLE_NOW, sampleQuestions, todaysFive } from "@/content/sample-questions";
+import { SAMPLE_NOW, sampleQuestions as sample, todaysFive } from "@/content/sample-questions";
+import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
@@ -25,6 +26,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return { title: { absolute: t.meta.title }, alternates: { canonical: `/${locale}`, languages: { "en-CA": "/en", "fr-CA": "/fr" } } };
 }
 
+/** Real crowd numbers refresh every minute (ISR). */
+export const revalidate = 60;
+
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: raw } = await params;
   if (!isLocale(raw)) notFound();
@@ -34,8 +38,10 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const pct = (v: number) => formatPercent(v, locale);
   const href = (path: string) => localeHref(locale, path);
 
+  const sampleQuestions = await withLiveCrowd(sample);
   const open = sampleQuestions.filter((q) => isOpen(questionState(q, SAMPLE_NOW)));
-  const lead = todaysFive()[0] ?? open[0] ?? sampleQuestions[0]!;
+  const firstSlug = todaysFive()[0]?.slug;
+  const lead = sampleQuestions.find((q) => q.slug === firstSlug) ?? open[0] ?? sampleQuestions[0]!;
   const leadYes = crowdNow(lead);
   const { high, low } = provinceExtremes(lead.provinces);
   const trending = [...open].filter((q) => q.slug !== lead.slug).sort((a, b) => b.forecasters - a.forecasters).slice(0, 3);
