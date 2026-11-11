@@ -20,8 +20,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-export default async function SignInPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function SignInPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ link?: string }> }) {
   const { locale: raw } = await params;
+  const { link } = await searchParams;
   if (!isLocale(raw)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
@@ -34,7 +35,7 @@ export default async function SignInPage({ params }: { params: Promise<{ locale:
         <p className="m-0 text-body text-ink-2">{t.signIn.body}</p>
       </header>
       <div className="rounded-card border border-line bg-surface p-5 shadow-card sm:p-6">
-        <SignInForm locale={locale} t={t.signIn} />
+        <SignInForm locale={locale} t={t.signIn} expired={link === "expired"} />
       </div>
       <p className="m-0 text-caption text-ink-2">{t.legal.footer}</p>
     </div>

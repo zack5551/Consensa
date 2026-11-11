@@ -5,6 +5,9 @@ import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } fr
 import { Icon } from "@/components/shell/icons";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
+import { browserSupabase } from "@/lib/supabase/browser";
+import type { SignupMetadata } from "@/lib/supabase/config";
+import { accountsEnabled } from "@/lib/supabase/env";
 import { emailSchema, isAdult, PROFILE_STORAGE_KEY, regionChoices, stepNumber, steps, todayInToronto, type RegionChoice, type Step } from "@/lib/onboarding";
 import { categories, type Category } from "@/lib/question";
 import { fill } from "@/lib/text";
@@ -48,13 +51,15 @@ function readDraft(): Draft {
 /**
  * Onboarding: language → 18+ check → region → topics → account with four separate, unticked consents → done.
  * Each step is one question with one action. Focus moves to the new step's heading so screen-reader and
- * keyboard users always know where they are. Nothing is sent anywhere until accounts exist (M2).
+ * keyboard users always know where they are. In preview mode nothing is sent anywhere; with accounts on, the
+ * last step emails a link that finishes creating the account.
  */
 export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabel }: Props) {
   const [step, setStep] = useState<Step>("language");
   const [blocked, setBlocked] = useState(false);
   const [draft, setDraft] = useState<Draft>({ region: null, topics: [] });
   const [saved, setSaved] = useState<StoredProfile | null>(null);
+  const [linkFailed, setLinkFailed] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
   const ids = useId();
@@ -249,6 +254,24 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabe
             }
             setSaved(profile);
             go("done");
+            const supabase = browserSupabase();
+            if (supabase) {
+              // The database refuses the account unless adult and terms are true (see the accounts migration).
+              const data: SignupMetadata = {
+                locale,
+                adult: true,
+                terms: true,
+                region: profile.region,
+                topics: profile.topics,
+                dataLicensing: profile.consents.dataLicensing,
+                analytics: profile.consents.analytics,
+                marketing: profile.consents.marketing,
+              };
+              setLinkFailed(false);
+              void supabase.auth
+                .signInWithOtp({ email, options: { shouldCreateUser: true, data, emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/${locale}/today` } })
+                .then(({ error }) => setLinkFailed(error !== null));
+            }
           }}
         />
       )}
@@ -271,7 +294,13 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabe
         </Panel>
       )}
 
-      <p className="m-0 text-caption text-ink-2">{t.previewNote}</p>
+      {accountsEnabled && step === "done" && saved ? (
+        <p role="status" className="m-0 rounded-control border border-line bg-sunken p-3 text-body-sm">
+          {linkFailed ? t.failed : fill(t.liveNote, { email: saved.email })}
+        </p>
+      ) : accountsEnabled ? null : (
+        <p className="m-0 text-caption text-ink-2">{t.previewNote}</p>
+      )}
     </div>
   );
 }

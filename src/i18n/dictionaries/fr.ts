@@ -150,6 +150,8 @@ const fr = {
     next: "Continuer",
     skip: "Passer pour l’instant",
     previewNote: "Les comptes arrivent bientôt. Pour l’instant, vos choix restent seulement sur cet appareil.",
+    liveNote: "Vérifiez vos courriels : un lien pour terminer la création de votre compte s’en va à {email}. Il ne fonctionne qu’une fois et expire dans 15 minutes.",
+    failed: "Impossible d’envoyer le lien pour le moment. Vos choix restent sur cet appareil ; réessayez dans une minute à partir de « Se connecter ».",
     language: {
       title: "Quelle langue préférez-vous?",
       body: "Vous pouvez changer en tout temps en haut de chaque écran. Les prévisions dans les deux langues comptent dans la même foule.",
@@ -218,6 +220,8 @@ const fr = {
     sentTitle: "Vérifiez vos courriels",
     sentBody: "Si {email} a un compte, un lien de connexion est en route. Il fonctionne une seule fois et expire dans 15 minutes.",
     previewNote: "Ceci est un aperçu : les comptes arrivent bientôt, alors aucun courriel n’a été envoyé.",
+    failed: "Impossible d’envoyer le lien pour le moment. Attendez une minute et réessayez.",
+    expired: "Ce lien de connexion a expiré ou a déjà servi. Entrez votre courriel pour en recevoir un nouveau.",
     another: "Utiliser un autre courriel",
     newHere: "Nouveau sur Consensa?",
     getStarted: "Commencer",
