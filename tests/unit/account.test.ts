@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { consentChangeSchema, consentState, deleteAccountSchema, exportFileName } from "@/lib/account";
+import { consentChangeSchema, consentState, deleteAccountSchema, exportFileName, signedInRecently } from "@/lib/account";
 
 describe("consentState", () => {
   it("is on only while a row for that consent is not withdrawn", () => {
@@ -24,6 +24,15 @@ describe("account request bodies", () => {
     expect(deleteAccountSchema.safeParse({ confirm: true }).success).toBe(true);
     expect(deleteAccountSchema.safeParse({ confirm: "true" }).success).toBe(false);
     expect(deleteAccountSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("deletes only after a recent sign-in", () => {
+    const now = new Date("2026-11-11T12:00:00Z");
+    expect(signedInRecently("2026-11-11T11:50:00Z", now)).toBe(true);
+    expect(signedInRecently("2026-11-11T11:44:59Z", now)).toBe(false);
+    expect(signedInRecently("2026-11-11T12:30:00Z", now)).toBe(false);
+    expect(signedInRecently(null, now)).toBe(false);
+    expect(signedInRecently("not a date", now)).toBe(false);
   });
 
   it("dates the download", () => {

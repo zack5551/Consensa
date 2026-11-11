@@ -20,7 +20,7 @@ export function AccountPanel({ locale, t, consentLabels }: { locale: Locale; t: 
   const [note, setNote] = useState<string>("");
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [deleteFailed, setDeleteFailed] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState<"" | "failed" | "reauth">("");
   const ids = useId();
 
   useEffect(() => {
@@ -66,11 +66,12 @@ export function AccountPanel({ locale, t, consentLabels }: { locale: Locale; t: 
 
   async function remove() {
     setDeleting(true);
-    setDeleteFailed(false);
+    setDeleteFailed("");
     const res = await fetch("/api/account", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm: true }) }).catch(() => null);
     if (!res?.ok) {
       setDeleting(false);
-      setDeleteFailed(true);
+      const body = res?.status === 403 ? ((await res.json().catch(() => null)) as { error?: string } | null) : null;
+      setDeleteFailed(body?.error === "reauth" ? "reauth" : "failed");
       return;
     }
     // The account is gone; clear this browser's copy too (calls and onboarding answers).
@@ -140,9 +141,17 @@ export function AccountPanel({ locale, t, consentLabels }: { locale: Locale; t: 
               <input type="checkbox" className="mt-0.5 size-5 shrink-0" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
               <span>{t.deleteConfirm}</span>
             </label>
-            {deleteFailed && (
+            {deleteFailed === "failed" && (
               <p role="alert" className="m-0 text-body-sm font-semibold text-[var(--cn-danger)]">
                 {t.deleteFailed}
+              </p>
+            )}
+            {deleteFailed === "reauth" && (
+              <p role="alert" className="m-0 max-w-[60ch] text-body-sm font-semibold text-[var(--cn-danger)]">
+                {t.deleteReauth}{" "}
+                <Link href={`/${locale}/sign-in`} className="underline">
+                  {t.signInAgain}
+                </Link>
               </p>
             )}
             <button

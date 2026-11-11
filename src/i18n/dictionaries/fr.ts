@@ -544,6 +544,8 @@ const fr = {
     deleteAction: "Supprimer mon compte",
     deleting: "Suppression…",
     deleteFailed: "Votre compte n’a pas été supprimé. Réessayez dans un instant.",
+    deleteReauth: "Pour protéger votre compte, sa suppression exige une connexion datant de moins de 15 minutes.",
+    signInAgain: "Reconnectez-vous, puis revenez ici.",
     loading: "Chargement de votre compte…",
     signedOut: "Connectez-vous pour gérer votre compte, télécharger ou supprimer vos données.",
     signIn: "Me connecter",

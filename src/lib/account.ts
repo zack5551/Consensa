@@ -20,6 +20,18 @@ export function consentState(rows: readonly ConsentRow[]): ConsentState {
 export const consentChangeSchema = z.object({ kind: z.enum(optionalConsents), on: z.boolean() }).strict();
 
 /** Deleting needs an explicit yes in the body, so a stray request can't do it. */
+/** How recent a sign-in must be before the account can be deleted: a stolen or left-open session can't erase it. */
+export const RECENT_SIGN_IN_MS = 15 * 60_000;
+
+/** True when the person signed in within the last 15 minutes. A missing or unreadable time counts as not recent. */
+export function signedInRecently(lastSignInAt: string | null | undefined, now: Date): boolean {
+  if (!lastSignInAt) return false;
+  const at = Date.parse(lastSignInAt);
+  if (Number.isNaN(at)) return false;
+  const age = now.getTime() - at;
+  return age >= -60_000 && age <= RECENT_SIGN_IN_MS;
+}
+
 export const deleteAccountSchema = z.object({ confirm: z.literal(true) }).strict();
 
 /** The file name of the data download, dated so repeated downloads don't overwrite each other. */

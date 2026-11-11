@@ -542,6 +542,8 @@ const en = {
     deleteAction: "Delete my account",
     deleting: "Deleting…",
     deleteFailed: "Your account wasn’t deleted. Try again in a moment.",
+    deleteReauth: "To protect your account, deleting it needs a sign-in from the last 15 minutes.",
+    signInAgain: "Sign in again, then come back here.",
     loading: "Loading your account…",
     signedOut: "Sign in to manage your account and download or delete your data.",
     signIn: "Sign in",

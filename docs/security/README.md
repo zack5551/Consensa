@@ -31,8 +31,8 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
    the schema (no such function exists, and triggers refuse balance edits from clients).
 4. **One person, one call per question:** a unique `(user_id, question_id)` constraint, and calls refuse writes after
    the close date (checked in the database, not only the UI).
-5. **Delete and export** on the account screen. Export is that user's own data as JSON. Delete removes the account
-   and personal data within 30 days and keeps only anonymous aggregates. Both are Law 25 rights.
+5. **Delete and export** on the account screen. Export is that user's own data as JSON. Delete needs a sign-in from the last
+   15 minutes, then removes the account and personal data within 30 days and keeps only anonymous aggregates. Both are Law 25 rights.
 6. **Collect the minimum.** 18+ stored as yes/no only, province not city, no birth date, no phone. Consents stored as
    separate rows with a timestamp and the wording version shown.
 7. **Data stays in Canada.** Supabase in ca-central-1. Any new service that receives personal info (email sender,

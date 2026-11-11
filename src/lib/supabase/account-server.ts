@@ -27,5 +27,5 @@ export async function signedIn() {
   if (!supabase || !admin) return { ok: false, error: NextResponse.json({ error: "accounts off" }, { status: 404, headers: noStore }) } as const;
   const { data } = await supabase.auth.getUser();
   if (!data.user?.email) return { ok: false, error: NextResponse.json({ error: "sign in" }, { status: 401, headers: noStore }) } as const;
-  return { ok: true, user: { id: data.user.id, email: data.user.email, createdAt: data.user.created_at }, supabase, admin } as const;
+  return { ok: true, user: { id: data.user.id, email: data.user.email, createdAt: data.user.created_at, lastSignInAt: data.user.last_sign_in_at ?? null }, supabase, admin } as const;
 }
