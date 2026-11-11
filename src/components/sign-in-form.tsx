@@ -35,7 +35,7 @@ export function SignInForm({ locale, t, expired = false }: { locale: Locale; t: 
       setError(true);
       return;
     }
-    const supabase = browserSupabase();
+    const supabase = await browserSupabase();
     if (supabase) {
       setBusy(true);
       setFailed(false);
