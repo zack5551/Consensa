@@ -315,6 +315,8 @@ const en = {
   province: {
     title: "Canada says yes, by province",
     summary: "Highest in {high} at {highValue}, lowest in {low} at {lowValue}.",
+    notEnough: "Not enough calls in each region yet to show the split.",
+    hiddenNote: "— means fewer than 5 calls in that region so far. We show a number once 5 people there have called.",
     names: { BC: "BC", AB: "Alberta", PR: "Prairies", ON: "Ontario", QC: "Quebec", AT: "Atlantic" },
     short: { BC: "BC", AB: "AB", PR: "Prairies", ON: "ON", QC: "QC", AT: "Atl." },
   },

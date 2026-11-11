@@ -22,19 +22,24 @@ type Props = {
   format: (v: number) => string;
   /** Shade tiles across this question's own range, so close values still read apart. */
   relative?: boolean;
+  /** Regions with too few real calls to show: their tile reads "—" and stays unshaded. */
+  hidden?: readonly Province[];
+  /** Explains the "—" tiles; shown only when a tile is hidden. */
+  hiddenNote?: string;
 };
 
-export function ProvinceSplit({ values, title, summary, short, names, format, relative = false }: Props) {
-  const all = provinces.map((p) => values[p]);
-  const min = Math.min(...all);
-  const span = Math.max(...all) - min || 1;
+export function ProvinceSplit({ values, title, summary, short, names, format, relative = false, hidden = [], hiddenNote }: Props) {
+  const all = provinces.filter((p) => !hidden.includes(p)).map((p) => values[p]);
+  const min = all.length ? Math.min(...all) : 0;
+  const span = (all.length ? Math.max(...all) : 0) - min || 1;
   return (
     <figure className="m-0">
       <figcaption className="mb-2 text-caption font-bold text-canada">{title}</figcaption>
       <ul className="grid grid-cols-4 gap-2" aria-label={summary}>
         {provinces.map((p) => {
           const value = values[p];
-          const shade = relative ? 6 + ((value - min) / span) * 34 : 4 + (value / 100) * 20;
+          const off = hidden.includes(p);
+          const shade = off ? 0 : relative ? 6 + ((value - min) / span) * 34 : 4 + (value / 100) * 20;
           return (
             <li
               key={p}
@@ -44,11 +49,12 @@ export function ProvinceSplit({ values, title, summary, short, names, format, re
               <abbr title={names[p]} className={`text-caption font-semibold no-underline ${relative ? "text-ink" : "text-ink-2"}`}>
                 {short[p]}
               </abbr>
-              <span className="font-display text-title-sm font-bold tabular text-ink">{format(value)}</span>
+              <span className={`font-display text-title-sm font-bold tabular ${off ? "text-ink-3" : "text-ink"}`}>{off ? "—" : format(value)}</span>
             </li>
           );
         })}
       </ul>
+      {hidden.length > 0 && hiddenNote ? <p className="mb-0 mt-2 text-caption text-ink-2">{hiddenNote}</p> : null}
     </figure>
   );
 }

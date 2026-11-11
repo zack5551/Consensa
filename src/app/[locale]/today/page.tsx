@@ -20,7 +20,8 @@ import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatDayHeading, formatPercent, formatShortDate } from "@/lib/format";
-import { crowdNow, provinceExtremes, questionState } from "@/lib/question";
+import { crowdNow, questionState } from "@/lib/question";
+import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
 
 /** "vendredi 6 novembre" → "Vendredi 6 novembre" (CSS capitalize would also capitalize the month). */
@@ -50,7 +51,6 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
   const [lead, ...rest] = five;
   if (!lead) notFound();
   const pct = (v: number) => formatPercent(v, locale);
-  const { high, low } = provinceExtremes(lead.provinces);
   const href = (slug: string) => `/${locale}/q/${slug}`;
 
   const kicker = "m-0 text-caption font-bold uppercase tracking-widest";
@@ -108,7 +108,9 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
           relative
           values={lead.provinces}
           title={t.province.title}
-          summary={fill(t.province.summary, { high: t.province.names[high], highValue: pct(lead.provinces[high]), low: t.province.names[low], lowValue: pct(lead.provinces[low]) })}
+          summary={provinceSummary(lead, t.province, pct)}
+          hidden={lead.hiddenProvinces}
+          hiddenNote={t.province.hiddenNote}
           short={t.province.short}
           names={t.province.names}
           format={pct}

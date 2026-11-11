@@ -14,12 +14,19 @@ import { sampleResults } from "@/content/sample-results";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatPercent } from "@/lib/format";
-import { crowdNow, isOpen, provinceExtremes, questionState } from "@/lib/question";
-import { bellwether, MIN_CELL, meanDistance, regionalAccuracy, regions, regionSlug } from "@/lib/regions";
+import { crowdNow, isOpen, questionState } from "@/lib/question";
+import { bellwether, MIN_CELL, meanDistance, regionalAccuracy, regions, regionSlug, type Region } from "@/lib/regions";
 import { formatBrier, formatOneDecimal } from "@/lib/score-format";
+import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
 
 type Params = Promise<{ locale: string }>;
+
+/** Gap between the highest and lowest region shown (hidden regions don't count). */
+function spreadOf(q: { provinces: Record<Region, number>; hiddenProvinces?: readonly Region[] }): number {
+  const shown = regions.filter((r) => !q.hiddenProvinces?.includes(r)).map((r) => q.provinces[r]);
+  return shown.length > 1 ? Math.max(...shown) - Math.min(...shown) : 0;
+}
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
@@ -40,7 +47,7 @@ export default async function ProvincesPage({ params }: { params: Params }) {
   const accuracy = regionalAccuracy(sampleResults);
   const accuracyBy = new Map(accuracy.map((a) => [a.region, a]));
   const splits = open
-    .map((q) => ({ q, spread: Math.max(...regions.map((r) => q.provinces[r])) - Math.min(...regions.map((r) => q.provinces[r])) }))
+    .map((q) => ({ q, spread: spreadOf(q) }))
     .sort((a, b) => b.spread - a.spread)
     .slice(0, 3);
   const best = accuracy[0];
@@ -102,7 +109,6 @@ export default async function ProvincesPage({ params }: { params: Params }) {
         </div>
         <ul className="m-0 grid list-none gap-3 p-0 lg:grid-cols-3">
           {splits.map(({ q, spread }) => {
-            const { high, low } = provinceExtremes(q.provinces);
             return (
               <li key={q.slug} className="grid content-start gap-3 rounded-card border border-line bg-surface p-4">
                 <Link href={`/${locale}/q/${q.slug}`} className="text-body-sm font-semibold text-balance hover:underline">
@@ -112,7 +118,9 @@ export default async function ProvincesPage({ params }: { params: Params }) {
                 <ProvinceSplit
                   values={q.provinces}
                   title={t.province.title}
-                  summary={fill(t.province.summary, { high: t.province.names[high], highValue: pct(q.provinces[high]), low: t.province.names[low], lowValue: pct(q.provinces[low]) })}
+                  summary={provinceSummary(q, t.province, pct)}
+                  hidden={q.hiddenProvinces}
+                  hiddenNote={t.province.hiddenNote}
                   short={t.province.short}
                   names={t.province.names}
                   format={pct}

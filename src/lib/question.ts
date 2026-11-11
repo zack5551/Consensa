@@ -20,6 +20,8 @@ export const questionSchema = z.object({
   provinces: z.record(z.enum(provinces), percent),
   /** The crowd's chance among calls made in English vs French: one crowd, two languages. */
   languages: z.object({ en: percent, fr: percent }).optional(),
+  /** Regions with too few real calls to show (privacy floor). Their tiles read "—" and the summary skips them. */
+  hiddenProvinces: z.array(z.enum(provinces)).optional(),
   events: z.array(z.object({ dayIndex: z.number().int().nonnegative(), label: bilingual })).default([]),
   why: z
     .object({ body: bilingual, sources: z.array(bilingual).min(1) })
@@ -65,9 +67,12 @@ export function isOpen(state: QuestionState): boolean {
 }
 
 /** Highest and lowest regions, for the province split's text summary. */
-export function provinceExtremes(values: Record<Province, number>): { high: Province; low: Province } {
-  const sorted = [...provinces].sort((a, b) => values[b] - values[a]);
-  return { high: sorted[0]!, low: sorted[sorted.length - 1]! };
+/** Highest and lowest region among those shown. Null when fewer than two regions can be shown. */
+export function provinceExtremes(values: Record<Province, number>, hidden: readonly Province[] = []): { high: Province; low: Province } | null {
+  const sorted = provinces.filter((p) => !hidden.includes(p)).sort((a, b) => values[b] - values[a]);
+  const high = sorted[0];
+  const low = sorted[sorted.length - 1];
+  return high !== undefined && low !== undefined && high !== low ? { high, low } : null;
 }
 
 /** Whole-point change in the crowd's chance over the last `days` days. */
