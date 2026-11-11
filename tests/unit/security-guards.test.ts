@@ -119,3 +119,59 @@ describe("headers", async () => {
     expect(embedCsp).toMatch(/frame-ancestors \*/);
   });
 });
+
+/**
+ * Outside hosts (CLAUDE.md rules 7 and 8). Every web address in src must sit under one of these domains: official
+ * Canadian sources, the news and award sites questions cite, and the feeds PULSE reads on the server. A new host
+ * fails this test until someone checks it: no tracker or font CDN (data stays in Canada), and no sportsbook,
+ * casino, lottery, prediction-market or crypto-trading site. Add a domain here only after that check, with the
+ * reason in the PR.
+ */
+const allowedDomains = [
+  // Official Canadian sources
+  "statcan.gc.ca", "bankofcanada.ca", "canada.ca", "gc.ca", "cmhc-schl.gc.ca", "elections.ca",
+  // News outlets and cultural bodies cited as resolution sources
+  "cbc.ca", "radio-canada.ca", "globalnews.ca", "crea.ca", "academy.ca", "telefilm.ca", "numeris.ca",
+  "junoawards.ca", "scotiabankgillerprize.ca", "polarismusicprize.ca", "nhl.com", "cfl.ca",
+  "nasa.gov", "nobelprize.org", "imdb.com", "boxofficemojo.com",
+  // Read by the engine on the server only; no user data is sent
+  "trends.google.com",
+  // Not network calls: the SVG namespace and the local dev fallback
+  "www.w3.org", "localhost",
+];
+
+/** Packages that send visitor data to a third party. Rule 7: none without a privacy review and LEX's check. */
+const trackerPackages = [
+  /^@vercel\/(analytics|speed-insights)$/, /google-analytics|^react-ga|gtag|^@next\/third-parties$/, /^@segment\//,
+  /mixpanel/, /hotjar/, /fullstory/, /^@amplitude\//, /facebook-pixel|^react-facebook/, /^@datadog\/browser/,
+  /^logrocket/, /^posthog-js$/,
+];
+
+describe("outside hosts", () => {
+  const allowed = (host: string) => allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
+
+  for (const file of source) {
+    const hosts = [...read(file).matchAll(/https?:\/\/([a-z0-9.-]+)/gi)].map((m) => m[1]!.toLowerCase());
+    const unknown = [...new Set(hosts.filter((h) => !allowed(h)))];
+    if (unknown.length === 0) continue;
+    it(`${rel(file)} only links to checked hosts`, () => {
+      expect(unknown, "new outside host: check rules 7 and 8, then add it to allowedDomains").toEqual([]);
+    });
+  }
+
+  it("every source file was scanned", () => {
+    expect(source.length).toBeGreaterThan(50);
+  });
+
+  it("no tracker packages (rule 7)", () => {
+    const pkg = JSON.parse(read(join(root, "package.json"))) as Record<string, Record<string, string> | undefined>;
+    const names = Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
+    const trackers = names.filter((n) => trackerPackages.some((p) => p.test(n)));
+    expect(trackers, "tracker package: needs a privacy review and LEX's check first").toEqual([]);
+  });
+
+  it("no script tags pointing off-site", () => {
+    const offsite = source.filter((f) => /<script[^>]+src=["'{]?\s*["'`]?https?:/i.test(read(f))).map(rel);
+    expect(offsite).toEqual([]);
+  });
+});
