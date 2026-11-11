@@ -314,6 +314,12 @@ const fr = {
     back: "Retour aux cinq du jour",
     backBoard: "Retour au Tableau",
     yourCall: "Votre prévision : {value}",
+    verdict: {
+      right: "Le Canada a vu juste.",
+      wrong: "Le Canada s’est trompé cette fois.",
+      split: "Le Canada était partagé moitié-moitié.",
+      topic: "Pour les questions de la catégorie {topic}, le Canada a penché du bon côté {right} fois sur {total}.",
+    },
     week: {
       up: "En hausse de {n} points cette semaine",
       upOne: "En hausse de 1 point cette semaine",

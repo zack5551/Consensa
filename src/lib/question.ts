@@ -100,6 +100,24 @@ export function crowdBrier(q: Question): number | null {
   return (p - (r.outcome === "yes" ? 1 : 0)) ** 2;
 }
 
+/** Whether the crowd's number at close leaned toward the answer. Null until a non-disputed result on a scored question. */
+export function crowdVerdict(q: Question): "right" | "wrong" | "split" | null {
+  if (crowdBrier(q) === null) return null;
+  const now = crowdNow(q);
+  if (now === 50) return "split";
+  return (now > 50) === (q.resolution.result?.outcome === "yes") ? "right" : "wrong";
+}
+
+/**
+ * The crowd's record on this question's topic: how many resolved, scored questions it leaned the right way on. Null
+ * below `min` results, so a topic with one or two results never reads as a track record.
+ */
+export function topicRecord(q: Question, all: readonly Question[], min = 3): { right: number; total: number } | null {
+  const verdicts = all.filter((o) => o.category === q.category).map(crowdVerdict).filter((v) => v !== null);
+  if (verdicts.length < min) return null;
+  return { right: verdicts.filter((v) => v === "right").length, total: verdicts.length };
+}
+
 /** The crowd's public record across resolved, scored questions. */
 export function crowdRecord(qs: readonly Question[]): { resolved: number; meanBrier: number | null; rightSide: number | null } {
   const scored = qs.flatMap((q) => {

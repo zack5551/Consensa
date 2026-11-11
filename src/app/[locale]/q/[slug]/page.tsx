@@ -20,7 +20,7 @@ import { withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { crowdNow, questionState, weekMove } from "@/lib/question";
+import { crowdNow, crowdVerdict, questionState, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
@@ -76,6 +76,23 @@ export default async function QuestionPage({ params }: { params: Params }) {
       : move.points === 1
         ? t.question.week[move.direction === "up" ? "upOne" : "downOne"]
         : fill(t.question.week[move.direction], { n: String(move.points) }));
+
+  // After the result: did Canada lean the right way, and how has it done on this topic? Scored, undisputed results only.
+  const verdict = crowdVerdict(q);
+  const record = verdict ? topicRecord(q, sampleQuestions) : null;
+  const verdictText =
+    verdict &&
+    [
+      t.question.verdict[verdict],
+      record &&
+        fill(t.question.verdict.topic, {
+          topic: t.board.categories[q.category].toLocaleLowerCase(locale === "fr" ? "fr-CA" : "en-CA"),
+          right: String(record.right),
+          total: String(record.total),
+        }),
+    ]
+      .filter(Boolean)
+      .join(" ");
 
   const note =
     state === "closingSoon"
@@ -165,6 +182,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
               </>
             )}
           </p>
+          {verdictText && <p className="m-0 max-w-[62ch] border-t border-line pt-3 text-body font-semibold">{verdictText}</p>}
         </section>
 
         <div className="lg:hidden">{panel}</div>
