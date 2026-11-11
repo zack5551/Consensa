@@ -58,6 +58,13 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
 - **Logs and backups** (Privacy Policy §8: 90 days for logs and errors, 30 days for backups) are set in the Supabase and
   Vercel dashboards, not in code. Check them before launch.
 
+## Terms changes
+
+- `TERMS_VERSION` (`src/lib/supabase/config.ts`) is the date of the Terms everyone must have accepted. On a material
+  change, set it and `CONSENT_VERSION` to the new date (a test keeps them in order). At their next sign-in, people
+  who accepted an older version land on the Terms with an accept box; accepting adds a new `terms` row to
+  `consent_log`, and declining means deleting the account.
+
 ## Email (CASL)
 
 - The marketing box at sign-up names the sender ("from Consensa"). Add the operator's legal name to it once the

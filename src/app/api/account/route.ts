@@ -1,17 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { consentState, deleteAccountSchema, signedInRecently, type ConsentRow } from "@/lib/account";
+import { consentState, deleteAccountSchema, signedInRecently, termsCurrent, type ConsentRow } from "@/lib/account";
 import { rateLimiter } from "@/lib/rate-limit";
 import { noStore, sameOrigin, signedIn } from "@/lib/supabase/account-server";
+import { TERMS_VERSION } from "@/lib/supabase/config";
 
 const allowDelete = rateLimiter({ limit: 5, windowMs: 60_000 });
 
-/** Who is signed in and which optional consents are on. Read with the person's own session (row-level security). */
+/** Who is signed in, which optional consents are on, and whether they have accepted the current Terms. Read with the person's own session (row-level security). */
 export async function GET() {
   const me = await signedIn();
   if (!me.ok) return me.error.status === 401 ? NextResponse.json({ signedIn: false }, { headers: noStore }) : me.error;
-  const { data, error } = await me.supabase.from("consent_log").select("kind, given_at, withdrawn_at");
+  const { data, error } = await me.supabase.from("consent_log").select("kind, version, given_at, withdrawn_at");
   if (error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
-  return NextResponse.json({ signedIn: true, email: me.user.email, consents: consentState((data ?? []) as ConsentRow[]) }, { headers: noStore });
+  const rows = (data ?? []) as ConsentRow[];
+  return NextResponse.json(
+    { signedIn: true, email: me.user.email, consents: consentState(rows), termsCurrent: termsCurrent(rows, TERMS_VERSION), termsVersion: TERMS_VERSION },
+    { headers: noStore },
+  );
 }
 
 /**

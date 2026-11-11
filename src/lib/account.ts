@@ -9,13 +9,21 @@ export const optionalConsents = ["dataLicensing", "analytics", "marketing"] as c
 export type OptionalConsent = (typeof optionalConsents)[number];
 export type ConsentState = Record<OptionalConsent, boolean>;
 
-export type ConsentRow = { kind: string; given_at: string; withdrawn_at: string | null };
+export type ConsentRow = { kind: string; given_at: string; withdrawn_at: string | null; version?: string };
 
 /** A consent is on when the log has a row for it that hasn't been withdrawn. */
 export function consentState(rows: readonly ConsentRow[]): ConsentState {
   const on = (kind: OptionalConsent) => rows.some((r) => r.kind === kind && r.withdrawn_at === null);
   return { dataLicensing: on("dataLicensing"), analytics: on("analytics"), marketing: on("marketing") };
 }
+
+/** True when the log holds an open acceptance of the Terms at `termsVersion` or later (dates compare as text). */
+export function termsCurrent(rows: readonly ConsentRow[], termsVersion: string): boolean {
+  return rows.some((r) => r.kind === "terms" && r.withdrawn_at === null && typeof r.version === "string" && r.version >= termsVersion);
+}
+
+/** Accepting new Terms names the exact version shown, so a stale page can't accept a version it never displayed. */
+export const acceptTermsSchema = z.object({ version: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).strict();
 
 export const consentChangeSchema = z.object({ kind: z.enum(optionalConsents), on: z.boolean() }).strict();
 

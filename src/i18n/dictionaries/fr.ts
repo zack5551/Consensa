@@ -228,6 +228,15 @@ const fr = {
     getStarted: "Commencer",
   },
   legalPages: {
+    termsReview: {
+      title: "Nos conditions ont changé",
+      body: "Nous avons révisé les conditions ci-dessous le {date}. Lisez-les, puis acceptez-les pour continuer d’utiliser votre compte. Si vous n’êtes pas d’accord, vous pouvez supprimer votre compte depuis Mon bilan.",
+      accept: "J’accepte les conditions révisées",
+      accepting: "Enregistrement…",
+      accepted: "Merci. C’est fait.",
+      failed: "Ça n’a pas été enregistré. Réessayez dans un instant.",
+      account: "Aller à mon compte",
+    },
     draft: "Ceci est un résumé en langage clair. Le texte complet sera revu par un avocat avant le lancement.",
     updated: "Dernière révision : {date}",
     privacy: {

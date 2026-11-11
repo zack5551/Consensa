@@ -226,6 +226,15 @@ const en = {
     getStarted: "Get started",
   },
   legalPages: {
+    termsReview: {
+      title: "Our Terms changed",
+      body: "We updated the Terms below on {date}. Read them, then accept to keep using your account. If you don’t agree, you can delete your account from My record.",
+      accept: "I accept the updated Terms",
+      accepting: "Saving…",
+      accepted: "Thanks. You’re all set.",
+      failed: "That didn’t save. Try again in a moment.",
+      account: "Go to my account",
+    },
     draft: "This is a plain-language summary. The full text is reviewed by a lawyer before launch.",
     updated: "Last updated {date}",
     privacy: {
