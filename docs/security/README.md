@@ -45,6 +45,16 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
 11. **Logs carry no personal info**: no emails, IPs or tokens in logs or error reports.
 12. **Full CSP with nonces** (script-src) once pages render per request for accounts.
 
+## Retention and incidents
+
+- **Consent records** are removed 3 years after the consent ends, by the nightly `consensa-purge-expired-consents`
+  pg_cron job (`supabase/migrations/20261111000400_retention_and_incidents.sql`). Nothing else deletes them.
+- **Privacy incidents** go in `public.privacy_incidents` (dashboard only, secret key). Log every incident, even a
+  small one. Entries are kept at least 5 years, and the original facts can't be rewritten. The steps to follow are
+  in LEX's breach plan. The register lives in the database, not in this public repo, so no incident details are published.
+- **Logs and backups** (Privacy Policy §8: 90 days for logs and errors, 30 days for backups) are set in the Supabase and
+  Vercel dashboards, not in code. Check them before launch.
+
 ## Before launch (AEGIS + LEX)
 
 - Privacy impact assessment and the cross-border check for every provider (LEX items 6 and 1).
