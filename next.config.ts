@@ -10,10 +10,38 @@ const securityHeaders = [
 ];
 
 /**
- * CSP directives that are safe with Next's inline scripts: no plugins, no <base> hijack, forms post only here.
- * A full script-src policy needs per-request nonces; that lands with accounts (see docs/security/README.md).
+ * The Content-Security-Policy (AEGIS, baseline rule 12).
+ * - Scripts, styles, fonts and images load only from this site, so no tracker, font CDN or third-party script can be
+ *   added by accident (CLAUDE.md rule 7). 'unsafe-inline' stays for scripts because pages are prerendered and Next
+ *   inlines its bootstrap; per-request nonces would make every page dynamic. Revisit if pages go per-request.
+ * - The browser may talk only to this site and our Supabase project, which limits where injected code could send data.
+ * - No plugins, no <base> hijack, forms post only here, no framing of other sites.
  */
-const baseCsp = "object-src 'none'; base-uri 'self'; form-action 'self'";
+const dev = process.env.NODE_ENV !== "production";
+function supabaseOrigins(): string {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!url) return "";
+    const { host } = new URL(url);
+    return ` https://${host} wss://${host}`;
+  } catch {
+    return "";
+  }
+}
+const baseCsp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  `connect-src 'self'${supabaseOrigins()}${dev ? " ws:" : ""}`,
+  "frame-src 'none'",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

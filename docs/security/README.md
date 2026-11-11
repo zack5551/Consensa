@@ -46,7 +46,10 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
 10. **Exports for partners are aggregates only**, with a minimum cell size, from a separate function that can't
     return a user id.
 11. **Logs carry no personal info**: no emails, IPs or tokens in logs or error reports.
-12. **Full CSP with nonces** (script-src) once pages render per request for accounts.
+12. **CSP** (`next.config.ts`): scripts, styles, fonts and images from this site only; the browser connects only to this
+    site and our Supabase project; no frames, plugins or off-site forms. Scripts keep 'unsafe-inline' because pages are
+    prerendered; switch to per-request nonces if pages ever render per request. A new third-party origin needs a
+    privacy review first (rule 7), then a CSP change.
 
 ## Retention and incidents
 
