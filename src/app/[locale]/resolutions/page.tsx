@@ -34,10 +34,10 @@ export default async function ResolutionsPage({ params }: { params: Promise<{ lo
   const c = t.log.columns;
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-10">
       <ScreenView locale={locale} screen="resolutions" />
-      <header className="grid max-w-[68ch] gap-2">
-        <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{t.log.title}</h1>
+      <header className="grid max-w-[68ch] gap-3">
+        <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{t.log.title}</h1>
         <p className="m-0 text-body-lg text-ink-2">{t.log.intro}</p>
         <p className="m-0 text-body-sm text-ink-2">
           {fill(t.log.summary, { n: rows.length })}{" "}
@@ -47,33 +47,33 @@ export default async function ResolutionsPage({ params }: { params: Promise<{ lo
         </p>
       </header>
 
-      <ol className="m-0 grid list-none p-0">
+      <ol className="m-0 grid list-none border-t-2 border-ink p-0">
         {rows.map(({ q, state }) => {
           const r = q.resolution.result;
           const brier = crowdBrier(q);
           return (
-            <li key={q.slug} className="grid gap-3 border-b border-line py-5 first:border-t">
+            <li key={q.slug} className="grid gap-3 border-b border-line py-6">
               <div className="flex flex-wrap items-center gap-2 text-caption text-ink-2">
                 <StateBadge state={state} label={t.states[state]} />
                 <span>{formatLongDate(r?.publishedAt ?? q.resolution.resolvesAt, locale)}</span>
               </div>
-              <h2 className="m-0 font-display text-title-sm font-bold leading-snug text-balance">
+              <h2 className="m-0 font-display text-title-sm font-bold leading-snug tracking-tight text-balance sm:text-title">
                 <Link href={`/${locale}/q/${q.slug}`} className="hover:underline">
                   {q.question[locale]}
                 </Link>
               </h2>
-              <dl className="m-0 grid grid-cols-2 gap-3 text-body-sm sm:grid-cols-4">
+              <dl className="m-0 grid grid-cols-2 gap-4 text-body-sm sm:grid-cols-4">
                 <div>
                   <dt className="text-ink-2">{c.answer}</dt>
-                  <dd className="m-0 font-semibold">{r ? (r.outcome === "yes" ? t.question.yes : t.question.no) : t.log.pending}</dd>
+                  <dd className="m-0 font-display text-title-sm font-bold">{r ? (r.outcome === "yes" ? t.question.yes : t.question.no) : t.log.pending}</dd>
                 </div>
                 <div>
                   <dt className="text-ink-2">{c.crowd}</dt>
-                  <dd className="m-0 font-semibold tabular">{formatPercent(crowdNow(q), locale)}</dd>
+                  <dd className="m-0 font-display text-title-sm font-bold tabular">{formatPercent(crowdNow(q), locale)}</dd>
                 </div>
                 <div>
                   <dt className="text-ink-2">{c.brier}</dt>
-                  <dd className="m-0 font-semibold tabular">{brier === null ? "—" : formatBrier(brier, locale)}</dd>
+                  <dd className="m-0 font-display text-title-sm font-bold tabular">{brier === null ? "—" : formatBrier(brier, locale)}</dd>
                 </div>
                 <div>
                   <dt className="text-ink-2">{c.source}</dt>
