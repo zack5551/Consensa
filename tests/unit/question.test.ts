@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NOW, getQuestion, sampleQuestions, todaysFive } from "@/content/sample-questions";
-import { CLOSING_SOON_MS, crowdChange, crowdVerdict, provinceExtremes, questionState, topicRecord, weekMove, type Question } from "@/lib/question";
+import { CLOSING_SOON_MS, crowdChange, crowdVerdict, nextUp, provinceExtremes, questionState, topicRecord, weekMove, type Question } from "@/lib/question";
 
 const base = getQuestion("boc-cut-dec-2026")!;
 const at = (iso: string) => new Date(iso);
@@ -73,6 +73,16 @@ describe("helpers", () => {
     expect(topicRecord(right, [right, right])).toBeNull();
     expect(topicRecord(right, [right, right, settle([50, 30], "yes"), base])).toEqual({ right: 2, total: 3 });
     expect(topicRecord(right, [right, right, settle([50, 70], "yes", { category: "weather" })])).toBeNull();
+  });
+
+  it("offers open questions to call next, same topic first, never itself or a closed one", () => {
+    const next = nextUp(base, sampleQuestions, SAMPLE_NOW, 5);
+    expect(next.length).toBe(5);
+    expect(next.map((o) => o.slug)).not.toContain(base.slug);
+    for (const o of next) expect(["open", "closingSoon"]).toContain(questionState(o, SAMPLE_NOW));
+    const firstOther = next.findIndex((o) => o.category !== base.category);
+    if (firstOther > 0) for (const o of next.slice(0, firstOther)) expect(o.category).toBe(base.category);
+    if (firstOther >= 0) for (const o of next.slice(firstOther)) expect(o.category).not.toBe(base.category);
   });
 
   it("finds the highest and lowest regions", () => {

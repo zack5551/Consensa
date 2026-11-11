@@ -118,6 +118,18 @@ export function topicRecord(q: Question, all: readonly Question[], min = 3): { r
   return { right: verdicts.filter((v) => v === "right").length, total: verdicts.length };
 }
 
+/**
+ * Up to `n` open questions to call next, after this one: same topic first, then the rest, each group by most called.
+ * Never this question and never a closed one, so every link leads to a call that can still be made.
+ */
+export function nextUp(q: Question, all: readonly Question[], now: Date, n = 3): Question[] {
+  const open = all.filter((o) => o.slug !== q.slug && isOpen(questionState(o, now)));
+  const byCalls = (a: Question, b: Question) => b.forecasters - a.forecasters;
+  const same = open.filter((o) => o.category === q.category).sort(byCalls);
+  const rest = open.filter((o) => o.category !== q.category).sort(byCalls);
+  return [...same, ...rest].slice(0, n);
+}
+
 /** The crowd's public record across resolved, scored questions. */
 export function crowdRecord(qs: readonly Question[]): { resolved: number; meanBrier: number | null; rightSide: number | null } {
   const scored = qs.flatMap((q) => {
