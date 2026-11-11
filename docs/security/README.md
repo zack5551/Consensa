@@ -46,7 +46,10 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
 10. **Exports for partners are aggregates only**, with a minimum cell size, from a separate function that can't
     return a user id.
 11. **Logs carry no personal info**: no emails, IPs or tokens in logs or error reports.
-12. **Full CSP with nonces** (script-src) once pages render per request for accounts.
+12. **CSP** (`next.config.ts`): scripts, styles, fonts and images from this site only; the browser connects only to this
+    site and our Supabase project; no frames, plugins or off-site forms. Scripts keep 'unsafe-inline' because pages are
+    prerendered; switch to per-request nonces if pages ever render per request. A new third-party origin needs a
+    privacy review first (rule 7), then a CSP change.
 
 ## Retention and incidents
 
@@ -64,6 +67,17 @@ rules. If a rule here and CLAUDE.md disagree, CLAUDE.md wins and this file gets 
   change, set it and `CONSENT_VERSION` to the new date (a test keeps them in order). At their next sign-in, people
   who accepted an older version land on the Terms with an accept box; accepting adds a new `terms` row to
   `consent_log`, and declining means deleting the account.
+
+## Election questions (off at launch)
+
+Elections can't be asked today: `categories` in `src/lib/question.ts` has no politics category, and the engine's
+safety screen holds any election draft for an editor (`lexicon.json`, "elections"). Before anyone adds an elections
+category, these must ship in the same PR (LEX, Canada Elections Act ss. 326 and 328(2), and the provincial acts):
+
+- Every election question shows: "Not a scientific poll. People choose to take part; no margin of error." (EN and FR.)
+- A polling-day hold: no new crowd numbers for that question from the start of polling day until every poll in that
+  jurisdiction has closed. The page shows the last numbers from before polling day, labelled with their time.
+- LEX signs off on the wording, and the question is never persuasive.
 
 ## Email (CASL)
 
