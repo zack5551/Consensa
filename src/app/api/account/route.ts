@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { consentState, deleteAccountSchema, type ConsentRow } from "@/lib/account";
 import { rateLimiter } from "@/lib/rate-limit";
-import { emailHash, noStore, sameOrigin, signedIn } from "@/lib/supabase/account-server";
+import { noStore, sameOrigin, signedIn } from "@/lib/supabase/account-server";
 
 const allowDelete = rateLimiter({ limit: 5, windowMs: 60_000 });
 
@@ -27,10 +27,8 @@ export async function DELETE(request: NextRequest) {
   const parsed = deleteAccountSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400, headers: noStore });
 
-  // End open consents first, by hash, so the record is right even if a later step fails. The database does the
-  // same when the user row goes; doing it here as well costs nothing.
-  const ended = await me.admin.from("consent_log").update({ withdrawn_at: new Date().toISOString() }).eq("email_hash", emailHash(me.user.email)).is("withdrawn_at", null);
-  if (ended.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
+  // The database ends the open consents when the user row goes (on_auth_user_deleted), so a failed delete
+  // never leaves a live account with its choices switched off.
   const { error } = await me.admin.auth.admin.deleteUser(me.user.id);
   if (error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
   await me.supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
