@@ -16,8 +16,9 @@
 import type { Question } from "@/lib/question";
 import { duplicateFlag, findDuplicate } from "@/engine/dedup";
 import type { DraftUsage, Drafter } from "@/engine/draft/drafter";
-import { applyRead, newRecord, type toResult } from "@/engine/resolve/policy";
-import { readResolver, type Http } from "@/engine/resolve/resolvers";
+import { resolveDue } from "@/engine/resolve/due";
+import type { toResult } from "@/engine/resolve/policy";
+import type { Http } from "@/engine/resolve/resolvers";
 import { newItem, publish } from "@/engine/review";
 import { isBlocked, screenDraft, screenStory } from "@/engine/safety/safety";
 import type { Release } from "@/engine/sources/calendar";
@@ -183,19 +184,10 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   }
 
   // 8. Resolve
-  const resolutions: CycleReport["resolutions"] = [];
-  if (deps.http) {
-    for (const item of await store.items()) {
-      if (item.status !== "published") continue;
-      if (Date.parse(item.draft.resolution.resolvesAt) > now.getTime()) continue;
-      const record = (await store.getResolution(item.draft.slug)) ?? newRecord(item.draft.slug);
-      if (record.state === "resolved" || record.state === "needsEditor") continue;
-      const read = await readResolver(item.draft.resolver, deps.http, now);
-      const next = applyRead(record, read, now, item.draft.resolver.kind === "manual");
-      await store.putResolution(next);
-      resolutions.push({ slug: next.slug, state: next.state, ...(next.outcome ? { outcome: next.outcome } : {}) });
-    }
-  }
+  const due = (await store.items())
+    .filter((item) => item.status === "published")
+    .map((item) => ({ slug: item.draft.slug, resolver: item.draft.resolver, resolvesAt: item.draft.resolution.resolvesAt }));
+  const resolutions: CycleReport["resolutions"] = deps.http ? await resolveDue(due, store, deps.http, now) : [];
 
   return {
     startedAt,

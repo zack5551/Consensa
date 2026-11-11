@@ -52,3 +52,11 @@ Drafts with a blocking flag arrive as `autoRejected` and can't be approved. Noth
 ## 6. Showing live questions on the site (a separate switch, off)
 
 `CONSENSA_LIVE_QUESTIONS=1` in Vercel makes each build include the published questions. Leave it off for now: until calls are stored on the server (accounts, M2), a live question would show 0 forecasters and a flat 50% line.
+
+## Automatic results (no paid key needed)
+
+Every cycle also settles the site's own Bank of Canada and Labour Force Survey questions from free official data
+(the list is in `src/engine/site-results.ts`). This runs whenever `SUPABASE_URL` and `SUPABASE_SECRET_KEY` are set,
+with or without the Claude key. A result needs two matching reads on separate cycles; anything doubtful goes to an
+editor. Confirmed results are saved in `engine_resolutions`, the deploy hook rebuilds the site, and the build writes
+them to `src/content/live-results.json`, where they replace any hand-written result for that question.

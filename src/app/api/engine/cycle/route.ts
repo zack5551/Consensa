@@ -7,6 +7,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { engineEnv } from "@/engine/config";
 import { runFromEnv } from "@/engine/run";
+import { siteDueQuestions } from "@/engine/site-results";
 import { SupabaseStore } from "@/engine/supabase-store";
 import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
 
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
   // Save to Supabase only for a real run (live feeds and the Claude drafter), so sample or mock drafts never land
   // in the real review queue.
   const real = liveFeeds && Boolean(env.ANTHROPIC_API_KEY);
-  const store =
-    real && env.SUPABASE_URL && env.SUPABASE_SECRET_KEY ? new SupabaseStore({ url: env.SUPABASE_URL, secretKey: env.SUPABASE_SECRET_KEY, live }) : undefined;
+  const supabase = env.SUPABASE_URL && env.SUPABASE_SECRET_KEY ? new SupabaseStore({ url: env.SUPABASE_URL, secretKey: env.SUPABASE_SECRET_KEY, live }) : undefined;
+  const store = real ? supabase : undefined;
   const result = await runFromEnv({
     apiKey: env.ANTHROPIC_API_KEY,
     liveFeeds,
@@ -42,6 +43,8 @@ export async function POST(request: NextRequest) {
     live,
     store,
     deployHook: env.VERCEL_DEPLOY_HOOK_URL,
+    // Automatic results read free official data on the real clock, so they run whenever Supabase can keep the record.
+    ...(supabase ? { results: { questions: siteDueQuestions(sampleQuestions), store: supabase, now: new Date() } } : {}),
   });
   return NextResponse.json(result, { headers: { "cache-control": "no-store" } });
 }

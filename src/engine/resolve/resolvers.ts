@@ -4,7 +4,7 @@
  * Each resolver is a pure function of (spec, http, now) and validates the source's response with Zod, so a changed
  * API shape becomes an `error` read, never a wrong answer.
  * - Bank of Canada Valet: GET /valet/observations/V39079/json → { observations: [{ d, V39079: { v } }] }
- *   (checked against the live API on 2026-11-06: the target was 2.50%).
+ *   (checked against the live API on 2026-11-11: a change shows from the business day after the decision).
  * - Statistics Canada WDS: POST getDataFromVectorsAndLatestNPeriods → [{ status, object: { vectorDataPoint: [{ refPer, value, releaseTime }] } }]
  *   (from the WDS user guide, 2026-11-06).
  * - ECCC GeoMet OGC API: GET /collections/climate-daily/items → GeoJSON features with the element in properties.
@@ -58,7 +58,9 @@ export function valetUrl(decisionDate: string): string {
 }
 
 async function bocPolicyRate(r: Extract<Resolver, { kind: "boc-policy-rate" }>, http: Http, now: Date): Promise<ResolverRead> {
-  // The announcement is at 9:45 ET; the new target shows from the decision date. Wait until the day after.
+  // The announcement is at 9:45 ET, and Valet shows the new target from the next business day: on 2026-10-28 (a
+  // 25-point hike) the series read 2.25 on Oct 28 and 2.50 on Oct 29. So compare the decision date itself with the
+  // first day after it. Wait until the decision day is over.
   if (now.getTime() < Date.parse(`${r.decisionDate}T23:59:59Z`)) return { status: "pending", reason: "decision date not reached" };
   const url = valetUrl(r.decisionDate);
   const res = await http.get(url);
@@ -70,8 +72,8 @@ async function bocPolicyRate(r: Extract<Resolver, { kind: "boc-policy-rate" }>, 
     .map((o) => ({ d: o.d, v: Number(o[VALET_SERIES]?.v) }))
     .filter((p) => Number.isFinite(p.v))
     .sort((a, b) => a.d.localeCompare(b.d));
-  const before = points.filter((p) => p.d < r.decisionDate).at(-1);
-  const after = points.find((p) => p.d >= r.decisionDate);
+  const before = points.filter((p) => p.d <= r.decisionDate).at(-1);
+  const after = points.find((p) => p.d > r.decisionDate);
   if (!before || !after) return { status: "pending", reason: "Valet has no observation on both sides of the decision yet" };
 
   const change = round(after.v - before.v);
@@ -81,7 +83,8 @@ async function bocPolicyRate(r: Extract<Resolver, { kind: "boc-policy-rate" }>, 
     outcome: moved === r.direction ? "yes" : "no",
     observed: `${before.v.toFixed(2)}% → ${after.v.toFixed(2)}% (${after.d})`,
     evidenceUrl: url,
-    margin: Math.abs(change),
+    // Rates move in steps of at least 0.25, so a hold is as clear an answer as a move: never "on the line".
+    margin: Math.abs(change) || 0.25,
   };
 }
 
