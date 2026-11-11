@@ -314,6 +314,9 @@ const fr = {
     back: "Retour aux cinq du jour",
     backBoard: "Retour au Tableau",
     yourCall: "Votre prévision : {value}",
+    nextUp: {
+      title: "Une autre prévision",
+    },
     verdict: {
       right: "Le Canada a vu juste.",
       wrong: "Le Canada s’est trompé cette fois.",

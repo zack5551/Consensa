@@ -62,6 +62,18 @@ test("a resolved question says whether Canada called it, with its record on the 
   await expect(page.getByText(/Canada called it|Canada missed this one/)).toHaveCount(0);
 });
 
+test("every question ends with open questions to call next", async ({ page }) => {
+  await page.goto("/en/q/cpi-sept-2026");
+  const next = page.getByRole("region", { name: "Call another" });
+  await expect(next.getByRole("link")).toHaveCount(3);
+  await expect(next.locator('a[href$="/q/cpi-sept-2026"]')).toHaveCount(0);
+  await next.getByRole("link").first().click();
+  await expect(page).toHaveURL(/\/en\/q\//);
+  await expect(page.getByRole("button", { name: "Make my call" }).first()).toBeVisible();
+  await page.goto("/fr/q/boc-cut-dec-2026");
+  await expect(page.getByRole("region", { name: "Une autre prévision" }).getByRole("link")).toHaveCount(3);
+});
+
 test("a closing-soon question says when it closes", async ({ page }) => {
   await page.goto("/en/q/giller-debut-2026");
   await expect(page.getByText(/This question closes November 8, 2026/)).toBeVisible();
