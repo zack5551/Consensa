@@ -67,7 +67,7 @@ export function LeaderboardScreen({ locale, t, scope }: { locale: Locale; t: Dic
       <LeaderboardViewed locale={locale} tab={tab} />
 
       <header className="grid gap-2">
-        <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{l.title}</h1>
+        <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{l.title}</h1>
         <p className="m-0 max-w-[60ch] text-body text-ink-2">{l.subtitle}</p>
         <p className="m-0 text-caption text-ink-2">{l.sampleNote}</p>
       </header>
@@ -100,22 +100,22 @@ export function LeaderboardScreen({ locale, t, scope }: { locale: Locale; t: Dic
       ) : (
         <>
           <section aria-label={l.podiumLabel}>
-            <ol className="m-0 grid list-none gap-3 p-0 sm:grid-cols-3">
+            {/* The top three as stat blocks under a rule, not mini-cards. First place gets the heavier rule. */}
+            <ol className="m-0 grid list-none gap-x-8 gap-y-6 p-0 sm:grid-cols-3">
               {podium.map((r) => (
-                <li
-                  key={r.handle}
-                  className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-card border bg-surface p-4 shadow-card sm:grid-cols-1 sm:items-start ${r.rank === 1 ? "border-side-a" : "border-line"}`}
-                >
-                  <span className="font-display text-title font-extrabold tabular text-ink-2">{r.rank}</span>
+                <li key={r.handle} className={`grid content-start gap-2 pt-3 ${r.rank === 1 ? "border-t-4 border-ink" : "border-t-2 border-line-strong"}`}>
+                  <span className="flex items-baseline justify-between gap-3">
+                    <span className="font-display text-title font-bold tabular text-ink-3">{r.rank}</span>
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="font-display text-headline font-bold tabular text-side-a-text">{r.skill === null ? "—" : formatSignedSkill(r.skill, locale)}</span>
+                      <span className="text-caption font-semibold text-ink-2">{l.columns.skill}</span>
+                    </span>
+                  </span>
                   <span className="grid min-w-0 gap-0.5">
-                    <Link href={`/${locale}/forecasters/${r.handle}`} className="truncate text-body font-bold hover:underline">
+                    <Link href={`/${locale}/forecasters/${r.handle}`} className="truncate font-display text-title-sm font-bold hover:underline">
                       {r.displayName}
                     </Link>
-                    <span className="text-caption text-ink-2">{t.province.names[r.region]}</span>
-                  </span>
-                  <span className="grid justify-items-end font-display text-title-sm font-extrabold text-side-a-text tabular sm:mt-1 sm:flex sm:items-baseline sm:gap-1">
-                    {r.skill === null ? "—" : formatSignedSkill(r.skill, locale)}
-                    <span className="font-sans text-caption font-semibold text-ink-2">{l.columns.skill}</span>
+                    <span className="text-body-sm text-ink-2">{t.province.names[r.region]}</span>
                   </span>
                 </li>
               ))}
@@ -141,37 +141,46 @@ export function LeaderboardScreen({ locale, t, scope }: { locale: Locale; t: Dic
       )}
 
       {sharpest.length > 0 ? (
-        <section aria-labelledby="sharpest" className="grid gap-3">
+        <section aria-labelledby="sharpest" className="grid gap-4">
           <div className="grid gap-1">
-            <h2 id="sharpest" className="m-0 text-title-sm font-bold">
+            <h2 id="sharpest" className="m-0 font-display text-title font-bold text-balance">
               {l.sharpestTitle}
             </h2>
             <p className="m-0 max-w-[70ch] text-body-sm text-ink-2">{fill(l.sharpestHelp, { n: SHARPEST_N })}</p>
           </div>
-          <ul className="m-0 grid list-none gap-2 p-0">
-            {sharpest.map((s) => (
-              <li key={s.slug} className="grid gap-3 rounded-control border border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                <Link href={`/${locale}/q/${s.slug}`} className="text-body-sm font-semibold text-balance hover:underline">
-                  {s.question}
-                </Link>
-                <div className="flex items-end gap-5">
-                  <dl className="m-0 flex gap-5">
-                    <div className="grid gap-0.5">
-                      <dt className="text-caption font-bold text-canada">{l.sharpestColumns.canada}</dt>
-                      <dd className="m-0 font-display text-title-sm font-extrabold tabular">{pct(s.canada)}</dd>
-                    </div>
-                    <div className="grid gap-0.5">
-                      <dt className="text-caption font-semibold text-ink-2">{l.sharpestColumns.sharpest}</dt>
-                      <dd className="m-0 font-display text-title-sm font-extrabold tabular">{pct(s.sharpest)}</dd>
-                    </div>
-                  </dl>
-                  <span className="pb-1 text-caption text-ink-2 tabular" aria-hidden="true">
-                    {formatSignedPoints(s.sharpest - s.canada, locale)}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {/* A ruled list with the two numbers in fixed columns, so the eye reads down each column instead of box by box. */}
+          <div className="grid border-t-2 border-ink">
+            <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_3rem] gap-4 border-b border-line py-2 text-caption sm:grid" aria-hidden="true">
+              <span />
+              <span className="text-right font-bold text-canada">{l.sharpestColumns.canada}</span>
+              <span className="text-right font-semibold text-ink-2">{l.sharpestColumns.sharpest}</span>
+              <span />
+            </div>
+            <ul className="m-0 grid list-none p-0">
+              {sharpest.map((s) => (
+                <li key={s.slug} className="grid gap-2 border-b border-line py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-baseline sm:gap-4 sm:py-3">
+                  <Link href={`/${locale}/q/${s.slug}`} className="font-display text-body font-bold text-balance hover:underline">
+                    {s.question}
+                  </Link>
+                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-4 sm:grid-cols-[7rem_7rem_3rem] sm:items-baseline">
+                    <dl className="m-0 contents">
+                      <div className="grid gap-0.5 sm:justify-items-end">
+                        <dt className="text-caption font-bold text-canada sm:sr-only">{l.sharpestColumns.canada}</dt>
+                        <dd className="m-0 font-display text-title-sm font-bold tabular">{pct(s.canada)}</dd>
+                      </div>
+                      <div className="grid gap-0.5 sm:justify-items-end">
+                        <dt className="text-caption font-semibold text-ink-2 sm:sr-only">{l.sharpestColumns.sharpest}</dt>
+                        <dd className="m-0 font-display text-title-sm font-bold tabular">{pct(s.sharpest)}</dd>
+                      </div>
+                    </dl>
+                    <span className="text-caption text-ink-2 tabular sm:text-right" aria-hidden="true">
+                      {formatSignedPoints(s.sharpest - s.canada, locale)}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
       ) : null}
     </div>
