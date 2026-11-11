@@ -20,6 +20,8 @@ in preview mode.
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: the publishable key (safe in the browser; RLS protects the data).
    - `SUPABASE_SECRET_KEY`: already set for PULSE. Server only.
 5. Redeploy.
+6. **Check the security rules.** SQL Editor → paste `supabase/tests/rls_check.sql` → Run. It should say
+   "RLS check passed" and leaves nothing behind.
 
 Supabase's built-in email sender is limited to a few emails an hour. That is fine for a demo; before launch,
 set a custom SMTP sender on the consensa.ca domain (Authentication → Emails → SMTP).
@@ -27,7 +29,9 @@ set a custom SMTP sender on the consensa.ca domain (Authentication → Emails �
 ## How it works
 
 - **Signup** happens at the end of onboarding: the email link creates the account. The database trigger refuses
-  any account without the 18+ yes and the terms, and stores four separate consent timestamps (null = not given).
+  any account without the 18+ yes and the terms. Each consent is its own row in an append-only `consent_log`
+  (wording version, given and withdrawn times), keyed by an email hash only, so it outlives account deletion as
+  CASL proof (3 years after the consent ends).
 - **Sign in** never creates an account, and answers the same way whether or not the address has one.
 - **Calls** (next PR) are written by the server only (secret key) after it checks the session and that the question is
   open. People can read their own rows and nothing else (RLS).
