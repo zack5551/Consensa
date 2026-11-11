@@ -16,11 +16,11 @@ import { SourceCredit } from "@/components/source-credit";
 import { StateBadge } from "@/components/state-badge";
 import { StateNote } from "@/components/state-note";
 import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
-import { withLiveQuestion } from "@/lib/live";
+import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { crowdNow, crowdVerdict, questionState, topicRecord, weekMove } from "@/lib/question";
+import { crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
@@ -78,8 +78,10 @@ export default async function QuestionPage({ params }: { params: Params }) {
         : fill(t.question.week[move.direction], { n: String(move.points) }));
 
   // After the result: did Canada lean the right way, and how has it done on this topic? Scored, undisputed results only.
+  // Every question with live crowd numbers where they exist, so the topic record and the next calls never mix in sample numbers.
+  const all = await withLiveCrowd(sampleQuestions);
   const verdict = crowdVerdict(q);
-  const record = verdict ? topicRecord(q, sampleQuestions) : null;
+  const record = verdict ? topicRecord(q, all) : null;
   const verdictText =
     verdict &&
     [
@@ -93,6 +95,8 @@ export default async function QuestionPage({ params }: { params: Params }) {
     ]
       .filter(Boolean)
       .join(" ");
+
+  const next = nextUp(q, all, SAMPLE_NOW);
 
   const note =
     state === "closingSoon"
@@ -275,6 +279,27 @@ export default async function QuestionPage({ params }: { params: Params }) {
           <SourceCredit url={q.resolution.source.url} t={t.resolution.credit} />
           <p className="m-0 text-caption text-ink-2">{t.resolution.log}</p>
         </section>
+
+        {/* The loop goes on: open questions to call next, same topic first. Plain ruled rows, not cards. */}
+        {next.length > 0 && (
+          <section aria-labelledby="next-title" className="grid gap-2 border-t-2 border-ink pt-5">
+            <h2 id="next-title" className="m-0 font-display text-title-sm font-bold">
+              {t.question.nextUp.title}
+            </h2>
+            <ul className="m-0 grid list-none p-0">
+              {next.map((o) => (
+                <li key={o.slug} className="border-b border-line last:border-b-0">
+                  <Link href={`/${locale}/q/${o.slug}`} className="flex min-h-11 items-baseline justify-between gap-4 py-3 text-body hover:text-link">
+                    <span className="min-w-0 font-semibold">{o.question[locale]}</span>
+                    <span className="shrink-0 text-body-sm text-ink-2 tabular">
+                      {t.question.canadaSays} <span className="font-bold text-side-a-text">{pct(crowdNow(o))}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
       </div>

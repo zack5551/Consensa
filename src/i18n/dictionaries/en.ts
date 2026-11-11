@@ -312,6 +312,9 @@ const en = {
     back: "Back to today’s five",
     backBoard: "Back to the Board",
     yourCall: "Your call: {value}",
+    nextUp: {
+      title: "Call another",
+    },
     verdict: {
       right: "Canada called it.",
       wrong: "Canada missed this one.",
