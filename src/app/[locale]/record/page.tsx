@@ -2,10 +2,12 @@
  * Screen: My record / « Mon bilan ».
  * One message: how sharp your calls are compared with Canada ("26% sharper than Canada").
  * One action: make today's calls (the record only grows with new calls).
+ * Foot of the page: the account area (choices, download my data, delete my account) once accounts are on.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AccountPanel } from "@/components/account-panel";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { PendingCalls } from "@/components/pending-calls";
 import { RecordView } from "@/components/record-view";
@@ -85,6 +87,8 @@ export default async function RecordPage({ params }: { params: Params }) {
           <LeaderboardTable rows={teaser} me={SAMPLE_ME} locale={locale} t={t} label={fill(t.leaderboard.tableLabel, { board: t.leaderboard.tabs.canada })} compact />
         </section>
       </RecordView>
+
+      <AccountPanel locale={locale} t={t.account} consentLabels={{ dataLicensing: t.onboarding.account.dataLicensing, analytics: t.onboarding.account.analytics, marketing: t.onboarding.account.marketing }} />
     </div>
   );
 }
