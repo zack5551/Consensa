@@ -7,7 +7,7 @@ import { track } from "@/lib/analytics";
 import { readCall, saveCall } from "@/lib/calls-store";
 import { formatBrier, formatPercent } from "@/lib/format";
 import type { QuestionState } from "@/lib/question";
-import { brierScore, gapToCrowd } from "@/lib/scoring";
+import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
 import { accountsEnabled } from "@/lib/supabase/env";
 import { fill } from "@/lib/text";
 
@@ -193,7 +193,12 @@ function ClosedResult({
         {verdict && <p className={`m-0 font-display font-extrabold ${hit ? "text-title text-side-a-text" : "text-title-sm"}`}>{verdict}</p>}
         <p className="m-0">{stored === null ? t.noCall : fill(t.yourCall, { value: pct(stored) })}</p>
         {resolved && stored !== null && scored && (
-          <p className="m-0 mt-1 text-ink-2 tabular">{fill(t.score, { score: formatBrier(brierScore(stored / 100, outcome === "yes" ? 1 : 0), locale) })}</p>
+          <>
+            <p className="m-0 mt-1 text-ink-2 tabular">{fill(t.score, { score: formatBrier(brierScore(stored / 100, outcome === "yes" ? 1 : 0), locale) })}</p>
+            <p className="m-0 mt-1 text-ink-2 tabular">
+              {fill(t.vsCrowd[versusCrowd(stored, crowd, outcome === "yes" ? 1 : 0)], { crowd: formatBrier(brierScore(crowd / 100, outcome === "yes" ? 1 : 0), locale) })}
+            </p>
+          </>
         )}
         {state === "closed" && stored !== null && <p className="m-0 mt-1 text-ink-2">{t.waiting}</p>}
         {state === "disputed" && <p className="m-0 mt-1 text-ink-2">{t.disputed}</p>}

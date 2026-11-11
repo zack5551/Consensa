@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { brierScore, calibration, gapToCrowd, logScore, meanBrier } from "@/lib/scoring";
+import { brierScore, calibration, gapToCrowd, logScore, meanBrier, versusCrowd } from "@/lib/scoring";
 
 describe("brierScore", () => {
   it("is 0 for a perfect forecast and 1 for a confident miss", () => {
@@ -54,5 +54,17 @@ describe("gapToCrowd", () => {
   it("is signed whole points", () => {
     expect(gapToCrowd(50, 38)).toBe(12);
     expect(gapToCrowd(30, 38)).toBe(-8);
+  });
+});
+
+describe("versusCrowd", () => {
+  it("says who was more accurate on one question", () => {
+    expect(versusCrowd(80, 60, 1)).toBe("better");
+    expect(versusCrowd(40, 60, 1)).toBe("worse");
+    expect(versusCrowd(20, 40, 0)).toBe("better");
+  });
+  it("calls near-ties level", () => {
+    expect(versusCrowd(60, 60, 1)).toBe("level");
+    expect(versusCrowd(99, 98, 1)).toBe("level");
   });
 });

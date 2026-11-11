@@ -58,6 +58,7 @@ test("a resolved question shows the answer, and Called it! for a right call", as
   await page.reload();
   await expect(page.getByText("Answer: Yes").first()).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: "Called it!" }).first()).toContainText("You said 80%.");
+  await expect(page.getByRole("status").filter({ hasText: "Called it!" }).first()).toContainText("You were more accurate than Canada on this one.");
 });
 
 test("a resolved question says Pas cette fois. for a miss, in French", async ({ page }) => {

@@ -361,6 +361,11 @@ const fr = {
     notThisTime: "Pas cette fois.",
     tossUp: "Pile au milieu.",
     score: "Votre score de Brier sur cette question : {score}. Plus il est bas, mieux c’est.",
+    vsCrowd: {
+      better: "Score du Canada : {crowd}. Vous avez été plus précis que le Canada sur cette question.",
+      worse: "Score du Canada : {crowd}. Le Canada a été plus précis sur cette question.",
+      level: "Score du Canada : {crowd}, à égalité avec vous.",
+    },
     waiting: "Elle sera évaluée à la publication du résultat.",
     disputed: "L’évaluation attend la fin de la révision.",
   },
