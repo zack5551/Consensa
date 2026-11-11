@@ -62,7 +62,7 @@ export default async function ForecasterPage({ params }: { params: Params }) {
             <span>{fill(t.forecaster.joined, { date: formatLongDate(f.joinedAt, locale) })}</span>
             {isMe ? <span className="rounded-full bg-ink px-2 py-0.5 font-bold text-paper">{t.forecaster.itsYou}</span> : null}
           </p>
-          <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{fill(t.forecaster.title, { name: f.displayName })}</h1>
+          <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{fill(t.forecaster.title, { name: f.displayName })}</h1>
           <p className="m-0 max-w-[60ch] text-body text-ink-2">{t.forecaster.subtitle}</p>
           <p className="m-0 text-caption text-ink-2">{t.leaderboard.sampleNote}</p>
         </div>

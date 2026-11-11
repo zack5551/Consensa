@@ -64,10 +64,10 @@ export function RecordView({ locale, t, forecaster, board, youLabel, emptyAction
   const answer = (o: 0 | 1) => (o === 1 ? t.question.yes : t.question.no);
 
   return (
-    <div className="grid gap-10">
-      <section aria-labelledby="record-headline" className="grid gap-5 rounded-card border border-line bg-surface p-5 shadow-card sm:p-6">
+    <div className="grid gap-12">
+      <section aria-labelledby="record-headline" className="grid gap-5 rounded-card border border-line border-t-4 border-t-canada bg-surface p-5 sm:p-8">
         <div className="grid gap-2">
-          <h2 id="record-headline" className={`m-0 font-display text-headline font-extrabold tracking-tight text-balance ${s.skill !== null && s.skill > 0 ? "text-side-a-text" : "text-ink"}`}>
+          <h2 id="record-headline" className={`m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display ${s.skill !== null && s.skill > 0 ? "text-side-a-text" : "text-ink"}`}>
             {headline}
           </h2>
           <p className="m-0 text-body-sm text-ink-2">{fill(r.skillHelp, { n: s.count })}</p>
@@ -91,7 +91,7 @@ export function RecordView({ locale, t, forecaster, board, youLabel, emptyAction
         </div>
       </section>
 
-      <dl className="m-0 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <dl className="m-0 grid grid-cols-1 gap-6 sm:grid-cols-3">
         <StatTile label={r.scoredCalls} value={s.count} />
         <StatTile
           label={r.rightSide}
@@ -103,7 +103,7 @@ export function RecordView({ locale, t, forecaster, board, youLabel, emptyAction
 
       {best && bestResult ? (
         <section aria-labelledby="called-it" className="grid gap-2 rounded-card border border-side-a bg-side-a-soft p-5">
-          <h2 id="called-it" className="m-0 font-display text-title font-extrabold text-side-a-text">
+          <h2 id="called-it" className="m-0 font-display text-title font-bold tracking-tight text-side-a-text">
             {r.calledItTitle}
           </h2>
           <p className="m-0 max-w-[60ch] text-body">
@@ -113,7 +113,7 @@ export function RecordView({ locale, t, forecaster, board, youLabel, emptyAction
       ) : null}
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <section className="grid content-start gap-3 rounded-card border border-line bg-surface p-5">
+        <section className="grid content-start gap-3 border-t-2 border-ink pt-4">
           <CalibrationChart
             bins={s.calibration}
             title={r.calibrationTitle}
@@ -127,7 +127,7 @@ export function RecordView({ locale, t, forecaster, board, youLabel, emptyAction
           />
           <p className="m-0 rounded-control bg-sunken p-3 text-body-sm">{lean ? fill(r.lean[lean.lean], { n: lean.points }) : r.lean.thin}</p>
         </section>
-        <section className="grid content-start gap-3 rounded-card border border-line bg-surface p-5">
+        <section className="grid content-start gap-3 border-t-2 border-ink pt-4">
           <TrendChart
             points={s.trend}
             title={r.trendTitle}
@@ -140,13 +140,13 @@ export function RecordView({ locale, t, forecaster, board, youLabel, emptyAction
         </section>
       </div>
 
-      <section aria-labelledby="by-topic" className="grid gap-3">
-        <h2 id="by-topic" className="m-0 text-title-sm font-bold">
+      <section aria-labelledby="by-topic" className="grid gap-6">
+        <h2 id="by-topic" className="m-0 font-display text-headline font-bold tracking-tight text-balance">
           {r.topicsTitle}
         </h2>
-        <div className="overflow-hidden rounded-card border border-line bg-surface">
+        <div className="overflow-x-auto border-t-2 border-ink">
           <table className="w-full border-collapse text-left text-body-sm">
-            <thead className="bg-sunken text-caption text-ink-2">
+            <thead className="text-caption text-ink-2">
               <tr>
                 <th scope="col" className="px-4 py-2 font-semibold">{r.topicColumns.topic}</th>
                 <th scope="col" className="px-2 py-2 text-right font-semibold">{r.topicColumns.calls}</th>
@@ -173,24 +173,24 @@ export function RecordView({ locale, t, forecaster, board, youLabel, emptyAction
         </div>
       </section>
 
-      <section aria-labelledby="results" className="grid gap-3">
-        <h2 id="results" className="m-0 text-title-sm font-bold">
+      <section aria-labelledby="results" className="grid gap-6">
+        <h2 id="results" className="m-0 font-display text-headline font-bold tracking-tight text-balance">
           {r.historyTitle}
         </h2>
-        <ol className="m-0 grid list-none gap-2 p-0" aria-label={r.resultsLabel}>
+        <ol className="m-0 grid list-none border-t-2 border-ink p-0" aria-label={r.resultsLabel}>
           {s.recent.map((c) => {
             const res = getResult(c.slug);
             const title = res?.question[locale] ?? c.slug;
             const hasPage = getQuestion(c.slug) !== undefined;
             return (
-              <li key={c.slug} className="grid gap-2 rounded-control border border-line bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <li key={c.slug} className="grid gap-2 border-b border-line py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <div className="grid min-w-0 gap-1">
                   {hasPage ? (
-                    <Link href={`/${locale}/q/${c.slug}`} className="text-body-sm font-semibold text-balance hover:underline">
+                    <Link href={`/${locale}/q/${c.slug}`} className="font-display text-body font-bold text-balance hover:underline">
                       {title}
                     </Link>
                   ) : (
-                    <span className="text-body-sm font-semibold text-balance">{title}</span>
+                    <span className="font-display text-body font-bold text-balance">{title}</span>
                   )}
                   <span className="flex flex-wrap gap-x-3 text-caption text-ink-2 tabular">
                     <span>
