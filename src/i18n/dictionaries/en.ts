@@ -357,6 +357,7 @@ const en = {
     hint: "How likely is it? Slide to set your probability.",
     sliderLabel: "Your probability that the answer is yes",
     quick: { unlikely: "Unlikely", tossUp: "Toss-up", likely: "Likely" },
+    ifResult: "If the answer is yes, you’d score {yes}. If it’s no, {no}. Lower is better.",
     yourRegion: "Your region · {region}",
     you: "You",
     save: "Make my call",
