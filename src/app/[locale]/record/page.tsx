@@ -54,12 +54,12 @@ export default async function RecordPage({ params }: { params: Params }) {
   );
 
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-12">
       <ScreenView locale={locale} screen="record" />
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="grid gap-2">
-          <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{t.record.title}</h1>
-          <p className="m-0 max-w-[60ch] text-body text-ink-2">{t.record.subtitle}</p>
+        <div className="grid gap-3">
+          <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{t.record.title}</h1>
+          <p className="m-0 max-w-[60ch] text-body-lg text-ink-2">{t.record.subtitle}</p>
           <p className="m-0 text-caption text-ink-2">{t.record.sampleNote}</p>
         </div>
         {todayLink}
@@ -74,16 +74,16 @@ export default async function RecordPage({ params }: { params: Params }) {
           action={{ href: `/${locale}`, label: t.record.pendingAction }}
           locale={locale}
         />
-        <section aria-labelledby="record-board" className="grid gap-3">
+        <section aria-labelledby="record-board" className="grid gap-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="record-board" className="m-0 text-title-sm font-bold">
+            <h2 id="record-board" className="m-0 font-display text-headline font-bold tracking-tight text-balance">
               {t.record.leaderboardTitle}
             </h2>
             <Link href={`/${locale}/leaderboard`} className="text-body-sm font-semibold text-link underline underline-offset-4">
               {t.record.seeLeaderboard}
             </Link>
           </div>
-          <p className="m-0 text-body-sm text-ink-2">{t.leaderboard.subtitle}</p>
+          <p className="m-0 max-w-[60ch] text-body text-ink-2">{t.leaderboard.subtitle}</p>
           <LeaderboardTable rows={teaser} me={SAMPLE_ME} locale={locale} t={t} label={fill(t.leaderboard.tableLabel, { board: t.leaderboard.tabs.canada })} compact />
         </section>
       </RecordView>

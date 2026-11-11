@@ -31,12 +31,12 @@ export function PendingCalls({ items, title, help, empty, action, locale }: Prop
   const pct = (v: number) => new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA", { style: "percent" }).format(v / 100);
 
   return (
-    <section aria-labelledby="pending-title" className="grid gap-3">
+    <section aria-labelledby="pending-title" className="grid gap-6">
       <div className="grid gap-1">
-        <h2 id="pending-title" className="m-0 text-title-sm font-bold">
+        <h2 id="pending-title" className="m-0 font-display text-headline font-bold tracking-tight text-balance">
           {title}
         </h2>
-        <p className="m-0 text-body-sm text-ink-2">{help}</p>
+        <p className="m-0 max-w-[60ch] text-body text-ink-2">{help}</p>
       </div>
       {snapshot === null ? (
         <div className="h-16 animate-pulse rounded-card bg-sunken motion-reduce:animate-none" aria-hidden="true" />
@@ -48,9 +48,9 @@ export function PendingCalls({ items, title, help, empty, action, locale }: Prop
           </Link>
         </p>
       ) : (
-        <ul className="m-0 grid list-none gap-2 p-0">
+        <ul className="m-0 grid list-none border-t-2 border-ink p-0">
           {mine.map((i) => (
-            <li key={i.slug} className="flex items-center justify-between gap-3 rounded-control border border-line bg-surface p-3">
+            <li key={i.slug} className="flex items-center justify-between gap-3 border-b border-line py-3">
               <span className="grid min-w-0 gap-0.5">
                 <Link href={i.href} className="truncate text-body-sm font-semibold hover:underline">
                   {i.question}
