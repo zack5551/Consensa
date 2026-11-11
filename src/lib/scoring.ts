@@ -47,3 +47,13 @@ export function calibration(forecasts: ReadonlyArray<{ p: number; outcome: Outco
 export function gapToCrowd(userPercent: number, crowdPercent: number): number {
   return Math.round(userPercent) - Math.round(crowdPercent);
 }
+
+/**
+ * How your Brier score on one question compares with the crowd's (both in percent). Within half a hundredth
+ * counts as level, so rounding never turns a tie into a verdict.
+ */
+export function versusCrowd(userPercent: number, crowdPercent: number, outcome: Outcome): "better" | "worse" | "level" {
+  const diff = brierScore(crowdPercent / 100, outcome) - brierScore(userPercent / 100, outcome);
+  if (Math.abs(diff) < 0.005) return "level";
+  return diff > 0 ? "better" : "worse";
+}

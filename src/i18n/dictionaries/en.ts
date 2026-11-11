@@ -360,6 +360,11 @@ const en = {
     notThisTime: "Not this time.",
     tossUp: "Right down the middle.",
     score: "Your Brier score on this question: {score}. Lower is better.",
+    vsCrowd: {
+      better: "Canada scored {crowd}. You were more accurate than Canada on this one.",
+      worse: "Canada scored {crowd}. Canada was more accurate on this one.",
+      level: "Canada scored {crowd}, level with you.",
+    },
     waiting: "We’ll score it when the result is published.",
     disputed: "Scores wait until the review ends.",
   },
