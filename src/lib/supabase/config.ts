@@ -32,7 +32,11 @@ export function safeNext(next: string | null | undefined, fallback = "/en/today"
 }
 
 /** What onboarding sends as user metadata; the database trigger refuses a signup without adult and terms. */
+/** The date of the consent wording people see in onboarding. Bump it when that wording changes (AEGIS rule 6). */
+export const CONSENT_VERSION = "2026-11-11";
+
 export const signupMetadataSchema = z.object({
+  consentVersion: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   locale: z.enum(["en", "fr"]),
   adult: z.literal(true),
   terms: z.literal(true),
@@ -43,3 +47,6 @@ export const signupMetadataSchema = z.object({
   marketing: z.boolean(),
 });
 export type SignupMetadata = z.infer<typeof signupMetadataSchema>;
+
+/** Session cookies the server sets: not readable by page scripts, HTTPS only in production, and not sent on cross-site posts. */
+export const sessionCookieOptions = { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax" as const, path: "/" };

@@ -8,6 +8,7 @@ import { readCall, saveCall } from "@/lib/calls-store";
 import { formatBrier, formatPercent } from "@/lib/format";
 import type { QuestionState } from "@/lib/question";
 import { brierScore, gapToCrowd } from "@/lib/scoring";
+import { accountsEnabled } from "@/lib/supabase/env";
 import { fill } from "@/lib/text";
 
 type Props = {
@@ -139,7 +140,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
           {t.save}
         </button>
       )}
-      <p className="mt-3 mb-0 text-caption text-ink-2">{t.demoNote}</p>
+      {!accountsEnabled && <p className="mt-3 mb-0 text-caption text-ink-2">{t.demoNote}</p>}
     </section>
   );
 }

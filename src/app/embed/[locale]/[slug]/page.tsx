@@ -9,6 +9,7 @@ import { CrowdBar } from "@/components/crowd-bar";
 import { ProvinceSplit } from "@/components/province-split";
 import { Wordmark } from "@/components/wordmark";
 import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent } from "@/lib/format";
@@ -18,6 +19,9 @@ import { fill } from "@/lib/text";
 type Params = Promise<{ locale: string; slug: string }>;
 
 export const dynamicParams = false;
+
+/** Real crowd numbers refresh every minute (ISR). */
+export const revalidate = 60;
 
 export function generateStaticParams() {
   return locales.flatMap((locale) => sampleQuestions.map((q) => ({ locale, slug: q.slug })));
@@ -32,7 +36,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function EmbedPage({ params }: { params: Params }) {
   const { locale: raw, slug } = await params;
-  const q = getQuestion(slug);
+  const q = await withLiveQuestion(getQuestion(slug));
   if (!isLocale(raw) || !q) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);

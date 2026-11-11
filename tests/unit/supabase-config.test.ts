@@ -28,7 +28,7 @@ describe("safeNext", () => {
 });
 
 describe("signupMetadataSchema", () => {
-  const ok = { locale: "fr", adult: true, terms: true, region: "QC", topics: ["economy"], dataLicensing: false, analytics: false, marketing: false };
+  const ok = { consentVersion: "2026-11-11", locale: "fr", adult: true, terms: true, region: "QC", topics: ["economy"], dataLicensing: false, analytics: false, marketing: false };
   it("accepts a complete onboarding", () => {
     expect(signupMetadataSchema.safeParse(ok).success).toBe(true);
   });
