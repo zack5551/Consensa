@@ -30,11 +30,11 @@ export default async function SignInPage({ params, searchParams }: { params: Pro
   return (
     <div className="mx-auto grid w-full max-w-[440px] gap-6 py-4 sm:py-12">
       <ScreenView locale={locale} screen="signIn" />
-      <header className="grid gap-2">
-        <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{t.signIn.title}</h1>
-        <p className="m-0 text-body text-ink-2">{t.signIn.body}</p>
+      <header className="grid gap-3">
+        <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance">{t.signIn.title}</h1>
+        <p className="m-0 text-body-lg text-ink-2">{t.signIn.body}</p>
       </header>
-      <div className="rounded-card border border-line bg-surface p-5 shadow-card sm:p-6">
+      <div className="rounded-card border border-line border-t-4 border-t-ink bg-surface p-5 sm:p-6">
         <SignInForm locale={locale} t={t.signIn} expired={link === "expired"} />
       </div>
       <p className="m-0 text-caption text-ink-2">{t.legal.footer}</p>
