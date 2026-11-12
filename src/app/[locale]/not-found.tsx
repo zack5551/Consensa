@@ -12,14 +12,14 @@ import { useShell } from "@/components/shell/shell-context";
 export default function NotFound() {
   const { locale, notFound, methodology } = useShell();
   return (
-    <section className="mx-auto grid max-w-[560px] justify-items-center gap-4 py-16 text-center">
+    <section className="mx-auto grid max-w-xl justify-items-center gap-4 py-16 text-center">
       <svg
         width="200"
         height="120"
         viewBox="0 0 200 120"
-        role="img"
-        aria-label="The Consensa mark, split apart"
-        className="h-auto w-[200px]"
+        aria-hidden="true"
+        focusable="false"
+        className="h-auto w-50"
       >
         <path d="M 62 20 A 40 40 0 0 0 62 100 Z" fill="var(--cn-side-a)" />
         <path d="M 138 20 A 40 40 0 0 1 138 100 Z" fill="var(--cn-side-b)" />
@@ -36,7 +36,7 @@ export default function NotFound() {
         </text>
       </svg>
       <p className="m-0 text-caption font-semibold tracking-wide text-ink-2 uppercase">404</p>
-      <h1 className="m-0 font-display text-headline font-extrabold tracking-tight text-balance">{notFound.title}</h1>
+      <h1 className="m-0 font-display text-headline font-bold tracking-tight sm:text-display text-balance">{notFound.title}</h1>
       <p className="m-0 text-body-lg text-ink-2">{notFound.body}</p>
       <div className="flex flex-wrap justify-center gap-3">
         <Link href={`/${locale}/today`} className="rounded-control bg-ink px-5 py-3 text-body font-bold text-paper hover:opacity-90">
