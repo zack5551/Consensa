@@ -57,7 +57,7 @@ export function SignInForm({ locale, t, expired = false }: { locale: Locale; t: 
   if (sent) {
     return (
       <section className="grid gap-4">
-        <h2 ref={heading} tabIndex={-1} className="m-0 font-display text-headline font-extrabold tracking-tight outline-none">
+        <h2 ref={heading} tabIndex={-1} className="m-0 font-display text-headline font-bold tracking-tight text-balance outline-none">
           {t.sentTitle}
         </h2>
         <p className="m-0 text-body-lg text-ink-2">{fill(t.sentBody, { email: sent })}</p>
