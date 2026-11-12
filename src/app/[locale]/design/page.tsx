@@ -43,7 +43,7 @@ const spaces = [1, 2, 3, 4, 6, 8, 12] as const;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  return isLocale(locale) ? { title: getDictionary(locale).meta.designTitle } : {};
+  return isLocale(locale) ? { title: getDictionary(locale).meta.designTitle, robots: { index: false } } : {};
 }
 
 export default async function DesignSystemPage({ params }: { params: Promise<{ locale: string }> }) {

@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const t = getDictionary(locale);
-  return { title: t.search.title, alternates: { languages: { "en-CA": "/en/search", "fr-CA": "/fr/search" } } };
+  return { title: t.search.title, robots: { index: false }, alternates: { languages: { "en-CA": "/en/search", "fr-CA": "/fr/search" } } };
 }
 
 /**

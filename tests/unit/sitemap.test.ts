@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
@@ -45,9 +47,29 @@ describe("sitemap", () => {
 });
 
 describe("robots", () => {
-  it("allows everything and points at the sitemap", () => {
+  it("allows every page, keeps crawlers off the API and points at the sitemap", () => {
     const r = robots();
     expect(r.sitemap).toBe(`${siteUrl()}/sitemap.xml`);
-    expect(r.rules).toEqual({ userAgent: "*", allow: "/" });
+    expect(r.rules).toEqual({ userAgent: "*", allow: "/", disallow: "/api/" });
+  });
+});
+
+describe("private pages stay out of search (AEGIS)", () => {
+  const privatePages = ["record", "search", "welcome", "sign-in", "design"];
+
+  it("the sitemap leaves them out", () => {
+    const urls = sitemap().map((e) => e.url);
+    for (const p of privatePages) expect(urls.some((u) => u.endsWith(`/${p}`)), p).toBe(false);
+  });
+
+  it("each one is marked noindex", () => {
+    for (const p of privatePages) {
+      const code = readFileSync(join(__dirname, "..", "..", "src", "app", "[locale]", p, "page.tsx"), "utf8");
+      expect(code, p).toMatch(/robots: \{ index: false \}/);
+    }
+  });
+
+  it("robots keeps crawlers off the API", () => {
+    expect(robots().rules).toMatchObject({ disallow: "/api/" });
   });
 });
