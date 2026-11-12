@@ -39,18 +39,18 @@ export default async function BrowsePage({ params }: { params: Promise<{ locale:
   });
 
   return (
-    <div className="grid gap-8">
+    <div className="grid gap-12">
       <ScreenView locale={locale} screen="browse" />
-      <header className="grid gap-1">
-        <h1 className="m-0 font-display text-headline font-extrabold tracking-tight sm:text-display-sm">{t.browse.title}</h1>
-        <p className="m-0 text-body text-ink-2">{t.browse.subtitle}</p>
+      <header className="grid gap-3">
+        <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{t.browse.title}</h1>
+        <p className="m-0 max-w-[60ch] text-body-lg text-ink-2">{t.browse.subtitle}</p>
       </header>
-      <ul className="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="m-0 grid list-none gap-x-8 gap-y-10 p-0 sm:grid-cols-2 lg:grid-cols-3">
         {topics.map(({ c, open, lead, calls }) => (
-          <li key={c} className="relative grid content-start gap-4 rounded-card border border-line bg-surface p-5 shadow-card transition-colors duration-[var(--cn-duration-fast)] hover:border-line-strong">
+          <li key={c} className="relative grid content-start gap-4 border-t-2 border-ink pt-4">
             <div className="grid gap-1">
-              <h2 className="m-0 flex items-center justify-between gap-2 text-title-sm font-bold">
-                <Link href={`/${locale}/browse/${c}`} className="after:absolute after:inset-0 after:rounded-card hover:underline focus-visible:underline">
+              <h2 className="m-0 flex items-center justify-between gap-2 font-display text-title font-bold tracking-tight">
+                <Link href={`/${locale}/browse/${c}`} className="after:absolute after:inset-0 hover:underline focus-visible:underline">
                   {t.board.categories[c]}
                 </Link>
                 <Icon name="arrow" className="size-4 text-ink-2" />
@@ -58,13 +58,13 @@ export default async function BrowsePage({ params }: { params: Promise<{ locale:
               <p className="m-0 text-body-sm text-ink-2">{t.browse.topics[c]}</p>
             </div>
             {lead ? (
-              <div className="grid gap-2 rounded-control bg-sunken p-3">
+              <div className="grid gap-2">
                 <p className="m-0 text-caption font-semibold uppercase tracking-wide text-ink-2">{t.browse.mostCalled}</p>
-                <p className="m-0 text-body-sm font-semibold leading-snug">{lead.question[locale]}</p>
+                <p className="m-0 font-display text-body font-bold leading-snug text-balance">{lead.question[locale]}</p>
                 <CrowdBar yes={crowdNow(lead)} yesLabel={`${t.question.yes} ${pct(crowdNow(lead))}`} noLabel={`${t.question.no} ${pct(100 - crowdNow(lead))}`} />
               </div>
             ) : (
-              <p className="m-0 rounded-control bg-sunken p-3 text-body-sm text-ink-2">{t.browse.noneOpen}</p>
+              <p className="m-0 text-body-sm text-ink-2">{t.browse.noneOpen}</p>
             )}
             <p className="m-0 flex gap-3 text-caption text-ink-2 tabular">
               <span className="font-semibold text-ink">{open === 1 ? t.browse.openCountOne : fill(t.browse.openCount, { n: formatCount(open, locale) })}</span>
