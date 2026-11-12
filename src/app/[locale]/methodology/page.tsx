@@ -64,35 +64,35 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
 
       <article className="grid max-w-[68ch] gap-10">
         <header className="grid gap-3">
-          <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{m.title}</h1>
+          <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{m.title}</h1>
           <p className="m-0 text-body-lg text-ink-2">{m.intro}</p>
         </header>
 
-        <section id="crowd" aria-labelledby="crowd-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="crowd-h" className="m-0 font-display text-title-sm font-bold">{m.crowd.title}</h2>
+        <section id="crowd" aria-labelledby="crowd-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
+          <h2 id="crowd-h" className="m-0 font-display text-headline font-bold tracking-tight text-balance">{m.crowd.title}</h2>
           <p className="m-0">{m.crowd.body}</p>
-          <p className="m-0 rounded-control border-l-4 border-side-a bg-side-a-soft px-4 py-3 font-display font-bold">{m.crowd.onePerson}</p>
+          <p className="m-0 border-l-4 border-side-a py-1 pl-4 font-display text-title-sm font-bold text-balance">{m.crowd.onePerson}</p>
         </section>
 
-        <section id="scoring" aria-labelledby="scoring-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="scoring-h" className="m-0 font-display text-title-sm font-bold">{m.scoring.title}</h2>
+        <section id="scoring" aria-labelledby="scoring-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
+          <h2 id="scoring-h" className="m-0 font-display text-headline font-bold tracking-tight text-balance">{m.scoring.title}</h2>
           <p className="m-0">{m.scoring.body}</p>
-          <div className="overflow-x-auto rounded-card border border-line bg-surface">
+          <div className="overflow-x-auto border-t border-line">
             <table className="w-full border-collapse text-left text-body-sm">
               <caption className="sr-only">{m.scoring.tableCaption}</caption>
               <thead>
                 <tr className="border-b border-line text-ink-2">
-                  <th scope="col" className="px-4 py-2 font-semibold">{m.scoring.call}</th>
+                  <th scope="col" className="py-2 pl-0 pr-4 font-semibold">{m.scoring.call}</th>
                   <th scope="col" className="px-4 py-2 font-semibold">{m.scoring.outcome}</th>
-                  <th scope="col" className="px-4 py-2 text-right font-semibold">{m.scoring.score}</th>
+                  <th scope="col" className="py-2 pl-4 pr-0 text-right font-semibold">{m.scoring.score}</th>
                 </tr>
               </thead>
               <tbody>
                 {examples.map(([p, o]) => (
-                  <tr key={`${p}-${o}`} className="border-b border-line last:border-0">
-                    <td className="px-4 py-2 tabular">{formatPercent(p, locale)}</td>
+                  <tr key={`${p}-${o}`} className="border-b border-line">
+                    <td className="py-2 pl-0 pr-4 tabular">{formatPercent(p, locale)}</td>
                     <td className="px-4 py-2">{o === 1 ? t.question.yes : t.question.no}</td>
-                    <td className="px-4 py-2 text-right font-semibold tabular">{formatBrier(brierScore(p / 100, o), locale)}</td>
+                    <td className="py-2 pl-4 pr-0 text-right font-semibold tabular">{formatBrier(brierScore(p / 100, o), locale)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -114,8 +114,8 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
           <p className="m-0 text-body-sm text-ink-2">{m.scoring.polls}</p>
         </section>
 
-        <section id="resolution" aria-labelledby="resolution-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="resolution-h" className="m-0 font-display text-title-sm font-bold">{m.resolution.title}</h2>
+        <section id="resolution" aria-labelledby="resolution-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
+          <h2 id="resolution-h" className="m-0 font-display text-headline font-bold tracking-tight text-balance">{m.resolution.title}</h2>
           <p className="m-0">{m.resolution.body}</p>
           <p className="m-0">{m.resolution.disputes}</p>
           <Link href={`/${locale}/resolutions`} className="justify-self-start font-semibold text-link underline underline-offset-4">
@@ -123,13 +123,13 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
           </Link>
         </section>
 
-        <section id="why" aria-labelledby="why-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="why-h" className="m-0 font-display text-title-sm font-bold">{m.why.title}</h2>
+        <section id="why" aria-labelledby="why-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
+          <h2 id="why-h" className="m-0 font-display text-headline font-bold tracking-tight text-balance">{m.why.title}</h2>
           <p className="m-0">{m.why.body}</p>
         </section>
 
-        <section id="record" aria-labelledby="record-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="record-h" className="m-0 font-display text-title-sm font-bold">{m.record.title}</h2>
+        <section id="record" aria-labelledby="record-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
+          <h2 id="record-h" className="m-0 font-display text-headline font-bold tracking-tight text-balance">{m.record.title}</h2>
           <p className="m-0">{m.record.body}</p>
           <dl className="m-0 grid gap-3 sm:grid-cols-3">
             {(
@@ -139,23 +139,23 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
                 [m.record.rightSide, record.rightSide === null ? "—" : formatPercent(record.rightSide, locale)],
               ] as const
             ).map(([label, value]) => (
-              <div key={label} className="border-t-2 border-ink bg-sunken px-4 py-3">
-                <dt className="text-caption text-ink-2">{label}</dt>
-                <dd className="m-0 font-display text-headline font-bold tabular">{value}</dd>
+              <div key={label} className="grid content-start gap-1 border-t border-line pt-3">
+                <dt className="order-2 text-body-sm text-ink-2">{label}</dt>
+                <dd className="order-1 m-0 font-display text-headline font-bold tabular">{value}</dd>
               </div>
             ))}
           </dl>
           <p className="m-0 text-caption text-ink-2">{t.legal.sample}</p>
         </section>
 
-        <section id="money" aria-labelledby="money-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="money-h" className="m-0 font-display text-title-sm font-bold">{m.money.title}</h2>
+        <section id="money" aria-labelledby="money-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
+          <h2 id="money-h" className="m-0 font-display text-headline font-bold tracking-tight text-balance">{m.money.title}</h2>
           <p className="m-0">{m.money.body}</p>
           <p className="m-0 text-body-sm font-semibold">{t.legal.noValue}</p>
         </section>
 
-        <section id="data" aria-labelledby="data-h" className="grid scroll-mt-20 gap-3">
-          <h2 id="data-h" className="m-0 font-display text-title-sm font-bold">{m.data.title}</h2>
+        <section id="data" aria-labelledby="data-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
+          <h2 id="data-h" className="m-0 font-display text-headline font-bold tracking-tight text-balance">{m.data.title}</h2>
           <p className="m-0">{m.data.body}</p>
         </section>
       </article>
