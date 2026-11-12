@@ -7,6 +7,7 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
 import { emailSchema } from "@/lib/onboarding";
 import { browserSupabase } from "@/lib/supabase/browser";
 import { accountsEnabled } from "@/lib/supabase/env";
+import { authErrorCode } from "@/lib/supabase/error-code";
 import { fill } from "@/lib/text";
 
 /**
@@ -18,7 +19,7 @@ import { fill } from "@/lib/text";
 export function SignInForm({ locale, t, expired = false }: { locale: Locale; t: Dictionary["signIn"]; expired?: boolean }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -38,7 +39,7 @@ export function SignInForm({ locale, t, expired = false }: { locale: Locale; t: 
     const supabase = await browserSupabase();
     if (supabase) {
       setBusy(true);
-      setFailed(false);
+      setFailed(null);
       const { error: err } = await supabase.auth.signInWithOtp({
         email: value,
         options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/${locale}/today` },
@@ -47,7 +48,7 @@ export function SignInForm({ locale, t, expired = false }: { locale: Locale; t: 
       // An unknown address is answered like a known one, so nobody can test who has an account. Only a real
       // failure (rate limit, network) shows an error.
       if (err && err.status !== 400 && err.status !== 422) {
-        setFailed(true);
+        setFailed(authErrorCode(err));
         return;
       }
     }
@@ -77,7 +78,7 @@ export function SignInForm({ locale, t, expired = false }: { locale: Locale; t: 
     <form onSubmit={submit} noValidate className="grid gap-5">
       {(expired || failed) && (
         <p role="alert" className="m-0 rounded-control border border-line bg-sunken p-3 text-body-sm">
-          {failed ? t.failed : t.expired}
+          {failed ? `${t.failed} ${fill(t.errorCode, { code: failed })}` : t.expired}
         </p>
       )}
       <div className="grid gap-2">
