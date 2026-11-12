@@ -150,6 +150,7 @@ const en = {
     previewNote: "Accounts arrive soon. For now, your choices stay on this device only.",
     liveNote: "Check your email: a link to finish creating your account is on its way to {email}. It works once and expires in 15 minutes.",
     failed: "We couldn’t send the link just now. Your choices are kept on this device; try again from Sign in in a minute.",
+    errorCode: "Error code: {code}",
     language: {
       title: "Which language do you prefer?",
       body: "You can switch any time from the top of every screen. Calls in both languages count in the same crowd.",
@@ -221,6 +222,7 @@ const en = {
     previewNote: "This is a preview: accounts arrive soon, so no email was sent.",
     another: "Use another email",
     failed: "We couldn’t send the link just now. Wait a minute and try again.",
+    errorCode: "Error code: {code}",
     expired: "That sign-in link has expired or was already used. Enter your email for a new one.",
     newHere: "New to Consensa?",
     getStarted: "Get started",

@@ -15,6 +15,14 @@ describe("publicSupabase", () => {
   });
 });
 
+describe("publicSupabase URL", () => {
+  it("keeps only the project origin, so a pasted REST endpoint or stray space still works", () => {
+    const key = "sb_publishable_0123456789abcdef";
+    expect(publicSupabase({ NEXT_PUBLIC_SUPABASE_URL: "https://abc.supabase.co/rest/v1/", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: key })?.url).toBe("https://abc.supabase.co");
+    expect(publicSupabase({ NEXT_PUBLIC_SUPABASE_URL: " https://abc.supabase.co ", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: key })?.url).toBe("https://abc.supabase.co");
+  });
+});
+
 describe("safeNext", () => {
   it("keeps paths inside the app in one of our languages", () => {
     expect(safeNext("/fr/today")).toBe("/fr/today");
