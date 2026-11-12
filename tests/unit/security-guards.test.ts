@@ -21,7 +21,7 @@ const read = (f: string) => readFileSync(f, "utf8");
 const routes = files(join(root, "src", "app", "api"), /^route\.ts$/);
 const source = files(join(root, "src"), /\.(ts|tsx)$/);
 
-/** The engine endpoint is called by GitHub Actions with a bearer secret, not by a browser. */
+/** The engine endpoint is called by GitHub Actions or Vercel Cron with a bearer secret, not by a browser. */
 const machineRoutes = ["src/app/api/engine/cycle/route.ts"];
 
 describe("API routes", () => {

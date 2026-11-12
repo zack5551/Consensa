@@ -21,13 +21,17 @@ Vercel → the Consensa project → **Settings → Environment Variables**, scop
 
 Redeploy once so the variables take effect.
 
-## 3. GitHub: the 15-minute schedule (free)
+## 3. The schedule (free): Vercel Cron, or GitHub every 15 minutes
+
+**Vercel Cron (the one in use).** `vercel.json` asks Vercel to call `/api/engine/cycle` once a day at 15:00 UTC (10:00 ET in winter), after the Bank of Canada and Statistics Canada morning releases. It needs one variable: Vercel → **Settings → Environment Variables** → Name `CRON_SECRET`, Value 32+ random characters, scope Production, then redeploy. Vercel sends it as a bearer token, and the endpoint stays off (404) until it is set. Vercel Cron runs on the production deployment and isn't blocked by Deployment Protection. Check runs under **Settings → Cron Jobs → View Logs**. A result settles after two matching reads, so with one run a day it shows on the site about two days after the official release.
+
+**GitHub Actions (optional, every 15 minutes).**
 
 GitHub → the repo → **Settings → Secrets and variables → Actions → New repository secret**:
 
 | Name | Value |
 |---|---|
-| `ENGINE_URL` | the site's address, e.g. `https://consensa.vercel.app` |
+| `ENGINE_URL` | the site's production address, `https://consensa-omega.vercel.app` |
 | `ENGINE_CRON_SECRET` | the same value as in Vercel |
 
 **Actions → PULSE cycle → Run workflow** runs one cycle on demand. Until step 4, each run is a free dry run: sample feeds, mock drafts, nothing saved.
