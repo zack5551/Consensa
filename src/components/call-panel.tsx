@@ -75,8 +75,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
 
   if (!accepting) {
     return (
-      <section aria-labelledby={`${id}-title`} className="rounded-card border border-line bg-surface p-5 shadow-card">
-        <h2 id={`${id}-title`} className="m-0 text-title-sm font-bold">
+      <section aria-labelledby={`${id}-title`} className="rounded-card border border-line border-t-4 border-t-ink bg-surface p-5">
+        <h2 id={`${id}-title`} className="m-0 font-display text-title font-bold tracking-tight">
           {t.closedTitle}
         </h2>
         <p className="mt-1 text-body-sm text-ink-2">{fill(t.closedBody, { date: closedOn })}</p>
@@ -92,8 +92,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
   const sideText = value < 50 ? "text-side-b-text" : "text-side-a-text";
 
   return (
-    <section aria-labelledby={`${id}-title`} className="rounded-card border border-line bg-surface p-5 shadow-card">
-      <h2 id={`${id}-title`} className="m-0 text-title-sm font-bold">
+    <section aria-labelledby={`${id}-title`} className="rounded-card border border-line border-t-4 border-t-ink bg-surface p-5">
+      <h2 id={`${id}-title`} className="m-0 font-display text-title font-bold tracking-tight">
         {t.title}
       </h2>
       <p id={`${id}-hint`} className="mt-1 text-body-sm text-ink-2">
@@ -224,7 +224,7 @@ function ClosedResult({
         </div>
       </dl>
       <div role="status" className={`rounded-control p-3 text-body-sm ${hit ? "bg-side-a-soft" : "bg-sunken"}`}>
-        {verdict && <p className={`m-0 font-display font-extrabold ${hit ? "text-title text-side-a-text" : "text-title-sm"}`}>{verdict}</p>}
+        {verdict && <p className={`m-0 font-display font-bold tracking-tight ${hit ? "text-title text-side-a-text" : "text-title-sm"}`}>{verdict}</p>}
         <p className="m-0">{stored === null ? t.noCall : fill(t.yourCall, { value: pct(stored) })}</p>
         {resolved && stored !== null && scored && (
           <>
