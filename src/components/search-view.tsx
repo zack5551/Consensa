@@ -102,12 +102,12 @@ export function SearchView({ docs, locale, t, states, categories, forecasters, b
       </p>
 
       {!trimmed ? (
-        <section aria-labelledby={`${ids}-idle`} className="grid gap-4">
+        <section aria-labelledby={`${ids}-idle`} className="grid gap-4 border-t-2 border-ink pt-5">
           <div className="grid gap-1">
-            <h2 id={`${ids}-idle`} className="m-0 text-title-sm font-bold">
+            <h2 id={`${ids}-idle`} className="m-0 font-display text-title font-bold tracking-tight text-balance">
               {t.idleTitle}
             </h2>
-            <p className="m-0 text-body-sm text-ink-2">{t.idleBody}</p>
+            <p className="m-0 text-body text-ink-2">{t.idleBody}</p>
           </div>
           <div className="grid gap-2">
             <p className="m-0 text-caption font-semibold uppercase tracking-wide text-ink-2">{t.suggestionsLabel}</p>
@@ -137,15 +137,15 @@ export function SearchView({ docs, locale, t, states, categories, forecasters, b
           <p className="m-0 text-caption text-ink-2" aria-hidden="true">
             {summary}
           </p>
-          <ul className="m-0 grid list-none divide-y divide-line overflow-hidden rounded-card border border-line bg-surface p-0">
+          <ul className="m-0 grid list-none border-t-2 border-ink p-0">
             {hits.map(({ item: r }) => (
-              <li key={r.slug} className="relative grid gap-2 p-4 hover:bg-sunken sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6">
+              <li key={r.slug} className="relative grid gap-2 border-b border-line py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-6">
                 <div className="grid gap-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <StateBadge state={r.state} label={states[r.state]} />
                     <span className="text-caption text-ink-2">{categories[r.category]}</span>
                   </span>
-                  <Link href={`/${locale}/q/${r.slug}`} className="text-body font-semibold leading-snug text-ink after:absolute after:inset-0">
+                  <Link href={`/${locale}/q/${r.slug}`} className="font-display text-body font-bold leading-snug text-balance text-ink after:absolute after:inset-0 hover:underline">
                     {highlight(r.title[locale], trimmed).map((run, i) =>
                       run.match ? (
                         <mark key={i} className="rounded-sm bg-side-a-soft px-0.5 font-bold text-side-a-text">
@@ -158,7 +158,7 @@ export function SearchView({ docs, locale, t, states, categories, forecasters, b
                   </Link>
                 </div>
                 <span className="flex items-baseline gap-3 text-caption text-ink-2 tabular sm:justify-end">
-                  <span className="font-display text-title-sm font-extrabold text-ink">{pct(r.crowd)}</span>
+                  <span className="font-display text-title-sm font-bold text-ink">{pct(r.crowd)}</span>
                   <span>
                     {formatCount(r.forecasters, locale)} {forecasters}
                   </span>
