@@ -12,6 +12,9 @@ in preview mode.
    - `supabase/migrations/20261111000100_crowd.sql` (the crowd totals the server reads)
    - `supabase/migrations/20261111000200_call_rules.sql` (no calls after close, one change per 2 seconds)
    - `supabase/migrations/20261111000300_consent_retention.sql` (consents end on account deletion, 3-year purge)
+   - `supabase/migrations/20261111000400_retention_and_incidents.sql` (nightly clean-up of expired consents and
+     the private incident register). Turn on pg_cron first: Database → Extensions → pg_cron. It runs inside the
+     Montréal database, so nothing leaves Canada.
 2. **Allow our sign-in links.** Authentication → URL Configuration:
    - Site URL: the production URL (for example `https://consensa.vercel.app`).
    - Redirect URLs: add `https://*-consensa.vercel.app/api/auth/callback` (previews) and
