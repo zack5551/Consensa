@@ -9,7 +9,7 @@ import { z } from "zod";
 import { isLocale } from "@/i18n/config";
 
 const publicSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url(),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().trim().pipe(z.url()),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(20),
 });
 
@@ -18,7 +18,8 @@ export type PublicSupabase = { url: string; key: string };
 /** Pass `process.env` values explicitly: Next only inlines NEXT_PUBLIC_* when they are read by name. */
 export function publicSupabase(env: { NEXT_PUBLIC_SUPABASE_URL?: string; NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string }): PublicSupabase | null {
   const parsed = publicSchema.safeParse(env);
-  return parsed.success ? { url: parsed.data.NEXT_PUBLIC_SUPABASE_URL, key: parsed.data.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY } : null;
+  // Keep only the origin: the dashboard's "RESTful endpoint" (…supabase.co/rest/v1/) is an easy value to paste by mistake.
+  return parsed.success ? { url: new URL(parsed.data.NEXT_PUBLIC_SUPABASE_URL).origin, key: parsed.data.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.trim() } : null;
 }
 
 /**
