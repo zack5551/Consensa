@@ -26,7 +26,7 @@ type Params = Promise<{ locale: string }>;
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getDictionary(locale).meta.recordTitle, alternates: { languages: { "en-CA": "/en/record", "fr-CA": "/fr/record" } } };
+  return { title: getDictionary(locale).meta.recordTitle, robots: { index: false }, alternates: { languages: { "en-CA": "/en/record", "fr-CA": "/fr/record" } } };
 }
 
 export default async function RecordPage({ params }: { params: Params }) {
