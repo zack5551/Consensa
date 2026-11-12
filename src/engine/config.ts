@@ -4,7 +4,8 @@
  *
  * Keys (see docs/engine/README.md):
  * - ANTHROPIC_API_KEY: turns on the Claude drafter.
- * - ENGINE_CRON_SECRET: turns on the cycle endpoint; the scheduler sends it as a bearer token.
+ * - ENGINE_CRON_SECRET: turns on the cycle endpoint's POST; GitHub Actions sends it as a bearer token.
+ * - CRON_SECRET: turns on the cycle endpoint's GET; Vercel Cron sends it as a bearer token.
  * - ENGINE_LIVE_FEEDS=1: fetch the real feeds instead of the samples.
  * - SUPABASE_URL + SUPABASE_SECRET_KEY: keep the queue, reads and live questions in Supabase (otherwise a dry run).
  * - VERCEL_DEPLOY_HOOK_URL: rebuild the site when a question goes live or resolves.
@@ -15,6 +16,7 @@ import { z } from "zod";
 const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   ENGINE_CRON_SECRET: z.string().min(32, "ENGINE_CRON_SECRET must be at least 32 characters").optional(),
+  CRON_SECRET: z.string().min(32, "CRON_SECRET must be at least 32 characters").optional(),
   ENGINE_LIVE_FEEDS: z.enum(["0", "1"]).default("0"),
   ENGINE_MAX_DRAFTS: z.coerce.number().int().min(0).max(50).default(6),
   SUPABASE_URL: z.url().optional(),

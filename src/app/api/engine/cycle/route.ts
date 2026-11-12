@@ -1,11 +1,15 @@
 /**
- * POST /api/engine/cycle: runs one PULSE cycle. Called by the scheduler every 15 minutes with
- * `Authorization: Bearer $ENGINE_CRON_SECRET`. Off (404) until that secret is set. Returns the cycle report as JSON;
- * nothing here is user-facing, and nothing is published without an editor.
+ * /api/engine/cycle: runs one PULSE cycle and returns the cycle report as JSON. Nothing here is user-facing, and
+ * nothing is published without an editor.
+ *
+ * - POST: an outside scheduler (GitHub Actions) with `Authorization: Bearer $ENGINE_CRON_SECRET`.
+ * - GET: Vercel Cron (vercel.json), which sends `Authorization: Bearer $CRON_SECRET` when that variable is set.
+ *
+ * Each method is off (404) until its own secret is set.
  */
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { engineEnv } from "@/engine/config";
+import { engineEnv, type EngineEnv } from "@/engine/config";
 import { runFromEnv } from "@/engine/run";
 import { siteDueQuestions } from "@/engine/site-results";
 import { SupabaseStore } from "@/engine/supabase-store";
@@ -26,7 +30,17 @@ export async function POST(request: NextRequest) {
   const env = engineEnv();
   if (!env.ENGINE_CRON_SECRET) return new NextResponse(null, { status: 404 });
   if (!authorized(request.headers.get("authorization"), env.ENGINE_CRON_SECRET)) return new NextResponse(null, { status: 401 });
+  return runCycle(env);
+}
 
+export async function GET(request: NextRequest) {
+  const env = engineEnv();
+  if (!env.CRON_SECRET) return new NextResponse(null, { status: 404 });
+  if (!authorized(request.headers.get("authorization"), env.CRON_SECRET)) return new NextResponse(null, { status: 401 });
+  return runCycle(env);
+}
+
+async function runCycle(env: EngineEnv) {
   const liveFeeds = env.ENGINE_LIVE_FEEDS === "1";
   const live = sampleQuestions.map((q) => ({ slug: q.slug, question: q.question }));
   // Save to Supabase only for a real run (live feeds and the Claude drafter), so sample or mock drafts never land
