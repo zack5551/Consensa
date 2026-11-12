@@ -66,7 +66,7 @@ create table if not exists engine_live_questions (
 );
 
 -- Who changed a queue row's status by hand, for the audit trail.
-create or replace function engine_log_review() returns trigger language plpgsql as $$
+create or replace function engine_log_review() returns trigger language plpgsql set search_path = public as $$
 begin
   if new.status is distinct from old.status then
     insert into engine_review_events (item_id, actor, from_status, to_status)
@@ -78,7 +78,7 @@ end $$;
 drop trigger if exists engine_queue_review on engine_queue;
 create trigger engine_queue_review before update on engine_queue for each row execute function engine_log_review();
 
-create or replace function engine_refuse_delete() returns trigger language plpgsql as $$
+create or replace function engine_refuse_delete() returns trigger language plpgsql set search_path = public as $$
 begin
   raise exception 'PULSE keeps every row for the audit trail; change status instead of deleting.';
 end $$;
