@@ -279,7 +279,7 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabe
 
       {step === "done" && saved && (
         <Panel headingRef={heading} title={t.done.title} body={t.done.body}>
-          <dl className="m-0 grid gap-px overflow-hidden rounded-card border border-line bg-line">
+          <dl className="m-0 grid border-t-2 border-ink">
             <Row term={t.done.language} value={saved.locale === "fr" ? t.language.fr : t.language.en} />
             <Row term={t.done.region} value={saved.region === "none" ? t.region.none : regionNames[saved.region]} />
             <Row term={t.done.topics} value={saved.topics.length ? saved.topics.map((c) => categoryNames[c]).join(", ") : t.done.noTopics} />
@@ -310,7 +310,7 @@ function Panel({ headingRef, title, body, children }: { headingRef: React.RefObj
   return (
     <section className="grid gap-6">
       <div className="grid gap-2">
-        <h2 ref={headingRef} tabIndex={-1} className="m-0 font-display text-headline font-extrabold tracking-tight text-balance outline-none">
+        <h2 ref={headingRef} tabIndex={-1} className="m-0 font-display text-headline font-bold tracking-tight text-balance outline-none">
           {title}
         </h2>
         <p className="m-0 text-body-lg text-ink-2">{body}</p>
@@ -326,7 +326,7 @@ function Actions({ back, children }: { back: ReactNode; children: ReactNode }) {
 
 function Row({ term, value }: { term: string; value: string }) {
   return (
-    <div className="grid gap-1 bg-surface px-4 py-3 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-4">
+    <div className="grid gap-1 border-b border-line py-3 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-4">
       <dt className="text-body-sm text-ink-2">{term}</dt>
       <dd className="m-0 text-body-sm font-semibold">{value}</dd>
     </div>
