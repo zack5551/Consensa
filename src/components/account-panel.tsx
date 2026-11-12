@@ -84,8 +84,8 @@ export function AccountPanel({ locale, t, consentLabels }: { locale: Locale; t: 
   }
 
   return (
-    <section aria-labelledby={`${ids}-title`} className="grid gap-6 rounded-card border border-line bg-surface p-5 shadow-card">
-      <h2 id={`${ids}-title`} className="m-0 text-title-sm font-bold">
+    <section aria-labelledby={`${ids}-title`} className="grid gap-6 border-t-2 border-ink pt-5">
+      <h2 id={`${ids}-title`} className="m-0 font-display text-headline font-bold tracking-tight text-balance">
         {t.title}
       </h2>
 
@@ -113,7 +113,7 @@ export function AccountPanel({ locale, t, consentLabels }: { locale: Locale; t: 
           </div>
 
           <fieldset className="m-0 grid gap-3 border-0 border-t border-line p-0 pt-5">
-            <legend className="float-left mb-1 w-full text-body font-bold">{t.consentsTitle}</legend>
+            <legend className="float-left mb-1 w-full font-display text-title-sm font-bold">{t.consentsTitle}</legend>
             <p className="m-0 text-body-sm text-ink-2">{t.consentsHelp}</p>
             {optionalConsents.map((kind) => (
               <label key={kind} className="flex min-h-11 cursor-pointer items-start gap-3 text-body-sm">
@@ -127,7 +127,7 @@ export function AccountPanel({ locale, t, consentLabels }: { locale: Locale; t: 
           </fieldset>
 
           <div className="grid gap-3 border-t border-line pt-5">
-            <h3 className="m-0 text-body font-bold">{t.dataTitle}</h3>
+            <h3 className="m-0 font-display text-title-sm font-bold">{t.dataTitle}</h3>
             <p className="m-0 max-w-[60ch] text-body-sm text-ink-2">{t.dataHelp}</p>
             <a href="/api/account/export" download className="justify-self-start rounded-control border border-line px-4 py-2 text-body-sm font-semibold hover:bg-sunken">
               {t.download}
@@ -135,7 +135,7 @@ export function AccountPanel({ locale, t, consentLabels }: { locale: Locale; t: 
           </div>
 
           <div className="grid gap-3 border-t border-line pt-5">
-            <h3 className="m-0 text-body font-bold">{t.deleteTitle}</h3>
+            <h3 className="m-0 font-display text-title-sm font-bold">{t.deleteTitle}</h3>
             <p className="m-0 max-w-[60ch] text-body-sm text-ink-2">{t.deleteHelp}</p>
             <label className="flex min-h-11 cursor-pointer items-start gap-3 text-body-sm">
               <input type="checkbox" className="mt-0.5 size-5 shrink-0" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} />
