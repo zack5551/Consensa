@@ -145,7 +145,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
               </>
             )}
           </div>
-          <h1 className="m-0 font-display text-headline font-extrabold leading-tight tracking-tight text-balance">{q.question[locale]}</h1>
+          <h1 className="m-0 font-display text-headline font-bold leading-tight tracking-tight text-balance">{q.question[locale]}</h1>
           <StateNote state={state} title={t.states[state]}>
             {note}
           </StateNote>
@@ -234,7 +234,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
         {/* Why it moved: an upright, readable note with its sources as footnotes, not chips. */}
         {q.why && (
           <section aria-labelledby="why-title" className="grid gap-3 border-t-2 border-ink pt-5">
-            <h2 id="why-title" className="m-0 font-display text-title-sm font-bold">
+            <h2 id="why-title" className="m-0 font-display text-title font-bold tracking-tight text-balance">
               {t.why.title}
             </h2>
             <p className="m-0 text-caption font-bold uppercase tracking-wide text-ink-2">{t.why.byline}</p>
@@ -252,7 +252,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
         )}
 
         <section aria-labelledby="res-title" className="grid gap-3 border-t-2 border-ink pt-5">
-          <h2 id="res-title" className="m-0 font-display text-title-sm font-bold">
+          <h2 id="res-title" className="m-0 font-display text-title font-bold tracking-tight text-balance">
             {t.resolution.title}
           </h2>
           <p className="m-0 max-w-[65ch] text-body">{q.resolution.rule[locale]}</p>
@@ -283,7 +283,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
         {/* The loop goes on: open questions to call next, same topic first. Plain ruled rows, not cards. */}
         {next.length > 0 && (
           <section aria-labelledby="next-title" className="grid gap-2 border-t-2 border-ink pt-5">
-            <h2 id="next-title" className="m-0 font-display text-title-sm font-bold">
+            <h2 id="next-title" className="m-0 font-display text-title font-bold tracking-tight text-balance">
               {t.question.nextUp.title}
             </h2>
             <ul className="m-0 grid list-none p-0">
