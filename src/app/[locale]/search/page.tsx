@@ -53,9 +53,9 @@ export default async function SearchPage({ params }: { params: Promise<{ locale:
   const t = getDictionary(locale);
 
   return (
-    <div className="mx-auto grid w-full max-w-[760px] gap-6">
+    <div className="mx-auto grid w-full max-w-[760px] gap-8">
       <ScreenView locale={locale} screen="search" />
-      <h1 className="m-0 font-display text-headline font-extrabold tracking-tight">{t.search.title}</h1>
+      <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{t.search.title}</h1>
       <SearchView docs={buildDocs()} locale={locale} t={t.search} states={t.states} categories={t.board.categories} forecasters={t.question.forecasters} browseHref={`/${locale}/browse`} />
     </div>
   );
