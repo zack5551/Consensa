@@ -54,7 +54,7 @@
 }
 
 @layer base {
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scrollbar-color: var(--cn-text-subtle) var(--cn-bg); }
   body {
     background: var(--cn-bg);
     color: var(--cn-text);
@@ -68,4 +68,10 @@
     outline-offset: 2px;
   }
   .tabular { font-variant-numeric: tabular-nums; }
+}
+
+/* Themed text selection: the yes-side soft wash with its readable text colour, in light and dark. */
+::selection {
+  background: var(--cn-side-a-soft);
+  color: var(--cn-side-a-text);
 }

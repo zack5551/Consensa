@@ -9,7 +9,6 @@ import { notFound } from "next/navigation";
 import { CrowdBar } from "@/components/crowd-bar";
 import { ProvinceSplit } from "@/components/province-split";
 import { ScreenView } from "@/components/screen-view";
-import { Icon } from "@/components/shell/icons";
 import { localeHref } from "@/components/shell/nav-items";
 import { SAMPLE_NOW, sampleQuestions as sample, todaysFive } from "@/content/sample-questions";
 import { withLiveCrowd } from "@/lib/live";
@@ -65,20 +64,15 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       {/* Hero: the promise on the left, the proof (the day's lead question) on the right. */}
       <section aria-labelledby="hero-title" className="grid items-start gap-10 pt-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16 lg:pt-10">
         <div className="grid gap-6 lg:pt-6">
-          <p className={`${kicker} flex items-center gap-2 text-ink-2`}>
-            <span className="size-1.5 shrink-0 rounded-full bg-canada" aria-hidden="true" />
-            {l.eyebrow}
-          </p>
           <h1 id="hero-title" className="m-0 font-display text-display-sm font-bold tracking-tight text-balance sm:text-display">
             {l.title}
           </h1>
           <p className="m-0 max-w-[46ch] text-body-lg text-ink-2">{l.lede}</p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-1">
-            <Link href={href("/today")} className="inline-flex items-center gap-2 rounded-control bg-ink px-5 py-3 text-body font-bold text-paper transition-opacity duration-[var(--cn-duration-fast)] hover:opacity-90">
+            <Link href={href("/today")} className="inline-block rounded-control bg-ink px-5 py-3 text-body font-bold text-paper transition-[opacity,transform] duration-[var(--cn-duration-fast)] not-active:hover:opacity-90 active:translate-y-px">
               {l.primary}
-              <Icon name="arrow" className="size-4" />
             </Link>
-            <Link href={href("/board")} className="py-3 text-body font-semibold text-ink underline decoration-line-strong underline-offset-8 transition-colors duration-[var(--cn-duration-fast)] hover:decoration-ink">
+            <Link href={href("/board")} className="py-3 text-body font-semibold text-ink underline decoration-line-strong underline-offset-8 transition-[color,text-decoration-color,opacity] duration-[var(--cn-duration-fast)] hover:decoration-ink active:opacity-70">
               {l.secondary}
             </Link>
           </div>
@@ -94,7 +88,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
             </span>
           </p>
           <h2 id="showcase-q" className="m-0 font-display text-title font-bold text-balance sm:text-headline">
-            <Link href={href(`/q/${lead.slug}`)} className="after:absolute after:inset-0 after:rounded-card hover:underline focus-visible:underline">
+            <Link href={href(`/q/${lead.slug}`)} className="after:absolute after:inset-0 after:rounded-card hover:underline focus-visible:underline active:opacity-70">
               {lead.question[locale]}
             </Link>
           </h2>
@@ -122,9 +116,8 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
           />
           <p className="m-0 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-body-sm text-ink-2">
             <span className="tabular">{fill(l.showcaseCount, { n: formatCount(lead.forecasters, locale) })}</span>
-            <span className="inline-flex items-center gap-1 font-semibold text-ink" aria-hidden="true">
+            <span className="font-semibold text-link underline underline-offset-4" aria-hidden="true">
               {l.showcaseOpen}
-              <Icon name="arrow" className="size-4" />
             </span>
           </p>
         </article>
@@ -182,7 +175,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         <ul className="m-0 grid list-none grid-cols-2 gap-y-6 p-0 sm:grid-cols-3 lg:grid-cols-6">
           {categories.map((c) => (
             <li key={c} className="border-l border-line-strong">
-              <Link href={href(`/browse/${c}`)} className="group grid h-full gap-0.5 px-4 py-1">
+              <Link href={href(`/browse/${c}`)} className="group grid h-full gap-0.5 px-4 py-1 active:opacity-70">
                 <span className="font-display text-title-sm font-bold underline-offset-4 group-hover:underline">{t.board.categories[c]}</span>
                 <span className="text-caption text-ink-2 tabular">{openByTopic[c] === 0 ? l.topics.none : openByTopic[c] === 1 ? l.topics.countOne : fill(l.topics.count, { n: openByTopic[c] })}</span>
               </Link>
@@ -196,9 +189,8 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         <section aria-labelledby="trending-title" className="grid gap-6">
           <header className="flex flex-wrap items-end justify-between gap-3">
             <h2 id="trending-title" className={sectionTitle}>{l.trending.title}</h2>
-            <Link href={href("/board")} className="inline-flex items-center gap-1 text-body-sm font-semibold text-link underline-offset-4 hover:underline">
+            <Link href={href("/board")} className="text-body-sm font-semibold text-link underline underline-offset-4 active:opacity-70">
               {l.trending.all}
-              <Icon name="arrow" className="size-4" />
             </Link>
           </header>
           <ol className="m-0 grid list-none border-t-2 border-ink p-0">
@@ -209,7 +201,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
                   <span className="font-display text-headline leading-none text-ink-3 tabular" aria-hidden="true">{i + 1}</span>
                   <div className="grid gap-1">
                     <h3 className="m-0 font-display text-title-sm font-bold text-balance sm:text-title">
-                      <Link href={href(`/q/${q.slug}`)} className="after:absolute after:inset-0 hover:underline focus-visible:underline">
+                      <Link href={href(`/q/${q.slug}`)} className="after:absolute after:inset-0 hover:underline focus-visible:underline active:opacity-70">
                         {q.question[locale]}
                       </Link>
                     </h3>
@@ -247,7 +239,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         <div className="grid divide-y divide-line border-y border-line">
           {Object.entries(l.faq.items).map(([key, item]) => (
             <details key={key} className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-body-lg font-semibold [&::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-body-lg font-semibold active:opacity-70 [&::-webkit-details-marker]:hidden">
                 {item.q}
                 <svg viewBox="0 0 16 16" className="size-4 shrink-0 text-ink-2 transition-transform duration-[var(--cn-duration-base)] group-open:rotate-45" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" aria-hidden="true">
                   <path d="M8 2v12M2 8h12" />
@@ -264,9 +256,8 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         <h2 id="closing-title" className="m-0 font-display text-display-sm font-bold tracking-tight text-balance sm:text-display">{l.closing.title}</h2>
         <div className="grid justify-items-start gap-5">
           <p className="m-0 max-w-[44ch] text-body-lg text-ink-2">{l.closing.body}</p>
-          <Link href={href("/today")} className="inline-flex items-center gap-2 rounded-control bg-ink px-5 py-3 text-body font-bold text-paper transition-opacity duration-[var(--cn-duration-fast)] hover:opacity-90">
+          <Link href={href("/today")} className="inline-block rounded-control bg-ink px-5 py-3 text-body font-bold text-paper transition-[opacity,transform] duration-[var(--cn-duration-fast)] not-active:hover:opacity-90 active:translate-y-px">
             {l.closing.action}
-            <Icon name="arrow" className="size-4" />
           </Link>
         </div>
       </section>
