@@ -48,8 +48,8 @@ const en = {
       label: "Consensa at a glance",
       forecasters: "calls on open questions",
       questions: "open questions",
-      regions: "regions in every split",
-      languages: "languages, one crowd",
+      resolved: "resolved questions",
+      calledRight: "of results Canada called right",
     },
     how: {
       title: "How it works",
