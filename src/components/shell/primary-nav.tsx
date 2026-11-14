@@ -13,7 +13,7 @@ export function PrimaryNav({ locale, labels, navLabel }: Props) {
   const active = activeNav(usePathname() ?? "", locale);
   return (
     <nav aria-label={navLabel} className="hidden md:block">
-      <ul className="m-0 flex list-none items-center gap-1 p-0">
+      <ul className="m-0 flex list-none items-center gap-0 p-0 lg:gap-1">
         {navItems.map((item) => {
           const current = active === item.key;
           return (
@@ -21,12 +21,12 @@ export function PrimaryNav({ locale, labels, navLabel }: Props) {
               <Link
                 href={localeHref(locale, item.path)}
                 aria-current={current ? "page" : undefined}
-                className={`relative inline-flex h-10 items-center rounded-control px-3 text-body-sm font-semibold transition-colors duration-[var(--cn-duration-fast)] hover:bg-sunken ${
+                className={`relative inline-flex h-10 items-center whitespace-nowrap rounded-control px-2 lg:px-3 text-body-sm font-semibold transition-colors duration-[var(--cn-duration-fast)] hover:bg-sunken ${
                   current ? "text-ink" : "text-ink-2 hover:text-ink"
                 }`}
               >
                 {labels[item.key]}
-                {current ? <span className="absolute inset-x-3 -bottom-[9px] h-0.5 rounded-full bg-ink" aria-hidden="true" /> : null}
+                {current ? <span className="absolute inset-x-2 lg:inset-x-3 -bottom-[9px] h-0.5 rounded-full bg-ink" aria-hidden="true" /> : null}
               </Link>
             </li>
           );
