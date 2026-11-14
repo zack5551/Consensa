@@ -33,6 +33,12 @@ describe("runCycle on the sample feeds", () => {
     const rate = report.decisions.find((d) => d.headline.startsWith("Economists split"));
     expect(rate).toMatchObject({ decision: "autoRejected" });
     expect(rate && "flags" in rate && rate.flags.map((f) => f.code)).toContain("duplicate");
+    // Every draft says what PULSE did and why, and the note is saved on the queue item.
+    expect(rate && "why" in rate && rate.why).toMatch(/^Blocked, never shown: duplicate .*Written from "Economists split/);
+    const queued = report.decisions.find((d) => d.decision === "queued");
+    expect(queued && "why" in queued && queued.why).toMatch(/^Queued for an editor at priority \d+\. Written from ".+" \(heat \d+, \d+ reports? from \d+ sources?\)\..*Nothing publishes until an editor approves\.$/);
+    const saved = (await store.items()).find((i) => queued && "itemId" in queued && i.id === queued.itemId);
+    expect(saved?.why).toBe(queued && "why" in queued ? queued.why : undefined);
 
     expect(report.feeds.failed).toEqual([]);
     expect(report.drafter).toBe("mock");
@@ -96,8 +102,8 @@ describe("runCycle on the sample feeds", () => {
 
     const http = fakeHttp([{ match: /valet/, body: { observations: [{ d: "2026-12-09", [VALET_SERIES]: { v: "2.50" } }, { d: "2026-12-10", [VALET_SERIES]: { v: "2.25" } }] } }]);
     const at = (iso: string) => ({ ...deps(store), ingest: async () => [], http, now: new Date(iso) });
-    expect((await runCycle(at("2026-12-10T01:00:00Z"))).resolutions).toEqual([{ slug: "boc-cut-dec-2026", state: "confirming" }]);
-    expect((await runCycle(at("2026-12-10T01:15:00Z"))).resolutions).toEqual([{ slug: "boc-cut-dec-2026", state: "resolved", outcome: "yes" }]);
+    expect((await runCycle(at("2026-12-10T01:00:00Z"))).resolutions).toMatchObject([{ slug: "boc-cut-dec-2026", state: "confirming" }]);
+    expect((await runCycle(at("2026-12-10T01:15:00Z"))).resolutions).toMatchObject([{ slug: "boc-cut-dec-2026", state: "resolved", outcome: "yes", why: expect.stringMatching(/^Settled YES by the engine: 2\.50% → 2\.25%/) }]);
   });
 });
 

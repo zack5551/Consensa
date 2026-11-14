@@ -53,6 +53,8 @@ Supabase → **Table Editor → engine_queue**, sorted by `priority`. Read `ques
 
 Drafts with a blocking flag arrive as `autoRejected` and can't be approved. Nothing can be deleted, and every change is logged in `engine_review_events`. Approved questions resolve automatically from their official source when the result is due. Anything uncertain shows `needsEditor` in `engine_resolutions`.
 
+**PULSE explains every call.** `editor_note` ends with a `PULSE:` line saying what the engine did and why: the story it wrote from (heat, how many reports and sources), how the question settles, and which flags to check, or why it was blocked. Each row in `engine_resolutions` has `record → why`: what the official source read, whether it is waiting for a second matching read, why it settled, or why it needs an editor. The notes are written from the data, not by the model, so they cost nothing.
+
 ## 6. Showing live questions on the site (a separate switch, off)
 
 `CONSENSA_LIVE_QUESTIONS=1` in Vercel makes each build include the published questions. Leave it off for now: until calls are stored on the server (accounts, M2), a live question would show 0 forecasters and a flat 50% line.

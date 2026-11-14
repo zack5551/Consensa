@@ -16,7 +16,8 @@
 import type { Question } from "@/lib/question";
 import { duplicateFlag, findDuplicate } from "@/engine/dedup";
 import type { DraftUsage, Drafter } from "@/engine/draft/drafter";
-import { resolveDue } from "@/engine/resolve/due";
+import { explainItem } from "@/engine/explain";
+import { resolveDue, type ResolveStep } from "@/engine/resolve/due";
 import type { toResult } from "@/engine/resolve/policy";
 import type { Http } from "@/engine/resolve/resolvers";
 import { newItem, publish } from "@/engine/review";
@@ -59,7 +60,7 @@ export type StoryDecision =
   | { storyId: string; headline: string; heat: number; decision: "blockedStory"; flags: Flag[] }
   | { storyId: string; headline: string; heat: number; decision: "skipped"; reason: string }
   | { storyId: string; headline: string; heat: number; decision: "error"; reason: string }
-  | { storyId: string; headline: string; heat: number; decision: "queued" | "autoRejected"; itemId: string; flags: Flag[] };
+  | { storyId: string; headline: string; heat: number; decision: "queued" | "autoRejected"; itemId: string; flags: Flag[]; why: string };
 
 export interface CycleReport {
   startedAt: string;
@@ -68,7 +69,7 @@ export interface CycleReport {
   feeds: { ok: number; failed: Array<{ sourceId: string; error: string }>; newSignals: number; droppedItems: number };
   stories: { total: number; aboveHeat: number };
   decisions: StoryDecision[];
-  resolutions: Array<{ slug: string; state: string; outcome?: "yes" | "no" }>;
+  resolutions: ResolveStep[];
   usage: DraftUsage;
 }
 
@@ -169,7 +170,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
     const dup = findDuplicate(o.draft, [...existing, ...(await store.comparables()).filter((c) => !existing.includes(c))]);
     if (dup) flags.push(duplicateFlag(dup));
 
-    const item = newItem({
+    const drafted = newItem({
       id: `${o.draft.slug}--${story.id}`,
       storyId: story.id,
       draft: o.draft,
@@ -179,8 +180,10 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       drafter: o.drafter,
       at: now,
     });
+    const why = explainItem({ story, draft: o.draft, flags, status: drafted.status, priority: drafted.priority });
+    const item = { ...drafted, why };
     await store.putItem(item);
-    decisions.push({ ...base, decision: item.status === "autoRejected" ? "autoRejected" : "queued", itemId: item.id, flags });
+    decisions.push({ ...base, decision: item.status === "autoRejected" ? "autoRejected" : "queued", itemId: item.id, flags, why });
   }
 
   // 8. Resolve
