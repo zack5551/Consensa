@@ -38,7 +38,6 @@ const fr = {
     },
   },
   landing: {
-    eyebrow: "Gratuit · Canadien · En français et en anglais",
     title: "Ce que le Canada prévoit.",
     lede: "Faites une prévision rapide sur une question canadienne, puis voyez où le Canada se situe, province par province. Jamais d’argent en jeu.",
     primary: "Faire les cinq du jour",

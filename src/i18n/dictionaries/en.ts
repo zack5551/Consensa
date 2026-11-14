@@ -36,7 +36,6 @@ const en = {
     },
   },
   landing: {
-    eyebrow: "Free · Canadian · English and French",
     title: "What Canada thinks happens next.",
     lede: "Make a quick probability call on a Canadian question, then see where Canada lands, province by province. No money, ever.",
     primary: "Make today’s five calls",
