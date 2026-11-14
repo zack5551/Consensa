@@ -50,8 +50,8 @@ const fr = {
       label: "Consensa en bref",
       forecasters: "prévisions sur les questions ouvertes",
       questions: "questions ouvertes",
-      regions: "régions dans chaque portrait",
-      languages: "langues, une seule foule",
+      resolved: "questions résolues",
+      calledRight: "des résultats bien anticipés par le Canada",
     },
     how: {
       title: "Comment ça marche",

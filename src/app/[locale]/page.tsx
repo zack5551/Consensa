@@ -15,7 +15,8 @@ import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
-import { categories, crowdNow, isOpen, provinces, questionState } from "@/lib/question";
+import { buildLandingStats } from "@/lib/landing-stats";
+import { categories, crowdNow, crowdRecord, isOpen, questionState } from "@/lib/question";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
 
@@ -47,12 +48,16 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const totalCalls = open.reduce((sum, q) => sum + q.forecasters, 0);
   const openByTopic = Object.fromEntries(categories.map((c) => [c, open.filter((q) => q.category === c).length])) as Record<(typeof categories)[number], number>;
 
-  const stats = [
-    [formatCount(totalCalls, locale), l.stats.forecasters],
-    [formatCount(open.length, locale), l.stats.questions],
-    [formatCount(provinces.length, locale), l.stats.regions],
-    [formatCount(2, locale), l.stats.languages],
-  ] as const;
+  // Same raw sample data as /methodology, so the two pages always agree.
+  const record = crowdRecord(sample);
+  const { stats, columns } = buildLandingStats({
+    calls: formatCount(totalCalls, locale),
+    open: formatCount(open.length, locale),
+    record,
+    labels: l.stats,
+    formatCount: (n) => formatCount(n, locale),
+    formatPercent: pct,
+  });
 
   const kicker = "m-0 text-caption font-bold uppercase tracking-widest";
   const sectionTitle = "m-0 font-display text-headline font-bold tracking-tight text-balance";
@@ -125,10 +130,10 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
       {/* At a glance: big numbers under a rule, not tiles. */}
       <section aria-label={l.stats.label}>
-        <dl className="m-0 grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4 lg:gap-x-10">
+        <dl className={`m-0 grid grid-cols-2 gap-x-6 gap-y-8 lg:gap-x-10 ${columns}`}>
           {stats.map(([value, label]) => (
             <div key={label} className="grid content-start gap-1 border-t-2 border-ink pt-3">
-              <dt className="order-2 text-body-sm text-ink-2">{label}</dt>
+              <dt className="order-2 text-balance text-body-sm text-ink-2">{label}</dt>
               <dd className="order-1 m-0 font-display text-headline font-bold tabular lg:text-display">{value}</dd>
             </div>
           ))}
