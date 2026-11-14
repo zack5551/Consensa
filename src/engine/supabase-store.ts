@@ -116,7 +116,8 @@ export class SupabaseStore implements EngineStore {
         status: item.status,
         priority: item.priority,
         flags: item.flags,
-        editor_note: item.draft.editorNote,
+        // The why note sits in the column editors already read in Table Editor; no new column needed.
+        editor_note: item.why ? `${item.draft.editorNote}\n\nPULSE: ${item.why}` : item.draft.editorNote,
         item,
         created_at: item.createdAt,
       },

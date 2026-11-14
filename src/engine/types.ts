@@ -170,6 +170,8 @@ export interface QueueItem {
   /** Which drafter wrote it (model id or "mock"), for the AI disclosure and audits. */
   drafter: string;
   createdAt: string;
+  /** What the engine did with this draft and why, in plain English (see `explain.ts`). Older items may lack it. */
+  why?: string;
 }
 
 // ─── Resolution ───────────────────────────────────────────────────────────────
@@ -197,4 +199,6 @@ export interface ResolutionRecord {
   disputed?: boolean;
   /** Who settled it: "engine" for auto-resolution, otherwise the editor's id. */
   resolvedBy?: string;
+  /** Where the result stands after the latest read and why, in plain English (see `explain.ts`). */
+  why?: string;
 }

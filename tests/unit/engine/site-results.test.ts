@@ -45,8 +45,14 @@ describe("automatic results for the site's questions", () => {
     const due = siteDueQuestions(sampleQuestions).filter((q) => q.slug === "jobs-rate-oct-2026");
     const t0 = new Date("2026-11-11T12:00:00Z");
 
-    expect(await resolveDue(due, store, http, t0)).toEqual([{ slug: "jobs-rate-oct-2026", state: "confirming" }]);
-    expect(await resolveDue(due, store, http, new Date(t0.getTime() + CONFIRM_GAP_MS))).toEqual([{ slug: "jobs-rate-oct-2026", state: "resolved", outcome: "no" }]);
+    const first = await resolveDue(due, store, http, t0);
+    expect(first).toMatchObject([{ slug: "jobs-rate-oct-2026", state: "confirming" }]);
+    expect(first[0]!.why).toMatch(/reads NO: 6\.9% for 2026-10.*second matching read/);
+    const second = await resolveDue(due, store, http, new Date(t0.getTime() + CONFIRM_GAP_MS));
+    expect(second).toMatchObject([{ slug: "jobs-rate-oct-2026", state: "resolved", outcome: "no" }]);
+    // PULSE says what it did and why, on the step and on the saved record.
+    expect(second[0]!.why).toMatch(/^Settled NO by the engine: 6\.9% for 2026-10.*Two reads agreed.*vector 2062815 for 2026-10: YES if >= 7%/);
+    expect((await store.getResolution("jobs-rate-oct-2026"))?.why).toBe(second[0]!.why);
     // A resolved question is never read again.
     expect(await resolveDue(due, store, http, new Date(t0.getTime() + 2 * CONFIRM_GAP_MS))).toEqual([]);
   });
