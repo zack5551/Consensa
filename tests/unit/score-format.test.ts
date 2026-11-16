@@ -20,3 +20,14 @@ describe("score formatting", () => {
     expect(formatOneDecimal(2.43, "fr")).toBe("2,4");
   });
 });
+
+describe("formatDayHeading", () => {
+  it("uses the Eastern calendar day when asked, not UTC", async () => {
+    const { formatDayHeading } = await import("@/lib/format");
+    // 11:30 p.m. ET Monday Nov 16 is already Tuesday in UTC.
+    const iso = "2026-11-17T04:30:00Z";
+    expect(formatDayHeading(iso, "en", "America/Toronto")).toBe("Monday, November 16");
+    expect(formatDayHeading(iso, "fr", "America/Toronto")).toBe("lundi 16 novembre");
+    expect(formatDayHeading(iso, "en")).toBe("Tuesday, November 17");
+  });
+});
