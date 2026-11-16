@@ -64,7 +64,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
       {/* Masthead: date kicker, display title, and the streak as a number under a rule (not a tile). */}
       <header className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-10">
         <div className="grid gap-2">
-          <p className={`${kicker} text-ink-2`}>{capitalizeFirst(formatDayHeading(SAMPLE_NOW.toISOString(), locale))}</p>
+          <p className={`${kicker} text-ink-2`}>{capitalizeFirst(formatDayHeading(new Date().toISOString(), locale, "America/Toronto"))}</p>
           <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{t.today.title}</h1>
           <p className="m-0 max-w-prose text-body text-ink-2">{t.today.subtitle}</p>
         </div>

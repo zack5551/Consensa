@@ -24,7 +24,10 @@ export function formatBrier(value: number, locale: Locale): string {
   return new Intl.NumberFormat(intlLocale[locale], { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(value);
 }
 
-/** "Friday, November 6" / "vendredi 6 novembre" (UTC). */
-export function formatDayHeading(iso: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(intlLocale[locale], { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(iso));
+/**
+ * "Monday, November 16" / "lundi 16 novembre". Defaults to UTC; pass "America/Toronto" for the reader's
+ * calendar day, so the Today page doesn't flip to tomorrow at 7 p.m. Eastern.
+ */
+export function formatDayHeading(iso: string, locale: Locale, timeZone = "UTC"): string {
+  return new Intl.DateTimeFormat(intlLocale[locale], { weekday: "long", month: "long", day: "numeric", timeZone }).format(new Date(iso));
 }
