@@ -1,7 +1,7 @@
 /*
  * Screen: media embed widget (/embed/en/boc-cut-dec-2026), for Canadian newsrooms to drop into an article.
  * One message: where Canada lands on this question right now, by province.
- * One action: make your call on Consensa (opens in a new tab, tagged utm_source=embed).
+ * One action: make your call on Cansensa (opens in a new tab, tagged utm_source=embed).
  */
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";

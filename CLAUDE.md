@@ -1,6 +1,6 @@
-# Consensa: rules for anyone building here
+# Cansensa: rules for anyone building here
 
-Consensa is a free, no-stakes Canadian prediction and polling app. People make probability calls ("62% chance") on Canadian questions and see where Canada lands, split by province. It has no money anywhere. The quality bar is a $10M-budget app: the code is advanced (typed, tested, fast, accessible) and the design is articulate (one design system, intentional type and spacing, and every screen says one thing).
+Cansensa is a free, no-stakes Canadian prediction and polling app. People make probability calls ("62% chance") on Canadian questions and see where Canada lands, split by province. It has no money anywhere. The quality bar is a $10M-budget app: the code is advanced (typed, tested, fast, accessible) and the design is articulate (one design system, intentional type and spacing, and every screen says one thing).
 
 ## Hard rules (never break these)
 
@@ -83,3 +83,4 @@ Add a rule to this file so it doesn't happen twice.
 - **No `loading.tsx` at the `[locale]` root (2026-11-06, ORBIT).** A root Suspense boundary streams every page, so `notFound()` returns 200 instead of 404. Put `loading.tsx` only in routes that stream data, and render `LoadingScreen` from `src/components/shell/loading-screen.tsx`.
 - **Bank of Canada Valet dates (2026-11-11, PULSE).** Valet's overnight-target series shows a new rate from the business day *after* the decision (Oct 28, 2026 read 2.25; Oct 29 read 2.50). Compare the decision date with the next day, and check any new official feed against a known past event before trusting it.
 - **Playwright install in CI (2026-11-11, PULSE).** `playwright install --with-deps` uses apt, and Ubuntu's mirror failed to resolve on GitHub's runner twice in a row, failing e2e before any test ran. CI falls back to `playwright install chromium` (the runner already has the libraries). Keep that fallback.
+- **Renamed to Cansensa (zack, 2026-11-17).** Old internal names stay on purpose: `consensa:` localStorage keys (renaming them would wipe people's saved calls, profile and theme), the `CONSENSA_LIVE_QUESTIONS` env var (set in Vercel), the `consensa-voice` skill folder, the repo name and the Supabase migrations. Logos come from `brand/scripts/build.py` (WORD); OG cards from `brand/scripts/render-app-assets.mjs`.

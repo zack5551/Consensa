@@ -1,11 +1,11 @@
 ---
 name: canadian-questions
-description: Draft, check or refresh Consensa questions (the Canadian topics people forecast). Use when adding sample or real questions, writing resolution rules, or planning the weekly question slate.
+description: Draft, check or refresh Cansensa questions (the Canadian topics people forecast). Use when adding sample or real questions, writing resolution rules, or planning the weekly question slate.
 ---
 
 # Canadian questions
 
-A Consensa question is a yes/no (or multi-outcome) forecast about a public, checkable Canadian event, with an official source that settles it. The aim is that a reader in any province finds at least one of "Today's five" worth a call.
+A Cansensa question is a yes/no (or multi-outcome) forecast about a public, checkable Canadian event, with an official source that settles it. The aim is that a reader in any province finds at least one of "Today's five" worth a call.
 
 ## Mix for each weekly slate
 

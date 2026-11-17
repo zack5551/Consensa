@@ -1,4 +1,4 @@
-// Renders Consensa's app icons and Open Graph cards from brand/ sources.
+// Renders Cansensa's app icons and Open Graph cards from brand/ sources.
 // Run: node brand/scripts/render-app-assets.mjs (uses the repo's @playwright/test)
 // Outputs: src/app/apple-icon.png, public/icons/*.png, public/og/{en,fr}.png
 import { chromium } from "@playwright/test";

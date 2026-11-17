@@ -24,13 +24,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) return {};
   const t = getDictionary(locale);
   return {
-    title: { default: t.meta.title, template: `%s · Consensa` },
+    title: { default: t.meta.title, template: `%s · Cansensa` },
     description: t.meta.description,
     alternates: { languages: { "en-CA": "/en", "fr-CA": "/fr" } },
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
     openGraph: {
       type: "website",
-      siteName: "Consensa",
+      siteName: "Cansensa",
       locale: `${locale}_CA`,
       title: t.meta.title,
       description: t.meta.description,
