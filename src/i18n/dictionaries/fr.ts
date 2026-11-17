@@ -475,7 +475,7 @@ const fr = {
       boc: "Source : Banque du Canada.",
       statcanName: "Statistique Canada",
       bocName: "la Banque du Canada",
-      notEndorsed: "Cansensa n’est ni affiliée à {name} ni approuvée par elle.",
+      notEndorsed: "Cansensa n’a aucun lien avec {name}, qui ne l’approuve pas.",
     },
     answerIs: "Réponse : {answer}",
     log: "Chaque résultat est publié dans le registre public des résolutions.",

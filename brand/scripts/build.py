@@ -1,4 +1,4 @@
-"""Generates the Cansensa brand kit: tokens, logo SVGs. Run: PYTHONPATH=. python3 build.py OUTDIR FONTDIR"""
+"""Generates the Cansensa brand kit: tokens, logo SVGs. Run from brand/scripts: PYTHONPATH=. python3 build.py OUTDIR ../fonts (needs: pip install fonttools brotli)"""
 import sys, os, json, math
 from color import *
 OUT, FONTS = sys.argv[1], sys.argv[2]
@@ -142,7 +142,7 @@ from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.boundsPen import BoundsPen
-f = TTFont(f'{FONTS}/manrope-latin-800-normal.woff')
+f = TTFont(f'{FONTS}/manrope-latin-800-normal.woff2')
 gs = f.getGlyphSet(); cmap = f.getBestCmap(); upm = f['head'].unitsPerEm
 xh = f['OS/2'].sxHeight
 def word_path(text, size, tracking_em):
