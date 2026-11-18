@@ -11,6 +11,10 @@ describe("callsCountFrom", () => {
   });
 });
 
+const { allow, botCheck } = vi.hoisted(() => ({ allow: vi.fn<(key: string) => boolean>(() => true), botCheck: vi.fn<(payload: string | null) => Promise<"pass" | "fail" | "skipped">>(async () => "skipped") }));
+vi.mock("@/lib/rate-limit", () => ({ rateLimiter: () => (key: string) => allow(key) }));
+vi.mock("@/lib/server/bot-check", () => ({ verifyBotCheck: (payload: string | null) => botCheck(payload) }));
+
 const upsert = vi.fn(async (): Promise<{ error: { hint?: string } | null }> => ({ error: null }));
 const rpc = vi.fn(async () => ({ error: null }));
 const checkProxy = vi.fn(async (): Promise<{ vpn: boolean | "unknown" }> => ({ vpn: false }));
@@ -27,14 +31,17 @@ describe("POST /api/calls country gate", () => {
     upsert.mockClear();
     rpc.mockClear();
     checkProxy.mockClear();
+    allow.mockReset().mockReturnValue(true);
+    botCheck.mockReset().mockResolvedValue("skipped");
     vi.unstubAllEnvs();
   });
 
-  async function post(country?: string) {
+  async function post(country?: string, altcha?: string) {
     const { POST } = await import("@/app/api/calls/route");
     const { NextRequest } = await import("next/server");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (country !== undefined) headers[COUNTRY_HEADER] = country;
+    if (altcha !== undefined) headers["x-altcha"] = altcha;
     return POST(new NextRequest("http://localhost/api/calls", { method: "POST", headers, body: JSON.stringify({ slug: "boc-cut-dec-2026", probability: 60 }) }));
   }
 
@@ -48,6 +55,53 @@ describe("POST /api/calls country gate", () => {
     expect(upsert).not.toHaveBeenCalled();
     expect(checkProxy).not.toHaveBeenCalled();
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("reads the country only from the Vercel header, never from the body, the query or another header (AEGIS)", async () => {
+    vi.stubEnv("VERCEL", "1");
+    const { POST } = await import("@/app/api/calls/route");
+    const { NextRequest } = await import("next/server");
+    const res = await POST(new NextRequest("http://localhost/api/calls?country=CA&x-vercel-ip-country=CA", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-country": "CA", "cf-ipcountry": "CA", "x-geo-country": "CA" },
+      body: JSON.stringify({ slug: "boc-cut-dec-2026", probability: 60, country: "CA", [COUNTRY_HEADER]: "CA" }),
+    }));
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "outside canada" });
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("rate limits callers from outside canada too: the limit comes before the country check", async () => {
+    vi.stubEnv("VERCEL", "1");
+    allow.mockReturnValue(false);
+    const res = await post("US");
+    expect(res.status).toBe(429);
+    expect(allow).toHaveBeenCalledWith("u1");
+    expect(botCheck).not.toHaveBeenCalled();
+  });
+
+  it("answers 403 bot check on a failed check and writes nothing", async () => {
+    botCheck.mockResolvedValue("fail");
+    const res = await post("CA", "bad");
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "bot check" });
+    expect(botCheck).toHaveBeenCalledWith("bad");
+    expect(upsert).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("answers the country 403 before the bot check runs", async () => {
+    vi.stubEnv("VERCEL", "1");
+    botCheck.mockResolvedValue("fail");
+    expect(await (await post("US", "bad")).json()).toEqual({ error: "outside canada" });
+    expect(botCheck).not.toHaveBeenCalled();
+  });
+
+  it("lets a call with a passing or skipped check through", async () => {
+    botCheck.mockResolvedValueOnce("pass");
+    expect((await post("CA", "good")).status).toBe(200);
+    expect((await post()).status).toBe(200);
+    expect(botCheck).toHaveBeenLastCalledWith(null);
   });
 
   it("lets a call from Canada through to the write on Vercel", async () => {

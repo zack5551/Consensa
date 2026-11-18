@@ -1,6 +1,23 @@
 import type { Dictionary } from "./en";
 
 /** Quebec French strings. A non-breaking space goes before : and %, and inside « ». No space before ? or ! (PRISM). */
+/** Les libellés de la vérification anti-robot (ALTCHA). Elle s’exécute sans rien afficher, ces textes ne servent que si elle doit se montrer. Partagés par l’inscription et les prévisions. */
+const botWidget = {
+  label: "Vérification rapide sur votre appareil",
+  verifying: "Vérification…",
+  verified: "Vérifié",
+  error: "La vérification n’a pas réussi. Réessayez plus tard.",
+  expired: "La vérification a expiré. Réessayez.",
+  waitAlert: "Vérification… un instant.",
+  reload: "Recharger",
+  loading: "Chargement…",
+  verify: "Vérifier",
+  verificationRequired: "La vérification rapide est requise.",
+  cancel: "Annuler",
+  ariaLinkLabel: "À propos de cette vérification",
+  footer: "S’exécute sur votre appareil. Rien n’est envoyé ailleurs.",
+};
+
 const fr = {
   meta: {
     title: "Cansensa : ce que le Canada prévoit",
@@ -152,6 +169,7 @@ const fr = {
     liveNote: "Vérifiez vos courriels : un lien pour terminer la création de votre compte s’en va à {email}. Il ne fonctionne qu’une fois et expire dans 15 minutes.",
     failed: "Impossible d’envoyer le lien pour le moment. Vos choix restent sur cet appareil ; réessayez dans une minute à partir de « Se connecter ».",
     errorCode: "Code d’erreur : {code}",
+    botWidget,
     language: {
       title: "Quelle langue préférez-vous?",
       body: "Vous pouvez changer en tout temps en haut de chaque écran. Les prévisions dans les deux langues comptent dans la même foule.",
@@ -252,6 +270,7 @@ const fr = {
         adults: { title: "Pour les adultes", body: "Cansensa s’adresse aux personnes de 18 ans et plus. Nous demandons votre date de naissance une seule fois et ne gardons que la réponse oui ou non." },
         noMoney: { title: "Rien ici ne vaut de l’argent", body: "Il n’y a aucun achat ni aucun prix. Votre bilan n’a aucune valeur monétaire et ne peut pas être transféré." },
         languages: { title: "Le français et l’anglais, à égalité", body: "Ce résumé, la politique complète, nos conditions et notre soutien sont offerts dans les deux langues." },
+        botCheck: { title: "Une vérification rapide bloque les robots", body: "Une courte vérification s’exécute sur votre appareil pour distinguer les gens des robots. Rien à votre sujet n’est envoyé ailleurs." },
       },
     },
     terms: {
@@ -387,6 +406,8 @@ const fr = {
     },
     waiting: "Elle sera évaluée à la publication du résultat.",
     outsideCanada: "Seules les prévisions faites depuis le Canada comptent dans la foule. Celle-ci reste sur cet appareil.",
+    botCheckFailed: "La vérification rapide sur votre appareil n’a pas réussi. Cette prévision reste donc sur cet appareil pour l’instant. Rechargez la page et réessayez.",
+    botWidget,
     disputed: "L’évaluation attend la fin de la révision.",
   },
   embed: {

@@ -1,4 +1,21 @@
 /** English strings. Every key must also exist in fr.ts (enforced by tests/unit/dictionaries.test.ts). */
+/** The bot check's own labels (ALTCHA). The check runs unseen, so these only show if it ever has to. Shared by sign-up and calls. */
+const botWidget = {
+  label: "Quick check on your device",
+  verifying: "Checking…",
+  verified: "Checked",
+  error: "The check didn’t pass. Try again later.",
+  expired: "The check expired. Try again.",
+  waitAlert: "Checking… please wait.",
+  reload: "Reload",
+  loading: "Loading…",
+  verify: "Check",
+  verificationRequired: "The quick check is required.",
+  cancel: "Cancel",
+  ariaLinkLabel: "About this check",
+  footer: "Runs on your device. Nothing is sent anywhere.",
+};
+
 const en = {
   meta: {
     title: "Cansensa: what Canada thinks happens next",
@@ -150,6 +167,7 @@ const en = {
     liveNote: "Check your email: a link to finish creating your account is on its way to {email}. It works once and expires in 15 minutes.",
     failed: "We couldn’t send the link just now. Your choices are kept on this device; try again from Sign in in a minute.",
     errorCode: "Error code: {code}",
+    botWidget,
     language: {
       title: "Which language do you prefer?",
       body: "You can switch any time from the top of every screen. Calls in both languages count in the same crowd.",
@@ -250,6 +268,7 @@ const en = {
         adults: { title: "For adults", body: "Cansensa is for people 18 and over. We ask your date of birth once and keep only the yes or no." },
         noMoney: { title: "Nothing here is worth money", body: "There are no purchases and no prizes. Your record has no cash value and can’t be transferred." },
         languages: { title: "English and French, equally", body: "This summary, the full policy, our terms and our support are all available in both languages." },
+        botCheck: { title: "A quick check stops bots", body: "A short check runs on your device to tell people from bots. Nothing about you is sent anywhere." },
       },
     },
     terms: {
@@ -385,6 +404,8 @@ const en = {
     },
     waiting: "We’ll score it when the result is published.",
     outsideCanada: "Only calls made from Canada count in the crowd. This one stays on this device.",
+    botCheckFailed: "The quick check on your device didn’t pass, so this call stays on this device for now. Reload the page and try again.",
+    botWidget,
     disputed: "Scores wait until the review ends.",
   },
   embed: {

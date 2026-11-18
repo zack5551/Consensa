@@ -91,6 +91,14 @@ describe("logs (rule 11)", () => {
   });
 });
 
+describe("caller address (AEGIS)", () => {
+  it("only src/lib/server/proxy-check.ts reads the address headers", () => {
+    for (const file of source.filter((f) => rel(f) !== join("src", "lib", "server", "proxy-check.ts"))) {
+      expect(read(file), `${rel(file)} must use callerIp() from proxy-check.ts`).not.toMatch(/x-real-ip|x-forwarded-for/i);
+    }
+  });
+});
+
 describe("headers", async () => {
   const rules = await nextConfig.headers!();
   const header = (source: string, key: string) => rules.find((r) => r.source === source)?.headers.find((h) => h.key === key)?.value ?? "";
