@@ -1,4 +1,4 @@
-# Consensa
+# Cansensa
 
 **What Canada thinks happens next.** A free, no-stakes Canadian prediction and polling app in EN/FR. There's no money anywhere.
 
