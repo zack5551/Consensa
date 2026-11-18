@@ -7,7 +7,7 @@ type Props = { slot: AdSlotId; locale: Locale; t: Dictionary["ads"] };
 
 /**
  * A labelled ad slot with a fixed size, so a filled ad never shifts the layout. Until the ad network lands (M5),
- * it shows a house ad from Consensa. Refuses to render on ad-free screens (see src/lib/ads.ts).
+ * it shows a house ad from Cansensa. Refuses to render on ad-free screens (see src/lib/ads.ts).
  */
 export function AdSlot({ slot, locale, t }: Props) {
   const def = adSlots[slot];

@@ -1,7 +1,7 @@
 /** English strings. Every key must also exist in fr.ts (enforced by tests/unit/dictionaries.test.ts). */
 const en = {
   meta: {
-    title: "Consensa: what Canada thinks happens next",
+    title: "Cansensa: what Canada thinks happens next",
     description: "Make quick probability calls on Canadian questions and see where Canada lands, province by province. Free, no money, no prizes.",
     boardTitle: "Board",
     recordTitle: "My record",
@@ -20,7 +20,7 @@ const en = {
     search: "Search",
     signIn: "Sign in",
     getStarted: "Get started",
-    home: "Consensa home",
+    home: "Cansensa home",
     phone: "Sections",
     short: { today: "Today", board: "Board", provinces: "Provinces", leaderboard: "Rankings", record: "Record" },
   },
@@ -45,7 +45,7 @@ const en = {
     showcaseCount: "{n} forecasters so far",
     showcaseOpen: "Open this question",
     stats: {
-      label: "Consensa at a glance",
+      label: "Cansensa at a glance",
       forecasters: "calls on open questions",
       questions: "open questions",
       resolved: "resolved questions",
@@ -85,7 +85,7 @@ const en = {
     faq: {
       title: "Questions people ask",
       items: {
-        free: { q: "Is it really free?", a: "Yes. There’s nothing to buy, now or later. Consensa is paid for by ads that are clearly labelled and never sit on a question or its result." },
+        free: { q: "Is it really free?", a: "Yes. There’s nothing to buy, now or later. Cansensa is paid for by ads that are clearly labelled and never sit on a question or its result." },
         scored: { q: "How is accuracy scored?", a: "We use the Brier score: the gap between your probability and what happened, squared. Lower is better, 0 is perfect, and always saying 50% scores 0.25." },
         prizes: { q: "Are there prizes?", a: "No. Scores, streaks and records have no cash value and can’t be exchanged for anything. You’re here to see how good your calls are." },
         adults: { q: "Why is it 18 and over?", a: "Some questions touch on the economy and public life, and we’d rather keep the crowd adult. We ask once at sign-up." },
@@ -141,7 +141,7 @@ const en = {
     clear: "Clear search",
   },
   onboarding: {
-    title: "Welcome to Consensa",
+    title: "Welcome to Cansensa",
     stepOf: "Step {current} of {total}",
     back: "Back",
     next: "Continue",
@@ -158,10 +158,10 @@ const en = {
     },
     age: {
       title: "First, how old are you?",
-      body: "Consensa is for people 18 and over. We check once and keep only the yes or no, never your birthday.",
+      body: "Cansensa is for people 18 and over. We check once and keep only the yes or no, never your birthday.",
       label: "Date of birth",
       invalid: "Enter a full date of birth.",
-      underTitle: "Consensa is for people 18 and over",
+      underTitle: "Cansensa is for people 18 and over",
       underBody: "Thanks for your interest. Come back when you’re 18, and your first call will be waiting.",
       underAction: "Back to the home page",
     },
@@ -190,9 +190,9 @@ const en = {
       privacyLink: "privacy summary",
       otherTermsLink: "Conditions d’utilisation en français",
       termsRequired: "Agree to the terms of use to continue.",
-      dataLicensing: "My calls can be included in anonymous, combined results that Consensa shares with or licenses to partners such as media and research firms. Never my individual calls.",
-      analytics: "Help improve Consensa with anonymous usage stats, stored in Montreal. Off unless I tick it.",
-      marketing: "Send me occasional email from Consensa about new questions and features. I can unsubscribe at any time.",
+      dataLicensing: "My calls can be included in anonymous, combined results that Cansensa shares with or licenses to partners such as media and research firms. Never my individual calls.",
+      analytics: "Help improve Cansensa with anonymous usage stats, stored in Montreal. Off unless I tick it.",
+      marketing: "Send me occasional email from Cansensa about new questions and features. I can unsubscribe at any time.",
       optional: "Optional",
       submit: "Create my account",
     },
@@ -223,7 +223,7 @@ const en = {
     failed: "We couldn’t send the link just now. Wait a minute and try again.",
     errorCode: "Error code: {code}",
     expired: "That sign-in link has expired or was already used. Enter your email for a new one.",
-    newHere: "New to Consensa?",
+    newHere: "New to Cansensa?",
     getStarted: "Get started",
   },
   legalPages: {
@@ -240,14 +240,14 @@ const en = {
     updated: "Last updated {date}",
     privacy: {
       title: "Privacy, in plain language",
-      intro: "Consensa is built to keep as little about you as it can, and to keep it in Canada.",
+      intro: "Cansensa is built to keep as little about you as it can, and to keep it in Canada.",
       points: {
         canada: { title: "Your data stays in Canada", body: "Accounts, calls and analytics are stored in Montreal. Any service provider that handles data outside Canada is named in the full policy." },
-        aggregates: { title: "Only combined numbers leave Consensa", body: "If we share data with partners, it’s anonymous totals with a minimum group size. Never your individual calls." },
+        aggregates: { title: "Only combined numbers leave Cansensa", body: "If we share data with partners, it’s anonymous totals with a minimum group size. Never your individual calls." },
         consents: { title: "You choose, one box at a time", body: "Terms, anonymous data use, usage stats and email are four separate choices. None is ticked for you, and usage stats stay off unless you turn them on." },
         rights: { title: "Your data, your call", body: "You can see, correct or delete your data, and change any choice, from your account or by asking us." },
         contact: { title: "Questions or requests", body: "Our privacy officer answers questions and requests about your data. Their contact details are in the full policy." },
-        adults: { title: "For adults", body: "Consensa is for people 18 and over. We ask your date of birth once and keep only the yes or no." },
+        adults: { title: "For adults", body: "Cansensa is for people 18 and over. We ask your date of birth once and keep only the yes or no." },
         noMoney: { title: "Nothing here is worth money", body: "There are no purchases and no prizes. Your record has no cash value and can’t be transferred." },
         languages: { title: "English and French, equally", body: "This summary, the full policy, our terms and our support are all available in both languages." },
       },
@@ -256,7 +256,7 @@ const en = {
       title: "Terms, in plain language",
       intro: "The short version: make honest calls, be respectful, and enjoy seeing where Canada lands.",
       points: {
-        free: { title: "Free to play", body: "Consensa is free. There’s nothing to buy, and no ad or feature ever stands between you and a call. It isn’t gambling: you never put anything at risk, and there’s nothing to win." },
+        free: { title: "Free to play", body: "Cansensa is free. There’s nothing to buy, and no ad or feature ever stands between you and a call. It isn’t gambling: you never put anything at risk, and there’s nothing to win." },
         noValue: { title: "No cash value", body: "Scores, streaks and records have no cash value. They can’t be redeemed, transferred or exchanged for anything." },
         adults: { title: "18 and over", body: "You need to be 18 or older to make calls." },
         fair: { title: "One person, one account", body: "Make your own calls. Don’t automate them or run more than one account." },
@@ -388,13 +388,13 @@ const en = {
     disputed: "Scores wait until the review ends.",
   },
   embed: {
-    cta: "Make your call on Consensa",
-    poweredBy: "Live forecast from Consensa",
+    cta: "Make your call on Cansensa",
+    poweredBy: "Live forecast from Cansensa",
     closed: "Calls have closed",
   },
   ads: {
     label: "Advertisement",
-    house: "From Consensa",
+    house: "From Cansensa",
     houseTitle: "How is “Canada says” made?",
     houseBody: "One person, one forecast. See how every number is built and scored.",
     houseCta: "Read how it works",
@@ -406,7 +406,7 @@ const en = {
     sources: "Sources",
   },
   methodology: {
-    title: "How Consensa works",
+    title: "How Cansensa works",
     intro: "Everything behind the numbers, in plain language. If something here isn’t clear, it’s our job to fix it.",
     nav: "On this page",
     crowd: {
@@ -448,7 +448,7 @@ const en = {
     },
     money: {
       title: "No money, ever",
-      body: "Consensa is free. Points and scores can’t be bought, sold, exchanged for money, transferred or redeemed. Leaderboards rank accuracy, not points. Ads never appear on a question or its result.",
+      body: "Cansensa is free. Points and scores can’t be bought, sold, exchanged for money, transferred or redeemed. Leaderboards rank accuracy, not points. Ads never appear on a question or its result.",
     },
     data: {
       title: "Your data stays in Canada",
@@ -476,7 +476,7 @@ const en = {
       boc: "Source: Bank of Canada.",
       statcanName: "Statistics Canada",
       bocName: "the Bank of Canada",
-      notEndorsed: "Consensa is not affiliated with or endorsed by {name}.",
+      notEndorsed: "Cansensa is not affiliated with or endorsed by {name}.",
     },
     answerIs: "Answer: {answer}",
     log: "Every result is published in the public resolution log.",
@@ -675,7 +675,7 @@ const en = {
   },
   design: {
     title: "Design system",
-    intro: "The tokens and components every Consensa screen is built from.",
+    intro: "The tokens and components every Cansensa screen is built from.",
     colours: "Colour",
     type: "Type scale",
     spacing: "Spacing",
