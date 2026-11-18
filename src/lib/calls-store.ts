@@ -8,6 +8,8 @@ import { accountsEnabled } from "@/lib/supabase/env";
 
 const PREFIX = "consensa:call:";
 const EVENT = "consensa:calls";
+const OUTSIDE_EVENT = "consensa:calls-outside";
+let outsideCanada = false;
 const memory = new Map<string, number>();
 
 function valid(n: number): boolean {
@@ -65,6 +67,16 @@ export function subscribeCalls(onChange: () => void): () => void {
   };
 }
 
+/** True while the server's latest answer was that a call came from outside Canada: it stays on this device and doesn't count in the crowd. */
+export function isOutsideCanada(): boolean {
+  return outsideCanada;
+}
+
+export function subscribeOutsideCanada(onChange: () => void): () => void {
+  window.addEventListener(OUTSIDE_EVENT, onChange);
+  return () => window.removeEventListener(OUTSIDE_EVENT, onChange);
+}
+
 /** The database takes one change per call every 2 seconds, so quick changes are sent as the latest one. */
 const PUSH_GAP_MS = 2100;
 const lastPush = new Map<string, number>();
@@ -87,6 +99,14 @@ function pushCall(slug: string, probability: number): void {
 async function sendCall(slug: string, probability: number): Promise<boolean> {
   try {
     const res = await fetch("/api/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, probability }) });
+    if (res.status === 403 && ((await res.json().catch(() => null)) as { error?: unknown } | null)?.error === "outside canada") {
+      outsideCanada = true;
+      window.dispatchEvent(new Event(OUTSIDE_EVENT));
+    } else if (res.ok && outsideCanada) {
+      // A later call counted (back in Canada, or a one-off bad location read): the note would now be wrong.
+      outsideCanada = false;
+      window.dispatchEvent(new Event(OUTSIDE_EVENT));
+    }
     return res.ok;
   } catch {
     return false;

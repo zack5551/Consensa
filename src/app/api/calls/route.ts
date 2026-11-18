@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getQuestion, SAMPLE_NOW } from "@/content/sample-questions";
+import { callsCountFrom, COUNTRY_HEADER } from "@/lib/call-origin";
 import { isOpen, questionState } from "@/lib/question";
 import { rateLimiter } from "@/lib/rate-limit";
 import { adminSupabase } from "@/lib/supabase/admin";
@@ -39,6 +40,9 @@ export async function POST(request: NextRequest) {
   if (!supabase || !admin) return NextResponse.json({ error: "accounts off" }, { status: 404, headers: noStore });
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "sign in" }, { status: 401, headers: noStore });
+
+  // Only calls made from Canada count. Reads the 2-letter country header and nothing else about the origin; nothing is stored.
+  if (!callsCountFrom(request.headers.get(COUNTRY_HEADER), Boolean(process.env.VERCEL))) return NextResponse.json({ error: "outside canada" }, { status: 403, headers: noStore });
 
   if (!allowWrite(auth.user.id)) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
 

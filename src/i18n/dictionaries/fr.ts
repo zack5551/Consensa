@@ -386,6 +386,7 @@ const fr = {
       level: "Score du Canada : {crowd}, à égalité avec vous.",
     },
     waiting: "Elle sera évaluée à la publication du résultat.",
+    outsideCanada: "Seules les prévisions faites depuis le Canada comptent dans la foule. Celle-ci reste sur cet appareil.",
     disputed: "L’évaluation attend la fin de la révision.",
   },
   embed: {

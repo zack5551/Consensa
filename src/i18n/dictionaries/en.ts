@@ -384,6 +384,7 @@ const en = {
       level: "Canada scored {crowd}, level with you.",
     },
     waiting: "We’ll score it when the result is published.",
+    outsideCanada: "Only calls made from Canada count in the crowd. This one stays on this device.",
     disputed: "Scores wait until the review ends.",
   },
   embed: {
