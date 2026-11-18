@@ -16,6 +16,8 @@ in preview mode.
      the private incident register). Turn on pg_cron first: Database → Extensions → pg_cron. It runs inside the
      Montréal database, so nothing leaves Canada.
    - `supabase/migrations/20261118000000_error_events.sql` (the private error log, deleted after 90 days).
+   - `supabase/migrations/20261118001000_purge_unconfirmed_signups.sql` (deletes sign-ups never confirmed by email after
+     7 days). Run after `20261111000400_retention_and_incidents.sql`.
 2. **Allow our sign-in links.** Authentication → URL Configuration:
    - Site URL: the production URL (for example `https://consensa.vercel.app`).
    - Redirect URLs: add `https://*-consensa.vercel.app/api/auth/callback` (previews) and
