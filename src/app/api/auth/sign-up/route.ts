@@ -5,7 +5,6 @@ import { logErrorCode } from "@/lib/server/error-code-log";
 import { verifyBotCheck } from "@/lib/server/bot-check";
 import { noStore, sameOrigin } from "@/lib/supabase/account-server";
 import { signupMetadataSchema } from "@/lib/supabase/config";
-import { siteUrl } from "@/lib/site-url";
 import { serverSupabase } from "@/lib/supabase/server";
 
 const bodySchema = z.object({ email: z.string().trim().email().max(254), data: signupMetadataSchema, altcha: z.string().max(4096).nullable().optional() }).strict();
@@ -18,6 +17,11 @@ const allowSignUp = rateLimiter({ limit: 10, windowMs: 60_000 });
  * browser can't skip it). The server sends the sign-in link with the same options the browser used to; the code
  * verifier cookie is set on this response, so the link still completes at /api/auth/callback.
  */
+/** The site the email link points at: the fixed site address when set, else the domain that served this request. Never localhost on Vercel. */
+function linkOrigin(request: NextRequest): string {
+  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "") || request.nextUrl.origin;
+}
+
 export async function POST(request: NextRequest) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "forbidden" }, { status: 403, headers: noStore });
   if (!allowSignUp((request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown").trim())) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
@@ -30,7 +34,7 @@ export async function POST(request: NextRequest) {
   const { email, data } = parsed.data;
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true, data, emailRedirectTo: `${siteUrl()}/api/auth/callback?next=/${data.locale}/today` },
+    options: { shouldCreateUser: true, data, emailRedirectTo: `${linkOrigin(request)}/api/auth/callback?next=/${data.locale}/today` },
   });
   if (error) {
     // Only the code is logged, never the address. A rate limit gets a generic answer; every other error looks like success,
