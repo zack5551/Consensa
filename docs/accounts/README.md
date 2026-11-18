@@ -17,7 +17,9 @@ in preview mode.
      Montréal database, so nothing leaves Canada.
    - `supabase/migrations/20261118000000_error_events.sql` (the private error log, deleted after 90 days).
    - `supabase/migrations/20261118000100_call_origin_counts.sql` (daily totals of calls made through a VPN or proxy,
-     never a row per person). Run after `20261118000000_error_events.sql`.
+     never a row per person). Run after `20261118000000_error_events.sql`. Since 2026-11-18 a call through a VPN or
+     proxy is refused (403) but still counted here as an attempt, so `total` counts call attempts from Canada that
+     passed the bot check, and `vpn` counts the refused ones.
 2. **Allow our sign-in links.** Authentication → URL Configuration:
    - Site URL: the production URL (for example `https://consensa.vercel.app`).
    - Redirect URLs: add `https://*-consensa.vercel.app/api/auth/callback` (previews) and

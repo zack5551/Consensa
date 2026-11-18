@@ -30,7 +30,7 @@ describe("POST /api/calls country gate", () => {
   beforeEach(() => {
     upsert.mockClear();
     rpc.mockClear();
-    checkProxy.mockClear();
+    checkProxy.mockReset().mockResolvedValue({ vpn: false });
     allow.mockReset().mockReturnValue(true);
     botCheck.mockReset().mockResolvedValue("skipped");
     vi.unstubAllEnvs();
@@ -111,14 +111,39 @@ describe("POST /api/calls country gate", () => {
     expect(upsert).toHaveBeenCalled();
   });
 
-  it("counts each accepted call once with the right flag, and still accepts a VPN call", async () => {
-    for (const [vpn, p_vpn] of [[true, "yes"], [false, "no"], ["unknown", "unknown"]] as const) {
+  it("counts each accepted call once with the right flag", async () => {
+    for (const [vpn, p_vpn] of [[false, "no"], ["unknown", "unknown"]] as const) {
       rpc.mockClear();
       checkProxy.mockResolvedValueOnce({ vpn });
       expect((await post()).status).toBe(200);
       expect(rpc).toHaveBeenCalledTimes(1);
       expect(rpc).toHaveBeenCalledWith("count_call_origin", { p_vpn });
     }
+  });
+
+  it("refuses a VPN call with 403, writes nothing and counts the attempt once (zack, 2026-11-18)", async () => {
+    vi.stubEnv("VERCEL", "1");
+    checkProxy.mockResolvedValueOnce({ vpn: true });
+    const res = await post("CA");
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "vpn" });
+    expect(upsert).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith("count_call_origin", { p_vpn: "yes" });
+  });
+
+  it("lets a call through when the connection check is slow (150 ms) and counts it as unknown", async () => {
+    checkProxy.mockImplementationOnce(() => new Promise((resolve) => setTimeout(() => resolve({ vpn: true }), 400)));
+    expect((await post()).status).toBe(200);
+    expect(upsert).toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith("count_call_origin", { p_vpn: "unknown" });
+  });
+
+  it("runs the bot check before the connection check", async () => {
+    botCheck.mockResolvedValue("fail");
+    checkProxy.mockResolvedValueOnce({ vpn: true });
+    expect(await (await post("CA", "bad")).json()).toEqual({ error: "bot check" });
+    expect(checkProxy).not.toHaveBeenCalled();
   });
 
   it("never counts an invalid, unknown-question or failed-write call", async () => {
