@@ -91,6 +91,14 @@ describe("logs (rule 11)", () => {
   });
 });
 
+describe("caller address (AEGIS)", () => {
+  it("only src/lib/server/proxy-check.ts reads the address headers", () => {
+    for (const file of source.filter((f) => rel(f) !== join("src", "lib", "server", "proxy-check.ts"))) {
+      expect(read(file), `${rel(file)} must use callerIp() from proxy-check.ts`).not.toMatch(/x-real-ip|x-forwarded-for/i);
+    }
+  });
+});
+
 describe("headers", async () => {
   const rules = await nextConfig.headers!();
   const header = (source: string, key: string) => rules.find((r) => r.source === source)?.headers.find((h) => h.key === key)?.value ?? "";
@@ -136,6 +144,10 @@ const allowedDomains = [
   "nasa.gov", "nobelprize.org", "imdb.com", "boxofficemojo.com",
   // Read by the engine on the server only; no user data is sent
   "trends.google.com",
+  // A credit link on the methodology page (CC BY-SA 4.0 attribution for the IP2Proxy LITE database). The lookup itself
+  // reads a local file on our server; the database is fetched at build time by scripts/fetch-ip2proxy.mjs, not at run time.
+  "lite.ip2location.com",
+  "creativecommons.org",
   // Not network calls: the SVG namespace, the structured-data vocabulary name and the local dev fallback
   "www.w3.org", "schema.org", "localhost",
 ];
