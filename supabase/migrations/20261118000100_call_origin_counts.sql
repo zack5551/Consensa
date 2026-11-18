@@ -1,4 +1,4 @@
--- How many calls come through a VPN or proxy (ca-central-1). Run after 20261111000100_crowd.sql. Safe to run again.
+-- How many calls come through a VPN or proxy (ca-central-1). Run after 20261111000100_crowd.sql (and after 20261118000000_error_events.sql if present). Safe to run again.
 --
 -- One counter row per day, never a row per person or per call. The app's server looks the visitor up in a local
 -- database (nothing leaves Canada), then adds one to today's counts and forgets the address. Only the server's
