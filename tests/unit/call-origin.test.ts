@@ -57,6 +57,20 @@ describe("POST /api/calls country gate", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it("reads the country only from the Vercel header, never from the body, the query or another header (AEGIS)", async () => {
+    vi.stubEnv("VERCEL", "1");
+    const { POST } = await import("@/app/api/calls/route");
+    const { NextRequest } = await import("next/server");
+    const res = await POST(new NextRequest("http://localhost/api/calls?country=CA&x-vercel-ip-country=CA", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-country": "CA", "cf-ipcountry": "CA", "x-geo-country": "CA" },
+      body: JSON.stringify({ slug: "boc-cut-dec-2026", probability: 60, country: "CA", [COUNTRY_HEADER]: "CA" }),
+    }));
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "outside canada" });
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
   it("rate limits callers from outside canada too: the limit comes before the country check", async () => {
     vi.stubEnv("VERCEL", "1");
     allow.mockReturnValue(false);
