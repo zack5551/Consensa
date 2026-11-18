@@ -1,4 +1,6 @@
 import "server-only";
+import { z } from "zod";
+import { vpnSharePercent } from "@/lib/call-origin";
 import type { Question } from "@/lib/question";
 import { applyLive, summarize, type CrowdRow } from "@/lib/live-crowd";
 import { adminSupabase } from "@/lib/supabase/admin";
@@ -17,4 +19,18 @@ export async function withLiveQuestion<T extends Question>(q: T | undefined): Pr
   if (!q) return q;
   const [one] = await withLiveCrowd([q]);
   return one;
+}
+
+const count = z.coerce.number().int().nonnegative();
+const originShareRow = z.object({ total: count, vpn: count, unknown: count });
+
+/** Percent of calls in the last 30 days that came through a VPN or proxy; null when accounts are off, the counters are unavailable or there are too few calls. */
+export async function vpnShareLast30Days(): Promise<number | null> {
+  const admin = adminSupabase();
+  if (!admin) return null;
+  const { data, error } = await admin.rpc("call_origin_share", { p_days: 30 });
+  const row: unknown = Array.isArray(data) ? data[0] : null;
+  if (error || typeof row !== "object" || row === null) return null;
+  const parsed = originShareRow.safeParse(row);
+  return parsed.success ? vpnSharePercent(parsed.data) : null;
 }

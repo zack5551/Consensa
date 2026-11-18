@@ -445,6 +445,8 @@ const fr = {
       brier: "Score de Brier moyen de la foule",
       resolved: "Questions résolues",
       rightSide: "Foule du bon côté",
+      vpnShare: "{value} des prévisions des 30 derniers jours sont passées par un VPN ou un proxy.",
+      vpnCredit: "Ce site comprend des données IP2Proxy LITE d’IP2Location, lues sur notre propre serveur : aucune adresse ne quitte le Canada."
     },
     money: {
       title: "Jamais d’argent",

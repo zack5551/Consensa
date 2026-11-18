@@ -443,6 +443,8 @@ const en = {
       brier: "Crowd’s average Brier score",
       resolved: "Resolved questions",
       rightSide: "Crowd on the right side",
+      vpnShare: "{value} of calls in the last 30 days came through a VPN or proxy.",
+      vpnCredit: "This site includes IP2Proxy LITE data from IP2Location, read on our own server so no address leaves Canada."
     },
     money: {
       title: "No money, ever",
