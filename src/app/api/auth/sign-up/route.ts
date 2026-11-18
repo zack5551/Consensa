@@ -6,6 +6,7 @@ import { verifyBotCheck } from "@/lib/server/bot-check";
 import { noStore, sameOrigin } from "@/lib/supabase/account-server";
 import { signupMetadataSchema } from "@/lib/supabase/config";
 import { serverSupabase } from "@/lib/supabase/server";
+import { adminSupabase } from "@/lib/supabase/admin";
 import { callerIp } from "@/lib/server/proxy-check";
 
 const bodySchema = z.object({ email: z.string().trim().email().max(254), data: signupMetadataSchema, altcha: z.string().max(4096).nullable().optional() }).strict();
@@ -32,16 +33,35 @@ export async function POST(request: NextRequest) {
   if (!supabase) return NextResponse.json({ error: "accounts off" }, { status: 404, headers: noStore });
   if ((await verifyBotCheck(parsed.data.altcha ?? null)) === "fail") return NextResponse.json({ error: "bot check" }, { status: 403, headers: noStore });
 
+  const admin = adminSupabase();
+  if (!admin) return NextResponse.json({ error: "accounts off" }, { status: 404, headers: noStore });
+
   const { email, data } = parsed.data;
+  // Accounts are created only here, after the bot check, with the server key. Public sign-up is turned off in Supabase,
+  // so the publishable key can only send links to accounts that already exist. The sign-up trigger still checks
+  // adult and terms in the metadata, so it stays the gate.
+  const created = await admin.auth.admin.createUser({ email, email_confirm: false, user_metadata: data });
+  if (created.error && !isExisting(created.error)) {
+    logErrorCode("sign-up create failed", created.error.code ?? created.error.status);
+    if (isRateLimit(created.error)) return slowDown();
+    return NextResponse.json({ ok: true }, { headers: noStore });
+  }
+
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true, data, emailRedirectTo: `${linkOrigin(request)}/api/auth/callback?next=/${data.locale}/today` },
+    options: { shouldCreateUser: false, emailRedirectTo: `${linkOrigin(request)}/api/auth/callback?next=/${data.locale}/today` },
   });
   if (error) {
     // Only the code is logged, never the address. A rate limit gets a generic answer; every other error looks like success,
     // so nobody can use this route to find out which addresses have accounts.
     logErrorCode("sign-up link failed", error.code ?? error.status);
-    if (error.status === 429 || error.code?.includes("rate_limit")) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
+    if (isRateLimit(error)) return slowDown();
   }
   return NextResponse.json({ ok: true }, { headers: noStore });
 }
+
+type AuthError = { code?: string; status?: number };
+const isRateLimit = (e: AuthError) => e.status === 429 || Boolean(e.code?.includes("rate_limit"));
+/** An address that already has an account: carry on and send the link, so the answer is the same either way. */
+const isExisting = (e: AuthError) => e.code === "email_exists" || e.code === "user_already_exists" || e.status === 422;
+const slowDown = () => NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });

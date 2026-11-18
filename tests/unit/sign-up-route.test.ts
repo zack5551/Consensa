@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { botCheck, signInWithOtp } = vi.hoisted(() => ({
+const { botCheck, signInWithOtp, createUser } = vi.hoisted(() => ({
+  createUser: vi.fn(async (): Promise<{ error: null | { code?: string; status?: number } }> => ({ error: null })),
   botCheck: vi.fn<(p: string | null) => Promise<"pass" | "fail" | "skipped">>(async () => "skipped"),
   signInWithOtp: vi.fn(async (): Promise<{ error: null | { code?: string; status?: number } }> => ({ error: null })),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/server/bot-check", () => ({ verifyBotCheck: (p: string | null) => botCheck(p) }));
 vi.mock("@/lib/supabase/server", () => ({ serverSupabase: async () => ({ auth: { signInWithOtp } }) }));
+vi.mock("@/lib/supabase/admin", () => ({ adminSupabase: () => ({ auth: { admin: { createUser } } }) }));
 
 const data = { consentVersion: "2026-11-11", locale: "fr", adult: true, terms: true, region: "QC", topics: [], dataLicensing: false, analytics: false, marketing: false };
 
@@ -20,6 +22,8 @@ describe("POST /api/auth/sign-up", () => {
   beforeEach(() => {
     botCheck.mockReset().mockResolvedValue("skipped");
     signInWithOtp.mockClear();
+    createUser.mockReset().mockResolvedValue({ error: null });
+    vi.resetModules(); // a fresh per-instance rate limit for each test
   });
 
   it("answers 403 bot check and creates nothing when the check fails", async () => {
@@ -36,7 +40,7 @@ describe("POST /api/auth/sign-up", () => {
       expect((await post({ email: "a@example.com", data, altcha: "x" })).status).toBe(200);
     }
     expect(signInWithOtp).toHaveBeenCalledTimes(2);
-    expect(signInWithOtp).toHaveBeenCalledWith({ email: "a@example.com", options: expect.objectContaining({ shouldCreateUser: true, emailRedirectTo: "http://localhost/api/auth/callback?next=/fr/today" }) });
+    expect(signInWithOtp).toHaveBeenCalledWith({ email: "a@example.com", options: expect.objectContaining({ shouldCreateUser: false, emailRedirectTo: "http://localhost/api/auth/callback?next=/fr/today" }) });
   });
 
   it("refuses bad input and other sites", async () => {
@@ -74,5 +78,32 @@ describe("POST /api/auth/sign-up", () => {
       expect(res.status).toBe(429);
       expect(await res.json()).toEqual({ error: "slow down" });
     }
+  });
+
+  it("creates the account on the server, with the consent metadata, and never lets the link create one", async () => {
+    await post({ email: "a@example.com", data });
+    expect(createUser).toHaveBeenCalledWith({ email: "a@example.com", email_confirm: false, user_metadata: expect.objectContaining({ adult: true, terms: true, locale: "fr" }) });
+    expect(signInWithOtp).toHaveBeenCalledWith({ email: "a@example.com", options: expect.objectContaining({ shouldCreateUser: false }) });
+  });
+
+  it("treats an existing address like a new one: same answer, link sent", async () => {
+    createUser.mockResolvedValueOnce({ error: { code: "email_exists", status: 422 } });
+    const res = await post({ email: "a@example.com", data });
+    expect(await res.json()).toEqual({ ok: true });
+    expect(signInWithOtp).toHaveBeenCalledTimes(1);
+  });
+
+  it("answers ok without a link when the account can't be created, and slow down on a rate limit", async () => {
+    createUser.mockResolvedValueOnce({ error: { code: "unexpected_failure", status: 500 } });
+    expect(await (await post({ email: "a@example.com", data })).json()).toEqual({ ok: true });
+    expect(signInWithOtp).not.toHaveBeenCalled();
+    createUser.mockResolvedValueOnce({ error: { code: "over_request_rate_limit", status: 429 } });
+    expect((await post({ email: "a@example.com", data })).status).toBe(429);
+  });
+
+  it("creates nothing when the bot check fails", async () => {
+    botCheck.mockResolvedValue("fail");
+    await post({ email: "a@example.com", data, altcha: "bad" });
+    expect(createUser).not.toHaveBeenCalled();
   });
 });
