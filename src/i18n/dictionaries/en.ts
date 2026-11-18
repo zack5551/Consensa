@@ -107,7 +107,7 @@ const en = {
         prizes: { q: "Are there prizes?", a: "No. Scores, streaks and records have no cash value and can’t be exchanged for anything. You’re here to see how good your calls are." },
         adults: { q: "Why is it 18 and over?", a: "Some questions touch on the economy and public life, and we’d rather keep the crowd adult. We ask once at sign-up." },
         data: { q: "Where is my data kept?", a: "In Canada, in Montreal. If anything is ever shared, it’s anonymous totals with a minimum group size, never your individual calls." },
-        sports: { q: "Why aren’t sports questions scored?", a: "Sports appear as just-for-fun polls. They show what Canada thinks but never count toward your record." },
+        sports: { q: "Are sports questions scored?", a: "Yes, like any other question. For a game, calls close before it starts. They’re fan forecasts with no cash value." },
       },
     },
     closing: {
@@ -138,7 +138,7 @@ const en = {
       housing: "Prices, rents and building, settled by CREA and CMHC.",
       culture: "Awards, ratings and what Canada watches and reads.",
       science: "Climate, energy and technology, settled by public data.",
-      sports: "Just-for-fun polls. They show what Canada thinks and are never scored.",
+      sports: "Season outcomes and upcoming game winners, settled by league sites.",
     },
   },
   search: {
@@ -193,7 +193,7 @@ const en = {
       title: "What would you like to call?",
       body: "Choose a few topics for your daily five. You’ll still see a mix.",
       legend: "Topics",
-      sportsNote: "Sports are just-for-fun polls and never scored.",
+      sportsNote: "Sports are fan forecasts. Calls close before the game starts.",
     },
     account: {
       title: "Save your record",
@@ -288,6 +288,8 @@ const en = {
   },
   legal: {
     noValue: "Free to play. No cash value. No purchase necessary.",
+    sportsLabel: "Fan forecasts only. Not advice.",
+    sportsFooter: "Not affiliated with or endorsed by any league, team or player.",
     footer: "Free · No money · No prizes · 18+",
     sample: "Sample questions and numbers while we build.",
     design: "Design system",
@@ -327,6 +329,8 @@ const en = {
     no: "No",
     forecasters: "forecasters",
     closes: "Closes",
+    closesTime: "Closes {when} ET",
+    startsTime: "Starts {when} ET",
     closed: "Closed",
     poll: "Poll · not scored",
     scored: "Scored",

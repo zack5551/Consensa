@@ -18,7 +18,7 @@ import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatLongDate } from "@/lib/format";
 import { rankForecasters } from "@/lib/leaderboard";
-import { questionState } from "@/lib/question";
+import { callsCloseAt, questionState } from "@/lib/question";
 import { fill } from "@/lib/text";
 
 type Params = Promise<{ locale: string }>;
@@ -45,7 +45,7 @@ export default async function RecordPage({ params }: { params: Params }) {
       const s = questionState(q, SAMPLE_NOW);
       return q.scored && s !== "resolved";
     })
-    .map((q) => ({ slug: q.slug, href: `/${locale}/q/${q.slug}`, question: q.question[locale], closes: fill(t.record.closesOn, { date: formatLongDate(q.closesAt, locale) }) }));
+    .map((q) => ({ slug: q.slug, href: `/${locale}/q/${q.slug}`, question: q.question[locale], closes: fill(t.record.closesOn, { date: formatLongDate(callsCloseAt(q), locale) }) }));
 
   const todayLink = (
     <Link href={`/${locale}`} className="rounded-control bg-ink px-4 py-2 text-body-sm font-bold text-paper hover:opacity-90">

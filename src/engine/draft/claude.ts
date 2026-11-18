@@ -34,6 +34,7 @@ export const llmOutputSchema = z.object({
       question: pair,
       scored: z.boolean(),
       closesAt: z.string().describe("ISO 8601 UTC, e.g. 2026-12-09T14:30:00Z"),
+      startsAt: z.string().nullable().describe("Sports only: ISO 8601 UTC start of the game or event. null for every other category."),
       resolution: z.object({
         source: z.object({ name: pair, url: z.string() }),
         rule: pair,
@@ -73,7 +74,8 @@ function toResolver(r: LlmResolver): Resolver {
 export function toDraft(out: LlmOutput): { ok: true; draft: z.infer<typeof draftSchema> } | { ok: false; reason: string } {
   if (out.decision === "skip" || !out.draft) return { ok: false, reason: out.reason || "declined" };
   try {
-    const draft = draftSchema.parse({ ...out.draft, resolver: toResolver(out.draft.resolver) });
+    const { startsAt, ...rest } = out.draft;
+    const draft = draftSchema.parse({ ...rest, ...(startsAt ? { startsAt } : {}), resolver: toResolver(out.draft.resolver) });
     return { ok: true, draft };
   } catch (err) {
     const detail = err instanceof z.ZodError ? err.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ") : String(err);

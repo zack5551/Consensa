@@ -205,7 +205,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
 }
 
 /** A question as the site shows it, minus the crowd (FORGE's data layer joins calls on). */
-export type PublishedQuestion = Pick<Question, "slug" | "category" | "question" | "scored" | "closesAt"> & {
+export type PublishedQuestion = Pick<Question, "slug" | "category" | "question" | "scored" | "closesAt" | "startsAt"> & {
   resolution: Omit<Question["resolution"], "result"> & { result?: NonNullable<Question["resolution"]["result"]> };
   resolver: Resolver;
   /** Signal URLs the question was written from, for the public log. */
@@ -223,6 +223,7 @@ export function toPublished(item: QueueItem, result?: ReturnType<typeof toResult
     question: item.draft.question,
     scored: item.draft.scored,
     closesAt: item.draft.closesAt,
+    ...(item.draft.startsAt ? { startsAt: item.draft.startsAt } : {}),
     resolution: { ...item.draft.resolution, ...(result ? { result } : {}) },
     resolver: item.draft.resolver,
     provenance: item.provenance,

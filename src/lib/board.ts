@@ -1,4 +1,4 @@
-import { categories, crowdChange, crowdNow, isOpen, questionState, type Category, type Question, type QuestionState } from "@/lib/question";
+import { callsCloseAt, categories, crowdChange, crowdNow, isOpen, questionState, type Category, type Question, type QuestionState } from "@/lib/question";
 
 /**
  * The Board's filters and sorts, kept pure so the server renders the first view and the browser
@@ -34,7 +34,7 @@ export function toBoardRow(q: Question, now: Date): BoardRow {
     crowd: crowdNow(q),
     change: crowdChange(q, 7),
     forecasters: q.forecasters,
-    closesAt: q.closesAt,
+    closesAt: callsCloseAt(q),
     scored: q.scored,
     spark: q.history.slice(-14),
   };

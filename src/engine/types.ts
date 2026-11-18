@@ -116,9 +116,11 @@ export const draftSchema = z.object({
   slug: z.string().regex(/^[a-z0-9-]{3,60}$/),
   category: z.enum(categories),
   question: bilingual,
-  /** false = poll (sports at launch). Polls never count toward anyone's record. */
+  /** false = poll. Polls never count toward anyone's record. */
   scored: z.boolean(),
   closesAt: z.iso.datetime(),
+  /** Start of the game or event. Required for sports (checked in `validate.ts`, so a miss is a block flag, not a crash). */
+  startsAt: z.iso.datetime().optional(),
   resolution: z.object({
     source: z.object({ name: bilingual, url: z.url() }),
     rule: bilingual,

@@ -20,7 +20,7 @@ import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatDayHeading, formatPercent, formatShortDate } from "@/lib/format";
-import { crowdNow, questionState } from "@/lib/question";
+import { callsCloseAt, crowdNow, questionState } from "@/lib/question";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
 
@@ -83,7 +83,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
           <span className="flex flex-wrap items-center gap-3 font-semibold text-ink-2 tabular">
             {leadState === "closingSoon" && <StateBadge state={leadState} label={t.states[leadState]} />}
             <span>
-              {t.question.closes} {formatShortDate(lead.closesAt, locale)}
+              {t.question.closes} {formatShortDate(callsCloseAt(lead), locale)}
             </span>
             <span aria-hidden="true">·</span>
             <span>{lead.scored ? t.question.scored : t.question.poll}</span>
@@ -155,7 +155,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
                   <p className={`${kicker} flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-2`}>
                     {state === "closingSoon" ? <StateBadge state={state} label={t.states[state]} /> : null}
                     <span className="tabular">
-                      {t.question.closes} {formatShortDate(q.closesAt, locale)}
+                      {t.question.closes} {formatShortDate(callsCloseAt(q), locale)}
                     </span>
                     {!q.scored && <span className="text-side-b-text">{t.question.poll}</span>}
                   </p>
