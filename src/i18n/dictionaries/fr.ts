@@ -3,7 +3,7 @@ import type { Dictionary } from "./en";
 /** Quebec French strings. A non-breaking space goes before : and %, and inside « ». No space before ? or ! (PRISM). */
 const fr = {
   meta: {
-    title: "Consensa : ce que le Canada prévoit",
+    title: "Cansensa : ce que le Canada prévoit",
     description: "Faites des prévisions rapides sur des questions canadiennes et voyez où le Canada se situe, province par province. Gratuit, sans argent, sans prix.",
     boardTitle: "Tableau",
     recordTitle: "Mon bilan",
@@ -22,7 +22,7 @@ const fr = {
     search: "Rechercher",
     signIn: "Se connecter",
     getStarted: "Commencer",
-    home: "Accueil Consensa",
+    home: "Accueil Cansensa",
     phone: "Sections",
     short: { today: "Aujourd’hui", board: "Tableau", provinces: "Provinces", leaderboard: "Classement", record: "Bilan" },
   },
@@ -47,7 +47,7 @@ const fr = {
     showcaseCount: "{n} prévisionnistes jusqu’ici",
     showcaseOpen: "Ouvrir cette question",
     stats: {
-      label: "Consensa en bref",
+      label: "Cansensa en bref",
       forecasters: "prévisions sur les questions ouvertes",
       questions: "questions ouvertes",
       resolved: "questions résolues",
@@ -87,7 +87,7 @@ const fr = {
     faq: {
       title: "Questions fréquentes",
       items: {
-        free: { q: "C’est vraiment gratuit?", a: "Oui. Il n’y a rien à acheter, ni maintenant ni plus tard. Consensa est financé par des publicités clairement identifiées, jamais placées sur une question ou son résultat." },
+        free: { q: "C’est vraiment gratuit?", a: "Oui. Il n’y a rien à acheter, ni maintenant ni plus tard. Cansensa est financé par des publicités clairement identifiées, jamais placées sur une question ou son résultat." },
         scored: { q: "Comment la précision est-elle évaluée?", a: "Nous utilisons le score de Brier : l’écart entre votre probabilité et ce qui s’est produit, au carré. Plus c’est bas, mieux c’est. 0 est parfait, et répondre toujours 50 % donne 0,25." },
         prizes: { q: "Y a-t-il des prix?", a: "Non. Les points, les séries et les bilans n’ont aucune valeur monétaire et ne s’échangent contre rien. Vous êtes ici pour voir à quel point vous voyez juste." },
         adults: { q: "Pourquoi 18 ans et plus?", a: "Certaines questions touchent l’économie et la vie publique, et nous préférons une foule adulte. Nous le demandons une seule fois à l’inscription." },
@@ -143,7 +143,7 @@ const fr = {
     clear: "Effacer la recherche",
   },
   onboarding: {
-    title: "Bienvenue sur Consensa",
+    title: "Bienvenue sur Cansensa",
     stepOf: "Étape {current} sur {total}",
     back: "Retour",
     next: "Continuer",
@@ -160,10 +160,10 @@ const fr = {
     },
     age: {
       title: "D’abord, quel âge avez-vous?",
-      body: "Consensa s’adresse aux personnes de 18 ans et plus. Nous vérifions une seule fois et ne gardons que la réponse oui ou non, jamais votre date de naissance.",
+      body: "Cansensa s’adresse aux personnes de 18 ans et plus. Nous vérifions une seule fois et ne gardons que la réponse oui ou non, jamais votre date de naissance.",
       label: "Date de naissance",
       invalid: "Entrez une date de naissance complète.",
-      underTitle: "Consensa s’adresse aux personnes de 18 ans et plus",
+      underTitle: "Cansensa s’adresse aux personnes de 18 ans et plus",
       underBody: "Merci de votre intérêt. Revenez quand vous aurez 18 ans, votre première prévision vous attendra.",
       underAction: "Retour à l’accueil",
     },
@@ -192,9 +192,9 @@ const fr = {
       privacyLink: "résumé de confidentialité",
       otherTermsLink: "Terms of use in English",
       termsRequired: "Acceptez les conditions d’utilisation pour continuer.",
-      dataLicensing: "Mes prévisions peuvent faire partie de résultats anonymes et combinés que Consensa partage avec des partenaires, comme des médias et des firmes de recherche, ou leur offre sous licence. Jamais mes prévisions individuelles.",
-      analytics: "J’accepte que des statistiques d’usage anonymes, hébergées à Montréal, servent à améliorer Consensa. Désactivé si je ne coche pas la case.",
-      marketing: "Envoyez-moi à l’occasion des courriels de Consensa sur les nouvelles questions et fonctions. Je peux me désabonner en tout temps.",
+      dataLicensing: "Mes prévisions peuvent faire partie de résultats anonymes et combinés que Cansensa partage avec des partenaires, comme des médias et des firmes de recherche, ou leur offre sous licence. Jamais mes prévisions individuelles.",
+      analytics: "J’accepte que des statistiques d’usage anonymes, hébergées à Montréal, servent à améliorer Cansensa. Désactivé si je ne coche pas la case.",
+      marketing: "Envoyez-moi à l’occasion des courriels de Cansensa sur les nouvelles questions et fonctions. Je peux me désabonner en tout temps.",
       optional: "Facultatif",
       submit: "Créer mon compte",
     },
@@ -225,7 +225,7 @@ const fr = {
     errorCode: "Code d’erreur : {code}",
     expired: "Ce lien de connexion a expiré ou a déjà servi. Entrez votre courriel pour en recevoir un nouveau.",
     another: "Utiliser un autre courriel",
-    newHere: "Nouveau sur Consensa?",
+    newHere: "Nouveau sur Cansensa?",
     getStarted: "Commencer",
   },
   legalPages: {
@@ -242,14 +242,14 @@ const fr = {
     updated: "Dernière révision : {date}",
     privacy: {
       title: "La confidentialité, en clair",
-      intro: "Consensa est conçu pour garder le moins de renseignements possible sur vous, et pour les garder au Canada.",
+      intro: "Cansensa est conçu pour garder le moins de renseignements possible sur vous, et pour les garder au Canada.",
       points: {
         canada: { title: "Vos données restent au Canada", body: "Les comptes, les prévisions et les statistiques d’usage sont hébergés à Montréal. Tout fournisseur qui traite des données hors du Canada est nommé dans la politique complète." },
-        aggregates: { title: "Seuls des chiffres combinés sortent de Consensa", body: "Si nous partageons des données avec des partenaires, ce sont des totaux anonymes, avec une taille de groupe minimale. Jamais vos prévisions individuelles." },
+        aggregates: { title: "Seuls des chiffres combinés sortent de Cansensa", body: "Si nous partageons des données avec des partenaires, ce sont des totaux anonymes, avec une taille de groupe minimale. Jamais vos prévisions individuelles." },
         consents: { title: "Vous choisissez, une case à la fois", body: "Les conditions, l’usage anonyme des données, les statistiques d’usage et les courriels sont quatre choix distincts. Aucune case n’est cochée d’avance, et les statistiques d’usage restent désactivées tant que vous ne les activez pas." },
         rights: { title: "Vos données, votre choix", body: "Vous pouvez consulter, corriger ou supprimer vos données, et changer chacun de vos choix, depuis votre compte ou en nous le demandant." },
         contact: { title: "Questions et demandes", body: "Notre responsable de la protection des renseignements personnels répond aux questions et aux demandes sur vos données. Ses coordonnées figurent dans la politique complète." },
-        adults: { title: "Pour les adultes", body: "Consensa s’adresse aux personnes de 18 ans et plus. Nous demandons votre date de naissance une seule fois et ne gardons que la réponse oui ou non." },
+        adults: { title: "Pour les adultes", body: "Cansensa s’adresse aux personnes de 18 ans et plus. Nous demandons votre date de naissance une seule fois et ne gardons que la réponse oui ou non." },
         noMoney: { title: "Rien ici ne vaut de l’argent", body: "Il n’y a aucun achat ni aucun prix. Votre bilan n’a aucune valeur monétaire et ne peut pas être transféré." },
         languages: { title: "Le français et l’anglais, à égalité", body: "Ce résumé, la politique complète, nos conditions et notre soutien sont offerts dans les deux langues." },
       },
@@ -258,7 +258,7 @@ const fr = {
       title: "Les conditions, en clair",
       intro: "En bref : faites des prévisions honnêtes, restez respectueux et amusez-vous à voir où le Canada se situe.",
       points: {
-        free: { title: "Gratuit", body: "Consensa est gratuit. Il n’y a rien à acheter, et aucune publicité ni fonction ne se place entre vous et une prévision. Ce n’est pas un jeu de hasard : vous ne risquez rien et il n’y a rien à remporter." },
+        free: { title: "Gratuit", body: "Cansensa est gratuit. Il n’y a rien à acheter, et aucune publicité ni fonction ne se place entre vous et une prévision. Ce n’est pas un jeu de hasard : vous ne risquez rien et il n’y a rien à remporter." },
         noValue: { title: "Aucune valeur monétaire", body: "Les scores, les séries et les bilans n’ont aucune valeur monétaire. Ils ne peuvent être ni échangés, ni transférés, ni convertis en quoi que ce soit." },
         adults: { title: "18 ans et plus", body: "Il faut avoir 18 ans ou plus pour faire des prévisions." },
         fair: { title: "Une personne, un compte", body: "Faites vos propres prévisions. Ne les automatisez pas et n’utilisez qu’un seul compte." },
@@ -389,13 +389,13 @@ const fr = {
     disputed: "L’évaluation attend la fin de la révision.",
   },
   embed: {
-    cta: "Faites votre prévision sur Consensa",
-    poweredBy: "Prévision en direct de Consensa",
+    cta: "Faites votre prévision sur Cansensa",
+    poweredBy: "Prévision en direct de Cansensa",
     closed: "Les prévisions sont fermées",
   },
   ads: {
     label: "Publicité",
-    house: "De Consensa",
+    house: "De Cansensa",
     houseTitle: "Comment on calcule « Selon le Canada »?",
     houseBody: "Une personne, une prévision. Voyez comment chaque chiffre est calculé et évalué.",
     houseCta: "Voir le fonctionnement",
@@ -407,7 +407,7 @@ const fr = {
     sources: "Sources",
   },
   methodology: {
-    title: "Le fonctionnement de Consensa",
+    title: "Le fonctionnement de Cansensa",
     intro: "Tout ce qu’il y a derrière les chiffres, en mots simples. Si quelque chose n’est pas clair, c’est à nous de le corriger.",
     nav: "Sur cette page",
     crowd: {
@@ -447,7 +447,7 @@ const fr = {
     },
     money: {
       title: "Jamais d’argent",
-      body: "Consensa est gratuit. Les points et les scores ne peuvent être ni achetés, ni vendus, ni convertis en argent, ni transférés, ni échangés. Les classements récompensent la précision, pas les points. Aucune publicité n’apparaît sur une question ni sur son résultat.",
+      body: "Cansensa est gratuit. Les points et les scores ne peuvent être ni achetés, ni vendus, ni convertis en argent, ni transférés, ni échangés. Les classements récompensent la précision, pas les points. Aucune publicité n’apparaît sur une question ni sur son résultat.",
     },
     data: {
       title: "Vos données restent au Canada",
@@ -475,7 +475,7 @@ const fr = {
       boc: "Source : Banque du Canada.",
       statcanName: "Statistique Canada",
       bocName: "la Banque du Canada",
-      notEndorsed: "Consensa n’est ni affiliée à {name} ni approuvée par elle.",
+      notEndorsed: "Cansensa n’a aucun lien avec {name}, qui ne l’approuve pas.",
     },
     answerIs: "Réponse : {answer}",
     log: "Chaque résultat est publié dans le registre public des résolutions.",
@@ -674,7 +674,7 @@ const fr = {
   },
   design: {
     title: "Système de design",
-    intro: "Les jetons et composants qui servent à bâtir chaque écran de Consensa.",
+    intro: "Les jetons et composants qui servent à bâtir chaque écran de Cansensa.",
     colours: "Couleurs",
     type: "Échelle typographique",
     spacing: "Espacement",

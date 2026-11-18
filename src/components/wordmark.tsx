@@ -1,5 +1,5 @@
 /**
- * The lowercase "consensa" wordmark with PRISM's symbol: teal and violet halves, Canada's red point in the seam.
+ * The lowercase "cansensa" wordmark with PRISM's symbol: teal and violet halves, Canada's red point in the seam.
  * Paths come from brand/logo/symbol.svg; colours follow the theme tokens.
  */
 export function Wordmark({ className = "" }: { className?: string }) {
@@ -10,7 +10,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
         <path fill="var(--cn-side-b)" d="M53 .09a50 50 0 0 1 0 99.82V59.014a9.5 9.5 0 0 0 0-18.028Z" />
         <circle fill="var(--cn-accent)" cx="50" cy="50" r="6.5" />
       </svg>
-      <span>consensa</span>
+      <span>cansensa</span>
     </span>
   );
 }
