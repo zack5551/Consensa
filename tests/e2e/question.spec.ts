@@ -118,3 +118,14 @@ test("after a call, your own region's number shows beside Canada's", async ({ pa
   await page.getByRole("button", { name: "Confirmer ma prévision" }).click();
   await expect(page.getByText("Votre région · Ontario")).toBeVisible();
 });
+
+test("the bot check is off locally: the challenge route steps aside and a call saves with no extra UI", async ({ page, request }) => {
+  const challenge = await request.get("/api/altcha/challenge");
+  expect(challenge.status()).toBe(204);
+  expect(challenge.headers()["cache-control"]).toContain("no-store");
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await page.getByRole("button", { name: "Make my call" }).click();
+  await expect(page.getByText("Call saved")).toBeVisible();
+  await expect(page.locator("altcha-widget")).toHaveCount(0);
+  await expect(page.getByText(/quick check/i)).toHaveCount(0);
+});

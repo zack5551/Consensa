@@ -156,3 +156,6 @@ next-env.d.ts
 playwright-report/
 test-results/
 .env*.local
+
+# IP2Proxy LITE database, downloaded at build time (CC BY-SA 4.0)
+/data/ip2proxy/

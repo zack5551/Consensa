@@ -1,9 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getQuestion, SAMPLE_NOW } from "@/content/sample-questions";
 import { callsCountFrom, COUNTRY_HEADER } from "@/lib/call-origin";
 import { callsCloseAt, isOpen, questionState } from "@/lib/question";
 import { rateLimiter } from "@/lib/rate-limit";
+import { verifyBotCheck } from "@/lib/server/bot-check";
+import { checkProxy } from "@/lib/server/proxy-check";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { serverSupabase } from "@/lib/supabase/server";
 
@@ -41,10 +43,15 @@ export async function POST(request: NextRequest) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "sign in" }, { status: 401, headers: noStore });
 
+  if (!allowWrite(auth.user.id)) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
+
   // Only calls made from Canada count. Reads the 2-letter country header and nothing else about the origin; nothing is stored.
+  // It sits after the rate limit so callers from outside Canada are rate limited too.
   if (!callsCountFrom(request.headers.get(COUNTRY_HEADER), Boolean(process.env.VERCEL))) return NextResponse.json({ error: "outside canada" }, { status: 403, headers: noStore });
 
-  if (!allowWrite(auth.user.id)) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
+  // The bot check: the browser solves a small puzzle on its own device and sends the answer in the `x-altcha` header.
+  // Skipped when the server has no ALTCHA_HMAC_KEY (local dev, CI). Runs after the Canada check so that 403 stays its own.
+  if ((await verifyBotCheck(request.headers.get("x-altcha"))) === "fail") return NextResponse.json({ error: "bot check" }, { status: 403, headers: noStore });
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400, headers: noStore });
@@ -58,9 +65,16 @@ export async function POST(request: NextRequest) {
   const closeTime = await admin.from("question_windows").upsert({ slug: q.slug, closes_at: callsCloseAt(q) }, { onConflict: "slug" });
   if (closeTime.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
 
+  // A VPN doesn't stop a call; it is only counted, one number per day, never per person or per call.
+  const { vpn } = await checkProxy(request.headers);
+
   const { error } = await admin.from("calls").upsert({ user_id: auth.user.id, slug: q.slug, probability: parsed.data.probability }, { onConflict: "user_id,slug" });
   if (error?.hint === "closed") return NextResponse.json({ error: "closed" }, { status: 409, headers: noStore });
   if (error?.hint === "rate") return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "2" } });
   if (error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
+  // Best effort, after the answer is sent: a failed or slow counter never fails or delays a saved call.
+  after(async () => {
+    await admin.rpc("count_call_origin", { p_vpn: vpn === "unknown" ? "unknown" : vpn ? "yes" : "no" });
+  });
   return NextResponse.json({ ok: true }, { headers: noStore });
 }

@@ -5,10 +5,9 @@ import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } fr
 import { Icon } from "@/components/shell/icons";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
-import { browserSupabase } from "@/lib/supabase/browser";
+import { setBotWidgetStrings, solveBotCheck } from "@/lib/bot-check-client";
 import { CONSENT_VERSION, type SignupMetadata } from "@/lib/supabase/config";
 import { accountsEnabled } from "@/lib/supabase/env";
-import { authErrorCode } from "@/lib/supabase/error-code";
 import { emailSchema, isAdult, PROFILE_STORAGE_KEY, regionChoices, stepNumber, steps, todayInToronto, type RegionChoice, type Step } from "@/lib/onboarding";
 import { categories, type Category } from "@/lib/question";
 import { fill } from "@/lib/text";
@@ -253,25 +252,28 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames }: Props)
             }
             setSaved(profile);
             go("done");
-            void browserSupabase().then((supabase) => {
-              if (!supabase) return;
-              // The database refuses the account unless adult and terms are true (see the accounts migration).
-              const data: SignupMetadata = {
-                consentVersion: CONSENT_VERSION,
-                locale,
-                adult: true,
-                terms: true,
-                region: profile.region,
-                topics: profile.topics,
-                dataLicensing: profile.consents.dataLicensing,
-                analytics: profile.consents.analytics,
-                marketing: profile.consents.marketing,
-              };
-              setLinkFailed(null);
-              void supabase.auth
-                .signInWithOtp({ email, options: { shouldCreateUser: true, data, emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/${locale}/today` } })
-                .then(({ error }) => setLinkFailed(authErrorCode(error)));
-            });
+            if (!accountsEnabled) return;
+            // The server checks the quick bot check, then sends the link (see /api/auth/sign-up).
+            const data: SignupMetadata = {
+              consentVersion: CONSENT_VERSION,
+              locale,
+              adult: true,
+              terms: true,
+              region: profile.region,
+              topics: profile.topics,
+              dataLicensing: profile.consents.dataLicensing,
+              analytics: profile.consents.analytics,
+              marketing: profile.consents.marketing,
+            };
+            setLinkFailed(null);
+            setBotWidgetStrings(locale, t.botWidget);
+            void solveBotCheck()
+              .then((altcha) => fetch("/api/auth/sign-up", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, data, altcha }) }))
+              .then(async (res) => {
+                const body = res.ok ? null : ((await res.json().catch(() => null)) as { error?: string } | null);
+                setLinkFailed(res.ok ? null : (body?.error ?? `http_${res.status}`).replace(/\s/g, "_"));
+              })
+              .catch(() => setLinkFailed("network"));
           }}
         />
       )}

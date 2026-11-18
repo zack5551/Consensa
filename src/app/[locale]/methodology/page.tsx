@@ -11,6 +11,7 @@ import { sampleQuestions } from "@/content/sample-questions";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatBrier, formatPercent } from "@/lib/format";
+import { vpnShareLast30Days } from "@/lib/live";
 import { crowdRecord } from "@/lib/question";
 import { brierScore } from "@/lib/scoring";
 
@@ -19,6 +20,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) return {};
   return { title: getDictionary(locale).methodology.title, alternates: { languages: { "en-CA": "/en/methodology", "fr-CA": "/fr/methodology" } } };
 }
+
+export const revalidate = 3600;
+
+/** Where the IP2Proxy LITE database (CC BY-SA 4.0) is published, for its attribution. */
+const IP2PROXY_URL = "https://lite.ip2location.com";
+const CC_BY_SA_URL = "https://creativecommons.org/licenses/by-sa/4.0/";
 
 const examples = [
   [80, 1],
@@ -34,6 +41,7 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
   const t = getDictionary(locale);
   const m = t.methodology;
   const record = crowdRecord(sampleQuestions);
+  const vpnShare = await vpnShareLast30Days();
   const sections = [
     ["crowd", m.crowd.title],
     ["scoring", m.scoring.title],
@@ -146,6 +154,17 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
             ))}
           </dl>
           <p className="m-0 text-caption text-ink-2">{t.legal.sample}</p>
+          {vpnShare !== null && (
+            <>
+              <p className="m-0">{m.record.vpnShare.replace("{value}", formatPercent(vpnShare, locale))}</p>
+              <p className="m-0 text-caption text-ink-2">
+                {m.record.vpnCredit}{" "}
+                <a href={IP2PROXY_URL} className="text-link underline underline-offset-4">lite.ip2location.com</a>
+                {" · "}
+                <a href={CC_BY_SA_URL} rel="license" className="text-link underline underline-offset-4">CC BY-SA 4.0</a>
+              </p>
+            </>
+          )}
         </section>
 
         <section id="money" aria-labelledby="money-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
