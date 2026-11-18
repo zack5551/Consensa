@@ -44,5 +44,5 @@ export const deleteAccountSchema = z.object({ confirm: z.literal(true) }).strict
 
 /** The file name of the data download, dated so repeated downloads don't overwrite each other. */
 export function exportFileName(now: Date): string {
-  return `consensa-my-data-${now.toISOString().slice(0, 10)}.json`;
+  return `cansensa-my-data-${now.toISOString().slice(0, 10)}.json`;
 }

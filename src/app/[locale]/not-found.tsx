@@ -2,7 +2,7 @@
 
 /*
  * Screen: not found (a stale link, a moved question, a typo).
- * The Consensa mark, split apart with a "?" where the halves should meet — a forecast
+ * The Cansensa mark, split apart with a "?" where the halves should meet — a forecast
  * that missed. One message: this page isn't here, but everything else is. One action: go back to today's five.
  * Bilingual through the [locale] shell: the layout fills the notFound strings from the dictionary.
  */
