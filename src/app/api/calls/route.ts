@@ -4,6 +4,7 @@ import { getQuestion, SAMPLE_NOW } from "@/content/sample-questions";
 import { callsCountFrom, COUNTRY_HEADER } from "@/lib/call-origin";
 import { isOpen, questionState } from "@/lib/question";
 import { rateLimiter } from "@/lib/rate-limit";
+import { verifyBotCheck } from "@/lib/server/bot-check";
 import { checkProxy } from "@/lib/server/proxy-check";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { serverSupabase } from "@/lib/supabase/server";
@@ -42,10 +43,15 @@ export async function POST(request: NextRequest) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "sign in" }, { status: 401, headers: noStore });
 
+  if (!allowWrite(auth.user.id)) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
+
   // Only calls made from Canada count. Reads the 2-letter country header and nothing else about the origin; nothing is stored.
+  // It sits after the rate limit so callers from outside Canada are rate limited too.
   if (!callsCountFrom(request.headers.get(COUNTRY_HEADER), Boolean(process.env.VERCEL))) return NextResponse.json({ error: "outside canada" }, { status: 403, headers: noStore });
 
-  if (!allowWrite(auth.user.id)) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
+  // The bot check: the browser solves a small puzzle on its own device and sends the answer in the `x-altcha` header.
+  // Skipped when the server has no ALTCHA_HMAC_KEY (local dev, CI). Runs after the Canada check so that 403 stays its own.
+  if ((await verifyBotCheck(request.headers.get("x-altcha"))) === "fail") return NextResponse.json({ error: "bot check" }, { status: 403, headers: noStore });
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400, headers: noStore });

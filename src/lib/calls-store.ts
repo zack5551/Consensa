@@ -4,12 +4,14 @@
  * page load: the same calls follow you to any device. Every read and write is guarded: private windows and
  * blocked storage fall back to memory.
  */
+import { solveBotCheck } from "@/lib/bot-check-client";
 import { accountsEnabled } from "@/lib/supabase/env";
 
 const PREFIX = "consensa:call:";
 const EVENT = "consensa:calls";
 const OUTSIDE_EVENT = "consensa:calls-outside";
 let outsideCanada = false;
+let botCheckFailed = false;
 const memory = new Map<string, number>();
 
 function valid(n: number): boolean {
@@ -72,6 +74,11 @@ export function isOutsideCanada(): boolean {
   return outsideCanada;
 }
 
+/** True while the server's latest answer was that the bot check didn't pass: the call stays on this device. */
+export function isBotCheckFailed(): boolean {
+  return botCheckFailed;
+}
+
 export function subscribeOutsideCanada(onChange: () => void): () => void {
   window.addEventListener(OUTSIDE_EVENT, onChange);
   return () => window.removeEventListener(OUTSIDE_EVENT, onChange);
@@ -98,13 +105,15 @@ function pushCall(slug: string, probability: number): void {
 /** Sends one call to the server. Not signed in, or the question has closed: the call stays in this browser. */
 async function sendCall(slug: string, probability: number): Promise<boolean> {
   try {
-    const res = await fetch("/api/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, probability }) });
-    if (res.status === 403 && ((await res.json().catch(() => null)) as { error?: unknown } | null)?.error === "outside canada") {
-      outsideCanada = true;
-      window.dispatchEvent(new Event(OUTSIDE_EVENT));
-    } else if (res.ok && outsideCanada) {
-      // A later call counted (back in Canada, or a one-off bad location read): the note would now be wrong.
-      outsideCanada = false;
+    // The bot check is solved on this device in the background and sent in the `x-altcha` header; none when the check is off.
+    const altcha = await solveBotCheck();
+    const res = await fetch("/api/calls", { method: "POST", headers: { "Content-Type": "application/json", ...(altcha ? { "x-altcha": altcha } : {}) }, body: JSON.stringify({ slug, probability }) });
+    const refused = res.status === 403 ? ((await res.json().catch(() => null)) as { error?: unknown } | null)?.error : null;
+    // A later call that counted clears both notes: back in Canada, or a one-off bad read, so they would now be wrong.
+    const next = res.ok ? { outside: false, bot: false } : { outside: refused === "outside canada" || (outsideCanada && refused !== "bot check"), bot: refused === "bot check" || (botCheckFailed && refused !== "outside canada") };
+    if (next.outside !== outsideCanada || next.bot !== botCheckFailed) {
+      outsideCanada = next.outside;
+      botCheckFailed = next.bot;
       window.dispatchEvent(new Event(OUTSIDE_EVENT));
     }
     return res.ok;
