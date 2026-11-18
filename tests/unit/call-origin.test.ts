@@ -11,13 +11,22 @@ describe("callsCountFrom", () => {
   });
 });
 
-const upsert = vi.fn(async () => ({ error: null }));
-vi.mock("@/lib/supabase/admin", () => ({ adminSupabase: () => ({ from: () => ({ upsert }) }) }));
+const upsert = vi.fn(async (): Promise<{ error: { hint?: string } | null }> => ({ error: null }));
+const rpc = vi.fn(async () => ({ error: null }));
+const checkProxy = vi.fn(async (): Promise<{ vpn: boolean | "unknown" }> => ({ vpn: false }));
+vi.mock("next/server", async (orig) => ({
+  ...(await orig<Record<string, unknown>>()),
+  after: (fn: () => unknown) => { void fn(); },
+}));
+vi.mock("@/lib/supabase/admin", () => ({ adminSupabase: () => ({ from: () => ({ upsert }), rpc }) }));
+vi.mock("@/lib/server/proxy-check", () => ({ checkProxy: () => checkProxy() }));
 vi.mock("@/lib/supabase/server", () => ({ serverSupabase: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) } }) }));
 
 describe("POST /api/calls country gate", () => {
   beforeEach(() => {
     upsert.mockClear();
+    rpc.mockClear();
+    checkProxy.mockClear();
     vi.unstubAllEnvs();
   });
 
@@ -37,6 +46,8 @@ describe("POST /api/calls country gate", () => {
       expect(await res.json()).toEqual({ error: "outside canada" });
     }
     expect(upsert).not.toHaveBeenCalled();
+    expect(checkProxy).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("lets a call from Canada through to the write on Vercel", async () => {
@@ -44,5 +55,27 @@ describe("POST /api/calls country gate", () => {
     const res = await post("CA");
     expect(res.status).toBe(200);
     expect(upsert).toHaveBeenCalled();
+  });
+
+  it("counts each accepted call once with the right flag, and still accepts a VPN call", async () => {
+    for (const [vpn, p_vpn] of [[true, "yes"], [false, "no"], ["unknown", "unknown"]] as const) {
+      rpc.mockClear();
+      checkProxy.mockResolvedValueOnce({ vpn });
+      expect((await post()).status).toBe(200);
+      expect(rpc).toHaveBeenCalledTimes(1);
+      expect(rpc).toHaveBeenCalledWith("count_call_origin", { p_vpn });
+    }
+  });
+
+  it("never counts an invalid, unknown-question or failed-write call", async () => {
+    const { POST } = await import("@/app/api/calls/route");
+    const { NextRequest } = await import("next/server");
+    const send = (body: unknown) => POST(new NextRequest("http://localhost/api/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }));
+    expect((await send({ slug: "boc-cut-dec-2026", probability: 0 })).status).toBe(400);
+    expect((await send({ slug: "no-such-question", probability: 50 })).status).toBe(404);
+    upsert.mockResolvedValueOnce({ error: null }); // the close time
+    upsert.mockResolvedValueOnce({ error: { hint: "closed" } }); // the call itself
+    expect((await send({ slug: "boc-cut-dec-2026", probability: 50 })).status).toBe(409);
+    expect(rpc).not.toHaveBeenCalled();
   });
 });
