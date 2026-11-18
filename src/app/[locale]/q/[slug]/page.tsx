@@ -13,6 +13,7 @@ import { LanguageSplit } from "@/components/language-split";
 import { ProvinceSplit } from "@/components/province-split";
 import { ScreenView } from "@/components/screen-view";
 import { SourceCredit } from "@/components/source-credit";
+import { SportsNotice } from "@/components/sports-notice";
 import { StateBadge } from "@/components/state-badge";
 import { StateNote } from "@/components/state-note";
 import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
@@ -20,7 +21,7 @@ import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
+import { callsCloseAt, crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
@@ -100,7 +101,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
   const note =
     state === "closingSoon"
-      ? fill(t.stateNote.closingSoon, { date: formatLongDate(q.closesAt, locale) })
+      ? fill(t.stateNote.closingSoon, { date: formatLongDate(callsCloseAt(q), locale) })
       : state === "closed"
         ? fill(t.stateNote.closed, { date: formatLongDate(q.resolution.resolvesAt, locale) })
         : state === "resolved"
@@ -119,7 +120,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
       state={state}
       scored={q.scored}
       outcome={result?.outcome}
-      closedOn={formatLongDate(q.closesAt, locale)}
+      closedOn={formatLongDate(callsCloseAt(q), locale)}
       regions={{ values: q.provinces, hidden: q.hiddenProvinces, names: t.province.names }}
     />
   );
@@ -140,7 +141,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
               <>
                 <span aria-hidden="true">·</span>
                 <span className="uppercase tracking-wide">
-                  {t.question.closes} {formatShortDate(q.closesAt, locale)}
+                  {t.question.closes} {formatShortDate(callsCloseAt(q), locale)}
                 </span>
               </>
             )}
@@ -302,6 +303,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
         )}
 
         <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
+        {q.category === "sports" && <SportsNotice label={t.legal.sportsLabel} footer={t.legal.sportsFooter} />}
       </div>
 
       <aside className="sticky top-20 hidden lg:block">{panel}</aside>

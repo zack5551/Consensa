@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CrowdBar } from "@/components/crowd-bar";
 import { ProvinceSplit } from "@/components/province-split";
+import { SportsNotice } from "@/components/sports-notice";
 import { Wordmark } from "@/components/wordmark";
 import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
 import { withLiveQuestion } from "@/lib/live";
@@ -77,6 +78,7 @@ export default async function EmbedPage({ params }: { params: Params }) {
         </a>
       </div>
       <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
+      {q.category === "sports" && <SportsNotice label={t.legal.sportsLabel} footer={t.legal.sportsFooter} />}
     </main>
   );
 }

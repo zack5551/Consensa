@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getQuestion, SAMPLE_NOW } from "@/content/sample-questions";
 import { callsCountFrom, COUNTRY_HEADER } from "@/lib/call-origin";
-import { isOpen, questionState } from "@/lib/question";
+import { callsCloseAt, isOpen, questionState } from "@/lib/question";
 import { rateLimiter } from "@/lib/rate-limit";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { serverSupabase } from "@/lib/supabase/server";
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
   // The database checks the close time itself (and refuses late calls whatever the app says), so it needs the
   // question's close time. Content is the source of truth, so a changed close date is copied over.
-  const closeTime = await admin.from("question_windows").upsert({ slug: q.slug, closes_at: q.closesAt }, { onConflict: "slug" });
+  const closeTime = await admin.from("question_windows").upsert({ slug: q.slug, closes_at: callsCloseAt(q) }, { onConflict: "slug" });
   if (closeTime.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
 
   const { error } = await admin.from("calls").upsert({ user_id: auth.user.id, slug: q.slug, probability: parsed.data.probability }, { onConflict: "user_id,slug" });

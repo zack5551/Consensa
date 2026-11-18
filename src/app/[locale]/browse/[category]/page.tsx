@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import { boardStrings } from "@/components/board-strings";
 import { BoardView } from "@/components/board-view";
 import { ScreenView } from "@/components/screen-view";
+import { SportsNotice } from "@/components/sports-notice";
 import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -67,6 +68,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
       </header>
       <BoardView rows={rows} locale={locale} t={boardStrings(t)} fixedTopic={category} todayHref={`/${locale}/today`} />
       <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
+      {category === "sports" && <SportsNotice footer={t.legal.sportsFooter} />}
     </div>
   );
 }

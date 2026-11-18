@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NOW, getQuestion, sampleQuestions, todaysFive } from "@/content/sample-questions";
-import { CLOSING_SOON_MS, crowdChange, crowdVerdict, nextUp, provinceExtremes, questionState, topicRecord, weekMove, type Question } from "@/lib/question";
+import { CLOSING_SOON_MS, callsCloseAt, crowdChange, crowdVerdict, nextUp, provinceExtremes, questionSchema, questionState, topicRecord, weekMove, type Question } from "@/lib/question";
 
 const base = getQuestion("boc-cut-dec-2026")!;
 const at = (iso: string) => new Date(iso);
@@ -100,5 +100,28 @@ describe("crowd record", () => {
     // cpi-sept, boc-hold-oct, mtl-snow, plus boc-cut-oct from the extra questions.
     expect(record.resolved).toBe(4);
     expect(record.rightSide).toBe(100);
+  });
+});
+
+describe("sports start time", () => {
+  const game = getQuestion("oilers-flames-dec-2026")!;
+
+  it("closes calls at the earlier of closesAt and startsAt", () => {
+    expect(callsCloseAt(game)).toBe(game.closesAt);
+    const early = { ...game, startsAt: "2026-12-06T00:00:00Z" };
+    expect(callsCloseAt(early)).toBe("2026-12-06T00:00:00Z");
+    expect(questionState(early, at("2026-12-06T00:00:01Z"))).toBe("closed");
+    expect(questionState(early, at("2026-12-05T20:00:00Z"))).toBe("closingSoon");
+  });
+
+  it("ignores startsAt for other categories", () => {
+    expect(callsCloseAt({ ...base, startsAt: "2020-01-01T00:00:00Z" })).toBe(base.closesAt);
+  });
+
+  it("requires startsAt on a sports question only", () => {
+    const noStart: Record<string, unknown> = { ...game };
+    delete noStart.startsAt;
+    expect(questionSchema.safeParse(noStart).success).toBe(false);
+    expect(questionSchema.safeParse({ ...noStart, category: "economy" }).success).toBe(true);
   });
 });

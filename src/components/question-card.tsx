@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
-import { crowdNow, isOpen, type Question, type QuestionState } from "@/lib/question";
+import { callsCloseAt, crowdNow, isOpen, type Question, type QuestionState } from "@/lib/question";
 import { CrowdBar } from "./crowd-bar";
 import { StateBadge } from "./state-badge";
 import { YourCallBadge } from "./your-call-badge";
@@ -33,7 +33,7 @@ export function QuestionCard({ q, locale, t, states, state = "open", href, lead 
           <StateBadge state={state} label={states[state]} />
           {open && (
             <span className="uppercase tracking-wide">
-              {t.closes} {formatShortDate(q.closesAt, locale)}
+              {t.closes} {formatShortDate(callsCloseAt(q), locale)}
             </span>
           )}
         </span>

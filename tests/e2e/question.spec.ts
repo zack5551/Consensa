@@ -81,8 +81,6 @@ test("before a call, the panel shows what it would score either way", async ({ p
   await expect(page.getByText("If the answer is yes, you’d score 0.063. If it’s no, 0.563. Lower is better.").locator("visible=true").first()).toBeVisible();
   await page.goto("/fr/q/boc-cut-dec-2026");
   await expect(page.getByText(/Si la réponse est oui, votre score serait de 0,250\./).locator("visible=true").first()).toBeVisible();
-  await page.goto("/en/q/leafs-playoffs-2027");
-  await expect(page.getByText(/you’d score/)).toHaveCount(0);
 });
 
 test("a closing-soon question says when it closes", async ({ page }) => {

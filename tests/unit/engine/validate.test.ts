@@ -14,6 +14,16 @@ describe("validateDraft", () => {
     expect(codes(goodDraft({ closesAt: "2028-01-01T00:00:00Z" }))).toContain("block:closesTooLate");
   });
 
+  it("needs a start time for sports, and calls close no later than it", () => {
+    const sports = (over: Partial<ReturnType<typeof goodDraft>>) => codes(goodDraft({ category: "sports", ...over }));
+    expect(sports({})).toContain("block:sportsNoStart");
+    expect(sports({ startsAt: "2026-12-04T13:00:00Z" })).not.toContain("block:sportsNoStart");
+    expect(sports({ startsAt: "2026-12-04T13:00:00Z" })).not.toContain("block:sportsClosesAfterStart");
+    expect(sports({ startsAt: "2026-12-05T01:00:00Z" })).not.toContain("block:sportsClosesAfterStart");
+    expect(sports({ startsAt: "2026-12-04T12:59:00Z" })).toContain("block:sportsClosesAfterStart");
+    expect(codes(goodDraft())).not.toContain("block:sportsNoStart");
+  });
+
   it("only takes official sources over https", () => {
     const d = goodDraft();
     expect(codes({ ...d, resolution: { ...d.resolution, source: { ...d.resolution.source, url: "https://www.cbc.ca/news" } } })).toContain("block:sourceNotOfficial");

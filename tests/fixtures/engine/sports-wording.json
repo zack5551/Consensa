@@ -1,0 +1,61 @@
+{
+  "$comment": "Sports drafts the safety screen must block (one list per flag), and clean ones it must let through. Deliberately bad wording; lives outside src so the vocabulary test keeps passing. Rules: LEX's sports-questions rules.",
+  "blocked": {
+    "sportsLive": {
+      "en": ["Will the Raptors lead at halftime?", "Will the Canadiens win this live game?", "Will the Leafs score the next goal?"],
+      "fr": ["Les Canadiens mèneront-ils à la mi-temps?", "Les Oilers gagneront-ils en direct ce soir?", "Les Flames marqueront-ils pendant le match?"]
+    },
+    "sportsProp": {
+      "en": [
+        "Will the Oilers win by more than 2 goals?",
+        "Will the total goals in Leafs vs Habs go over 5.5?",
+        "Will McDavid score 2+ points tonight?",
+        "Who will score the first goal for the Flames?",
+        "Will the Canucks cover the puck line?"
+      ],
+      "fr": [
+        "Les Oilers gagneront-ils par plus de 2 buts?",
+        "Le total de buts dépassera-t-il 5,5 ce soir?",
+        "McDavid obtiendra-t-il 2 points ou plus ce soir?",
+        "Qui marquera le premier but des Flames?"
+      ]
+    },
+    "sportsAmateur": {
+      "en": ["Will the Oshawa Generals win the Memorial Cup?", "Will Canada win the 2027 World Juniors?", "Will the Western Mustangs win the university title?", "Will the high school team win?"],
+      "fr": ["L’équipe junior de Québec gagnera-t-elle?", "Le Vert et Or gagnera-t-il le championnat universitaire?", "L’équipe midget de Laval gagnera-t-elle?"]
+    },
+    "sportsOddsFormat": {
+      "en": ["Will the Leafs win at +150?", "Will the Habs win at 5/2?", "Will the Canucks win at 2.40?"],
+      "fr": ["Les Canadiens gagneront-ils à 2,40?", "Les Jets gagneront-ils à +150?", "Les Sénateurs gagneront-ils à 5/2?"]
+    },
+    "sportsBookTalk": {
+      "en": ["Is there value on the Leafs tonight?", "Will the Jets beat the book?", "Will the sharps back the Oilers?", "Are the Flames the favourite?", "Will the underdog win?"],
+      "fr": ["Les Canadiens sont-ils favoris ce soir?", "Y a-t-il de la valeur sur les Leafs?", "Quel est le pronostic pour les Flames?"]
+    }
+  },
+  "clean": {
+    "en": [
+      "Will the Maple Leafs make the 2027 NHL playoffs?",
+      "Will a Canadian team win the 2027 Stanley Cup?",
+      "Will Connor McDavid win the 2027 Hart Trophy?",
+      "Will the Edmonton Oilers beat the Calgary Flames on December 5, 2026?",
+      "Will the Toronto Argonauts win the 2026 Grey Cup?"
+    ],
+    "fr": [
+      "Les Maple Leafs participeront-ils aux séries éliminatoires de la LNH en 2027?",
+      "Une équipe canadienne remportera-t-elle la coupe Stanley en 2027?",
+      "Les Oilers d’Edmonton battront-ils les Flames de Calgary le 5 décembre 2026?",
+      "Les Alouettes de Montréal gagneront-ils la coupe Grey en 2026?"
+    ]
+  },
+  "explanation": {
+    "blocked": {
+      "en": ["The Leafs will win tonight after the injury report.", "Expect the Oilers to win, so call yes.", "You should go with the Habs."],
+      "fr": ["Les Canadiens vont gagner ce soir.", "Appelez oui avant le match.", "Nous recommandons les Flames."]
+    },
+    "clean": {
+      "en": ["The crowd moved from 52% to 61% after the injury report listed two defencemen out.", "Calls rose 4 points after the trade was announced by the team."],
+      "fr": ["La foule est passée de 52 % à 61 % après la publication du rapport des blessures.", "Les prévisions ont monté de 4 points après l’annonce de l’échange."]
+    }
+  }
+}

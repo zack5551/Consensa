@@ -4,7 +4,7 @@
  * 1. `screenStory` runs before any model call, on the raw headlines. Stories about deaths, violence, crime or
  *    someone's private life never reach the drafter, which also saves the API cost.
  * 2. `screenDraft` runs on every user-facing string the drafter wrote (EN and FR). It catches gambling language,
- *    tips, persuasion and anything the first pass missed, and adds structural rules (sports are polls only).
+ *    tips, persuasion and anything the first pass missed, and adds the sports rules (pre-game fan forecasts only, LEX's sports-questions rules).
  *
  * The word lists live in `lexicon.json`. A `block` flag means the draft is auto-rejected and never shown to anyone;
  * a `review` flag means an editor must clear it. The model is also told these rules, but the screen never trusts it.
@@ -12,9 +12,13 @@
 import lexicon from "@/engine/safety/lexicon.json";
 import type { Draft, Flag, Severity, Story } from "@/engine/types";
 
+/** `all` rules run on every draft; `sports` rules only on sports drafts; `explanation` rules only on sports explanations. */
+type Scope = "all" | "sports" | "explanation";
+
 interface Rule {
   code: string;
   severity: Severity;
+  scope: Scope;
   detail: string;
   patterns: RegExp[];
 }
@@ -22,8 +26,8 @@ interface Rule {
 const rules: Rule[] = Object.entries(lexicon)
   .filter(([, value]) => typeof value === "object" && value !== null && "patterns" in value)
   .map(([code, value]) => {
-    const v = value as { severity: Severity; detail: string; patterns: string[] };
-    return { code, severity: v.severity, detail: v.detail, patterns: v.patterns.map((p) => new RegExp(p, "i")) };
+    const v = value as { severity: Severity; scope?: Scope; detail: string; patterns: string[] };
+    return { code, severity: v.severity, scope: v.scope ?? "all", detail: v.detail, patterns: v.patterns.map((p) => new RegExp(p, "i")) };
   });
 
 /** Rules that stop a story before drafting. Wording rules don't apply here: a news story may say anything. */
@@ -37,10 +41,11 @@ export function foldForMatch(text: string): string {
 }
 
 /** Every rule a piece of text trips, with the first matching phrase quoted for the editor. */
-export function scan(text: string, only?: ReadonlySet<string>): Flag[] {
+export function scan(text: string, only?: ReadonlySet<string>, scopes: readonly Scope[] = ["all"]): Flag[] {
   const folded = foldForMatch(text);
   const flags: Flag[] = [];
   for (const rule of rules) {
+    if (!scopes.includes(rule.scope)) continue;
     if (only && !only.has(rule.code)) continue;
     for (const re of rule.patterns) {
       const m = re.exec(folded);
@@ -71,13 +76,11 @@ export function draftText(draft: Draft): string[] {
 }
 
 export function screenDraft(draft: Draft): Flag[] {
-  const flags = draftText(draft).flatMap((t) => scan(t));
+  const scopes: Scope[] = draft.category === "sports" ? ["all", "sports"] : ["all"];
+  const flags = draftText(draft).flatMap((t) => scan(t, undefined, scopes));
 
-  if (draft.category === "sports" && draft.scored) {
-    flags.push({ code: "sportsScored", severity: "block", detail: "Sports are polls only at launch (scored: false), with no sportsbook links." });
-  }
   if (draft.category === "sports") {
-    flags.push({ code: "sports", severity: "review", detail: "Sports poll: an editor checks it reads as a fan poll, not a sportsbook line." });
+    flags.push({ code: "sports", severity: "review", detail: "Sports forecast: an editor checks it reads as fan opinion, not sportsbook information." });
   }
   return dedupeFlags(flags);
 }

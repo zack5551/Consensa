@@ -2,10 +2,20 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import lexicon from "@/engine/safety/lexicon.json";
 import { isBlocked, scan, screenDraft, screenStory } from "@/engine/safety/safety";
+import { screenExplanation } from "@/engine/explain";
 import { sampleQuestions } from "@/content/sample-questions";
 import { goodDraft, signal, story } from "./helpers";
 
 const bad = JSON.parse(readFileSync("tests/fixtures/engine/banned-wording.json", "utf8")) as { en: string[]; fr: string[] };
+type Pair = { en: string[]; fr: string[] };
+const sports = JSON.parse(readFileSync("tests/fixtures/engine/sports-wording.json", "utf8")) as {
+  blocked: Record<string, Pair>;
+  clean: Pair;
+  explanation: { blocked: Pair; clean: Pair };
+};
+const CLEAN_EN = "Will the Maple Leafs make the 2027 NHL playoffs?";
+const CLEAN_FR = "Les Maple Leafs participeront-ils aux séries éliminatoires de la LNH en 2027?";
+const sportsDraft = (question: { en: string; fr: string }) => goodDraft({ category: "sports", scored: true, question });
 
 describe("screenStory (before any model call)", () => {
   it.each([
@@ -54,11 +64,11 @@ describe("screenDraft (every user-facing string, EN and FR)", () => {
     expect(flags.map((f) => f.code)).toContain("gambling");
   });
 
-  it("only allows sports as unscored polls, and always sends them to an editor", () => {
-    expect(isBlocked(screenDraft(goodDraft({ category: "sports", scored: true })))).toBe(true);
-    const poll = screenDraft(goodDraft({ category: "sports", scored: false }));
-    expect(isBlocked(poll)).toBe(false);
-    expect(poll.map((f) => f.code)).toContain("sports");
+  it("lets sports be scored, and always sends them to an editor", () => {
+    const flags = screenDraft(goodDraft({ category: "sports", scored: true }));
+    expect(isBlocked(flags)).toBe(false);
+    expect(flags.find((f) => f.code === "sports")?.severity).toBe("review");
+    expect(flags.map((f) => f.code)).not.toContain("sportsScored");
   });
 
   it("holds election questions for an editor (off at launch)", () => {
@@ -93,5 +103,79 @@ describe("lexicon", () => {
     const words = ["bet", "wager", "odds", "parlay", "slip", "payout", "stake", "jackpot", "profit", "lock in"];
     for (const w of words) expect(line.toLowerCase()).toContain(w.split(" ")[0]);
     for (const w of words) expect(scan(`Will the ${w} matter?`).map((f) => f.code), w).toContain("gambling");
+  });
+});
+
+describe("sports rules (LEX): pre-game fan forecasts only", () => {
+  for (const [code, examples] of Object.entries(sports.blocked)) {
+    it.each(examples.en.map((q) => [q]))(`${code} blocks (EN): %s`, (q) => {
+      const flags = screenDraft(sportsDraft({ en: q, fr: CLEAN_FR }));
+      expect(flags.find((f) => f.code === code)?.severity).toBe("block");
+      expect(isBlocked(flags)).toBe(true);
+    });
+    it.each(examples.fr.map((q) => [q]))(`${code} blocks (FR): %s`, (q) => {
+      const flags = screenDraft(sportsDraft({ en: CLEAN_EN, fr: q }));
+      expect(flags.find((f) => f.code === code)?.severity).toBe("block");
+      expect(isBlocked(flags)).toBe(true);
+    });
+  }
+
+  it("blocks the same wording inside the resolution rule", () => {
+    const d = sportsDraft({ en: CLEAN_EN, fr: CLEAN_FR });
+    const flags = screenDraft({ ...d, resolution: { ...d.resolution, rule: { ...d.resolution.rule, en: "Resolves YES if the Leafs win in the second period. Otherwise NO." } } });
+    expect(flags.map((f) => f.code)).toContain("sportsLive");
+  });
+
+  it.each(sports.clean.en.map((q) => [q]))("lets a clean sports question through to an editor (EN): %s", (q) => {
+    expect(isBlocked(screenDraft(sportsDraft({ en: q, fr: CLEAN_FR })))).toBe(false);
+  });
+
+  it.each(sports.clean.fr.map((q) => [q]))("lets a clean sports question through to an editor (FR): %s", (q) => {
+    expect(isBlocked(screenDraft(sportsDraft({ en: CLEAN_EN, fr: q })))).toBe(false);
+  });
+
+  it("applies the sports flags to sports drafts only", () => {
+    const text = { en: "Will the Leafs win at +150?", fr: CLEAN_FR };
+    expect(screenDraft(goodDraft({ category: "economy", question: text })).map((f) => f.code)).not.toContain("sportsOddsFormat");
+    expect(screenDraft(sportsDraft(text)).map((f) => f.code)).toContain("sportsOddsFormat");
+  });
+
+  it("keeps decimal-looking percentages and season spans out of the odds-format flag", () => {
+    const flags = screenDraft(sportsDraft({ en: "Will the Leafs finish the 2026-27 season above 62.50% in points?", fr: "Les Leafs termineront-ils la saison 2026-27 au-dessus de 62,50 %?" }));
+    expect(flags.map((f) => f.code)).not.toContain("sportsOddsFormat");
+  });
+
+  it("every sports sample question is pre-game and clears every block flag", () => {
+    const samples = sampleQuestions.filter((q) => q.category === "sports");
+    expect(samples.length).toBeGreaterThanOrEqual(3);
+    for (const q of samples) {
+      expect(q.scored).toBe(true);
+      expect(q.startsAt).toBeDefined();
+      expect(Date.parse(q.closesAt)).toBeLessThanOrEqual(Date.parse(q.startsAt!));
+      const text = [q.question.en, q.question.fr, q.resolution.rule.en, q.resolution.rule.fr, q.resolution.source.name.en, q.resolution.source.name.fr];
+      expect(text.flatMap((t) => scan(t, undefined, ["all", "sports"])).filter((f) => f.severity === "block")).toEqual([]);
+    }
+  });
+});
+
+describe("sports explanations never name a winner or say what to call", () => {
+  it.each(sports.explanation.blocked.en.map((t) => [t]))("blocks (EN): %s", (t) => {
+    expect(isBlocked(screenExplanation("sports", t))).toBe(true);
+  });
+  it.each(sports.explanation.blocked.fr.map((t) => [t]))("blocks (FR): %s", (t) => {
+    expect(isBlocked(screenExplanation("sports", t))).toBe(true);
+  });
+  it.each([...sports.explanation.clean.en, ...sports.explanation.clean.fr].map((t) => [t]))("lets a description of what changed through: %s", (t) => {
+    expect(screenExplanation("sports", t)).toEqual([]);
+  });
+  it("applies the sports check to sports only, and the tip check to everything", () => {
+    expect(screenExplanation("economy", "The Leafs will win tonight.")).toEqual([]);
+    expect(isBlocked(screenExplanation("economy", "Should you buy now?"))).toBe(true);
+    expect(isBlocked(screenExplanation("sports", "Should you call yes?"))).toBe(true);
+  });
+  it("covers the sports question's own why note", () => {
+    for (const q of sampleQuestions.filter((x) => x.category === "sports" && x.why)) {
+      for (const lang of ["en", "fr"] as const) expect(screenExplanation("sports", q.why!.body[lang])).toEqual([]);
+    }
   });
 });

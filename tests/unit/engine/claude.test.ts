@@ -9,7 +9,7 @@ const nulls = { decisionDate: null, direction: null, vectorId: null, refPeriod: 
 const output: LlmOutput = {
   decision: "draft",
   reason: "jobs",
-  draft: { ...d, resolver: { ...nulls, kind: "statcan-vector", vectorId: 2062815, refPeriod: "2026-11", comparator: ">=", threshold: 7, unit: "%" } },
+  draft: { ...d, startsAt: null, resolver: { ...nulls, kind: "statcan-vector", vectorId: 2062815, refPeriod: "2026-11", comparator: ">=", threshold: 7, unit: "%" } },
 };
 
 /** A stand-in for the SDK client: returns a canned response and records the request. */
