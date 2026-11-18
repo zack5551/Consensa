@@ -325,6 +325,8 @@
       "\\bhalf-?time\\b",
       "\\b(first|second|third|1st|2nd|3rd) (period|quarter|half|inning)\\b(?! of the season)",
       "\\bnext (goal|score|point|basket|touchdown|run)\\b",
+      "\\bscores? next\\b",
+      "\\b(first|second|third|1st|2nd|3rd)? ?intermission\\b",
       "\\bcurrent score\\b",
       "\\ben direct\\b",
       "\\bpendant (le|ce|la|cette) (match|partie|jeu|periode)\\b",
@@ -332,7 +334,8 @@
       "\\bmi-temps\\b",
       "\\b(premiere|deuxieme|troisieme) (periode|moitie)\\b(?! de la saison)",
       "\\bprochain (but|point|panier|touchdown)\\b",
-      "\\bpointage actuel\\b"
+      "\\bpointage actuel\\b",
+      "\\bentracte\\b"
     ]
   },
   "sportsProp": {
@@ -341,6 +344,8 @@
     "detail": "Betting-shaped market or player prop for a single game: spread, puck line, over/under, total, exact score, first scorer or a stat line. Season awards are fine.",
     "patterns": [
       "\\bpuck ?lines?\\b",
+      "\\b(both|all three|all) (\\w+ )?win (on|tonight|today|this)\\b",
+      "\\b(gagneront|l.emporteront)(-ils|-elles)? (tous|toutes) (les )?(deux|trois)\\b",
       "\\bspreads?\\b",
       "\\bover/under\\b",
       "\\bover or under\\b",

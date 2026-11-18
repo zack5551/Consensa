@@ -5,12 +5,15 @@
       "en": [
         "Will the Raptors lead at halftime?",
         "Will the Canadiens win this live game?",
-        "Will the Leafs score the next goal?"
+        "Will the Leafs score the next goal?",
+        "Will the Leafs score next tonight?",
+        "Will the Leafs be leading at the second intermission?"
       ],
       "fr": [
         "Les Canadiens mèneront-ils à la mi-temps?",
         "Les Oilers gagneront-ils en direct ce soir?",
-        "Les Flames marqueront-ils pendant le match?"
+        "Les Flames marqueront-ils pendant le match?",
+        "Les Leafs mèneront-ils à l’entracte samedi?"
       ]
     },
     "sportsProp": {
@@ -24,7 +27,8 @@
         "Will a Flames player score a goal against the Oilers?",
         "Will the Leafs win 4-2?",
         "Will there be more than 5.5 combined goals?",
-        "Will the Habs score at least three goals on Saturday?"
+        "Will the Habs score at least three goals on Saturday?",
+        "Will the Oilers and the Leafs both win on Saturday?"
       ],
       "fr": [
         "Les Oilers gagneront-ils par plus de 2 buts?",
@@ -33,7 +37,8 @@
         "Qui marquera le premier but des Flames?",
         "Marchand marquera-t-il un but contre Toronto?",
         "Les Canadiens gagneront-ils 4 à 2?",
-        "Y aura-t-il au moins trois buts ce soir?"
+        "Y aura-t-il au moins trois buts ce soir?",
+        "Les Oilers et les Leafs gagneront-ils tous les deux samedi?"
       ]
     },
     "sportsAmateur": {
