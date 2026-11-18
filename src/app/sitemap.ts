@@ -60,7 +60,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       entries.push({
         url: url(locale, `/q/${q.slug}`),
         alternates: languages(`/q/${q.slug}`),
-        lastModified: new Date(q.closesAt),
+        ...(Date.parse(q.closesAt) <= Date.now() ? { lastModified: new Date(q.closesAt) } : {}),
         changeFrequency: "daily",
         priority: 0.8,
       });

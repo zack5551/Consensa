@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { JsonLd } from "@/components/json-ld";
+import { BRAND_NAME } from "@/lib/brand";
 import { OfflineNotice } from "@/components/shell/offline-notice";
 import { TabBar } from "@/components/shell/primary-nav";
 import { ShellProvider } from "@/components/shell/shell-context";
@@ -11,7 +12,7 @@ import { themeBootScript } from "@/components/shell/theme";
 import { isLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { schemaOrg } from "@/lib/json-ld";
-import { siteUrl,isPreviewDeployment } from "@/lib/site-url";
+import { siteUrl, isPreviewDeployment } from "@/lib/site-url";
 import { inter, manrope } from "@/styles/fonts";
 import "@/styles/globals.css";
 
@@ -27,14 +28,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) return {};
   const t = getDictionary(locale);
   return {
-    title: { default: t.meta.title, template: `%s · Consensa` },
+    title: { default: t.meta.title, template: `%s · ${BRAND_NAME}` },
     description: t.meta.description,
     metadataBase: new URL(siteUrl()),
     ...(isPreviewDeployment() ? { robots: { index: false, follow: false } } : {}),
     ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
     openGraph: {
       type: "website",
-      siteName: "Consensa",
+      siteName: BRAND_NAME,
       locale: `${locale}_CA`,
       title: t.meta.title,
       description: t.meta.description,
@@ -58,7 +59,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
 
   const base = siteUrl();
   const website = schemaOrg("WebSite", {
-    name: "Consensa",
+    name: BRAND_NAME,
     url: `${base}/${locale}`,
     inLanguage: `${locale}-CA`,
     potentialAction: {
@@ -68,7 +69,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
     },
   });
   const organization = schemaOrg("Organization", {
-    name: "Consensa",
+    name: BRAND_NAME,
     url: base,
     logo: `${base}/icons/icon-512.png`,
   });

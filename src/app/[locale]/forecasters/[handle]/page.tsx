@@ -5,7 +5,6 @@
  * Privacy: shows resolved calls only. Calls on open questions stay private until they close.
  */
 import type { Metadata } from "next";
-import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RecordView } from "@/components/record-view";
@@ -31,7 +30,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!isLocale(locale) || !f) return {};
   return {
     title: fill(getDictionary(locale).forecaster.title, { name: f.displayName }),
-    alternates: pageAlternates(locale, `/forecasters/${handle}`),
+    robots: { index: false },
   };
 }
 

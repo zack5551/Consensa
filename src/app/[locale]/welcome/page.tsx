@@ -18,7 +18,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: getDictionary(locale).onboarding.title,
     robots: { index: false },
-    alternates: { languages: { "en-CA": "/en/welcome", "fr-CA": "/fr/welcome" } },
   };
 }
 

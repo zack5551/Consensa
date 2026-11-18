@@ -16,7 +16,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: getDictionary(locale).signIn.title,
     robots: { index: false },
-    alternates: { languages: { "en-CA": "/en/sign-in", "fr-CA": "/fr/sign-in" } },
   };
 }
 

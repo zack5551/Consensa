@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
@@ -19,6 +21,10 @@ describe("siteUrl order", () => {
     expect(siteUrl()).toBe("https://consensa.example");
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://www.consensa.example");
     expect(siteUrl()).toBe("https://www.consensa.example");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://x.test/");
+    expect(siteUrl()).toBe("https://x.test");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "not a url");
+    expect(siteUrl()).toBe("https://consensa.example");
   });
 
   it("treats only a non-production Vercel environment as a preview", () => {
@@ -67,5 +73,20 @@ describe("sitemap alternates", () => {
       expect(Object.keys(l ?? {}).sort(), e.url).toEqual(["en-CA", "fr-CA", "x-default"]);
       expect(l?.["x-default"]).toBe(l?.["en-CA"]);
     }
+  });
+});
+
+describe("brand name", () => {
+  it("is written once: no app file spells the literal name outside BRAND_NAME", () => {
+    const hits: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) walk(path);
+        else if (/\.tsx?$/.test(entry.name) && readFileSync(path, "utf8").includes('"Consensa"')) hits.push(path);
+      }
+    };
+    walk(join(__dirname, "..", "..", "src", "app"));
+    expect(hits).toEqual([]);
   });
 });

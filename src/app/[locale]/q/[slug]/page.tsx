@@ -13,6 +13,7 @@ import { ForecastChart } from "@/components/forecast-chart";
 import { LanguageSplit } from "@/components/language-split";
 import { ProvinceSplit } from "@/components/province-split";
 import { JsonLd } from "@/components/json-ld";
+import { BRAND_NAME } from "@/lib/brand";
 import { ScreenView } from "@/components/screen-view";
 import { SourceCredit } from "@/components/source-credit";
 import { StateBadge } from "@/components/state-badge";
@@ -48,6 +49,16 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: q.question[locale],
     description: q.resolution.rule[locale],
     alternates: pageAlternates(locale, `/q/${slug}`),
+    openGraph: {
+      type: "website",
+      siteName: BRAND_NAME,
+      locale: `${locale}_CA`,
+      title: q.question[locale],
+      description: q.resolution.rule[locale],
+      url: `/${locale}/q/${slug}`,
+      images: [{ url: `/og/${locale}.png`, width: 1200, height: 630, alt: q.question[locale] }],
+    },
+    twitter: { card: "summary_large_image", title: q.question[locale], description: q.resolution.rule[locale], images: [`/og/${locale}.png`] },
   };
 }
 
@@ -117,7 +128,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
   const base = siteUrl();
   const breadcrumb = schemaOrg("BreadcrumbList", {
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Consensa", item: `${base}/${locale}` },
+      { "@type": "ListItem", position: 1, name: BRAND_NAME, item: `${base}/${locale}` },
       { "@type": "ListItem", position: 2, name: t.board.categories[q.category], item: `${base}/${locale}/browse/${q.category}` },
       { "@type": "ListItem", position: 3, name: q.question[locale], item: `${base}/${locale}/q/${q.slug}` },
     ],
