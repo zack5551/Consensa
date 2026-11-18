@@ -4,12 +4,14 @@
  * page load: the same calls follow you to any device. Every read and write is guarded: private windows and
  * blocked storage fall back to memory.
  */
+import { takeBotCheck, warmBotCheck } from "@/lib/bot-check-client";
 import { accountsEnabled } from "@/lib/supabase/env";
 
 const PREFIX = "consensa:call:";
 const EVENT = "consensa:calls";
 const OUTSIDE_EVENT = "consensa:calls-outside";
 let outsideCanada = false;
+let botCheckFailed = false;
 const memory = new Map<string, number>();
 
 function valid(n: number): boolean {
@@ -72,39 +74,72 @@ export function isOutsideCanada(): boolean {
   return outsideCanada;
 }
 
+/** True while the server's latest answer was that the bot check didn't pass: the call stays on this device. */
+export function isBotCheckFailed(): boolean {
+  return botCheckFailed;
+}
+
 export function subscribeOutsideCanada(onChange: () => void): () => void {
   window.addEventListener(OUTSIDE_EVENT, onChange);
   return () => window.removeEventListener(OUTSIDE_EVENT, onChange);
 }
 
-/** The database takes one change per call every 2 seconds, so quick changes are sent as the latest one. */
+/**
+ * The database takes one change per call every 2 seconds. Each question sends one request at a time, and the gap is
+ * measured from the moment the previous request went out. While one waits or is in flight, only the newest value is
+ * kept: a newer value replaces an older one that hasn't been sent.
+ */
 const PUSH_GAP_MS = 2100;
 const lastPush = new Map<string, number>();
-const pending = new Map<string, ReturnType<typeof setTimeout>>();
+const latest = new Map<string, number>();
+const timers = new Map<string, ReturnType<typeof setTimeout>>();
+const inflight = new Set<string>();
 
-function pushCall(slug: string, probability: number): void {
-  const timer = pending.get(slug);
-  if (timer !== undefined) clearTimeout(timer);
+export function pushCall(slug: string, probability: number): void {
+  latest.set(slug, probability);
+  schedule(slug);
+}
+
+function schedule(slug: string): void {
+  if (inflight.has(slug) || timers.has(slug) || !latest.has(slug)) return;
   const wait = (lastPush.get(slug) ?? -Infinity) + PUSH_GAP_MS - Date.now();
-  const send = () => {
-    pending.delete(slug);
+  if (wait <= 0) void run(slug);
+  else
+    timers.set(
+      slug,
+      setTimeout(() => {
+        timers.delete(slug);
+        void run(slug);
+      }, wait),
+    );
+}
+
+async function run(slug: string): Promise<void> {
+  inflight.add(slug);
+  try {
+    const altcha = await takeBotCheck(); // already solved in the background, so this is immediate
+    const probability = latest.get(slug); // read after the wait: a newer value wins
+    if (probability === undefined) return;
+    latest.delete(slug);
     lastPush.set(slug, Date.now());
-    void sendCall(slug, probability);
-  };
-  if (wait <= 0) send();
-  else pending.set(slug, setTimeout(send, wait));
+    await sendCall(slug, probability, altcha);
+  } finally {
+    inflight.delete(slug);
+    schedule(slug);
+  }
 }
 
 /** Sends one call to the server. Not signed in, or the question has closed: the call stays in this browser. */
-async function sendCall(slug: string, probability: number): Promise<boolean> {
+async function sendCall(slug: string, probability: number, altcha: string | null): Promise<boolean> {
   try {
-    const res = await fetch("/api/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, probability }) });
-    if (res.status === 403 && ((await res.json().catch(() => null)) as { error?: unknown } | null)?.error === "outside canada") {
-      outsideCanada = true;
-      window.dispatchEvent(new Event(OUTSIDE_EVENT));
-    } else if (res.ok && outsideCanada) {
-      // A later call counted (back in Canada, or a one-off bad location read): the note would now be wrong.
-      outsideCanada = false;
+    // The bot check was solved on this device in the background and goes in the `x-altcha` header; none when the check is off.
+    const res = await fetch("/api/calls", { method: "POST", headers: { "Content-Type": "application/json", ...(altcha ? { "x-altcha": altcha } : {}) }, body: JSON.stringify({ slug, probability }) });
+    const refused = res.status === 403 ? ((await res.json().catch(() => null)) as { error?: unknown } | null)?.error : null;
+    // A later call that counted clears both notes: back in Canada, or a one-off bad read, so they would now be wrong.
+    const next = res.ok ? { outside: false, bot: false } : { outside: refused === "outside canada" || (outsideCanada && refused !== "bot check"), bot: refused === "bot check" || (botCheckFailed && refused !== "outside canada") };
+    if (next.outside !== outsideCanada || next.bot !== botCheckFailed) {
+      outsideCanada = next.outside;
+      botCheckFailed = next.bot;
       window.dispatchEvent(new Event(OUTSIDE_EVENT));
     }
     return res.ok;
@@ -122,6 +157,7 @@ let pulled = false;
 export async function syncCalls(): Promise<void> {
   if (!accountsEnabled || pulled) return;
   pulled = true;
+  warmBotCheck();
   try {
     const res = await fetch("/api/calls", { cache: "no-store" });
     if (!res.ok) return;
