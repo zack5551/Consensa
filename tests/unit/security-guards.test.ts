@@ -136,6 +136,10 @@ const allowedDomains = [
   "nasa.gov", "nobelprize.org", "imdb.com", "boxofficemojo.com",
   // Read by the engine on the server only; no user data is sent
   "trends.google.com",
+  // A credit link on the methodology page (CC BY-SA 4.0 attribution for the IP2Proxy LITE database). The lookup itself
+  // reads a local file on our server; the database is fetched at build time by scripts/fetch-ip2proxy.mjs, not at run time.
+  "lite.ip2location.com",
+  "creativecommons.org",
   // Not network calls: the SVG namespace and the local dev fallback
   "www.w3.org", "localhost",
 ];
