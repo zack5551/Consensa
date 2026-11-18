@@ -6,6 +6,7 @@ import { verifyBotCheck } from "@/lib/server/bot-check";
 import { noStore, sameOrigin } from "@/lib/supabase/account-server";
 import { signupMetadataSchema } from "@/lib/supabase/config";
 import { serverSupabase } from "@/lib/supabase/server";
+import { callerIp } from "@/lib/server/proxy-check";
 
 const bodySchema = z.object({ email: z.string().trim().email().max(254), data: signupMetadataSchema, altcha: z.string().max(4096).nullable().optional() }).strict();
 
@@ -24,7 +25,7 @@ function linkOrigin(request: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "forbidden" }, { status: 403, headers: noStore });
-  if (!allowSignUp((request.headers.get("x-real-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown").trim())) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
+  if (!allowSignUp(callerIp(request.headers, Boolean(process.env.VERCEL)) ?? "unknown")) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400, headers: noStore });
   const supabase = await serverSupabase();
