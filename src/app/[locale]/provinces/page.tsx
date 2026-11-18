@@ -5,6 +5,7 @@
  * Privacy: aggregates only; a region's number is hidden when fewer than MIN_CELL forecasters are behind it.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProvinceSplit } from "@/components/province-split";
@@ -31,7 +32,7 @@ function spreadOf(q: { provinces: Record<Region, number>; hiddenProvinces?: read
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getDictionary(locale).provinces.title, alternates: { languages: { "en-CA": "/en/provinces", "fr-CA": "/fr/provinces" } } };
+  return { title: getDictionary(locale).provinces.title, alternates: pageAlternates(locale, "/provinces") };
 }
 
 export default async function ProvincesPage({ params }: { params: Params }) {

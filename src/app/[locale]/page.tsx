@@ -4,6 +4,7 @@
  * One action: make today's five calls.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CrowdBar } from "@/components/crowd-bar";
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const t = getDictionary(locale);
-  return { title: { absolute: t.meta.title }, alternates: { canonical: `/${locale}`, languages: { "en-CA": "/en", "fr-CA": "/fr" } } };
+  return { title: { absolute: t.meta.title }, alternates: pageAlternates(locale, "") };
 }
 
 /** Real crowd numbers refresh every minute (ISR). */

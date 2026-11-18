@@ -136,8 +136,8 @@ const allowedDomains = [
   "nasa.gov", "nobelprize.org", "imdb.com", "boxofficemojo.com",
   // Read by the engine on the server only; no user data is sent
   "trends.google.com",
-  // Not network calls: the SVG namespace and the local dev fallback
-  "www.w3.org", "localhost",
+  // Not network calls: the SVG namespace, the structured-data vocabulary name and the local dev fallback
+  "www.w3.org", "schema.org", "localhost",
 ];
 
 /** Packages that send visitor data to a third party. Rule 7: none without a privacy review and LEX's check. */

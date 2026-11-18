@@ -4,6 +4,7 @@
  * One action: open a question.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { boardStrings } from "@/components/board-strings";
@@ -36,7 +37,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title: t.board.categories[category],
     description: t.browse.topics[category],
-    alternates: { languages: { "en-CA": `/en/browse/${category}`, "fr-CA": `/fr/browse/${category}` } },
+    alternates: pageAlternates(locale, `/browse/${category}`),
   };
 }
 

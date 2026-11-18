@@ -5,6 +5,7 @@
  * Privacy: aggregates only. A result cell with fewer than MIN_CELL forecasters shows "Too few to show".
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BoardTabs } from "@/components/board-tabs";
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!isLocale(locale) || !region) return {};
   return {
     title: getDictionary(locale).provinces.headings[region],
-    alternates: { languages: { "en-CA": `/en/provinces/${slug}`, "fr-CA": `/fr/provinces/${slug}` } },
+    alternates: pageAlternates(locale, `/provinces/${slug}`),
   };
 }
 

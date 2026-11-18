@@ -5,6 +5,7 @@
  * Layout: one lead with a Canada-red rule, then a numbered running order, so the five never read as identical cards.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdSlot } from "@/components/ad-slot";
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const t = getDictionary(locale);
-  return { title: t.today.title, alternates: { languages: { "en-CA": "/en/today", "fr-CA": "/fr/today" } } };
+  return { title: t.today.title, alternates: pageAlternates(locale, "/today") };
 }
 
 export default async function TodayPage({ params }: { params: Promise<{ locale: string }> }) {

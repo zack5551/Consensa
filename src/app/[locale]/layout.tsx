@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { JsonLd } from "@/components/json-ld";
 import { OfflineNotice } from "@/components/shell/offline-notice";
 import { TabBar } from "@/components/shell/primary-nav";
 import { ShellProvider } from "@/components/shell/shell-context";
@@ -9,6 +10,8 @@ import { SiteHeader } from "@/components/shell/site-header";
 import { themeBootScript } from "@/components/shell/theme";
 import { isLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { schemaOrg } from "@/lib/json-ld";
+import { siteUrl,isPreviewDeployment } from "@/lib/site-url";
 import { inter, manrope } from "@/styles/fonts";
 import "@/styles/globals.css";
 
@@ -26,8 +29,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: { default: t.meta.title, template: `%s · Consensa` },
     description: t.meta.description,
-    alternates: { languages: { "en-CA": "/en", "fr-CA": "/fr" } },
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+    metadataBase: new URL(siteUrl()),
+    ...(isPreviewDeployment() ? { robots: { index: false, follow: false } } : {}),
+    ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
     openGraph: {
       type: "website",
       siteName: "Consensa",
@@ -52,11 +56,30 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale);
 
+  const base = siteUrl();
+  const website = schemaOrg("WebSite", {
+    name: "Consensa",
+    url: `${base}/${locale}`,
+    inLanguage: `${locale}-CA`,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: { "@type": "EntryPoint", urlTemplate: `${base}/${locale}/search?q={search_term_string}` },
+      "query-input": "required name=search_term_string",
+    },
+  });
+  const organization = schemaOrg("Organization", {
+    name: "Consensa",
+    url: base,
+    logo: `${base}/icons/icon-512.png`,
+  });
+
   return (
     <html lang={`${locale}-CA`} className={`${manrope.variable} ${inter.variable}`} suppressHydrationWarning>
       <head>
         {/* Applies a saved light/dark choice before first paint. Inline, first-party, no network. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <JsonLd data={website} />
+        <JsonLd data={organization} />
       </head>
       <body className="flex min-h-dvh flex-col">
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-surface focus:p-3 focus:shadow-card">

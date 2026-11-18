@@ -4,6 +4,7 @@
  * One action: check the public resolution log.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ScreenView } from "@/components/screen-view";
@@ -17,7 +18,7 @@ import { brierScore } from "@/lib/scoring";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getDictionary(locale).methodology.title, alternates: { languages: { "en-CA": "/en/methodology", "fr-CA": "/fr/methodology" } } };
+  return { title: getDictionary(locale).methodology.title, alternates: pageAlternates(locale, "/methodology") };
 }
 
 const examples = [
