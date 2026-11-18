@@ -15,8 +15,13 @@ export default function ErrorScreen({ error, reset }: { error: Error & { digest?
   useEffect(() => {
     // Move focus so keyboard and screen-reader users land on the explanation, not mid-page.
     heading.current?.focus();
-    // Sentry (personal info scrubbed) takes this over in M5. Only the digest is logged, never user data.
-    if (error.digest) console.error(`render error ${error.digest}`);
+    // To the in-house error log (Montréal, scrubbed): the path, the error's name and text, never what was typed.
+    void fetch("/api/errors", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ route: window.location.pathname, name: error.name, message: error.message, digest: error.digest }),
+      keepalive: true,
+    }).catch(() => {});
   }, [error]);
 
   return (
