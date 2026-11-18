@@ -23,7 +23,7 @@ PULSE keeps Consensa's slate fresh. Every 15 minutes it reads what Canada is tal
 | Story screen | `safety/safety.ts` `screenStory` | Before any model call: blocks deaths, violence, crime and private lives. Saves cost and keeps those stories away from the model entirely. |
 | Pick | `pipeline.ts` `pickStories` | Hottest undrafted stories over the heat floor, at most 2 per category and 6 per cycle (configurable), so cost is capped. |
 | Draft | `draft/claude.ts`, `draft/prompt.ts` | Claude Opus 5.5, adaptive thinking, structured JSON output, cached system prompt, server-side refusal fallback. Writes the question, the rule, the close and result dates and a typed resolver, or declines. Most stories should be declined. |
-| Checks | `safety/safety.ts` `screenDraft`, `validate.ts`, `dedup.ts` | Gambling and trading words (EN+FR), tips, persuasion, fake urgency, harm; sports only as unscored polls; elections held for review; official-domain sources only; closes ≥ 24 h out and before the result; "?" with Quebec typography; EN and FR carry the same numbers; duplicates by wording or by the data point they settle on. |
+| Checks | `safety/safety.ts` `screenDraft`, `validate.ts`, `dedup.ts` | Gambling and trading words (EN+FR), tips, persuasion, fake urgency, harm; sports only as pre-game fan forecasts; elections held for review; official-domain sources only; closes ≥ 24 h out and before the result; "?" with Quebec typography; EN and FR carry the same numbers; duplicates by wording or by the data point they settle on. |
 | Review | `review.ts` | `pending → approved → published`, or `rejected` / `needsChanges`. Blocked drafts are `autoRejected` and kept for the audit. Editors must acknowledge each review flag by name; an edit re-runs every check. Every step is logged with who and why. |
 | Resolve | `resolve/resolvers.ts`, `resolve/policy.ts` | Bank of Canada Valet (V39079), StatCan WDS vectors, ECCC daily climate. Resolves automatically only on **two matching reads 10+ minutes apart**; a value exactly on the threshold, a disagreement, three errors in a row or a manual question go to an editor. Emits `{ outcome, publishedAt, disputed }` for FORGE's public resolution log. |
 
@@ -37,7 +37,9 @@ PULSE keeps Consensa's slate fresh. Every 15 minutes it reads what Canada is tal
 | Every question EN + FR | `draftSchema` requires both; `validate.ts` checks FR typography and number parity |
 | AI explains, never tips (rule 4) | `lexicon.json` `tip`; prompt rule 3 |
 | No deaths, violence, private lives, unlawful activity (LEX) | `screenStory` before drafting, `screenDraft` after |
-| Sports only as polls, no sportsbook links | `screenDraft` blocks scored sports and flags every sports poll |
+| Sports are scored, pre-game fan forecasts only ([sports rules](../legal/sports-questions-rules.md)) | `screenDraft` blocks live wording, spreads, totals, exact scores and player props, amateur and junior sports, odds formats and sportsbook talk, and flags every sports draft for review; `validateDraft` blocks a sports draft with no `startsAt` or `closesAt` after it; `screenExplanation` blocks naming a winner or what to call |
+| Any "why it moved" text passes `screenExplanation` before it reaches the editor queue | `explain.ts` runs every wording rule on sports text and the tip check on the rest |
+| Season questions close at playoff start; playoff interest goes in pre-series questions that close before game 1; postponed or cancelled games are voided, never resolved NO | Convention for editors; `startsAt` and `closesAt` are checked in `validateDraft` |
 | Elections off at launch, never persuasive | `elections` is a review flag; `persuasion` blocks |
 | No gambling sources or links (rule 8) | Not in the registry; resolution sources must be on `resolutionDomains` |
 | Data stays in Canada (rule 7) | The engine only reads public feeds and sends no user data anywhere. The Claude API receives public headlines only. |

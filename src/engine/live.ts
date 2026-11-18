@@ -20,6 +20,7 @@ export function toSiteQuestion(item: QueueItem, record?: ResolutionRecord): Ques
     question: draft.question,
     scored: draft.scored,
     closesAt: draft.closesAt,
+    ...(draft.startsAt ? { startsAt: draft.startsAt } : {}),
     forecasters: 0,
     history: [EVEN, EVEN],
     provinces: Object.fromEntries(provinces.map((p) => [p, EVEN])) as Record<Province, number>,

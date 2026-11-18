@@ -2,7 +2,7 @@ import { after, NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getQuestion, SAMPLE_NOW } from "@/content/sample-questions";
 import { callsCountFrom, COUNTRY_HEADER } from "@/lib/call-origin";
-import { isOpen, questionState } from "@/lib/question";
+import { callsCloseAt, isOpen, questionState } from "@/lib/question";
 import { rateLimiter } from "@/lib/rate-limit";
 import { verifyBotCheck } from "@/lib/server/bot-check";
 import { checkProxy } from "@/lib/server/proxy-check";
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
   // The database checks the close time itself (and refuses late calls whatever the app says), so it needs the
   // question's close time. Content is the source of truth, so a changed close date is copied over.
-  const closeTime = await admin.from("question_windows").upsert({ slug: q.slug, closes_at: q.closesAt }, { onConflict: "slug" });
+  const closeTime = await admin.from("question_windows").upsert({ slug: q.slug, closes_at: callsCloseAt(q) }, { onConflict: "slug" });
   if (closeTime.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
 
   // A VPN doesn't stop a call; it is only counted, one number per day, never per person or per call.

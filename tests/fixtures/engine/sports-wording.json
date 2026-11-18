@@ -1,0 +1,152 @@
+{
+  "$comment": "Sports drafts the safety screen must block (one list per flag), and clean ones it must let through. Deliberately bad wording; lives outside src so the vocabulary test keeps passing. Rules: LEX's sports-questions rules.",
+  "blocked": {
+    "sportsLive": {
+      "en": [
+        "Will the Raptors lead at halftime?",
+        "Will the Canadiens win this live game?",
+        "Will the Leafs score the next goal?",
+        "Will the Leafs score next tonight?",
+        "Will the Leafs be leading at the second intermission?"
+      ],
+      "fr": [
+        "Les Canadiens mèneront-ils à la mi-temps?",
+        "Les Oilers gagneront-ils en direct ce soir?",
+        "Les Flames marqueront-ils pendant le match?",
+        "Les Leafs mèneront-ils à l’entracte samedi?"
+      ]
+    },
+    "sportsProp": {
+      "en": [
+        "Will the Oilers win by more than 2 goals?",
+        "Will the total goals in Leafs vs Habs go over 5.5?",
+        "Will McDavid score 2+ points tonight?",
+        "Who will score the first goal for the Flames?",
+        "Will the Canucks cover the puck line?",
+        "Will McDavid get two points in tonight’s game?",
+        "Will a Flames player score a goal against the Oilers?",
+        "Will the Leafs win 4-2?",
+        "Will there be more than 5.5 combined goals?",
+        "Will the Habs score at least three goals on Saturday?",
+        "Will the Oilers and the Leafs both win on Saturday?"
+      ],
+      "fr": [
+        "Les Oilers gagneront-ils par plus de 2 buts?",
+        "Le total de buts dépassera-t-il 5,5 ce soir?",
+        "McDavid obtiendra-t-il 2 points ou plus ce soir?",
+        "Qui marquera le premier but des Flames?",
+        "Marchand marquera-t-il un but contre Toronto?",
+        "Les Canadiens gagneront-ils 4 à 2?",
+        "Y aura-t-il au moins trois buts ce soir?",
+        "Les Oilers et les Leafs gagneront-ils tous les deux samedi?"
+      ]
+    },
+    "sportsAmateur": {
+      "en": [
+        "Will the Oshawa Generals win the Memorial Cup?",
+        "Will Canada win the 2027 World Juniors?",
+        "Will the Western Mustangs win the university title?",
+        "Will the high school team win?",
+        "Will the Laval Rocket’s farm team, the LHJMQ champion, win?",
+        "Will the Western Mustangs win the Vanier Cup?",
+        "Will the Yates Cup go to Queen’s?"
+      ],
+      "fr": [
+        "L’équipe junior de Québec gagnera-t-elle?",
+        "Le Vert et Or gagnera-t-il le championnat universitaire?",
+        "L’équipe midget de Laval gagnera-t-elle?",
+        "Le Rouge et Or gagnera-t-il la coupe Vanier?",
+        "Les Titans de la LHJMQ gagneront-ils?"
+      ]
+    },
+    "sportsOddsFormat": {
+      "en": [
+        "Will the Leafs win at +150?",
+        "Will the Habs win at 5/2?",
+        "Will the Canucks win at 2.40?",
+        "Will the Habs win at 2.40?"
+      ],
+      "fr": [
+        "Les Canadiens gagneront-ils à 2,40?",
+        "Les Jets gagneront-ils à +150?",
+        "Les Sénateurs gagneront-ils à 5/2?"
+      ]
+    },
+    "sportsBookTalk": {
+      "en": [
+        "Is there value on the Leafs tonight?",
+        "Will the Jets beat the book?",
+        "Will the sharps back the Oilers?",
+        "Are the Flames the favourite?",
+        "Will the underdog win?",
+        "Is this the Oilers’ pick of the week?",
+        "Will the betting line move?",
+        "Do the Jets have an edge?"
+      ],
+      "fr": [
+        "Les Canadiens sont-ils favoris ce soir?",
+        "Y a-t-il de la valeur sur les Leafs?",
+        "Quel est le pronostic pour les Flames?",
+        "Les négligés des Flames gagneront-ils?",
+        "Est-ce un coup sûr pour les Canadiens?",
+        "Quel est votre choix sur les Jets?"
+      ]
+    }
+  },
+  "clean": {
+    "en": [
+      "Will the Maple Leafs make the 2027 NHL playoffs?",
+      "Will a Canadian team win the 2027 Stanley Cup?",
+      "Will Connor McDavid win the 2027 Hart Trophy?",
+      "Will the Edmonton Oilers beat the Calgary Flames on December 5, 2026?",
+      "Will the Toronto Argonauts win the 2026 Grey Cup?",
+      "Will the Maple Leafs live up to the 2027 preseason forecast and make the playoffs?",
+      "Will the Leafs finish the second half of the season above 100 points?",
+      "Will the Leafs’ final score of the season be listed on nhl.com?",
+      "Will the Oilers play on 1/5 of the days in March?",
+      "Will the Maple Leafs win the Atlantic Division in 2027?"
+    ],
+    "fr": [
+      "Les Maple Leafs participeront-ils aux séries éliminatoires de la LNH en 2027?",
+      "Une équipe canadienne remportera-t-elle la coupe Stanley en 2027?",
+      "Les Oilers d’Edmonton battront-ils les Flames de Calgary le 5 décembre 2026?",
+      "Les Alouettes de Montréal gagneront-ils la coupe Grey en 2026?",
+      "Les Maple Leafs termineront-ils la deuxième moitié de la saison avec 100 points ou plus?",
+      "Les jeunes partisans verront-ils les Canadiens en séries en 2027?"
+    ]
+  },
+  "explanation": {
+    "blocked": {
+      "en": [
+        "The Leafs will win tonight after the injury report.",
+        "Expect the Oilers to win, so call yes.",
+        "You should go with the Habs.",
+        "A casino-style lock: the Habs are a sure thing.",
+        "Expect the Jets to come out on top.",
+        "You should say yes to the Flames."
+      ],
+      "fr": [
+        "Les Canadiens vont gagner ce soir.",
+        "Appelez oui avant le match.",
+        "Nous recommandons les Flames.",
+        "Les Canadiens remporteront le match.",
+        "Avantage aux Flames: un coup sûr."
+      ]
+    },
+    "clean": {
+      "en": [
+        "The crowd moved from 52% to 61% after the injury report listed two defencemen out.",
+        "Calls rose 4 points after the trade was announced by the team.",
+        "62% of Cansensa fans say yes.",
+        "The crowd moved to a 61% chance to win after the report.",
+        "The Leafs came back the next night to beat Boston, and the crowd rose 3 points.",
+        "The Leafs can take the lead in the standings, the team said."
+      ],
+      "fr": [
+        "La foule est passée de 52 % à 61 % après la publication du rapport des blessures.",
+        "Les prévisions ont monté de 4 points après l’annonce de l’échange.",
+        "Une note citait « remportera » dans un article, et la foule a monté de 3 points."
+      ]
+    }
+  }
+}

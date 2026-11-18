@@ -29,6 +29,13 @@ export function validateDraft(draft: Draft, now: Date): Flag[] {
   if (closes >= resolves) flags.push(block("closesAfterResult", "Must close before the official source publishes the answer."));
   if (resolves - closes > MAX_RESOLVE_GAP_MS) flags.push(review("longResultGap", "The result comes more than 45 days after closing."));
 
+  // Sports are pre-game only: they need a start time, and calls close no later than it
+  if (draft.category === "sports") {
+    if (!draft.startsAt) flags.push(block("sportsNoStart", "Sports questions need startsAt, the start of the game or event."));
+    else if (closes > Date.parse(draft.startsAt)) flags.push(block("sportsClosesAfterStart", "Calls must close at or before the start of the game or event (closesAt <= startsAt)."));
+    else if (Date.parse(draft.startsAt) >= resolves) flags.push(block("sportsStartsAfterResult", "The official result must come after the start of the game or event."));
+  }
+
   // Source: only official or primary sources settle a question
   if (!isResolutionDomain(draft.resolution.source.url)) {
     flags.push(block("sourceNotOfficial", `Resolution source ${draft.resolution.source.url} isn't on the official-source list.`));
@@ -75,7 +82,7 @@ export function validateDraft(draft: Draft, now: Date): Flag[] {
     flags.push(review("thresholdNotInRule", `The rule text doesn't state the threshold ${r.threshold}.`));
   }
   if (r.kind === "manual") flags.push(review("manualResolver", `Resolves by hand: ${r.check}`));
-  if (!draft.scored && draft.category !== "sports") flags.push(review("unscored", "Poll, not scored. Check that's intended."));
+  if (!draft.scored) flags.push(review("unscored", "Poll, not scored. Check that's intended."));
 
   return flags;
 }

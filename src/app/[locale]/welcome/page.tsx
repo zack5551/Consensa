@@ -35,7 +35,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
         <Wordmark className="text-title" />
         <h1 className="m-0 text-body font-semibold text-ink-2">{t.onboarding.title}</h1>
       </header>
-      <OnboardingFlow locale={locale} t={t.onboarding} regionNames={t.province.names} categoryNames={t.board.categories} pollLabel={t.question.poll} />
+      <OnboardingFlow locale={locale} t={t.onboarding} regionNames={t.province.names} categoryNames={t.board.categories} />
     </div>
   );
 }

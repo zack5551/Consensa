@@ -14,6 +14,8 @@ export const questionSchema = z.object({
   question: bilingual,
   scored: z.boolean(),
   closesAt: z.iso.datetime(),
+  /** When the game or event starts. Required for sports, which are pre-game only: calls close at the earlier of this and `closesAt`. */
+  startsAt: z.iso.datetime().optional(),
   forecasters: z.number().int().nonnegative(),
   /** Daily crowd probability (percent), oldest first. The last value is "now". */
   history: z.array(percent).min(2),
@@ -35,9 +37,14 @@ export const questionSchema = z.object({
       .object({ outcome: z.enum(["yes", "no"]), publishedAt: z.iso.datetime(), disputed: z.boolean().default(false) })
       .optional(),
   }),
-});
+}).refine((q) => q.category !== "sports" || q.startsAt !== undefined, { path: ["startsAt"], message: "Sports questions need startsAt." });
 
 export type Question = z.infer<typeof questionSchema>;
+
+/** When calls stop: the close date, or the event start for sports if that comes first. */
+export function callsCloseAt(q: Pick<Question, "closesAt" | "startsAt" | "category">): string {
+  return q.category === "sports" && q.startsAt !== undefined && Date.parse(q.startsAt) < Date.parse(q.closesAt) ? q.startsAt : q.closesAt;
+}
 
 export function crowdNow(q: Question): number {
   return q.history[q.history.length - 1] ?? 0;
@@ -56,7 +63,7 @@ export const CLOSING_SOON_MS = 72 * 60 * 60 * 1000;
 export function questionState(q: Question, now: Date): QuestionState {
   const result = q.resolution.result;
   if (result) return result.disputed ? "disputed" : "resolved";
-  const msLeft = Date.parse(q.closesAt) - now.getTime();
+  const msLeft = Date.parse(callsCloseAt(q)) - now.getTime();
   if (msLeft <= 0) return "closed";
   if (msLeft <= CLOSING_SOON_MS) return "closingSoon";
   return "open";

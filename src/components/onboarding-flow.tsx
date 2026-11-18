@@ -17,7 +17,6 @@ type Props = {
   t: Dictionary["onboarding"];
   regionNames: Dictionary["province"]["names"];
   categoryNames: Dictionary["board"]["categories"];
-  pollLabel: string;
 };
 
 /** What the preview remembers on this device. No birth date: only that the age check passed (LEX §6). */
@@ -54,7 +53,7 @@ function readDraft(): Draft {
  * keyboard users always know where they are. In preview mode nothing is sent anywhere; with accounts on, the
  * last step emails a link that finishes creating the account.
  */
-export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabel }: Props) {
+export function OnboardingFlow({ locale, t, regionNames, categoryNames }: Props) {
   const [step, setStep] = useState<Step>("language");
   const [blocked, setBlocked] = useState(false);
   const [draft, setDraft] = useState<Draft>({ region: null, topics: [] });
@@ -217,7 +216,6 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames, pollLabe
                   />
                   {draft.topics.includes(c) && <Icon name="check" className="size-4" />}
                   {categoryNames[c]}
-                  {c === "sports" && <span className="text-caption font-normal opacity-80">· {pollLabel}</span>}
                 </label>
               ))}
             </div>

@@ -4,7 +4,18 @@
  * model, so it costs nothing and can't drift from what actually happened.
  */
 import { CONFIRM_GAP_MS, MAX_ERRORS } from "@/engine/resolve/policy";
+import { scan, STORY_ONLY } from "@/engine/safety/safety";
 import type { Draft, Flag, ResolutionRecord, Resolver, ResolverRead, ReviewStatus, Story } from "@/engine/types";
+
+/**
+ * Guard for "why it moved" text. Any explanation gets the tip check. A sports explanation gets every wording rule
+ * (gambling words, sportsbook talk, the sports tip check), so it can say what changed but never who will win or what
+ * to call (CLAUDE.md rule 4, LEX's sports rules).
+ * Returns the flags; an empty list means the text may go to an editor.
+ */
+export function screenExplanation(category: Draft["category"], text: string): Flag[] {
+  return category === "sports" ? scan(text, undefined, ["all", "sports", "explanation"], STORY_ONLY) : scan(text, new Set(["tip"]));
+}
 
 /** The settling rule in one line. */
 export function describeResolver(r: Resolver): string {

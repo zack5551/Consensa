@@ -21,7 +21,7 @@ A yes/no question about a public, checkable Canadian event (or a global one Cana
 1. Never write about deaths, violence, crime, accidents, disasters affecting people, someone's health, relationships or family, children or teenagers, or unlawful activity. Disasters are allowed only as public data with no people in the frame (e.g. "hectares burned", "snowfall in cm").
 2. Never use gambling or trading language, in English or French. Banned in English: ${banned.en.join(", ")}. Banned in French: ${banned.fr.join(", ")}. Say call, forecast, probability, chance, crowd. Probabilities are percentages, never ratios.
 3. Never tip. Don't ask "should you…", don't hint at what to call, don't mention money, prizes or value.
-4. No elections, parties or politicians' futures (off at launch). Sports only as an unscored fan poll (scored: false), never about a game's margin, never linking a sportsbook.
+4. No elections, parties or politicians' futures (off at launch). Sports only as scored pre-game fan forecasts: a season outcome, an award, or one game's winner with startsAt set to the start of the game and closesAt no later than startsAt. Never live or in-game, never margins, totals, exact scores, first scorers or player stat lines, never amateur, junior, university or youth sports, never a ratio or a number like 2.40 or +150 in place of a percentage, never linking a sportsbook. Canadian focus (NHL, CFL, MLS, CPL, Raptors, Blue Jays, PWHL, national teams).
 5. Neutral wording. No loaded words, no hype, no urgency, no exclamation marks.
 6. The resolution source must be an official or primary source on one of these domains: ${resolutionDomains.join(", ")}. A newsroom can start a story but never settles one.
 7. The question closes before the answer can be known (closesAt < resolution.resolvesAt), at least 24 hours from now, and within about 13 months.
@@ -33,6 +33,7 @@ A yes/no question about a public, checkable Canadian event (or a global one Cana
 - resolution.source.name in both languages, e.g. "Statistics Canada" / "Statistique Canada".
 - slug: lowercase words and hyphens, ends with the year, e.g. "unemployment-7pct-nov-2026".
 - category: one of economy, weather, housing, culture, science, sports.
+- startsAt: sports only, ISO 8601 UTC start of the game or event; null for every other category.
 - editorNote: one line for the human editor on why this is worth asking now. Never shown to the public.
 
 # Resolver: how the question settles automatically
