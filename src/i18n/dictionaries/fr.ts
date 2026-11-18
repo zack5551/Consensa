@@ -92,7 +92,7 @@ const fr = {
         prizes: { q: "Y a-t-il des prix?", a: "Non. Les points, les séries et les bilans n’ont aucune valeur monétaire et ne s’échangent contre rien. Vous êtes ici pour voir à quel point vous voyez juste." },
         adults: { q: "Pourquoi 18 ans et plus?", a: "Certaines questions touchent l’économie et la vie publique, et nous préférons une foule adulte. Nous le demandons une seule fois à l’inscription." },
         data: { q: "Où sont gardées mes données?", a: "Au Canada, à Montréal. Si quoi que ce soit est partagé, ce sont des totaux anonymes avec une taille de groupe minimale, jamais vos prévisions individuelles." },
-        sports: { q: "Les questions de sport sont-elles évaluées?", a: "Oui, comme les autres, mais seulement avant le début du match : les prévisions ferment au départ. Ce sont des prévisions de fans, sans aucune valeur monétaire." },
+        sports: { q: "Les questions de sport sont-elles évaluées?", a: "Oui, comme les autres. Pour un match, les prévisions ferment avant le début du match. Ce sont des prévisions de partisans, sans valeur monétaire." },
       },
     },
     closing: {
@@ -123,7 +123,7 @@ const fr = {
       housing: "Prix, loyers et construction, tranchés par l’ACI et la SCHL.",
       culture: "Prix, auditoires et ce que le Canada regarde et lit.",
       science: "Climat, énergie et technologie, tranchés par des données publiques.",
-      sports: "Bilans de saison et vainqueurs de matchs à venir, établis d’après les sites des ligues.",
+      sports: "Issues de saison et gagnants de matchs à venir, tranchés selon les sites des ligues.",
     },
   },
   search: {
@@ -177,7 +177,7 @@ const fr = {
       title: "Sur quoi aimeriez-vous vous prononcer?",
       body: "Choisissez quelques sujets pour vos cinq du jour. Vous verrez quand même un peu de tout.",
       legend: "Sujets",
-      sportsNote: "Le sport, ce sont des prévisions de fans. Elles ferment avant le début du match.",
+      sportsNote: "Le sport, ce sont des prévisions de partisans. Elles ferment avant le début du match.",
     },
     account: {
       title: "Gardez votre bilan",
@@ -270,8 +270,8 @@ const fr = {
   },
   legal: {
     noValue: "Gratuit. Aucune valeur monétaire. Aucun achat requis.",
-    sportsLabel: "Prévisions de fans seulement. Pas un conseil.",
-    sportsFooter: "Aucun lien avec une ligue, une équipe ou un joueur, qui ne l’approuvent pas.",
+    sportsLabel: "Prévisions de partisans seulement. Ce ne sont pas des conseils.",
+    sportsFooter: "Cansensa n’est affilié à aucune ligue, équipe ou joueur, et n’est approuvé par aucun d’eux.",
     footer: "Gratuit · Sans argent · Sans prix · 18 ans et plus",
     sample: "Questions et chiffres fictifs pendant la construction.",
     design: "Système de design",
@@ -308,6 +308,8 @@ const fr = {
     no: "Non",
     forecasters: "prévisionnistes",
     closes: "Fermeture le",
+    closesTime: "Fermeture le {when} (HE)",
+    startsTime: "Début le {when} (HE)",
     closed: "Fermée",
     poll: "Sondage · non évalué",
     scored: "Évaluée",

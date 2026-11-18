@@ -20,7 +20,7 @@ import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-quest
 import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { formatCount, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
+import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
 import { callsCloseAt, crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
@@ -141,8 +141,16 @@ export default async function QuestionPage({ params }: { params: Params }) {
               <>
                 <span aria-hidden="true">·</span>
                 <span className="uppercase tracking-wide">
-                  {t.question.closes} {formatShortDate(callsCloseAt(q), locale)}
+                  {q.category === "sports"
+                    ? fill(t.question.closesTime, { when: formatEasternTime(callsCloseAt(q), locale) })
+                    : `${t.question.closes} ${formatShortDate(callsCloseAt(q), locale)}`}
                 </span>
+                {q.category === "sports" && q.startsAt && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span className="uppercase tracking-wide">{fill(t.question.startsTime, { when: formatEasternTime(q.startsAt, locale) })}</span>
+                  </>
+                )}
               </>
             )}
           </div>

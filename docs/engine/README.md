@@ -37,7 +37,9 @@ PULSE keeps Consensa's slate fresh. Every 15 minutes it reads what Canada is tal
 | Every question EN + FR | `draftSchema` requires both; `validate.ts` checks FR typography and number parity |
 | AI explains, never tips (rule 4) | `lexicon.json` `tip`; prompt rule 3 |
 | No deaths, violence, private lives, unlawful activity (LEX) | `screenStory` before drafting, `screenDraft` after |
-| Sports are scored, pre-game fan forecasts only ([LEX's rules](../legal/sports-questions-rules.md)) | `screenDraft` blocks live wording, spreads, totals, exact scores and player props, amateur and junior sports, odds formats and sportsbook talk, and flags every sports draft for review; `validateDraft` blocks a sports draft with no `startsAt` or `closesAt` after it; `screenExplanation` blocks naming a winner or what to call |
+| Sports are scored, pre-game fan forecasts only ([sports rules](../legal/sports-questions-rules.md)) | `screenDraft` blocks live wording, spreads, totals, exact scores and player props, amateur and junior sports, odds formats and sportsbook talk, and flags every sports draft for review; `validateDraft` blocks a sports draft with no `startsAt` or `closesAt` after it; `screenExplanation` blocks naming a winner or what to call |
+| Any "why it moved" text passes `screenExplanation` before it reaches the editor queue | `explain.ts` runs every wording rule on sports text and the tip check on the rest |
+| Season questions close at playoff start; playoff interest goes in pre-series questions that close before game 1; postponed or cancelled games are voided, never resolved NO | Convention for editors; `startsAt` and `closesAt` are checked in `validateDraft` |
 | Elections off at launch, never persuasive | `elections` is a review flag; `persuasion` blocks |
 | No gambling sources or links (rule 8) | Not in the registry; resolution sources must be on `resolutionDomains` |
 | Data stays in Canada (rule 7) | The engine only reads public feeds and sends no user data anywhere. The Claude API receives public headlines only. |

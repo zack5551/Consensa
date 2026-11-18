@@ -173,9 +173,9 @@ describe("sports explanations never name a winner or say what to call", () => {
     expect(isBlocked(screenExplanation("economy", "Should you buy now?"))).toBe(true);
     expect(isBlocked(screenExplanation("sports", "Should you call yes?"))).toBe(true);
   });
-  it("covers the sports question's own why note", () => {
-    for (const q of sampleQuestions.filter((x) => x.category === "sports" && x.why)) {
-      for (const lang of ["en", "fr"] as const) expect(screenExplanation("sports", q.why!.body[lang])).toEqual([]);
+  it("every sample why note, in every category, passes the guard", () => {
+    for (const q of sampleQuestions.filter((x) => x.why)) {
+      for (const lang of ["en", "fr"] as const) expect(screenExplanation(q.category, q.why!.body[lang]), q.slug).toEqual([]);
     }
   });
 });

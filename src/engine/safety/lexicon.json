@@ -318,19 +318,19 @@
     "scope": "sports",
     "detail": "In-game or live wording. Sports questions are pre-game only; calls close before the start (LEX sports rules).",
     "patterns": [
-      "\\blive\\b",
+      "\\blive\\b(?! up)",
       "\\bin-?game\\b",
       "\\bin play\\b",
       "\\bduring (the|this) (game|match|play|period|quarter|inning)\\b",
       "\\bhalf-?time\\b",
-      "\\b(first|second|third|1st|2nd|3rd) (period|quarter|half|inning)\\b",
+      "\\b(first|second|third|1st|2nd|3rd) (period|quarter|half|inning)\\b(?! of the season)",
       "\\bnext (goal|score|point|basket|touchdown|run)\\b",
       "\\bcurrent score\\b",
       "\\ben direct\\b",
       "\\bpendant (le|ce|la|cette) (match|partie|jeu|periode)\\b",
       "\\ben cours de (match|partie)\\b",
       "\\bmi-temps\\b",
-      "\\b(premiere|deuxieme|troisieme) (periode|moitie)\\b",
+      "\\b(premiere|deuxieme|troisieme) (periode|moitie)\\b(?! de la saison)",
       "\\bprochain (but|point|panier|touchdown)\\b",
       "\\bpointage actuel\\b"
     ]
@@ -348,7 +348,7 @@
       "\\btotal (goals|points|runs|score)\\b",
       "\\bcombined score\\b",
       "\\bexact(ly)? score\\b",
-      "\\bfinal score\\b",
+      "\\b(exact|predicted) final score\\b|\\bfinal score (of|will be) \\d",
       "\\bscores? (exactly|of \\d)",
       "\\b\\d{1,2} ?[-–] ?\\d{1,2} (win|loss|score|final)\\b",
       "\\bwins? by\\b",
@@ -374,7 +374,15 @@
       "\\b(plus|moins) de \\d+(,5)? (buts|points)\\b",
       "\\bdifference de \\d+ (buts|points)\\b",
       "\\b\\d+\\+? (buts?|points?|passes|aides|tirs|arrets|verges|touchdowns?|rebonds)\\b.{0,40}\\b(ce soir|aujourd'hui|ce match|cette partie|contre)\\b",
-      "\\b(ce soir|aujourd'hui|ce match|cette partie|contre)\\b.{0,40}\\b\\d+\\+? (buts?|points?|passes|aides|tirs|arrets|verges|touchdowns?|rebonds)\\b"
+      "\\b(ce soir|aujourd'hui|ce match|cette partie|contre)\\b.{0,40}\\b\\d+\\+? (buts?|points?|passes|aides|tirs|arrets|verges|touchdowns?|rebonds)\\b",
+      "\\b(a|one|two|three|four|five|at least \\w+|\\d+\\+?)( or more)? (goals?|points?|assists?|shots?|saves?|hits?|touchdowns?|rebounds?)\\b.{0,40}\\b(tonight|today|game|match|against|vs\\.?|on (monday|tuesday|wednesday|thursday|friday|saturday|sunday|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\w*)\\b",
+      "\\b(tonight|today|game|match|against|vs\\.?|on (monday|tuesday|wednesday|thursday|friday|saturday|sunday|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\\w*)\\b.{0,40}\\b(a|one|two|three|four|five|at least \\w+|\\d+\\+?)( or more)? (goals?|points?|assists?|shots?|saves?|hits?|touchdowns?|rebounds?)\\b",
+      "\\b(win|lose|beat \\w+) \\d{1,2}[-–]\\d{1,2}\\b",
+      "\\b(more|fewer|less) than \\d+(\\.5)? (combined )?(goals|points|runs)\\b",
+      "\\bcombined (goals|points|runs)\\b",
+      "\\b(un|une|deux|trois|quatre|cinq|au moins \\w+|\\d+\\+?)( ou plus)? (buts?|points?|passes|aides|tirs|arrets)\\b.{0,40}\\b(ce soir|match|partie|contre|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\\b",
+      "\\b(ce soir|match|partie|contre|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\\b.{0,40}\\b(un|une|deux|trois|quatre|cinq|au moins \\w+|\\d+\\+?)( ou plus)? (buts?|points?|passes|aides|tirs|arrets)\\b",
+      "\\b\\d{1,2} a \\d{1,2}\\b"
     ]
   },
   "sportsAmateur": {
@@ -383,7 +391,7 @@
     "detail": "Amateur, junior (CHL), university, high-school or youth sports. Integrity risk; LEX's sports rules rule them out.",
     "patterns": [
       "\\bjuniors?\\b",
-      "\\b(chl|ohl|whl|qmjhl|ljmq)\\b",
+      "\\b(chl|ohl|whl|qmjhl|lhjmq|ljmq|lhjo)\\b",
       "\\bu ?sports\\b",
       "\\bcollege\\b",
       "\\bncaa\\b",
@@ -400,9 +408,12 @@
       "\\bcegep\\b",
       "\\bsecondaire\\b",
       "\\bscolaire\\b",
-      "\\bjeunes\\b",
+      "\\bjeunes (athletes|sportifs)\\b|\\bequipe de jeunes\\b",
       "\\bhockey mineur\\b",
-      "\\bcoupe memorial\\b"
+      "\\bcoupe memorial\\b",
+      "\\b(vanier|yates) cup\\b",
+      "\\bcoupe (vanier|yates)\\b",
+      "\\brouge et or\\b"
     ]
   },
   "sportsOddsFormat": {
@@ -410,10 +421,10 @@
     "scope": "sports",
     "detail": "Odds format (decimal, American or fractional). Sports show percentages only.",
     "patterns": [
-      "(?<![\\d.,])[1-9]\\.\\d{2}(?![\\d.]|\\s?%)",
-      "(?<![\\d.,])[1-9],\\d{2}(?![\\d,]|\\s?%)",
+      "(?<![\\d.,])[1-9]\\.\\d{2}(?!\\d|[.,]\\d|\\s?%)",
+      "(?<![\\d.,])[1-9],\\d{2}(?!\\d|[.,]\\d|\\s?%)",
       "(?<![\\w-])[+-]\\d{3}\\b",
-      "\\b\\d{1,2}/\\d{1,2}\\b",
+      "(?<!\\bon )\\b\\d{1,2}/\\d{1,2}\\b",
       "\\b\\d{1,2} (to|pour|contre) 1\\b",
       "\\bimplied\\b",
       "\\bimplicite\\b"
@@ -425,10 +436,10 @@
     "detail": "Sportsbook comparison words (value, edge, line, spread, action, favourite or underdog). Fans forecast; they don't shop lines.",
     "patterns": [
       "\\bvalue\\b",
-      "\\bedge\\b",
+      "\\b(an|the|betting) edge\\b",
       "\\bbeat the (book|books|house|line|market|closing)\\b",
       "\\bsharps?\\b",
-      "\\blines?\\b",
+      "\\b(betting|money|opening|closing|moving|point) lines?\\b|\\bthe line (moved|is|opened)\\b",
       "\\baction\\b",
       "\\bfavou?rites?\\b",
       "\\bunderdogs?\\b",
@@ -441,7 +452,11 @@
       "\\boutsiders?\\b",
       "\\bpronostics?\\b",
       "\\blignes? (de|des|d') ?(marche|jeu|pari)",
-      "\\bbattre (le|les) (bookmaker|marche)\\b"
+      "\\bbattre (le|les) (bookmaker|marche)\\b",
+      "\\bnegliges?\\b",
+      "\\bchoix sur\\b",
+      "\\bcoup sur\\b",
+      "\\bpicks?\\b"
     ]
   },
   "sportsTip": {
@@ -449,25 +464,23 @@
     "scope": "explanation",
     "detail": "Names who will win or tells people what to call. Sports explanations describe what changed, never what to call (CLAUDE.md rule 4).",
     "patterns": [
-      "\\b(will|should|to|going to|gonna|expected to|set to|likely to|bound to|poised to|can) (win|beat|cover|sweep|dominate)\\b",
+      "\\b(will|should|going to|gonna|expected to|set to|likely to|bound to|poised to|can) (win|beat|cover|sweep|dominate)\\b",
       "\\bwho (will|should) win\\b",
-      "\\b(back|take|go with|ride|fade) the\\b",
+      "\\b(back|go with|ride|fade) the (?!(next|lead|ice|field|same|other|first|second|third)\\b)\\w+",
       "\\bwe (expect|predict|like|favou?r|recommend|think)\\b.{0,30}\\b(win|yes|no)\\b",
-      "\\b(call|go|say) (yes|no)\\b",
+      "\\b(call|go with) (yes|no)\\b|\\byou should say (yes|no)\\b",
       "\\byou should\\b",
       "\\bshould (call|forecast|say)\\b",
       "\\bbest call\\b",
       "\\bsmart call\\b",
       "\\bwe'?re (calling|backing)\\b",
       "\\b(va|vont|devrait|devraient|doit|doivent|pourrait|peut) (gagner|battre|l'emporter|remporter)\\b",
-      "\\bgagnera\\b",
-      "\\bgagneront\\b",
-      "\\bremportera\\b",
-      "\\bl'emportera\\b",
+      "(\\bles |\\ble |\\bla |\\bl')\\w+ (gagnera|gagneront|remportera|remporteront|l'emportera|l'emporteront)\\b",
       "\\bnous (prevoyons|recommandons|favorisons)\\b",
       "\\bvous devriez\\b",
       "\\b(appelez|dites|choisissez|allez avec) (oui|non|les|le|la)\\b",
-      "\\bmeilleur choix\\b"
+      "\\bmeilleur choix\\b",
+      "\\bexpect (the )?\\w+ to (win|come out on top)\\b"
     ]
   }
 }

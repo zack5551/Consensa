@@ -104,14 +104,14 @@ describe("crowd record", () => {
 });
 
 describe("sports start time", () => {
-  const game = getQuestion("oilers-flames-dec-2026")!;
+  const game = getQuestion("leafs-playoffs-2027")!;
 
   it("closes calls at the earlier of closesAt and startsAt", () => {
     expect(callsCloseAt(game)).toBe(game.closesAt);
-    const early = { ...game, startsAt: "2026-12-06T00:00:00Z" };
-    expect(callsCloseAt(early)).toBe("2026-12-06T00:00:00Z");
-    expect(questionState(early, at("2026-12-06T00:00:01Z"))).toBe("closed");
-    expect(questionState(early, at("2026-12-05T20:00:00Z"))).toBe("closingSoon");
+    const early = { ...game, startsAt: "2027-04-15T00:00:00Z" };
+    expect(callsCloseAt(early)).toBe("2027-04-15T00:00:00Z");
+    expect(questionState(early, at("2027-04-15T00:00:01Z"))).toBe("closed");
+    expect(questionState(early, at("2027-04-14T20:00:00Z"))).toBe("closingSoon");
   });
 
   it("ignores startsAt for other categories", () => {

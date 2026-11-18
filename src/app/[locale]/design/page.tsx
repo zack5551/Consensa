@@ -17,7 +17,7 @@ import { sampleQuestions } from "@/content/sample-questions";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatLongDate, formatPercent } from "@/lib/format";
-import { crowdNow, questionStates } from "@/lib/question";
+import { callsCloseAt, crowdNow, questionStates } from "@/lib/question";
 import { fill } from "@/lib/text";
 
 const swatches = [
@@ -111,7 +111,7 @@ export default async function DesignSystemPage({ params }: { params: Promise<{ l
               ) : (
                 <StateNote state={s} title={t.states[s]}>
                   {s === "closingSoon"
-                    ? fill(t.stateNote.closingSoon, { date: formatLongDate(q.closesAt, locale) })
+                    ? fill(t.stateNote.closingSoon, { date: formatLongDate(callsCloseAt(q), locale) })
                     : s === "closed"
                       ? fill(t.stateNote.closed, { date: formatLongDate(q.resolution.resolvesAt, locale) })
                       : s === "resolved"

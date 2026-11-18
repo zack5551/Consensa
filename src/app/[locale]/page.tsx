@@ -16,7 +16,7 @@ import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
 import { buildLandingStats } from "@/lib/landing-stats";
-import { categories, crowdNow, crowdRecord, isOpen, questionState } from "@/lib/question";
+import { callsCloseAt, categories, crowdNow, crowdRecord, isOpen, questionState } from "@/lib/question";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
 
@@ -89,7 +89,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
           <p className={`${kicker} flex flex-wrap items-center justify-between gap-x-4 gap-y-1`}>
             <span className="text-canada">{l.showcaseLabel}</span>
             <span className="font-semibold text-ink-2 tabular">
-              {t.question.closes} {formatShortDate(lead.closesAt, locale)}
+              {t.question.closes} {formatShortDate(callsCloseAt(lead), locale)}
             </span>
           </p>
           <h2 id="showcase-q" className="m-0 font-display text-title font-bold text-balance sm:text-headline">
@@ -214,7 +214,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
                       <span className={q.scored ? "" : "text-side-b-text"}>{q.scored ? t.question.scored : t.question.poll}</span>
                       <span aria-hidden="true">·</span>
                       <span>
-                        {t.question.closes} {formatShortDate(q.closesAt, locale)}
+                        {t.question.closes} {formatShortDate(callsCloseAt(q), locale)}
                       </span>
                       <span aria-hidden="true">·</span>
                       <span>

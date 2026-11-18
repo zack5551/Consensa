@@ -21,6 +21,7 @@ describe("validateDraft", () => {
     expect(sports({ startsAt: "2026-12-04T13:00:00Z" })).not.toContain("block:sportsClosesAfterStart");
     expect(sports({ startsAt: "2026-12-05T01:00:00Z" })).not.toContain("block:sportsClosesAfterStart");
     expect(sports({ startsAt: "2026-12-04T12:59:00Z" })).toContain("block:sportsClosesAfterStart");
+    expect(sports({ startsAt: "2026-12-04T13:45:00Z" })).toContain("block:sportsStartsAfterResult");
     expect(codes(goodDraft())).not.toContain("block:sportsNoStart");
   });
 

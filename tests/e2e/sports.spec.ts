@@ -4,11 +4,11 @@ import { expect, test } from "@playwright/test";
 const tags = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
 const labels = {
   en: { label: "Fan forecasts only. Not advice.", footer: "Not affiliated with or endorsed by any league, team or player." },
-  fr: { label: "Prévisions de fans seulement. Pas un conseil.", footer: "Aucun lien avec une ligue, une équipe ou un joueur, qui ne l’approuvent pas." },
+  fr: { label: "Prévisions de partisans seulement. Ce ne sont pas des conseils.", footer: "Cansensa n’est affilié à aucune ligue, équipe ou joueur, et n’est approuvé par aucun d’eux." },
 } as const;
 
 for (const locale of ["en", "fr"] as const) {
-  for (const slug of ["leafs-playoffs-2027", "oilers-flames-dec-2026"]) {
+  for (const slug of ["leafs-playoffs-2027", "canadiens-playoffs-2027", "canadian-team-cup-2027"]) {
     test(`sports question ${slug} in ${locale} shows both labels, and axe passes`, async ({ page }) => {
       await page.goto(`/${locale}/q/${slug}`);
       await expect(page.getByText(labels[locale].label)).toBeVisible();
@@ -33,6 +33,14 @@ for (const locale of ["en", "fr"] as const) {
     }
   });
 }
+
+test("a sports question shows its close and start times in Eastern time", async ({ page }) => {
+  await page.goto("/en/q/leafs-playoffs-2027");
+  await expect(page.getByText("Closes Apr 15, 7:00 p.m. ET")).toBeVisible();
+  await expect(page.getByText("Starts Apr 16, 7:00 p.m. ET")).toBeVisible();
+  await page.goto("/fr/q/leafs-playoffs-2027");
+  await expect(page.getByText(/Fermeture le 15 avr\.,\s19\sh \(HE\)/)).toBeVisible();
+});
 
 test("a sports question takes scored calls: the panel shows what the call would score", async ({ page }) => {
   await page.goto("/en/q/leafs-playoffs-2027");

@@ -8,8 +8,8 @@ describe("sports labels", () => {
   it("has the fan-forecast label and the non-affiliation footer in both languages", () => {
     expect(en.legal.sportsLabel).toBe("Fan forecasts only. Not advice.");
     expect(en.legal.sportsFooter).toBe("Not affiliated with or endorsed by any league, team or player.");
-    expect(fr.legal.sportsLabel).toBe("Prévisions de fans seulement. Pas un conseil.");
-    expect(fr.legal.sportsFooter).toBe("Aucun lien avec une ligue, une équipe ou un joueur, qui ne l’approuvent pas.");
+    expect(fr.legal.sportsLabel).toBe("Prévisions de partisans seulement. Ce ne sont pas des conseils.");
+    expect(fr.legal.sportsFooter).toBe("Cansensa n’est affilié à aucune ligue, équipe ou joueur, et n’est approuvé par aucun d’eux.");
   });
 
   it("shows them on sports screens only", () => {

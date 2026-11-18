@@ -33,6 +33,7 @@ export function validateDraft(draft: Draft, now: Date): Flag[] {
   if (draft.category === "sports") {
     if (!draft.startsAt) flags.push(block("sportsNoStart", "Sports questions need startsAt, the start of the game or event."));
     else if (closes > Date.parse(draft.startsAt)) flags.push(block("sportsClosesAfterStart", "Calls must close at or before the start of the game or event (closesAt <= startsAt)."));
+    else if (Date.parse(draft.startsAt) >= resolves) flags.push(block("sportsStartsAfterResult", "The official result must come after the start of the game or event."));
   }
 
   // Source: only official or primary sources settle a question

@@ -32,6 +32,8 @@ const rules: Rule[] = Object.entries(lexicon)
 
 /** Rules that stop a story before drafting. Wording rules don't apply here: a news story may say anything. */
 const STORY_RULES = new Set(["harm", "crime", "private"]);
+/** The same codes, as the skip list for text that is not a news story. */
+export const STORY_ONLY: ReadonlySet<string> = STORY_RULES;
 
 export const ruleCodes: readonly string[] = rules.map((r) => r.code);
 
@@ -41,12 +43,13 @@ export function foldForMatch(text: string): string {
 }
 
 /** Every rule a piece of text trips, with the first matching phrase quoted for the editor. */
-export function scan(text: string, only?: ReadonlySet<string>, scopes: readonly Scope[] = ["all"]): Flag[] {
+export function scan(text: string, only?: ReadonlySet<string>, scopes: readonly Scope[] = ["all"], skip?: ReadonlySet<string>): Flag[] {
   const folded = foldForMatch(text);
   const flags: Flag[] = [];
   for (const rule of rules) {
     if (!scopes.includes(rule.scope)) continue;
     if (only && !only.has(rule.code)) continue;
+    if (skip?.has(rule.code)) continue;
     for (const re of rule.patterns) {
       const m = re.exec(folded);
       if (m) {
