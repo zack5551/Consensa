@@ -15,7 +15,7 @@ export async function GET() {
   if (!allowExport(me.user.id)) return NextResponse.json({ error: "slow down" }, { status: 429, headers: noStore });
   const [profile, calls, consents] = await Promise.all([
     me.supabase.from("profiles").select("locale, region, topics, adult_confirmed_at, created_at, updated_at").maybeSingle(),
-    me.supabase.from("calls").select("slug, probability, created_at, updated_at").order("created_at"),
+    me.supabase.from("calls").select("slug, probability, origin, created_at, updated_at").order("created_at"),
     me.supabase.from("consent_log").select("kind, version, given_at, withdrawn_at").order("given_at"),
   ]);
   if (profile.error || calls.error || consents.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });

@@ -154,6 +154,7 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
             ))}
           </dl>
           <p className="m-0 text-caption text-ink-2">{t.legal.sample}</p>
+          <p className="m-0">{m.record.worldGroup}</p>
           {vpnShare !== null && (
             <>
               <p className="m-0">{m.record.vpnShare.replace("{value}", formatPercent(vpnShare, locale))}</p>

@@ -44,6 +44,8 @@ const baseCsp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // Only the World/VPN e2e run sets this, so its dev server never touches the production build.
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   reactStrictMode: true,
   poweredByHeader: false,
   // The VPN check reads this file at run time, so the call route's serverless function must ship it.

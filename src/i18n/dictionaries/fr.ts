@@ -271,6 +271,7 @@ const fr = {
         noMoney: { title: "Rien ici ne vaut de l’argent", body: "Il n’y a aucun achat ni aucun prix. Votre bilan n’a aucune valeur monétaire et ne peut pas être transféré." },
         languages: { title: "Le français et l’anglais, à égalité", body: "Ce résumé, la politique complète, nos conditions et notre soutien sont offerts dans les deux langues." },
         botCheck: { title: "Une vérification rapide bloque les robots", body: "Une courte vérification s’exécute sur votre appareil pour distinguer les gens des robots. Rien à votre sujet n’est envoyé ailleurs." },
+        connectionLabel: { title: "Une étiquette sur chaque prévision : Canada ou RPV/mandataire", body: "Pour garder « Selon le Canada » exact, notre serveur de Montréal vérifie votre connexion dans une base de données conservée sur ce serveur : votre adresse IP n’est transmise à personne. Une prévision faite par un RPV, un mandataire ou un centre de données compte quand même, dans un groupe distinct « Monde/RPV ». Nous ne conservons que l’étiquette, jamais votre adresse IP ni le type de RPV. Elle est gardée aussi longtemps que la prévision, supprimée avec votre compte et incluse dans le téléchargement de vos données." },
       },
     },
     terms: {
@@ -319,6 +320,9 @@ const fr = {
   },
   question: {
     canadaSays: "Selon le Canada",
+    world: "Monde/RPV : {percent} · {n} prévisions",
+    worldNone: "Monde/RPV : —",
+    worldNote: "Prévisions faites par un RPV ou un proxy. Comptées à part du Canada.",
     canadaSaid: "Le Canada prévoyait",
     chance: "de chances",
     yes: "Oui",
@@ -466,6 +470,7 @@ const fr = {
       brier: "Score de Brier moyen de la foule",
       resolved: "Questions résolues",
       rightSide: "Foule du bon côté",
+      worldGroup: "Les prévisions faites par un RPV ou un proxy forment un groupe distinct, « Monde/RPV », présenté à part et jamais compté dans « Selon le Canada ». Comme pour une région, un chiffre n’apparaît qu’à partir de 5 prévisions.",
       vpnShare: "{value} des prévisions des 30 derniers jours sont passées par un VPN ou un proxy.",
       vpnCredit: "Ce site comprend des données IP2Proxy LITE d’IP2Location, lues sur notre propre serveur : aucune adresse ne quitte le Canada."
     },

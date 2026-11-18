@@ -269,6 +269,7 @@ const en = {
         noMoney: { title: "Nothing here is worth money", body: "There are no purchases and no prizes. Your record has no cash value and can’t be transferred." },
         languages: { title: "English and French, equally", body: "This summary, the full policy, our terms and our support are all available in both languages." },
         botCheck: { title: "A quick check stops bots", body: "A short check runs on your device to tell people from bots. Nothing about you is sent anywhere." },
+        connectionLabel: { title: "A label on each call: Canada or VPN/proxy", body: "To keep “Canada says” accurate, our server in Montréal checks your connection against a database kept on that server, so your IP address is sent to no one. A call through a VPN, proxy or data centre still counts, in a separate World/VPN group. We keep only the label, never your IP address or the type of VPN. It stays as long as the call, is deleted with your account, and is in your data download." },
       },
     },
     terms: {
@@ -317,6 +318,9 @@ const en = {
   },
   question: {
     canadaSays: "Canada says",
+    world: "World/VPN: {percent} · {n} calls",
+    worldNone: "World/VPN: —",
+    worldNote: "Calls made through a VPN or proxy. Counted separately from Canada.",
     canadaSaid: "Canada said",
     chance: "chance",
     yes: "Yes",
@@ -464,6 +468,7 @@ const en = {
       brier: "Crowd’s average Brier score",
       resolved: "Resolved questions",
       rightSide: "Crowd on the right side",
+      worldGroup: "Calls made through a VPN or proxy go into a separate World/VPN group, shown on its own and never counted in “Canada says”. Like a region, it shows a number only once at least 5 calls are behind it.",
       vpnShare: "{value} of calls in the last 30 days came through a VPN or proxy.",
       vpnCredit: "This site includes IP2Proxy LITE data from IP2Location, read on our own server so no address leaves Canada."
     },

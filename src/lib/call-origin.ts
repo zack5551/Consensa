@@ -21,3 +21,27 @@ export function vpnSharePercent({ total, vpn, unknown }: CallOriginTotals): numb
   const checked = total - unknown;
   return checked >= MIN_VPN_SAMPLE && vpn >= 0 && vpn <= checked ? Math.round((vpn / checked) * 100) : null;
 }
+
+/** Where a saved call came from. Only the server decides this, from the connection check; the browser never sends it. */
+export type CallOrigin = "canada" | "vpn";
+
+/** A call through a VPN or proxy is "vpn". A direct connection, or one that could not be checked, is "canada". */
+export function originFromVpn(vpn: boolean | "unknown"): CallOrigin {
+  return vpn === true ? "vpn" : "canada";
+}
+
+/** How long a call waits for the connection check before it counts as unchecked. */
+export const PROXY_CHECK_TIMEOUT_MS = 150;
+
+/** The answer from `work`, or `fallback` if it fails or takes longer than `ms`. The wait is always cleared. */
+export async function withinTime<T>(work: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallback), ms);
+  });
+  try {
+    return await Promise.race([work.catch(() => fallback), late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}

@@ -12,6 +12,23 @@ export const MIN_CROWD = 5;
 /** One row from `crowd_summary`: a count and a sum of probabilities for a question, region and language. */
 export type CrowdRow = { slug: string; region: string | null; locale: string | null; n: number; total: number };
 
+/** One row from `crowd_world_vpn`: calls made through a VPN or proxy, per question. */
+export type WorldRow = { slug: string; n: number; total: number };
+
+/** The World/VPN group for a question: its own average, shown only where at least MIN_CROWD calls are behind it. Never mixed into Canada. */
+export function summarizeWorld(rows: readonly WorldRow[]): Map<string, { n: number; mean: number }> {
+  const acc = new Map<string, { n: number; total: number }>();
+  for (const r of rows) {
+    const a = acc.get(r.slug) ?? { n: 0, total: 0 };
+    a.n += r.n;
+    a.total += r.total;
+    acc.set(r.slug, a);
+  }
+  const out = new Map<string, { n: number; mean: number }>();
+  for (const [slug, a] of acc) if (a.n >= MIN_CROWD) out.set(slug, { n: a.n, mean: Math.round(a.total / a.n) });
+  return out;
+}
+
 export type LiveCrowd = {
   n: number;
   mean: number;

@@ -22,6 +22,8 @@ export const questionSchema = z.object({
   languages: z.object({ en: percent, fr: percent }).optional(),
   /** Regions with too few real calls to show (privacy floor). Their tiles read "—" and the summary skips them. */
   hiddenProvinces: z.array(z.enum(provinces)).optional(),
+  /** Calls made through a VPN or proxy, kept apart from Canada. Absent when there is no live data; null while fewer than 5 calls are behind it. */
+  world: z.object({ n: z.number().int().nonnegative(), mean: percent }).nullable().optional(),
   events: z.array(z.object({ dayIndex: z.number().int().nonnegative(), label: bilingual })).default([]),
   why: z
     .object({ body: bilingual, sources: z.array(bilingual).min(1) })

@@ -1,7 +1,7 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getQuestion, SAMPLE_NOW } from "@/content/sample-questions";
-import { callsCountFrom, COUNTRY_HEADER } from "@/lib/call-origin";
+import { callsCountFrom, COUNTRY_HEADER, originFromVpn, PROXY_CHECK_TIMEOUT_MS, withinTime } from "@/lib/call-origin";
 import { isOpen, questionState } from "@/lib/question";
 import { rateLimiter } from "@/lib/rate-limit";
 import { verifyBotCheck } from "@/lib/server/bot-check";
@@ -65,10 +65,14 @@ export async function POST(request: NextRequest) {
   const closeTime = await admin.from("question_windows").upsert({ slug: q.slug, closes_at: q.closesAt }, { onConflict: "slug" });
   if (closeTime.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
 
-  // A VPN doesn't stop a call; it is only counted, one number per day, never per person or per call.
-  const { vpn } = await checkProxy(request.headers);
+  // A VPN doesn't stop a call; it moves it to the World/VPN group. Only the server sets the origin, from this check
+  // (never from the body). The check is fail-soft: a slow or missing database (150 ms) counts as "unknown", which is
+  // saved as 'canada' and counted as unchecked. Only the label is stored, never the address or the proxy type.
+  const { vpn } = await withinTime(checkProxy(request.headers), PROXY_CHECK_TIMEOUT_MS, { vpn: "unknown" as const });
 
-  const { error } = await admin.from("calls").upsert({ user_id: auth.user.id, slug: q.slug, probability: parsed.data.probability }, { onConflict: "user_id,slug" });
+  const { error } = await admin
+    .from("calls")
+    .upsert({ user_id: auth.user.id, slug: q.slug, probability: parsed.data.probability, origin: originFromVpn(vpn) }, { onConflict: "user_id,slug" });
   if (error?.hint === "closed") return NextResponse.json({ error: "closed" }, { status: 409, headers: noStore });
   if (error?.hint === "rate") return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "2" } });
   if (error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
