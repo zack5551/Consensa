@@ -10,6 +10,12 @@ const botWidget = {
   expired: "La vérification a expiré. Réessayez.",
   waitAlert: "Vérification… un instant.",
   reload: "Recharger",
+  loading: "Chargement…",
+  verify: "Vérifier",
+  verificationRequired: "La vérification rapide est requise.",
+  cancel: "Annuler",
+  ariaLinkLabel: "À propos de cette vérification",
+  footer: "S’exécute sur votre appareil. Rien n’est envoyé ailleurs.",
 };
 
 const fr = {

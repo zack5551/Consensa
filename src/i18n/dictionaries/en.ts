@@ -8,6 +8,12 @@ const botWidget = {
   expired: "The check expired. Try again.",
   waitAlert: "Checking… please wait.",
   reload: "Reload",
+  loading: "Loading…",
+  verify: "Check",
+  verificationRequired: "The quick check is required.",
+  cancel: "Cancel",
+  ariaLinkLabel: "About this check",
+  footer: "Runs on your device. Nothing is sent anywhere.",
 };
 
 const en = {

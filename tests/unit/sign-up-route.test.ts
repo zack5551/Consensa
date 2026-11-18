@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { botCheck, signInWithOtp } = vi.hoisted(() => ({
-  botCheck: vi.fn(async (_p: string | null): Promise<"pass" | "fail" | "skipped"> => "skipped"),
-  signInWithOtp: vi.fn(async (_args: unknown): Promise<{ error: null | { code?: string; status?: number } }> => ({ error: null })),
+  botCheck: vi.fn<(p: string | null) => Promise<"pass" | "fail" | "skipped">>(async () => "skipped"),
+  signInWithOtp: vi.fn(async (): Promise<{ error: null | { code?: string; status?: number } }> => ({ error: null })),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/server/bot-check", () => ({ verifyBotCheck: (p: string | null) => botCheck(p) }));
@@ -36,7 +36,7 @@ describe("POST /api/auth/sign-up", () => {
       expect((await post({ email: "a@example.com", data, altcha: "x" })).status).toBe(200);
     }
     expect(signInWithOtp).toHaveBeenCalledTimes(2);
-    expect(signInWithOtp).toHaveBeenCalledWith({ email: "a@example.com", options: expect.objectContaining({ shouldCreateUser: true, emailRedirectTo: "http://localhost/api/auth/callback?next=/fr/today" }) });
+    expect(signInWithOtp).toHaveBeenCalledWith({ email: "a@example.com", options: expect.objectContaining({ shouldCreateUser: true, emailRedirectTo: "http://localhost:3000/api/auth/callback?next=/fr/today" }) });
   });
 
   it("refuses bad input and other sites", async () => {
@@ -44,5 +44,27 @@ describe("POST /api/auth/sign-up", () => {
     expect((await post({ email: "a@example.com", data: { ...data, adult: false } })).status).toBe(400);
     expect((await post({ email: "a@example.com", data }, { Origin: "https://evil.example" })).status).toBe(403);
     expect(signInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("answers ok for every Supabase error except a rate limit, and logs only the code", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    for (const error of [{ code: "user_already_exists", status: 422 }, { code: "email_address_invalid", status: 400 }, { status: 500 }]) {
+      signInWithOtp.mockResolvedValueOnce({ error });
+      const res = await post({ email: "private@example.com", data });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ ok: true });
+    }
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("private@example.com");
+    warn.mockRestore();
+  });
+
+  it("answers a generic 429 for a rate limit", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    for (const error of [{ code: "over_email_send_rate_limit", status: 429 }, { code: "over_request_rate_limit" }]) {
+      signInWithOtp.mockResolvedValueOnce({ error });
+      const res = await post({ email: "a@example.com", data });
+      expect(res.status).toBe(429);
+      expect(await res.json()).toEqual({ error: "slow down" });
+    }
   });
 });

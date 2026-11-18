@@ -11,7 +11,7 @@ describe("callsCountFrom", () => {
   });
 });
 
-const { allow, botCheck } = vi.hoisted(() => ({ allow: vi.fn((_key: string) => true), botCheck: vi.fn(async (_payload: string | null): Promise<"pass" | "fail" | "skipped"> => "skipped") }));
+const { allow, botCheck } = vi.hoisted(() => ({ allow: vi.fn<(key: string) => boolean>(() => true), botCheck: vi.fn<(payload: string | null) => Promise<"pass" | "fail" | "skipped">>(async () => "skipped") }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimiter: () => (key: string) => allow(key) }));
 vi.mock("@/lib/server/bot-check", () => ({ verifyBotCheck: (payload: string | null) => botCheck(payload) }));
 

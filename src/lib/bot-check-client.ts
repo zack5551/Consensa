@@ -28,6 +28,8 @@ export async function solveBotCheck(): Promise<string | null> {
     if (strings && registry) registry.i18n.set(language, { ...(registry.i18n.get("en") ?? {}), ...strings.values });
     const widget = document.createElement("altcha-widget") as Widget;
     widget.hidden = true;
+    widget.inert = true;
+    widget.setAttribute("aria-hidden", "true");
     document.body.appendChild(widget);
     try {
       // The widget mounts a moment after it is attached; its methods exist once it has.
@@ -40,4 +42,33 @@ export async function solveBotCheck(): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+/** A solved token is good for 10 minutes on the server; replace ours well before that. */
+const MAX_AGE_MS = 8 * 60_000;
+let ready: Promise<string | null> | null = null;
+let readyAt = 0;
+let refresh: ReturnType<typeof setTimeout> | undefined;
+
+function solveAhead(): Promise<string | null> {
+  const p = solveBotCheck();
+  ready = p;
+  readyAt = Date.now();
+  clearTimeout(refresh);
+  refresh = setTimeout(() => {
+    if (ready === p) solveAhead();
+  }, MAX_AGE_MS);
+  return p;
+}
+
+/** Starts solving in the background, once, so the first request doesn't wait for it. */
+export function warmBotCheck(): void {
+  if (!ready) solveAhead();
+}
+
+/** The ready token (each is used once), and starts solving the next one straight away. */
+export function takeBotCheck(): Promise<string | null> {
+  const token = ready && Date.now() - readyAt < MAX_AGE_MS ? ready : solveBotCheck();
+  solveAhead();
+  return token;
 }

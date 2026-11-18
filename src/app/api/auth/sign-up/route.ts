@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { rateLimiter } from "@/lib/rate-limit";
+import { logErrorCode } from "@/lib/server/error-code-log";
 import { verifyBotCheck } from "@/lib/server/bot-check";
 import { noStore, sameOrigin } from "@/lib/supabase/account-server";
 import { signupMetadataSchema } from "@/lib/supabase/config";
+import { siteUrl } from "@/lib/site-url";
 import { serverSupabase } from "@/lib/supabase/server";
 
 const bodySchema = z.object({ email: z.string().trim().email().max(254), data: signupMetadataSchema, altcha: z.string().max(4096).nullable().optional() }).strict();
@@ -28,8 +30,13 @@ export async function POST(request: NextRequest) {
   const { email, data } = parsed.data;
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true, data, emailRedirectTo: `${request.nextUrl.origin}/api/auth/callback?next=/${data.locale}/today` },
+    options: { shouldCreateUser: true, data, emailRedirectTo: `${siteUrl()}/api/auth/callback?next=/${data.locale}/today` },
   });
-  if (error) return NextResponse.json({ error: error.code ?? `http_${error.status ?? 500}` }, { status: error.status && error.status >= 400 ? error.status : 500, headers: noStore });
+  if (error) {
+    // Only the code is logged, never the address. A rate limit gets a generic answer; every other error looks like success,
+    // so nobody can use this route to find out which addresses have accounts.
+    logErrorCode("sign-up link failed", error.code ?? error.status);
+    if (error.status === 429 || error.code?.includes("rate_limit")) return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "60" } });
+  }
   return NextResponse.json({ ok: true }, { headers: noStore });
 }

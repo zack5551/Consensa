@@ -11,7 +11,7 @@ import { z } from "zod";
  */
 export const CHALLENGE_TTL_SECONDS = 600;
 const ALGORITHM = "PBKDF2/SHA-256";
-/** About half a second on a phone: 256 tries on average, each 10,000 hashing rounds. */
+/** 256 tries on average, each 10,000 hashing rounds: expect 1 to 2 seconds at the median on a low-end phone, solved in the background. */
 const COST = 10_000;
 
 let warned = false;
