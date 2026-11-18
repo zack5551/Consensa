@@ -438,6 +438,7 @@ const en = {
       title: "How “Canada says” is made",
       body: "Each person’s latest call counts once. Canada says is the average of those calls, so one person can’t move it by calling many times. Province and language splits use the same rule within each group.",
       onePerson: "One person, one forecast. Nobody can buy a bigger say.",
+      worldGroup: "Calls made through a VPN or proxy go into a separate World/VPN group, shown on its own and never counted in “Canada says”. Like a region, it shows a number only once at least 5 calls are behind it.",
     },
     scoring: {
       title: "How calls are scored",
@@ -468,7 +469,6 @@ const en = {
       brier: "Crowd’s average Brier score",
       resolved: "Resolved questions",
       rightSide: "Crowd on the right side",
-      worldGroup: "Calls made through a VPN or proxy go into a separate World/VPN group, shown on its own and never counted in “Canada says”. Like a region, it shows a number only once at least 5 calls are behind it.",
       vpnShare: "{value} of calls in the last 30 days came through a VPN or proxy.",
       vpnCredit: "This site includes IP2Proxy LITE data from IP2Location, read on our own server so no address leaves Canada."
     },

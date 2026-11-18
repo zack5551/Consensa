@@ -20,6 +20,9 @@ in preview mode.
      never a row per person). Run after `20261118000000_error_events.sql`.
    - `supabase/migrations/20261118000200_call_origin_column.sql` (each call's origin, Canada or VPN; the Canada
      numbers read Canada only and the World/VPN group has its own function). Run after `20261111000100_crowd.sql`.
+     **Run this in Supabase BEFORE the merge that adds World/VPN deploys; otherwise saving a call and the account export
+     return 503.** The column default makes it safe to run early. It supersedes `20261111000100_crowd.sql`: if you
+     re-run that file, run `20261118000200_call_origin_column.sql` again afterwards.
 2. **Allow our sign-in links.** Authentication → URL Configuration:
    - Site URL: the production URL (for example `https://consensa.vercel.app`).
    - Redirect URLs: add `https://*-consensa.vercel.app/api/auth/callback` (previews) and

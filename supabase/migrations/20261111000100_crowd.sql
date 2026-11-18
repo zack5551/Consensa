@@ -1,5 +1,7 @@
 -- The crowd from real calls (ca-central-1). Run after 20261111000000_accounts.sql. Safe to run again.
 --
+-- Superseded by 20261118000200_call_origin_column.sql: if you re-run this file, run that one again afterwards.
+--
 -- Only the app's server can call this (secret key). It returns counts and sums per question, region and
 -- language, never a row per person. The app shows a number only when at least 5 people are behind it, so a
 -- single person's call can never be read off the page.

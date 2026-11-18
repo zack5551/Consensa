@@ -2,11 +2,14 @@
 // with fixed numbers so the question page can show live data. Nothing else is served.
 import { createServer } from "node:http";
 
-const port = Number(process.env.MOCK_SUPABASE_PORT ?? 3102);
+const port = Number(process.env.MOCK_SUPABASE_PORT ?? 3602);
 
 const answers = {
   // Canada: enough people to show a number.
-  crowd_summary: [{ slug: "boc-cut-dec-2026", region: null, locale: null, n: 40, total: 1600 }],
+  crowd_summary: [
+    { slug: "boc-cut-dec-2026", region: null, locale: null, n: 40, total: 1600 },
+    { slug: "giller-debut-2026", region: null, locale: null, n: 20, total: 800 },
+  ],
   // World/VPN: 12 calls averaging 58% on one question, 3 calls (under the floor of 5) on another.
   crowd_world_vpn: [
     { slug: "boc-cut-dec-2026", n: 12, total: 696 },

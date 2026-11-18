@@ -18,7 +18,8 @@ export async function withLiveCrowd<T extends Question>(qs: readonly T[]): Promi
   const world = parsed?.success ? summarizeWorld(parsed.data) : null;
   return qs.map((q) => {
     const withCanada = applyLive(q, live.get(q.slug));
-    return world ? { ...withCanada, world: world.get(q.slug) ?? null } : withCanada;
+    // Only where live data exists for this question: no live data, no World/VPN line.
+    return world && live.has(q.slug) ? { ...withCanada, world: world.get(q.slug) ?? null } : withCanada;
   });
 }
 

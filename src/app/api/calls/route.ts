@@ -60,16 +60,18 @@ export async function POST(request: NextRequest) {
   // The site's clock: the same one every page uses to show a question as open or closed.
   if (!isOpen(questionState(q, SAMPLE_NOW))) return NextResponse.json({ error: "closed" }, { status: 409, headers: noStore });
 
+  // A VPN doesn't stop a call; it moves it to the World/VPN group. Only the server sets the origin, from this check
+  // (never from the body). The check starts now and is awaited just before the write, so it runs beside the close-time
+  // write. It is fail-soft: a slow or missing database (150 ms) counts as "unknown", which is saved as 'canada' and
+  // counted as unchecked. Only the label is stored, never the address or the proxy type.
+  const proxy = withinTime(checkProxy(request.headers), PROXY_CHECK_TIMEOUT_MS, { vpn: "unknown" as const });
+
   // The database checks the close time itself (and refuses late calls whatever the app says), so it needs the
   // question's close time. Content is the source of truth, so a changed close date is copied over.
   const closeTime = await admin.from("question_windows").upsert({ slug: q.slug, closes_at: q.closesAt }, { onConflict: "slug" });
   if (closeTime.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
 
-  // A VPN doesn't stop a call; it moves it to the World/VPN group. Only the server sets the origin, from this check
-  // (never from the body). The check is fail-soft: a slow or missing database (150 ms) counts as "unknown", which is
-  // saved as 'canada' and counted as unchecked. Only the label is stored, never the address or the proxy type.
-  const { vpn } = await withinTime(checkProxy(request.headers), PROXY_CHECK_TIMEOUT_MS, { vpn: "unknown" as const });
-
+  const { vpn } = await proxy;
   const { error } = await admin
     .from("calls")
     .upsert({ user_id: auth.user.id, slug: q.slug, probability: parsed.data.probability, origin: originFromVpn(vpn) }, { onConflict: "user_id,slug" });

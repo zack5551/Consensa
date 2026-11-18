@@ -186,16 +186,17 @@ export default async function QuestionPage({ params }: { params: Params }) {
               </>
             )}
           </p>
-          {q.world !== undefined && (
-            <p className="m-0 text-caption text-ink-2" title={t.question.worldNote}>
-              <span data-testid="world-vpn">
-                {q.world === null ? t.question.worldNone : fill(t.question.world, { percent: pct(q.world.mean), n: formatCount(q.world.n, locale) })}
-              </span>
-              <span className="sr-only"> ({t.question.worldNote})</span>
-            </p>
-          )}
           {verdictText && <p className="m-0 max-w-[62ch] border-t border-line pt-3 text-body font-semibold">{verdictText}</p>}
         </section>
+
+        {q.world !== undefined && (
+          <p className="m-0 grid gap-0.5 text-caption text-ink-2">
+            <span data-testid="world-vpn">
+              {q.world === null ? t.question.worldNone : fill(t.question.world, { percent: pct(q.world.mean), n: formatCount(q.world.n, locale) })}
+            </span>
+            <span className="text-ink-3">{t.question.worldNote}</span>
+          </p>
+        )}
 
         <div className="lg:hidden">{panel}</div>
 

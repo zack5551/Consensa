@@ -80,6 +80,7 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
           <h2 id="crowd-h" className="m-0 font-display text-headline font-bold tracking-tight text-balance">{m.crowd.title}</h2>
           <p className="m-0">{m.crowd.body}</p>
           <p className="m-0 border-l-4 border-side-a py-1 pl-4 font-display text-title-sm font-bold text-balance">{m.crowd.onePerson}</p>
+          <p className="m-0">{m.crowd.worldGroup}</p>
         </section>
 
         <section id="scoring" aria-labelledby="scoring-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
@@ -154,7 +155,6 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
             ))}
           </dl>
           <p className="m-0 text-caption text-ink-2">{t.legal.sample}</p>
-          <p className="m-0">{m.record.worldGroup}</p>
           {vpnShare !== null && (
             <>
               <p className="m-0">{m.record.vpnShare.replace("{value}", formatPercent(vpnShare, locale))}</p>
