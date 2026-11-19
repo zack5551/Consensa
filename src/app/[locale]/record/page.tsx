@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { AccountPanel } from "@/components/account-panel";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { PendingCalls } from "@/components/pending-calls";
+import { askedByLabel } from "@/lib/asked-by";
 import { RecordView } from "@/components/record-view";
 import { ScreenView } from "@/components/screen-view";
 import { getForecaster, SAMPLE_ME, sampleForecasters } from "@/content/sample-forecasters";
@@ -44,9 +45,10 @@ export default async function RecordPage({ params }: { params: Params }) {
   const pending = sampleQuestions
     .filter((q) => {
       const s = questionState(q, SAMPLE_NOW);
-      return q.scored && s !== "resolved";
+      // A cancelled question is never scored, so it isn't waiting for anything.
+      return q.scored && s !== "resolved" && s !== "cancelled";
     })
-    .map((q) => ({ slug: q.slug, href: `/${locale}/q/${q.slug}`, question: q.question[locale], closes: fill(t.record.closesOn, { date: formatLongDate(callsCloseAt(q), locale) }) }));
+    .map((q) => ({ slug: q.slug, href: `/${locale}/q/${q.slug}`, question: q.question[locale], askedBy: q.askedBy && askedByLabel(q.askedBy, t.question.askedBy), closes: fill(t.record.closesOn, { date: formatLongDate(callsCloseAt(q), locale) }) }));
 
   const todayLink = (
     <Link href={`/${locale}`} className="rounded-control bg-ink px-4 py-2 text-body-sm font-bold text-paper hover:opacity-90">

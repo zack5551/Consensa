@@ -3,7 +3,8 @@ import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-quest
 import { scan } from "@/engine/safety/safety";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
-import { questionState } from "@/lib/question";
+import { fixtureQuestions } from "@/content/test-fixtures";
+import { questionSchema, questionState } from "@/lib/question";
 import type { Question } from "@/lib/question";
 import { MIN_CELL } from "@/lib/regions";
 import { calledItCards, calledItFooter, cardSafe, crowdForCard, hasCalledItCard } from "@/lib/share";
@@ -162,7 +163,7 @@ describe("called-it card: no card without a right side", () => {
   it("does not exist for a cancelled or voided question, or any outcome other than yes or no", () => {
     for (const outcome of ["cancelled", "canceled", "void", "voided", "annulled", "n/a", ""]) {
       const q = base();
-      // The schema allows yes or no only today; this is the shape a cancelled or voided result would take.
+      // Cancelled is a real outcome now; the others are shapes a voided result might take later.
       q.resolution.result = { ...q.resolution.result!, outcome: outcome as "yes" };
       for (const side of ["yes", "no", outcome]) expect(hasCalledItCard(q, side, SAMPLE_NOW), `${outcome} ${side}`).toBe(false);
       expect(calledItCards([q], SAMPLE_NOW), outcome).toEqual([]);
@@ -177,6 +178,42 @@ describe("called-it card: no card without a right side", () => {
     for (const q of [cancelled, unscored]) {
       const spy = vi.spyOn(live, "withLiveQuestion").mockResolvedValue(q);
       await expect(image("en", resolvedYes, "yes")).rejects.toMatchObject(notFound);
+      spy.mockRestore();
+    }
+  });
+});
+
+describe("called-it card: a cancelled game", () => {
+  /** The made-up cancelled game from the e2e fixtures (src/content/test-fixtures.ts): settled as cancelled, nobody scored. */
+  const cancelledGame = (): Question => questionSchema.parse(fixtureQuestions().find((q) => q.slug === "oilers-canucks-nov-3-2026"));
+  const page = async (locale: string, slug: string, side: string) => {
+    const { default: Page } = await import("@/app/[locale]/q/[slug]/called-it/[side]/page");
+    return Page({ params: Promise.resolve({ locale, slug, side }) });
+  };
+
+  it("is cancelled, with a scored flag that does not bring a card back", () => {
+    const q = cancelledGame();
+    expect(q.scored).toBe(true);
+    expect(questionState(q, SAMPLE_NOW)).toBe("cancelled");
+  });
+
+  it("has no card on either side", () => {
+    const q = cancelledGame();
+    for (const side of ["yes", "no", "cancelled"]) expect(hasCalledItCard(q, side, SAMPLE_NOW), side).toBe(false);
+    expect(calledItCards([q], SAMPLE_NOW)).toEqual([]);
+  });
+
+  it("has no card picture and no page on either side, in either language", async () => {
+    const live = await import("@/lib/live");
+    const spy = vi.spyOn(live, "withLiveQuestion").mockResolvedValue(cancelledGame());
+    try {
+      for (const locale of ["en", "fr"]) {
+        for (const side of ["yes", "no"]) {
+          await expect(image(locale, "oilers-canucks-nov-3-2026", side), `image ${locale} ${side}`).rejects.toMatchObject(notFound);
+          await expect(page(locale, "oilers-canucks-nov-3-2026", side), `page ${locale} ${side}`).rejects.toMatchObject(notFound);
+        }
+      }
+    } finally {
       spy.mockRestore();
     }
   });

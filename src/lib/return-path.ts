@@ -26,3 +26,32 @@ export function inLocale(next: string | null | undefined, locale: Locale): strin
 export function landingPath(locale: Locale, next: string | null | undefined): string {
   return returnPath(next) ?? `/${locale}/today`;
 }
+
+const carriesNext = /^\/(?:en|fr)\/(?:welcome|sign-in)\/?$/;
+const questionPage = /^\/(?:en|fr)\/q\/[A-Za-z0-9._~-]+\/?$/;
+
+/** Whether a return path is a question page (`/en/q/boc-cut-dec-2026`), so the "come back to this question" line is true. */
+export function isQuestionPath(next: string | null | undefined): boolean {
+  const back = returnPath(next);
+  return back !== null && questionPage.test(back);
+}
+
+/**
+ * The header's language switch: the same page in the other language. On onboarding and sign-in, `next` comes along in
+ * that language too (as the in-page language step does), so switching language never loses the question.
+ */
+export function headerLocaleHref(pathname: string, next: string | null | undefined, locale: Locale): string {
+  const base = pathname.replace(/^\/(en|fr)(?=\/|$)/, `/${locale}`);
+  return carriesNext.test(pathname) ? withNext(base, inLocale(next, locale)) : base;
+}
+
+/**
+ * The header's sign-in link. From a question page it brings people back to that question; from onboarding it keeps
+ * the `next` already there. Anywhere else it is the plain sign-in page.
+ */
+export function headerSignInHref(locale: Locale, pathname: string, next: string | null | undefined): string {
+  const base = `/${locale}/sign-in`;
+  if (questionPage.test(pathname)) return withNext(base, pathname);
+  if (/^\/(?:en|fr)\/welcome\/?$/.test(pathname)) return withNext(base, next);
+  return base;
+}

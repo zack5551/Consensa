@@ -6,6 +6,7 @@ const tone: Record<QuestionState, string> = {
   closed: "bg-sunken text-ink-2",
   resolved: "bg-side-a-soft text-side-a-text",
   disputed: "bg-side-b-soft text-side-b-text",
+  cancelled: "bg-sunken text-ink-2",
 };
 
 /** A small pill naming where a question is in its life. The text carries the meaning; colour only supports it. */

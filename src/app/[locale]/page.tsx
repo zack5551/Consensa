@@ -17,7 +17,7 @@ import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
 import { buildLandingStats } from "@/lib/landing-stats";
-import { callsCloseAt, categories, crowdNow, crowdRecord, isOpen, questionState } from "@/lib/question";
+import { callsCloseAt, categories, crowdNow, crowdRecord, isOpen, questionState, scoreBadge } from "@/lib/question";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
 
@@ -212,7 +212,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
                       </Link>
                     </h3>
                     <p className="m-0 flex flex-wrap gap-x-2 text-body-sm text-ink-2 tabular">
-                      <span className={q.scored ? "" : "text-side-b-text"}>{q.scored ? t.question.scored : t.question.poll}</span>
+                      <span className={scoreBadge(q) === "poll" ? "text-side-b-text" : ""}>{t.question[scoreBadge(q)]}</span>
                       <span aria-hidden="true">·</span>
                       <span>
                         {t.question.closes} {formatShortDate(callsCloseAt(q), locale)}

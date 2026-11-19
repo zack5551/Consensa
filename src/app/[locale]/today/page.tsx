@@ -21,7 +21,7 @@ import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatDayHeading, formatPercent, formatShortDate } from "@/lib/format";
-import { callsCloseAt, crowdNow, questionState } from "@/lib/question";
+import { callsCloseAt, crowdNow, questionState, scoreBadge } from "@/lib/question";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
 
@@ -87,7 +87,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
               {t.question.closes} {formatShortDate(callsCloseAt(lead), locale)}
             </span>
             <span aria-hidden="true">·</span>
-            <span>{lead.scored ? t.question.scored : t.question.poll}</span>
+            <span>{t.question[scoreBadge(lead)]}</span>
           </span>
         </p>
         <h2 id="lead-q" className="m-0 font-display text-title font-bold text-balance sm:text-headline">

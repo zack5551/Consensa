@@ -3,7 +3,7 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { formatCount, formatEasternTime, formatPercent, formatShortDate } from "@/lib/format";
 import { fill } from "@/lib/text";
-import { callsCloseAt, crowdNow, isOpen, type Question, type QuestionState } from "@/lib/question";
+import { callsCloseAt, crowdNow, isOpen, scoreBadge, type Question, type QuestionState } from "@/lib/question";
 import { CrowdBar } from "./crowd-bar";
 import { StateBadge } from "./state-badge";
 import { YourCallBadge } from "./your-call-badge";
@@ -38,7 +38,7 @@ export function QuestionCard({ q, locale, t, states, state = "open", href, lead 
             </span>
           )}
         </span>
-        <span className={`rounded-full px-2 py-0.5 ${q.scored ? "bg-sunken" : "bg-side-b-soft text-side-b-text"}`}>{q.scored ? t.scored : t.poll}</span>
+        <span className={`rounded-full px-2 py-0.5 ${scoreBadge(q) === "poll" ? "bg-side-b-soft text-side-b-text" : "bg-sunken"}`}>{t[scoreBadge(q)]}</span>
       </div>
       <Title className={`m-0 font-display font-bold leading-snug text-balance ${lead ? "text-headline" : "text-title-sm"}`}>
         {href ? (

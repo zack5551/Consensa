@@ -4,11 +4,13 @@ import { getQuestion } from "@/content/sample-questions";
 import { getResult } from "@/content/sample-results";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
+import { askedByLabel } from "@/lib/asked-by";
 import { formatPercent } from "@/lib/format";
 import { DEFAULT_MIN_CALLS, percentileOf, type ForecasterRecord, type LeaderboardRow } from "@/lib/leaderboard";
 import { confidenceLean, crowdBrier, summarizeRecord, type Verdict } from "@/lib/record";
 import { formatBrier, formatOneDecimal, formatSkill } from "@/lib/score-format";
 import { fill } from "@/lib/text";
+import { AskedByLabel } from "./asked-by-label";
 import { CalibrationChart } from "./calibration-chart";
 import { EmptyState } from "./empty-state";
 import { ScoreCompare } from "./score-compare";
@@ -181,10 +183,12 @@ export function RecordView({ locale, t, forecaster, board, youLabel, emptyAction
           {s.recent.map((c) => {
             const res = getResult(c.slug);
             const title = res?.question[locale] ?? c.slug;
-            const hasPage = getQuestion(c.slug) !== undefined;
+            const page = getQuestion(c.slug);
+            const hasPage = page !== undefined;
             return (
               <li key={c.slug} className="grid gap-2 border-b border-line py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                 <div className="grid min-w-0 gap-1">
+                  <AskedByLabel label={page?.askedBy && askedByLabel(page.askedBy, t.question.askedBy)} />
                   {hasPage ? (
                     <Link href={`/${locale}/q/${c.slug}`} className="font-display text-body font-bold text-balance hover:underline">
                       {title}

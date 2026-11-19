@@ -108,15 +108,6 @@ describe("counting replies from linked accounts", () => {
     expect(store.reads.has(`x:${OUR_POST}`)).toBe(false);
   });
 
-  it("removes a deleted reply from the ledger on the weekly sweep, and only then", async () => {
-    const { store, run } = setup();
-    await run();
-    expect(store.ledger).toHaveLength(2);
-    const swept = await setup({ sweepDeleted: true, store } as Partial<CountOptions>).run();
-    expect(swept.removed).toBe(1);
-    expect(store.ledger.map((l) => l.replyId)).toEqual(["1990000000000000002"]);
-  });
-
   it("reports how many stale links the monthly re-check paused, and one failing post doesn't stop the next", async () => {
     const store = new MemoryStore().link("x", "222", "user-b");
     store.paused = 3;

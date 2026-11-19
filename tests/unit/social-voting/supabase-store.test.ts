@@ -47,6 +47,26 @@ describe("the social store in Supabase", () => {
     expect(await s.countReply(reply)).toBe("closed");
   });
 
+  it("hands a deleted reply to remove_social_reply() and passes its answer on", async () => {
+    const { store: s, sent } = await store([{ data: "call_removed" }, { data: "removed" }, { error: { hint: "rate" } }, { error: { hint: "closed" } }, { error: {} }, { data: "something new" }]);
+    expect(await s.removeReply("x", "9003")).toBe("call_removed");
+    expect(sent[0]).toEqual({ rpc: "remove_social_reply", values: { p_platform: "x", p_reply_id: "9003" } });
+    expect(await s.removeReply("x", "9003")).toBe("removed");
+    expect(await s.removeReply("x", "9003")).toBe("retry"); // the 2-second rule on calls
+    expect(await s.removeReply("x", "9003")).toBe("closed");
+    await expect(s.removeReply("x", "9003")).rejects.toThrow();
+    await expect(s.removeReply("x", "9003")).rejects.toThrow(); // an answer it doesn't know is never treated as done
+  });
+
+  it("lists a post's counted reply ids up to the limit it is given", async () => {
+    const { store: s, sent } = await store([{ data: [{ reply_id: "9001" }, { reply_id: "9002" }] }, { data: [{ reply_id: "9001" }] }, { error: {} }]);
+    expect(await s.ledgerReplyIds("x", "500", 5)).toEqual(["9001", "9002"]);
+    expect(sent[0]).toMatchObject({ table: "social_votes", action: "select" });
+    expect(await s.ledgerReplyIds("x", "500", 1)).toEqual(["9001"]);
+    expect(sent).toHaveLength(2);
+    await expect(s.ledgerReplyIds("x", "500", 5)).rejects.toThrow();
+  });
+
   it("keeps a keyed hash, not the id, for the auto-reply record", async () => {
     const { store: s, sent } = await store([{}, { error: {} }]);
     expect(await s.claimAutoReply("x", "999", "500")).toBe(true);

@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { parseVote } from "../parse";
 import type { SpendCap } from "../spend";
-import type { FetchFn, ParsedReply, PollTotals, ReadReplies, SocialProvider } from "../types";
+import type { DeletedCheck, FetchFn, ParsedReply, PollTotals, ReadReplies, SocialProvider } from "../types";
 
 // Outside host (rule 7): a US service our server reads from. Data only comes in; LEX cleared it for this sprint.
 const X_API = "https://api.x.com/2";
@@ -106,7 +106,13 @@ export class XProvider implements SocialProvider {
     if (!id.safeParse(ourPostId).success) return null;
     if (!(await this.config.spend.reserve(X_READ_COST_MICROS, now))) return null;
     const parsed = pollSchema.safeParse(await this.get(`/tweets/${ourPostId}?expansions=attachments.poll_ids&poll.fields=options`));
-    const options = parsed.success ? parsed.data.includes?.polls?.[0]?.options : undefined;
+    if (!parsed.success) {
+      // The read failed (X refused, or the request never got an answer), so nothing was read: hand the reservation
+      // back (AEGIS). A read that worked stays counted, whether or not the post carries a poll we can use.
+      await this.config.spend.release(X_READ_COST_MICROS, now);
+      return null;
+    }
+    const options = parsed.data.includes?.polls?.[0]?.options;
     if (!options) return null;
     // Only a two-way YES/NO poll is read; any other poll is left alone.
     const yes = options.filter((o) => parseVote(o.label) === "yes");
@@ -115,25 +121,34 @@ export class XProvider implements SocialProvider {
     return { yes: yes[0]!.votes, no: no[0]!.votes };
   }
 
-  async findDeleted(replyIds: readonly string[], now: Date): Promise<string[] | null> {
+  /**
+   * The daily sweep's check: X's post lookup, 100 ids a request (its limit). Each request reserves its worst case
+   * first and hands back what X didn't return. It stops at the first refused reservation or failed request (a 429
+   * included) and says so, keeping what it had already learned.
+   */
+  async findDeleted(replyIds: readonly string[], now: Date): Promise<DeletedCheck> {
     const gone: string[] = [];
-    const ids = replyIds.filter((r) => id.safeParse(r).success);
+    const ids = [...new Set(replyIds.filter((r) => id.safeParse(r).success))];
+    let checked = 0;
     for (let i = 0; i < ids.length; i += PAGE_SIZE) {
       const batch = ids.slice(i, i + PAGE_SIZE);
       const reserved = batch.length * X_READ_COST_MICROS;
-      if (!(await this.config.spend.reserve(reserved, now))) return gone.length > 0 ? gone : null;
+      if (!(await this.config.spend.reserve(reserved, now))) return { gone, checked, complete: false };
       const parsed = lookupSchema.safeParse(await this.get(`/tweets?ids=${batch.join(",")}`));
       if (!parsed.success) {
         await this.config.spend.release(reserved, now);
-        return gone.length > 0 ? gone : null;
+        return { gone, checked, complete: false };
       }
-      await this.config.spend.release((batch.length - (parsed.data.data?.length ?? 0)) * X_READ_COST_MICROS, now);
-      // Gone means X says "not found". A reply hidden for another reason (a protected account) is left alone.
+      const found = new Set((parsed.data.data ?? []).map((d) => d.id));
+      await this.config.spend.release((batch.length - Math.min(found.size, batch.length)) * X_READ_COST_MICROS, now);
+      checked += batch.length;
+      // Gone means X says "not found". A reply hidden for another reason (a protected account) is left alone, and
+      // so is one X returned in the same answer.
       for (const e of parsed.data.errors ?? []) {
-        if (e.resource_id && batch.includes(e.resource_id) && e.type?.endsWith("resource-not-found")) gone.push(e.resource_id);
+        if (e.resource_id && batch.includes(e.resource_id) && !found.has(e.resource_id) && e.type?.endsWith("resource-not-found") && !gone.includes(e.resource_id)) gone.push(e.resource_id);
       }
     }
-    return gone;
+    return { gone, checked, complete: true };
   }
 
   async postReply(replyId: string, text: string): Promise<boolean> {

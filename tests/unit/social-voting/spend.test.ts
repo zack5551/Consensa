@@ -39,7 +39,7 @@ describe("the monthly spend cap", () => {
     const x = new XProvider({ bearer: "b", spend: new SpendCap(new MemorySpend(), "x", 0), fetch });
     expect(await x.readReplies(OUR_POST, null, NOW)).toEqual({ replies: [], complete: false });
     expect(await x.readPollTotals(OUR_POST, NOW)).toBeNull();
-    expect(await x.findDeleted(["1990000000000000001"], NOW)).toBeNull();
+    expect(await x.findDeleted(["1990000000000000001"], NOW)).toEqual({ gone: [], checked: 0, complete: false });
     expect(calls).toHaveLength(0);
   });
 

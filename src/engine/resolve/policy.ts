@@ -3,8 +3,11 @@
  * same answer on two reads at least `CONFIRM_GAP_MS` apart, and the value isn't sitting exactly on the threshold.
  * Anything doubtful goes to an editor: two reads that disagree, a value on the line, repeated errors, or a manual
  * resolver. A resolved question feeds FORGE's public resolution log as `{ outcome, publishedAt, disputed }`.
+ * A `cancelled` reading (a game called off or postponed) never settles by itself: an editor confirms it and leaves a
+ * short note. A cancelled question has no answer and nobody is scored on it.
  */
 import type { ResolutionRecord, ResolverRead } from "@/engine/types";
+import type { QuestionOutcome } from "@/lib/question";
 
 export const CONFIRM_GAP_MS = 10 * 60 * 1000;
 /** After this many errors in a row, a person looks at it. */
@@ -29,7 +32,7 @@ export function applyRead(record: ResolutionRecord, read: ResolverRead, at: Date
   }
   if (read.status === "pending") return next;
 
-  if (read.margin === 0) return { ...next, state: "needsEditor" };
+  if (read.margin === 0 || read.outcome === "cancelled") return { ...next, state: "needsEditor" };
 
   const previous = [...record.reads].reverse().find((r) => r.read.status === "answer");
   if (!previous || previous.read.status !== "answer") return { ...next, state: "confirming" };
@@ -40,12 +43,17 @@ export function applyRead(record: ResolutionRecord, read: ResolverRead, at: Date
 }
 
 /** The shape `questionSchema.resolution.result` takes. Editor decisions use `editorResult`. */
-export function toResult(record: ResolutionRecord): { outcome: "yes" | "no"; publishedAt: string; disputed: boolean } | null {
+export function toResult(record: ResolutionRecord): { outcome: QuestionOutcome; publishedAt: string; disputed: boolean } | null {
   if (record.state !== "resolved" || !record.outcome || !record.resolvedAt) return null;
   return { outcome: record.outcome, publishedAt: record.resolvedAt, disputed: record.disputed ?? false };
 }
 
-/** An editor settles a record the engine escalated. `disputed: true` keeps it out of scoring while under review. */
-export function editorResult(record: ResolutionRecord, outcome: "yes" | "no", editor: string, at: Date, disputed = false): ResolutionRecord {
-  return { ...record, state: "resolved", outcome, resolvedAt: at.toISOString(), resolvedBy: editor, disputed };
+/**
+ * An editor settles a record the engine escalated. `disputed: true` keeps it out of scoring while under review.
+ * `cancelled` needs a note saying what happened, so the audit shows why nobody was scored.
+ */
+export function editorResult(record: ResolutionRecord, outcome: QuestionOutcome, editor: string, at: Date, disputed = false, note?: string): ResolutionRecord {
+  const editorNote = note?.trim();
+  if (outcome === "cancelled" && !editorNote) throw new Error("A cancelled result needs an editor note.");
+  return { ...record, state: "resolved", outcome, resolvedAt: at.toISOString(), resolvedBy: editor, disputed, ...(editorNote ? { editorNote } : {}) };
 }

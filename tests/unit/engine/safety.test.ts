@@ -4,6 +4,7 @@ import lexicon from "@/engine/safety/lexicon.json";
 import { isBlocked, scan, screenDraft, screenStory } from "@/engine/safety/safety";
 import { screenExplanation } from "@/engine/explain";
 import { sampleQuestions } from "@/content/sample-questions";
+import { eventStart } from "@/lib/question";
 import { goodDraft, signal, story } from "./helpers";
 
 const bad = JSON.parse(readFileSync("tests/fixtures/engine/banned-wording.json", "utf8")) as { en: string[]; fr: string[] };
@@ -150,8 +151,9 @@ describe("sports rules (LEX): pre-game fan forecasts only", () => {
     expect(samples.length).toBeGreaterThanOrEqual(3);
     for (const q of samples) {
       expect(q.scored).toBe(true);
-      expect(q.startsAt).toBeDefined();
-      expect(Date.parse(q.closesAt)).toBeLessThanOrEqual(Date.parse(q.startsAt!));
+      const start = eventStart(q);
+      expect(start).toBeDefined();
+      expect(Date.parse(q.closesAt)).toBeLessThanOrEqual(Date.parse(start!));
       const text = [q.question.en, q.question.fr, q.resolution.rule.en, q.resolution.rule.fr, q.resolution.source.name.en, q.resolution.source.name.fr];
       expect(text.flatMap((t) => scan(t, undefined, ["all", "sports"])).filter((f) => f.severity === "block")).toEqual([]);
     }

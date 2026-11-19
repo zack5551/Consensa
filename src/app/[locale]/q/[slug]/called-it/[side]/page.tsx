@@ -10,15 +10,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AskedByLabel } from "@/components/asked-by-label";
 import { SportsNotice } from "@/components/sports-notice";
 import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { askedByLabel } from "@/lib/asked-by";
 import { BRAND_NAME } from "@/lib/brand";
 import { formatCount, formatLongDate, formatPercent } from "@/lib/format";
 import { withLiveQuestion } from "@/lib/live";
 import { crowdNow } from "@/lib/question";
-import { calledItCards, calledItFooter, crowdForCard, hasCalledItCard } from "@/lib/share";
+import { calledItCards, crowdForCard, hasCalledItCard } from "@/lib/share";
 import { fill } from "@/lib/text";
 
 type Params = Promise<{ locale: string; slug: string; side: string }>;
@@ -59,22 +61,25 @@ export default async function CalledItPage({ params }: { params: Params }) {
   const locale: Locale = raw;
   const t = getDictionary(locale);
   const crowd = crowdForCard(q, crowdNow(q));
-  const legal = calledItFooter(t, q.category);
 
   return (
     <article className="mx-auto grid w-full max-w-2xl gap-6">
-      {/* The same card as the picture: a Canada-red rule, the headline, the question, the official answer. */}
-      <section aria-labelledby="called-it-title" className="grid gap-5 rounded-card border border-line border-t-4 border-t-canada bg-surface p-6 shadow-card">
+      {/* The same card as the picture: an ink rule (as on the call panel), the headline, the question, the official answer. */}
+      <section aria-labelledby="called-it-title" className="grid gap-5 rounded-card border border-line border-t-4 border-t-ink bg-surface p-6 shadow-card">
         <header className="grid gap-3">
-          <h1 id="called-it-title" className="m-0 font-display text-display font-bold leading-none tracking-tight text-side-a-text">
+          <h1 id="called-it-title" className="m-0 font-display text-display font-bold leading-none tracking-tight text-ink">
             {t.call.calledIt}
           </h1>
+          <AskedByLabel label={q.askedBy && askedByLabel(q.askedBy, t.question.askedBy)} className="text-body-sm" />
           <p className="m-0 font-display text-title font-bold leading-tight tracking-tight text-balance">{q.question[locale]}</p>
           <p className="m-0 max-w-[62ch] text-body text-ink-2">{t.share.calledItLead}</p>
         </header>
 
         <p className="m-0 flex flex-wrap items-center gap-x-3 gap-y-2 text-body-sm text-ink-2">
-          <span className="rounded-full bg-ink px-3 py-1 font-bold text-paper">{fill(t.resolution.answerIs, { answer: side === "yes" ? t.question.yes : t.question.no })}</span>
+          {/* The answer on its side's colour (teal = yes, violet = no), as on the card. */}
+          <span data-side={side} className={`rounded-full px-3 py-1 font-bold text-on-fill ${side === "yes" ? "bg-side-a" : "bg-side-b"}`}>
+            {fill(t.resolution.answerIs, { answer: side === "yes" ? t.question.yes : t.question.no })}
+          </span>
           <span>{fill(t.share.calledItResult, { date: formatLongDate(result.publishedAt, locale) })}</span>
         </p>
 
@@ -91,11 +96,8 @@ export default async function CalledItPage({ params }: { params: Params }) {
         </Link>
       </section>
 
-      {/* LEX: the card's own legal line, then the site's no-value label; sports adds the fan-forecast notice. */}
-      <div className="grid gap-1 text-caption text-ink-2">
-        <p className="m-0">{legal.footer}</p>
-        <p className="m-0">{t.legal.noValue}</p>
-      </div>
+      {/* LEX: the site's no-value label (the card picture keeps its own legal footer); sports adds the fan-forecast notice. */}
+      <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
       {q.category === "sports" && <SportsNotice label={t.legal.sportsLabel} footer={t.legal.sportsFooter} />}
     </article>
   );

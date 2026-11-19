@@ -4,6 +4,7 @@ import { CardFrame, CardWordmark, cardFonts } from "@/components/share-card-part
 import { getQuestion, sampleQuestions, SAMPLE_NOW } from "@/content/sample-questions";
 import { isLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { askedByLabel } from "@/lib/asked-by";
 import { BRAND_NAME } from "@/lib/brand";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
 import { withLiveQuestion } from "@/lib/live";
@@ -46,15 +47,18 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
   const questionSize = text.length > 110 ? 36 : text.length > 70 ? 40 : 46;
   const answer = cardSafe(fill(t.resolution.answerIs, { answer: yes ? t.question.yes : t.question.no }));
   const published = cardSafe(fill(t.share.calledItResult, { date: formatShortDate(result.publishedAt, locale) }));
+  // LEX: a guest or brand question's label travels with it onto this card too, right above the question.
+  const askedBy = q.askedBy ? cardSafe(askedByLabel(q.askedBy, t.question.askedBy)) : null;
   const fonts = await cardFonts();
 
   return new ImageResponse(
     (
-      <CardFrame footer={cardSafe(legal.footer)} sportsFooter={legal.sports.map(cardSafe)}>
+      <CardFrame footer={cardSafe(legal.footer)} sportsFooter={legal.sports.map(cardSafe)} rule={c.ink}>
         <CardWordmark />
 
         <div style={{ display: "flex", flexDirection: "column", flex: 1, justifyContent: "center", gap: 14 }}>
-          <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: 96, lineHeight: 1, letterSpacing: -3, color: c.sideAText }}>{cardSafe(t.call.calledIt)}</div>
+          <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: 96, lineHeight: 1, letterSpacing: -3, color: c.ink }}>{cardSafe(t.call.calledIt)}</div>
+          {askedBy && <div style={{ display: "flex", fontSize: 22, fontWeight: 600, color: c.inkMuted }}>{askedBy}</div>}
           <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 700, fontSize: questionSize, lineHeight: 1.2, letterSpacing: -0.8, maxHeight: 180, overflow: "hidden" }}>{text}</div>
         </div>
 
