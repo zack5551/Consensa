@@ -168,7 +168,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
           <p className="m-0 grid gap-1">
             <span className="text-caption">
               <span className="font-bold uppercase tracking-wide text-canada">{settled ? t.question.canadaSaid : t.question.canadaSays}</span>
-              <span className="text-ink-3"> · {t.question.canadaSource}</span>
+              <span className="text-ink-2"> · {t.question.canadaSource}</span>
             </span>
             <span className="flex flex-wrap items-baseline gap-x-3">
               <span className="font-display text-display-lg font-bold leading-none tabular text-side-a-text">{pct(yes)}</span>
