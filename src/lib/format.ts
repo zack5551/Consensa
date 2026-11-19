@@ -23,13 +23,24 @@ export function formatEasternTime(iso: string, locale: Locale): string {
   return new Intl.DateTimeFormat(intlLocale[locale], parts).format(date);
 }
 
-/** "Dec. 9" / "9 déc." (UTC so server and client agree). */
-export function formatShortDate(iso: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(intlLocale[locale], { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(iso));
+/**
+ * The zone a date is read in (LEX, 2026-11-19). A timestamp ("2026-11-04T02:00:00Z") is a moment, so it shows the
+ * Eastern calendar day: a game at 9 p.m. ET on Nov 3 closes on November 3, not November 4. A date-only string
+ * ("2026-08-02") is already a calendar day, so it stays in UTC and never shifts back a day. Fixed zones keep the
+ * server and the client in agreement.
+ */
+function dateZone(iso: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? "UTC" : "America/Toronto";
 }
 
+/** "Dec. 9" / "9 déc.", on the Eastern calendar day for a timestamp (see dateZone). */
+export function formatShortDate(iso: string, locale: Locale): string {
+  return new Intl.DateTimeFormat(intlLocale[locale], { month: "short", day: "numeric", timeZone: dateZone(iso) }).format(new Date(iso));
+}
+
+/** "December 9, 2026" / "9 décembre 2026", on the Eastern calendar day for a timestamp (see dateZone). */
 export function formatLongDate(iso: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(intlLocale[locale], { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(iso));
+  return new Intl.DateTimeFormat(intlLocale[locale], { year: "numeric", month: "long", day: "numeric", timeZone: dateZone(iso) }).format(new Date(iso));
 }
 
 /** "0.142" / "0,142": Brier scores always show three decimals. */

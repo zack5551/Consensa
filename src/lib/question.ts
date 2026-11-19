@@ -14,8 +14,12 @@ const percent = z.number().min(0).max(100);
 export const outcomes = ["yes", "no", "cancelled"] as const;
 export type QuestionOutcome = (typeof outcomes)[number];
 
+/** The leagues a game can name. Each has an EN and FR name in the dictionary (`question.leagues`), checked by a test. */
+export const leagues = ["NHL", "CFL", "MLS", "CPL", "NBA", "MLB", "PWHL"] as const;
+export type League = (typeof leagues)[number];
+
 /** One game, as text only (LEX: names describe facts; no logos, jerseys or photos). `startsAt` is the scheduled start. */
-export const gameSchema = z.object({ league: z.string().min(1), home: z.string().min(1), away: z.string().min(1), startsAt: z.iso.datetime() }).strict();
+export const gameSchema = z.object({ league: z.enum(leagues), home: z.string().min(1), away: z.string().min(1), startsAt: z.iso.datetime() }).strict();
 export type Game = z.infer<typeof gameSchema>;
 
 export const questionSchema = z.object({
@@ -103,6 +107,15 @@ export function questionState(q: Question, now: Date): QuestionState {
   if (msLeft <= 0) return "closed";
   if (msLeft <= CLOSING_SOON_MS) return "closingSoon";
   return "open";
+}
+
+/**
+ * The score badge a question carries: "scored" (counts toward your record), "poll" (never scored), or "notScored"
+ * once the question is cancelled, because a cancelled question scores nobody whatever `scored` says (LEX).
+ */
+export function scoreBadge(q: Pick<Question, "scored" | "resolution">): "scored" | "poll" | "notScored" {
+  if (q.resolution.result?.outcome === "cancelled") return "notScored";
+  return q.scored ? "scored" : "poll";
 }
 
 export function isOpen(state: QuestionState): boolean {

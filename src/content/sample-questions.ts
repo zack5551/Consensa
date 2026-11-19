@@ -4,6 +4,7 @@ import liveQuestions from "./live-questions.json";
 import liveResults from "./live-results.json";
 import { moreSampleQuestions } from "./more-questions";
 import { series } from "./series";
+import { fixtureQuestions } from "./test-fixtures";
 
 /**
  * The preview's fixed "now", so sample states (closing soon, closed, resolved) render the same on every build.
@@ -287,6 +288,9 @@ const raw = [
     },
   },
   ...moreSampleQuestions,
+  // Test-only game questions (made up), for the e2e build alone. next.config.ts inlines this flag at build time, so a
+  // production build, which never sets it, compiles the branch away along with the fixtures (AEGIS, 2026-11-19).
+  ...(process.env.CONSENSA_TEST_FIXTURES === "1" ? fixtureQuestions() : []),
 ] satisfies ReadonlyArray<unknown>;
 
 /**

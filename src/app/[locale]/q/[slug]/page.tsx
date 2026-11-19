@@ -26,7 +26,7 @@ import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { callsCloseAt, crowdNow, crowdVerdict, eventStart, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
+import { callsCloseAt, crowdNow, crowdVerdict, eventStart, nextUp, questionState, scoreBadge, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { socialPollLine, questionShareUrl, shareLinks } from "@/lib/social";
@@ -193,7 +193,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
         <header className="grid gap-3">
           <div className="flex flex-wrap items-center gap-2 text-caption text-ink-2">
             <StateBadge state={state} label={t.states[state]} />
-            <span className="uppercase tracking-wide">{q.scored ? t.question.scored : t.question.poll}</span>
+            <span className="uppercase tracking-wide">{t.question[scoreBadge(q)]}</span>
             {!settled && (
               <>
                 <span aria-hidden="true">·</span>
@@ -214,7 +214,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
           {q.game && (
             <p className="m-0 text-body-sm text-ink-2" data-testid="game-line">
               {fill(t.question.game, {
-                league: (t.question.leagues as Record<string, string>)[q.game.league] ?? q.game.league,
+                league: t.question.leagues[q.game.league],
                 away: q.game.away,
                 home: q.game.home,
                 when: formatEasternTime(q.game.startsAt, locale),

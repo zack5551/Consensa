@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NOW, getQuestion, sampleQuestions, todaysFive } from "@/content/sample-questions";
-import { CLOSING_SOON_MS, callsCloseAt, crowdChange, crowdVerdict, eventStart, hasStarted, nextUp, provinceExtremes, questionSchema, questionState, topicRecord, weekMove, type Question } from "@/lib/question";
+import { fixtureQuestions } from "@/content/test-fixtures";
+import en from "@/i18n/dictionaries/en";
+import fr from "@/i18n/dictionaries/fr";
+import { CLOSING_SOON_MS, callsCloseAt, crowdChange, crowdVerdict, eventStart, hasStarted, leagues, nextUp, provinceExtremes, questionSchema, questionState, scoreBadge, topicRecord, weekMove, type Question } from "@/lib/question";
 
 const base = getQuestion("boc-cut-dec-2026")!;
 const at = (iso: string) => new Date(iso);
+/** The made-up game questions, which only the e2e build ships (src/content/test-fixtures.ts). */
+const fixture = (slug: string): Question => questionSchema.parse(fixtureQuestions().find((q) => q.slug === slug));
 
 describe("questionState", () => {
   it("is open well before it closes", () => {
@@ -126,8 +131,17 @@ describe("sports start time", () => {
   });
 });
 
+describe("shipped content", () => {
+  it("has no game question and no cancelled result: the made-up game fixtures never ship (AEGIS)", () => {
+    expect(process.env.CONSENSA_TEST_FIXTURES).not.toBe("1");
+    expect(sampleQuestions.filter((q) => q.game !== undefined).map((q) => q.slug)).toEqual([]);
+    expect(sampleQuestions.filter((q) => q.resolution.result?.outcome === "cancelled").map((q) => q.slug)).toEqual([]);
+    for (const f of fixtureQuestions()) expect(getQuestion(f.slug)).toBeUndefined();
+  });
+});
+
 describe("game questions", () => {
-  const game = getQuestion("canadiens-leafs-nov-21-2026")!;
+  const game = fixture("canadiens-leafs-nov-21-2026");
   const raw: Record<string, unknown> = { ...game };
 
   it("accepts a game as text: league, home, away and a start time, nothing else", () => {
@@ -136,6 +150,13 @@ describe("game questions", () => {
     expect(questionSchema.safeParse({ ...raw, game: { ...game.game, logo: "https://example.com/logo.png" } }).success).toBe(false);
     expect(questionSchema.safeParse({ ...raw, game: { ...game.game, startsAt: "November 21" } }).success).toBe(false);
     expect(questionSchema.safeParse({ ...raw, game: { ...game.game, home: "" } }).success).toBe(false);
+  });
+
+  it("names only a league the dictionary can name in EN and FR", () => {
+    expect(Object.keys(en.question.leagues).sort()).toEqual([...leagues].sort());
+    expect(Object.keys(fr.question.leagues).sort()).toEqual([...leagues].sort());
+    expect(questionSchema.safeParse({ ...raw, game: { ...game.game, league: "XFL" } }).success).toBe(false);
+    expect(questionSchema.safeParse({ ...raw, game: { ...game.game, league: "PWHL" } }).success).toBe(true);
   });
 
   it("allows a game on sports questions only, and its start must match startsAt when both are set", () => {
@@ -165,7 +186,8 @@ describe("game questions", () => {
 });
 
 describe("cancelled questions", () => {
-  const cancelled = getQuestion("oilers-canucks-nov-3-2026")!;
+  const cancelled = fixture("oilers-canucks-nov-3-2026");
+  const all = [...sampleQuestions, cancelled];
 
   it("accepts cancelled as a result, and rejects anything else", () => {
     const withOutcome = (outcome: string) => ({ ...cancelled, resolution: { ...cancelled.resolution, result: { outcome, publishedAt: "2026-11-04T03:00:00Z" } } });
@@ -176,8 +198,18 @@ describe("cancelled questions", () => {
   it("has its own state, whatever the clock says, and takes no calls", () => {
     expect(questionState(cancelled, SAMPLE_NOW)).toBe("cancelled");
     expect(questionState(cancelled, at("2026-01-01T00:00:00Z"))).toBe("cancelled");
-    expect(sampleQuestions.filter((q) => questionState(q, SAMPLE_NOW) === "cancelled").map((q) => q.slug)).toEqual(["oilers-canucks-nov-3-2026"]);
-    expect(nextUp(base, sampleQuestions, SAMPLE_NOW, 100).map((q) => q.slug)).not.toContain(cancelled.slug);
+    expect(nextUp(base, all, SAMPLE_NOW, 100).map((q) => q.slug)).not.toContain(cancelled.slug);
+  });
+
+  it("carries the Not scored badge, not the scored one (LEX)", () => {
+    expect(scoreBadge(cancelled)).toBe("notScored");
+    expect(scoreBadge({ ...cancelled, scored: false })).toBe("notScored");
+    expect(scoreBadge({ ...base, scored: true })).toBe("scored");
+    expect(scoreBadge({ ...base, scored: false })).toBe("poll");
+    expect(en.question.notScored).toBe("Not scored");
+    expect(fr.question.notScored).toBe("Non évaluée");
+    expect(en.question.scored).toBe("Counts toward your record");
+    expect(fr.question.scored).toBe("Comptée dans votre bilan");
   });
 
   it("is never scored: no crowd score, no verdict, and nothing added to the crowd or topic record", async () => {
@@ -185,8 +217,8 @@ describe("cancelled questions", () => {
     expect(cancelled.scored).toBe(true);
     expect(crowdBrier(cancelled)).toBeNull();
     expect(crowdVerdict(cancelled)).toBeNull();
-    const others = sampleQuestions.filter((q) => q.slug !== cancelled.slug);
-    expect(crowdRecord(sampleQuestions)).toEqual(crowdRecord(others));
+    const others = sampleQuestions;
+    expect(crowdRecord(all)).toEqual(crowdRecord(others));
     // The same question settled NO would have counted as a miss for a crowd at 57%; cancelled counts as nothing.
     const asNo: Question = { ...cancelled, resolution: { ...cancelled.resolution, result: { outcome: "no", publishedAt: "2026-11-04T03:00:00Z", disputed: false } } };
     expect(crowdVerdict(asNo)).toBe("wrong");

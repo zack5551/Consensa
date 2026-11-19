@@ -323,7 +323,7 @@ const en = {
     closed: "Calls have closed. The official result is expected {date}.",
     resolved: "The answer was {answer}. Canada said {crowd} when calls closed.",
     disputed: "The official result is under review. Scores wait until the review ends.",
-    cancelled: "The game was not played, so there is no answer and nobody is scored. Canada said {crowd} before it was cancelled.",
+    cancelled: "The game was not played, so there is no answer and nobody is scored. Canada gave yes a {crowd} chance before it was cancelled.",
   },
   share: {
     title: "Share this question",
@@ -367,7 +367,8 @@ const en = {
     leagues: { NHL: "NHL", CFL: "CFL", MLS: "MLS", CPL: "CPL", NBA: "NBA", MLB: "MLB", PWHL: "PWHL" },
     closed: "Closed",
     poll: "Poll · not scored",
-    scored: "Scored",
+    scored: "Counts toward your record",
+    notScored: "Not scored",
     makeYourCall: "Make your call",
     seeResult: "See the result",
     open: "Open question",

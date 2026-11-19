@@ -325,7 +325,7 @@ const fr = {
     closed: "Les prévisions sont fermées. Le résultat officiel est attendu le {date}.",
     resolved: "La réponse était {answer}. Le Canada prévoyait {crowd} à la fermeture.",
     disputed: "Le résultat officiel est en révision. L’évaluation attend la fin de la révision.",
-    cancelled: "Le match n’a pas eu lieu : il n’y a donc pas de réponse et personne n’est évalué. Le Canada prévoyait {crowd} avant l’annulation.",
+    cancelled: "Le match n’a pas eu lieu : il n’y a donc pas de réponse et personne n’est évalué. Le Canada donnait {crowd} de chances au oui avant l’annulation.",
   },
   share: {
     title: "Partager cette question",
@@ -369,7 +369,8 @@ const fr = {
     leagues: { NHL: "LNH", CFL: "LCF", MLS: "MLS", CPL: "PLC", NBA: "NBA", MLB: "MLB", PWHL: "LPHF" },
     closed: "Fermée",
     poll: "Sondage · non évalué",
-    scored: "Évaluée",
+    scored: "Comptée dans votre bilan",
+    notScored: "Non évaluée",
     makeYourCall: "Faire ma prévision",
     seeResult: "Voir le résultat",
     open: "Ouvrir la question",
