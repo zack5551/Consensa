@@ -148,8 +148,8 @@ const allowedDomains = [
   // reads a local file on our server; the database is fetched at build time by scripts/fetch-ip2proxy.mjs, not at run time.
   "lite.ip2location.com",
   "creativecommons.org",
-  // Not network calls: the SVG namespace and the local dev fallback
-  "www.w3.org", "localhost",
+  // Not network calls: the SVG namespace, the structured-data vocabulary name and the local dev fallback
+  "www.w3.org", "schema.org", "localhost",
 ];
 
 /** Packages that send visitor data to a third party. Rule 7: none without a privacy review and LEX's check. */

@@ -4,6 +4,7 @@
  * One action: read it (and come back to make a call). The lawyer-reviewed full text replaces the draft notice before launch.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import { notFound } from "next/navigation";
 import { LegalSummary } from "@/components/legal-summary";
 import { ScreenView } from "@/components/screen-view";
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) return {};
   return {
     title: getDictionary(locale).legalPages.privacy.title,
-    alternates: { languages: { "en-CA": "/en/privacy", "fr-CA": "/fr/privacy" } },
+    alternates: pageAlternates(locale, "/privacy"),
   };
 }
 

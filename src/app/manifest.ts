@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
+import { BRAND_NAME } from "@/lib/brand";
 
 /** Web app manifest. Colours are PRISM's paper (light background) and ink (brand) values from brand/tokens. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Cansensa",
-    short_name: "Cansensa",
+    name: BRAND_NAME,
+    short_name: BRAND_NAME,
     description: "What Canada thinks happens next. · Ce que le Canada prévoit.",
     start_url: "/",
     display: "standalone",

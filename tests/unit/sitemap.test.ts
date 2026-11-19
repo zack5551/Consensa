@@ -35,10 +35,12 @@ describe("sitemap", () => {
     }
   });
 
-  it("gives questions their close date as lastModified", () => {
+  it("gives closed questions their close date as lastModified and leaves it off open ones", () => {
     const entry = entries.find((e) => e.url === `${siteUrl()}/en/q/boc-cut-dec-2026`);
-    expect(entry?.lastModified).toEqual(new Date("2026-12-09T14:45:00Z"));
     expect(entry?.priority).toBe(0.8);
+    const q = sampleQuestions.find((s) => s.slug === "boc-cut-dec-2026");
+    const expected = q && Date.parse(q.closesAt) <= Date.now() ? new Date(q.closesAt) : undefined;
+    expect(entry?.lastModified).toEqual(expected);
   });
 
   it("leaves sample forecaster profiles out of the sitemap", () => {

@@ -4,6 +4,7 @@
  * One action: open a resolved question.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ScreenView } from "@/components/screen-view";
@@ -19,7 +20,7 @@ import { fill } from "@/lib/text";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getDictionary(locale).log.title, alternates: { languages: { "en-CA": "/en/resolutions", "fr-CA": "/fr/resolutions" } } };
+  return { title: getDictionary(locale).log.title, alternates: pageAlternates(locale, "/resolutions") };
 }
 
 export default async function ResolutionsPage({ params }: { params: Promise<{ locale: string }> }) {

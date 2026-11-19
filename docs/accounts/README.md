@@ -20,6 +20,8 @@ in preview mode.
      never a row per person). Run after `20261118000000_error_events.sql`. Since 2026-11-18 a call through a VPN or
      proxy is refused (403) but still counted here as an attempt, so `total` counts call attempts from Canada that
      passed the bot check, and `vpn` counts the refused ones.
+   - `supabase/migrations/20261118001000_purge_unconfirmed_signups.sql` (deletes sign-ups never confirmed by email after
+     7 days). Run after `20261111000400_retention_and_incidents.sql`.
 2. **Allow our sign-in links.** Authentication → URL Configuration:
    - Site URL: the production URL (for example `https://consensa.vercel.app`).
    - Redirect URLs: add `https://*-consensa.vercel.app/api/auth/callback` (previews) and
