@@ -5,6 +5,7 @@
  * Privacy: aggregates only. A result cell with fewer than MIN_CELL forecasters shows "Too few to show".
  */
 import type { Metadata } from "next";
+import { notFoundMetadata } from "@/lib/not-found-metadata";
 import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -37,7 +38,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale, region: slug } = await params;
   const region = regionFromSlug(slug);
-  if (!isLocale(locale) || !region) return {};
+  if (!isLocale(locale) || !region) return notFoundMetadata(locale);
   return {
     title: getDictionary(locale).provinces.headings[region],
     alternates: pageAlternates(locale, `/provinces/${slug}`),

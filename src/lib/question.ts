@@ -60,7 +60,8 @@ export const questionSchema = z.object({
   /** Hand-entered native poll totals from official Cansensa posts. Shown apart from the crowd, never mixed into it. */
   socialPolls: z.array(socialPollSchema).optional(),
   resolution: z.object({
-    source: z.object({ name: bilingual, url: z.url() }),
+    /** `url` is the source's English page. `urlFr` is the same page in French, when the publisher has one; /fr links to it. */
+    source: z.object({ name: bilingual, url: z.url({ protocol: /^https$/ }), urlFr: z.url({ protocol: /^https$/ }).optional() }),
     rule: bilingual,
     resolvesAt: z.iso.datetime(),
     /** Set once the official source has published. `disputed` means the result is under review. */
@@ -126,8 +127,21 @@ export function scoreBadge(q: Pick<Question, "scored" | "resolution">): "scored"
   return q.scored ? "scored" : "poll";
 }
 
+/** The official source's link for a reader: the French page on /fr when there is one, the English page otherwise. */
+export function sourceUrl(source: { url: string; urlFr?: string }, locale: "en" | "fr"): string {
+  return locale === "fr" && source.urlFr ? source.urlFr : source.url;
+}
+
 export function isOpen(state: QuestionState): boolean {
   return state === "open" || state === "closingSoon";
+}
+
+/**
+ * The heading over a question's resolution rule, in the tense its state calls for: "How this resolves" until a result is
+ * published (a result under review still may change), "How it was resolved" after, "How it would have resolved" when cancelled.
+ */
+export function resolutionTitle(state: QuestionState, labels: { title: string; titleResolved: string; titleCancelled: string }): string {
+  return state === "resolved" ? labels.titleResolved : state === "cancelled" ? labels.titleCancelled : labels.title;
 }
 
 /** Highest and lowest regions, for the province split's text summary. */

@@ -26,6 +26,8 @@ test.describe("flag off", () => {
     test(`the linking page is hidden in ${locale} (404)`, async ({ page }) => {
       const res = await page.goto(`/${locale}/account/social`);
       expect(res?.status()).toBe(404);
+      // A hidden page claims no title of its own: the 404's title stands.
+      await expect(page).toHaveTitle(locale === "en" ? "Page not found · Cansensa" : "Page introuvable · Cansensa");
     });
   }
 

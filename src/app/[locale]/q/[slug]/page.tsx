@@ -4,6 +4,7 @@
  * One action: make your call (tap Yes or No, say how sure, save). Once it closes, the action becomes "see how your call did".
  */
 import type { Metadata } from "next";
+import { notFoundMetadata } from "@/lib/not-found-metadata";
 import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -26,7 +27,7 @@ import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { callsCloseAt, crowdNow, crowdVerdict, eventStart, nextUp, questionState, scoreBadge, topicRecord, weekMove } from "@/lib/question";
+import { callsCloseAt, crowdNow, crowdVerdict, eventStart, isOpen, nextUp, questionState, resolutionTitle, scoreBadge, sourceUrl, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { askedByLabel } from "@/lib/asked-by";
@@ -51,7 +52,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale, slug } = await params;
   const q = getQuestion(slug);
-  if (!isLocale(locale) || !q) return {};
+  if (!isLocale(locale) || !q) return notFoundMetadata(locale);
   return {
     title: q.question[locale],
     description: q.resolution.rule[locale],
@@ -185,7 +186,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
   // Social v1: plain question link, no tracking. Native poll totals sit apart from the crowd.
   const shareUrl = questionShareUrl(siteUrl(), locale, q.slug);
-  const shareText = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", askedBy });
+  const shareText = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", askedBy, closed: !isOpen(state) });
   const polls = q.socialPolls ?? [];
   const social = (
     <SocialPolls
@@ -198,14 +199,21 @@ export default async function QuestionPage({ params }: { params: Params }) {
   );
 
   return (
-    <article className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+    // Keyboard order is Back, then Yes/No, at every width. On desktop the call panel comes right after Back in the
+    // DOM and the grid places it in the right column; on a phone it is hidden there and shown below the crowd's number.
+    <article className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:items-start">
       <JsonLd data={breadcrumb} />
       <ScreenView locale={locale} screen="question" slug={q.slug} state={state} />
-      <div className="grid min-w-0 gap-6">
-        <Link href={`/${locale}`} className="justify-self-start text-body-sm font-semibold text-ink-2 hover:text-ink">
-          ← {t.question.back}
-        </Link>
+      <Link href={`/${locale}`} className="justify-self-start text-body-sm font-semibold text-ink-2 hover:text-ink lg:col-start-1 lg:row-start-1">
+        ← {t.question.back}
+      </Link>
 
+      <aside className="sticky top-20 hidden gap-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:grid">
+        {panel}
+        {social}
+      </aside>
+
+      <div className="grid min-w-0 gap-6 lg:col-start-1 lg:row-start-2">
         <header className="grid gap-3">
           {/* On a phone the close time takes its own line, so no separator is left hanging at a line end. A game's start is in the game line below, not here. */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-2">
@@ -352,14 +360,14 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
         <section aria-labelledby="res-title" className="grid gap-3 border-t-2 border-ink pt-5">
           <h2 id="res-title" className="m-0 font-display text-title font-bold tracking-tight text-balance">
-            {t.resolution.title}
+            {resolutionTitle(state, t.resolution)}
           </h2>
           <p className="m-0 max-w-[65ch] text-body">{q.resolution.rule[locale]}</p>
           <dl className="m-0 grid gap-3 text-body-sm sm:grid-cols-3">
             <div>
               <dt className="text-ink-2">{t.resolution.source}</dt>
               <dd className="m-0 font-semibold">
-                <a href={q.resolution.source.url} rel="noopener noreferrer" target="_blank" className="text-link underline underline-offset-4">
+                <a href={sourceUrl(q.resolution.source, locale)} rel="noopener noreferrer" target="_blank" className="text-link underline underline-offset-4">
                   {q.resolution.source.name[locale]}
                 </a>
               </dd>
@@ -403,11 +411,6 @@ export default async function QuestionPage({ params }: { params: Params }) {
         <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
         {q.category === "sports" && <SportsNotice label={t.legal.sportsLabel} footer={t.legal.sportsFooter} />}
       </div>
-
-      <aside className="sticky top-20 hidden gap-6 lg:grid">
-        {panel}
-        {social}
-      </aside>
     </article>
   );
 }

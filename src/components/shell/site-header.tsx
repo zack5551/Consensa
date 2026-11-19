@@ -21,7 +21,7 @@ export function SiteHeader({ locale, t }: Props) {
   const labels = { today: t.nav.today, board: t.nav.board, provinces: t.nav.provinces, leaderboard: t.nav.leaderboard, record: t.nav.record };
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur supports-[backdrop-filter]:bg-paper/75">
-      <div className="mx-auto flex h-14 max-w-[1120px] items-center gap-2 px-4 lg:gap-4">
+      <div className="mx-auto flex h-header max-w-[1120px] items-center gap-2 px-4 lg:gap-4">
         <Link href={localeHref(locale, "/")} aria-label={t.nav.home} className="-ml-1 rounded-control px-1 py-1">
           <Wordmark />
         </Link>

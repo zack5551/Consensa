@@ -37,7 +37,8 @@ export function PrimaryNav({ locale, labels, navLabel }: Props) {
 }
 
 /**
- * Phones: a bottom tab bar, thumb-reachable, 56px tall plus the home-indicator inset.
+ * Phones: a bottom tab bar, thumb-reachable, --app-tab-bar-height tall (globals.css) plus the home-indicator inset.
+ * html's scroll padding uses the same size, so a focused control never sits behind the bar.
  * Labels come from nav.short (one word each) so they fit five across at 320px in French.
  */
 export function TabBar({ locale, labels, navLabel }: Props) {
@@ -52,7 +53,7 @@ export function TabBar({ locale, labels, navLabel }: Props) {
               <Link
                 href={localeHref(locale, item.path)}
                 aria-current={current ? "page" : undefined}
-                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-center text-[length:var(--cn-text-caption)] leading-tight font-semibold ${
+                className={`flex min-h-tab-bar flex-col items-center justify-center gap-0.5 px-1 py-1.5 text-center text-[length:var(--cn-text-caption)] leading-tight font-semibold ${
                   current ? "text-ink" : "text-ink-2"
                 }`}
               >

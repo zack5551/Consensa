@@ -86,7 +86,7 @@ describe("asked-by schema", () => {
     const page = src("src/app/[locale]/q/[slug]/page.tsx");
     expect(page).toMatch(/askedByLabel\(q\.askedBy, t\.question\.askedBy\)/);
     expect(page).toMatch(/<AskedByLabel label=\{askedBy\}/);
-    expect(page).toMatch(/questionShareText\(t\.share, q\.question\[locale\], \{ sports: q\.category === "sports", askedBy \}\)/);
+    expect(page).toMatch(/questionShareText\(t\.share, q\.question\[locale\], \{ sports: q\.category === "sports", askedBy, closed: !isOpen\(state\) \}\)/);
     expect(page).toMatch(/withAskedBy\(fill\(t\.share\.calledItText, \{ question: q\.question\[locale\] \}\), askedBy\)/);
     for (const file of ["src/app/embed/[locale]/[slug]/page.tsx", "src/app/[locale]/q/[slug]/called-it/[side]/page.tsx", "src/app/[locale]/resolutions/page.tsx"]) {
       expect(src(file), file).toMatch(/<AskedByLabel label=\{q\.askedBy && askedByLabel\(q\.askedBy, t\.question\.askedBy\)\}/);
@@ -110,6 +110,19 @@ describe("share post text", () => {
     expect(questionShareText(fr.share, "Q?", { sports: false })).toBe("Q? Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner.");
   });
 
+  it("points to where Canada landed once calls close, and keeps the fan-forecast and asked-by lines", () => {
+    expect(questionShareText(en.share, "Q?", { sports: false, closed: true })).toBe("Q? See where Canada landed on Cansensa. Free. No prizes.");
+    expect(questionShareText(fr.share, "Q?", { sports: false, closed: true })).toBe("Q? Voyez ce que prévoyait le Canada sur Cansensa. Gratuit. Aucun prix à gagner.");
+    expect(questionShareText(en.share, "Q?", { sports: true, closed: true })).toBe("Q? See where Canada landed on Cansensa. Free. No prizes. Fan forecasts only.");
+    expect(questionShareText(fr.share, "Q?", { sports: true, closed: true })).toBe(
+      "Q? Voyez ce que prévoyait le Canada sur Cansensa. Gratuit. Aucun prix à gagner. Prévisions de partisans seulement.",
+    );
+    expect(questionShareText(en.share, "Q?", { sports: false, closed: true, askedBy: askedByLabel(guest, en.question.askedBy) })).toBe(
+      "Asked by Alex Tremblay · Q? See where Canada landed on Cansensa. Free. No prizes.",
+    );
+    for (const t of [en, fr]) expect(questionShareText(t.share, "Q?", { sports: false, closed: false })).toBe(questionShareText(t.share, "Q?", { sports: false }));
+  });
+
   it("leads the Called it! post with the label too", () => {
     expect(withAskedBy("I called it on Cansensa: Q? Free. No prizes.", askedByLabel(guest, en.question.askedBy))).toBe("Asked by Alex Tremblay · I called it on Cansensa: Q? Free. No prizes.");
     expect(withAskedBy("J’ai vu juste", undefined)).toBe("J’ai vu juste");
@@ -124,8 +137,10 @@ describe("share post text", () => {
   it("keeps every sample question's X post well under 280 characters", () => {
     for (const [locale, t] of [["en", en], ["fr", fr]] as const) {
       for (const q of sampleQuestions) {
-        const text = questionShareText(t.share, q.question[locale], { sports: q.category === "sports" });
-        expect(xLength(text), `${q.slug} (${locale})`).toBeLessThanOrEqual(250);
+        for (const closed of [false, true]) {
+          const text = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", closed });
+          expect(xLength(text), `${q.slug} (${locale}${closed ? ", closed" : ""})`).toBeLessThanOrEqual(250);
+        }
       }
     }
   });
@@ -133,6 +148,7 @@ describe("share post text", () => {
   it("fits 280 even for the longest French sample question worded as sports, or with a sponsor label", () => {
     const longest = [...sampleQuestions].sort((a, b) => b.question.fr.length - a.question.fr.length)[0]!.question.fr;
     expect(xLength(questionShareText(fr.share, longest, { sports: true }))).toBeLessThan(280);
+    expect(xLength(questionShareText(fr.share, longest, { sports: true, closed: true }))).toBeLessThan(280);
     expect(xLength(questionShareText(fr.share, longest, { sports: false, askedBy: askedByLabel(sponsor, fr.question.askedBy) }))).toBeLessThan(280);
   });
 });

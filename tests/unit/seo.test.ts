@@ -2,10 +2,14 @@ import { BRAND_NAME } from "@/lib/brand";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("server-only", () => ({}));
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { pageAlternates } from "@/lib/alternates";
+import { notFoundMetadata } from "@/lib/not-found-metadata";
 import { jsonLdString } from "@/lib/json-ld";
+import en from "@/i18n/dictionaries/en";
+import fr from "@/i18n/dictionaries/fr";
 import { isPreviewDeployment, siteUrl } from "@/lib/site-url";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -89,5 +93,45 @@ describe("brand name", () => {
     };
     walk(join(__dirname, "..", "..", "src", "app"));
     expect(hits).toEqual([]);
+  });
+});
+
+describe("page descriptions", () => {
+  const own = {
+    resolutions: "resolutionsDescription",
+    methodology: "methodologyDescription",
+    terms: "termsDescription",
+    privacy: "privacyDescription",
+    leaderboard: "leaderboardDescription",
+    provinces: "provincesDescription",
+    record: "recordDescription",
+  } as const;
+
+  it("each main page names its own description, not the home one", () => {
+    for (const [dir, key] of Object.entries(own)) {
+      const page = readFileSync(`src/app/[locale]/${dir}/page.tsx`, "utf8");
+      expect(page, dir).toContain(`description: getDictionary(locale).meta.${key}`);
+    }
+  });
+
+  it("are short, distinct and different from the home description in both languages", () => {
+    for (const t of [en, fr]) {
+      const texts = Object.values(own).map((key) => t.meta[key]);
+      expect(new Set(texts).size).toBe(texts.length);
+      for (const text of texts) {
+        expect(text).not.toBe(t.meta.description);
+        expect(text.length).toBeGreaterThan(40);
+        expect(text.length).toBeLessThanOrEqual(180);
+      }
+    }
+  });
+});
+
+describe("not-found metadata", () => {
+  it("names the 404 in each language, falls back to English, and is never indexed", () => {
+    expect(notFoundMetadata("en")).toEqual({ title: "Page not found", robots: { index: false } });
+    expect(notFoundMetadata("fr")).toEqual({ title: "Page introuvable", robots: { index: false } });
+    expect(notFoundMetadata("de")).toEqual(notFoundMetadata("en"));
+    expect(notFoundMetadata(undefined)).toEqual(notFoundMetadata("en"));
   });
 });

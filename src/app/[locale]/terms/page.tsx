@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   return {
-    title: getDictionary(locale).legalPages.terms.title,
+    title: getDictionary(locale).legalPages.terms.title, description: getDictionary(locale).meta.termsDescription,
     alternates: pageAlternates(locale, "/terms"),
   };
 }

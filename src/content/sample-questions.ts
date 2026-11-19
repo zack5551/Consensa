@@ -44,7 +44,7 @@ const raw = [
       ],
     },
     resolution: {
-      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/" },
+      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/", urlFr: "https://www.banqueducanada.ca/grandes-fonctions/politique-monetaire/taux-directeur/" },
       rule: {
         en: "Resolves YES if the Bank of Canada announces a lower target for the overnight rate on its scheduled December 2026 decision date. Any other outcome resolves NO.",
         fr: "Résolue OUI si la Banque du Canada annonce une cible plus basse pour le taux du financement à un jour à sa date de décision prévue de décembre 2026. Tout autre résultat donne NON.",
@@ -113,7 +113,7 @@ const raw = [
     languages: { en: 55, fr: 62 },
     events: [],
     resolution: {
-      source: { name: { en: "CREA monthly statistics", fr: "Statistiques mensuelles de l’ACI" }, url: "https://stats.crea.ca/en-CA/" },
+      source: { name: { en: "CREA monthly statistics", fr: "Statistiques mensuelles de l’ACI" }, url: "https://stats.crea.ca/en-CA/", urlFr: "https://stats.crea.ca/fr-CA/" },
       rule: {
         en: "Resolves YES if CREA’s actual (not seasonally adjusted) national average price for November 2026 is higher than for November 2025.",
         fr: "Résolue OUI si le prix moyen national réel (non désaisonnalisé) de l’ACI pour novembre 2026 dépasse celui de novembre 2025.",
@@ -183,7 +183,7 @@ const raw = [
     languages: { en: 51, fr: 43 },
     events: [],
     resolution: {
-      source: { name: { en: "Statistics Canada · Labour Force Survey", fr: "Statistique Canada · Enquête sur la population active" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701" },
+      source: { name: { en: "Statistics Canada · Labour Force Survey", fr: "Statistique Canada · Enquête sur la population active" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701", urlFr: "https://www150.statcan.gc.ca/t1/tbl1/fr/tv.action?pid=1410028701" },
       rule: {
         en: "Resolves YES if the seasonally adjusted national unemployment rate for October 2026 is 7.0% or higher in the first Labour Force Survey release.",
         fr: "Résolue OUI si le taux de chômage national désaisonnalisé d’octobre 2026 est de 7,0 % ou plus dans la première publication de l’Enquête sur la population active.",
@@ -206,7 +206,7 @@ const raw = [
     languages: { en: 71, fr: 70 },
     events: [{ dayIndex: 22, label: { en: "Gas prices up", fr: "Hausse de l’essence" } }],
     resolution: {
-      source: { name: { en: "Statistics Canada · Consumer Price Index", fr: "Statistique Canada · Indice des prix à la consommation" }, url: "https://www150.statcan.gc.ca/n1/en/subjects/prices_and_price_indexes/consumer_price_indexes" },
+      source: { name: { en: "Statistics Canada · Consumer Price Index", fr: "Statistique Canada · Indice des prix à la consommation" }, url: "https://www150.statcan.gc.ca/n1/en/subjects/prices_and_price_indexes/consumer_price_indexes", urlFr: "https://www150.statcan.gc.ca/n1/fr/sujets/prix_et_indices_des_prix/indices_des_prix_a_la_consommation" },
       rule: {
         en: "Resolves YES if the all-items CPI rose 2.0% or more year over year in September 2026, in Statistics Canada’s first release.",
         fr: "Résolue OUI si l’IPC d’ensemble a augmenté de 2,0 % ou plus sur un an en septembre 2026, selon la première publication de Statistique Canada.",
@@ -230,7 +230,7 @@ const raw = [
     languages: { en: 78, fr: 74 },
     events: [{ dayIndex: 12, label: { en: "CPI release", fr: "Publication de l’IPC" } }],
     resolution: {
-      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/" },
+      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/", urlFr: "https://www.banqueducanada.ca/grandes-fonctions/politique-monetaire/taux-directeur/" },
       rule: {
         en: "Resolves YES if the target for the overnight rate is unchanged after the scheduled October 2026 decision.",
         fr: "Résolue OUI si la cible du taux du financement à un jour reste inchangée après la décision prévue d’octobre 2026.",
@@ -278,7 +278,7 @@ const raw = [
     languages: { en: 24, fr: 35 },
     events: [],
     resolution: {
-      source: { name: { en: "Telefilm Canada · box-office data", fr: "Téléfilm Canada · données du box-office" }, url: "https://telefilm.ca/en/" },
+      source: { name: { en: "Telefilm Canada · box-office data", fr: "Téléfilm Canada · données du box-office" }, url: "https://telefilm.ca/en/", urlFr: "https://telefilm.ca/fr/" },
       rule: {
         en: "Resolves YES if a Canadian-certified film ranks in the top five for Canada over Oct. 9 to 12, 2026, in the first published weekend figures.",
         fr: "Résolue OUI si un film certifié canadien se classe parmi les cinq premiers au Canada du 9 au 12 octobre 2026, selon les premiers chiffres publiés.",

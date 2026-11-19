@@ -67,8 +67,8 @@ const raw = [
   {
     slug: "starts-aug-2026",
     category: "housing",
-    question: { en: "Will CMHC report more than 250,000 annualized housing starts for August?", fr: "La SCHL annoncera-t-elle plus de 250 000 mises en chantier annualisées en août?" },
-    source: { en: "CMHC · Housing starts", fr: "SCHL · Mises en chantier" },
+    question: { en: "Will CMHC report more than 250,000 annualized housing starts for August?", fr: "Le nombre de logements commencés en août dépassera-t-il 250 000 en rythme annuel, selon la SCHL?" },
+    source: { en: "CMHC · Housing starts", fr: "SCHL · Logements commencés" },
     resolvedAt: "2026-09-15",
     outcome: 0,
     regions: cells([47, 52, 49, 44, 41, 46], mix(5400)),

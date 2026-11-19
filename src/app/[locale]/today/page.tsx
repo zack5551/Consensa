@@ -81,13 +81,16 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
       <article aria-labelledby="lead-q" className="relative grid gap-6 rounded-card border border-line border-t-4 border-t-canada bg-surface p-5 sm:p-8">
         <p className={`${kicker} flex flex-wrap items-center justify-between gap-x-4 gap-y-1`}>
           <span className="text-canada">{t.today.lead}</span>
-          <span className="flex flex-wrap items-center gap-3 font-semibold text-ink-2 tabular">
+          {/* On a phone the scored/poll badge takes its own line, so no separator is left hanging at a line end (as on the question page). */}
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1 font-semibold text-ink-2 tabular">
             {leadState === "closingSoon" && <StateBadge state={leadState} label={t.states[leadState]} />}
             <span>
               {t.question.closes} {formatShortDate(callsCloseAt(lead), locale)}
             </span>
-            <span aria-hidden="true">·</span>
-            <span>{t.question[scoreBadge(lead)]}</span>
+            <span aria-hidden="true" className="hidden sm:inline">
+              ·
+            </span>
+            <span className="basis-full sm:basis-auto">{t.question[scoreBadge(lead)]}</span>
           </span>
         </p>
         <h2 id="lead-q" className="m-0 font-display text-title font-bold text-balance sm:text-headline">

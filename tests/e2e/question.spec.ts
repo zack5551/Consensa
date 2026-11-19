@@ -326,3 +326,32 @@ test("the share card is a 200 PNG in both languages, and the page asks for the l
     await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", new RegExp(`/${locale}/q/boc-cut-dec-2026/opengraph-image`));
   }
 });
+
+for (const width of [390, 1280]) {
+  test(`at ${width}px, Tab goes from Back straight to the Yes and No answers`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/en/q/boc-cut-dec-2026");
+    await page.getByRole("link", { name: /Back to today/ }).focus();
+    await page.keyboard.press("Tab");
+    await expect(page.locator(":focus")).toHaveText(/^Yes/);
+    await page.keyboard.press("Tab");
+    await expect(page.locator(":focus")).toHaveText(/^No/);
+  });
+}
+
+test("a resolved question speaks in the past and its share post invites no call", async ({ page }) => {
+  for (const locale of ["en", "fr"] as const) {
+    await page.goto(`/${locale}/q/cpi-sept-2026`);
+    await expect(page.getByRole("heading", { level: 2, name: locale === "en" ? "How it was resolved" : "Comment elle a été résolue" })).toBeVisible();
+    const x = new URL((await page.locator('a[data-share="x"]').getAttribute("href")) ?? "");
+    expect(x.searchParams.get("text")).toContain(locale === "en" ? "See where Canada landed on Cansensa." : "Voyez ce que prévoyait le Canada sur Cansensa.");
+    expect(x.searchParams.get("text")).not.toContain(locale === "en" ? "Make your call" : "Faites votre prévision");
+  }
+});
+
+test("the official source links to its French page on /fr and its English page on /en", async ({ page }) => {
+  await page.goto("/fr/q/boc-cut-dec-2026");
+  await expect(page.getByRole("link", { name: "Banque du Canada" }).first()).toHaveAttribute("href", /^https:\/\/www\.banqueducanada\.ca\//);
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await expect(page.getByRole("link", { name: "Bank of Canada" }).first()).toHaveAttribute("href", /^https:\/\/www\.bankofcanada\.ca\//);
+});

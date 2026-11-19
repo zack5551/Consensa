@@ -66,7 +66,8 @@ for (const locale of ["en", "fr"] as const) {
   test(`a game question in ${locale} shows the matchup and start time as text, and axe passes`, async ({ page }) => {
     await page.goto(`/${locale}/q/canadiens-leafs-nov-21-2026`);
     await expect(page.getByTestId("game-line")).toHaveText(game[locale].line);
-    await expect(page.getByText(game[locale].closes).first()).toBeVisible();
+    // The call panel is in the DOM twice (phone and desktop copies, one hidden), so look for the copy on screen.
+    await expect(page.getByText(game[locale].closes).filter({ visible: true }).first()).toBeVisible();
     await expect(page.locator("article header").getByText(game[locale].scored, { exact: true })).toBeVisible();
     await expect(page.locator("article img")).toHaveCount(0);
     const results = await new AxeBuilder({ page }).withTags(tags).analyze();

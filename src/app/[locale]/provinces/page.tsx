@@ -32,7 +32,7 @@ function spreadOf(q: { provinces: Record<Region, number>; hiddenProvinces?: read
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getDictionary(locale).provinces.title, alternates: pageAlternates(locale, "/provinces") };
+  return { title: getDictionary(locale).provinces.title, description: getDictionary(locale).meta.provincesDescription, alternates: pageAlternates(locale, "/provinces") };
 }
 
 export default async function ProvincesPage({ params }: { params: Params }) {

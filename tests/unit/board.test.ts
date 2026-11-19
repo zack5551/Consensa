@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
-import { applyBoardQuery, boardQueryString, parseBoardQuery, sortRows, toBoardRow, type BoardRow } from "@/lib/board";
+import { applyBoardQuery, boardQueryString, changeLabel, changeText, parseBoardQuery, sortRows, toBoardRow, type BoardRow } from "@/lib/board";
+import en from "@/i18n/dictionaries/en";
+import fr from "@/i18n/dictionaries/fr";
 
 const rows = sampleQuestions.map((q) => toBoardRow(q, SAMPLE_NOW));
 
@@ -65,5 +67,27 @@ describe("URL state", () => {
     const q = parseBoardQuery({ show: "results", topic: "housing", sort: "moved" });
     expect(boardQueryString(q)).toBe("?show=results&topic=housing&sort=moved");
     expect(boardQueryString(parseBoardQuery({}))).toBe("");
+  });
+});
+
+describe("7-day change text", () => {
+  it("says 1 pt and 2 pts, with a real minus sign", () => {
+    expect(changeText(1, en.board)).toBe("+1 pt");
+    expect(changeText(-1, en.board)).toBe("−1 pt");
+    expect(changeText(2, en.board)).toBe("+2 pts");
+    expect(changeText(-14, en.board)).toBe("−14 pts");
+    expect(changeText(0, en.board)).toBe("No change");
+    expect(changeText(1, fr.board)).toBe("+1 pt");
+    expect(changeText(-3, fr.board)).toBe("−3 pts");
+    expect(changeText(0, fr.board)).toBe("Aucune variation");
+  });
+
+  it("speaks 1 point and 2 points in the screen-reader label", () => {
+    expect(changeLabel(1, en.board)).toBe("Up 1 point over 7 days");
+    expect(changeLabel(-1, en.board)).toBe("Down 1 point over 7 days");
+    expect(changeLabel(5, en.board)).toBe("Up 5 points over 7 days");
+    expect(changeLabel(-2, en.board)).toBe("Down 2 points over 7 days");
+    expect(changeLabel(1, fr.board)).toBe("En hausse de 1 point sur 7 jours");
+    expect(changeLabel(-2, fr.board)).toBe("En baisse de 2 points sur 7 jours");
   });
 });

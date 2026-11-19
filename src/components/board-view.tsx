@@ -9,7 +9,7 @@ import { YourCallBadge } from "@/components/your-call-badge";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
-import { applyBoardQuery, boardFilters, boardQueryString, boardSorts, defaultBoardQuery, parseBoardQuery, type BoardQuery, type BoardRow } from "@/lib/board";
+import { applyBoardQuery, boardFilters, boardQueryString, boardSorts, changeLabel, changeText, defaultBoardQuery, parseBoardQuery, type BoardQuery, type BoardRow } from "@/lib/board";
 import { readAllCalls, subscribeCalls } from "@/lib/calls-store";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
 import { categories, isOpen, type Category } from "@/lib/question";
@@ -67,8 +67,6 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
 
   const pct = (v: number) => formatPercent(v, locale);
   const count = shown.length === 1 ? t.browse.shownOne : fill(t.browse.shown, { n: formatCount(shown.length, locale) });
-  const changeText = (n: number) => (n === 0 ? t.board.noChange : `${n > 0 ? "+" : "−"}${fill(t.board.change, { n: Math.abs(n) })}`);
-  const changeLabel = (n: number) => (n === 0 ? t.board.noChange : n > 0 ? fill(t.board.changeLabel, { up: n }) : fill(t.board.changeDownLabel, { down: Math.abs(n) }));
   const href = (slug: string) => `/${locale}/q/${slug}`;
 
   return (
@@ -195,8 +193,8 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
                     <td className="px-4 py-3 align-middle">
                       <span className="flex items-center gap-3">
                         <Sparkline values={r.spark} className="h-6 w-16" />
-                        <span className={`text-body-sm font-semibold tabular ${r.change > 0 ? "text-side-a-text" : r.change < 0 ? "text-side-b-text" : "text-ink-2"}`} aria-label={changeLabel(r.change)}>
-                          {changeText(r.change)}
+                        <span className={`text-body-sm font-semibold tabular ${r.change > 0 ? "text-side-a-text" : r.change < 0 ? "text-side-b-text" : "text-ink-2"}`} aria-label={changeLabel(r.change, t.board)}>
+                          {changeText(r.change, t.board)}
                         </span>
                       </span>
                     </td>
@@ -223,8 +221,8 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
                 <span className="flex items-center justify-between gap-3">
                   <span className="flex items-baseline gap-2">
                     <span className="font-display text-title-sm font-bold tabular">{pct(r.crowd)}</span>
-                    <span className={`text-caption font-semibold tabular ${r.change > 0 ? "text-side-a-text" : r.change < 0 ? "text-side-b-text" : "text-ink-2"}`} aria-label={changeLabel(r.change)}>
-                      {changeText(r.change)}
+                    <span className={`text-caption font-semibold tabular ${r.change > 0 ? "text-side-a-text" : r.change < 0 ? "text-side-b-text" : "text-ink-2"}`} aria-label={changeLabel(r.change, t.board)}>
+                      {changeText(r.change, t.board)}
                     </span>
                   </span>
                   <Sparkline values={r.spark} className="h-6 w-20" />
