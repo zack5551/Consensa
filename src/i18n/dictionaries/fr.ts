@@ -322,6 +322,7 @@ const fr = {
   question: {
     canadaSays: "Selon le Canada",
     canadaSaid: "Le Canada prévoyait",
+    canadaSource: "d’après les participants de Cansensa",
     chance: "de chances",
     yes: "Oui",
     no: "Non",
