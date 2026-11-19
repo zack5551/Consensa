@@ -334,6 +334,11 @@ const fr = {
     cardCalls: "Moyenne de {n} prévisions",
     cardCloses: "Fermeture le {date}",
     cardClosed: "Fermée",
+    calledItTitle: "Partager ma prévision",
+    calledItText: "J’ai vu juste sur Cansensa : {question} Gratuit. Aucun prix.",
+    calledItLead: "Cette prévision allait dans le sens du résultat officiel.",
+    calledItResult: "Résultat publié le {date}",
+    calledItPageTitle: "Vu juste! {question}",
   },
   social: {
     title: "Sur les réseaux sociaux",

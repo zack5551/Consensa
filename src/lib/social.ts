@@ -75,6 +75,11 @@ export function questionShareUrl(base: string, locale: Locale, slug: string): st
   return `${base.replace(/\/+$/, "")}/${locale}/q/${slug}`;
 }
 
+/** The "Called it!" page for a resolved question: the slug and the side that happened, nothing about who called it. */
+export function calledItShareUrl(base: string, locale: Locale, slug: string, side: "yes" | "no"): string {
+  return `${questionShareUrl(base, locale, slug)}/called-it/${side}`;
+}
+
 export type ShareLinks = { x: string; threads: string; facebook: string };
 
 /** Plain intent links: no SDKs, no scripts, no trackers. The share hosts are links only; nothing is sent from our side. */

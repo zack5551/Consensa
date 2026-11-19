@@ -1,4 +1,26 @@
+import { questionState, type Question } from "@/lib/question";
 import { isPublishable } from "@/lib/regions";
+
+export const callSides = ["yes", "no"] as const;
+export type CallSide = (typeof callSides)[number];
+
+export function isCallSide(value: string): value is CallSide {
+  return (callSides as readonly string[]).includes(value);
+}
+
+/**
+ * Whether a "Called it!" card exists for this question and side: only once the official result is in and not under
+ * review, and only for the side that happened. The card and its page are built from the question and the side alone,
+ * so there is never anything about a person to check, store or show.
+ */
+export function hasCalledItCard(question: Question, side: string, now: Date): side is CallSide {
+  return questionState(question, now) === "resolved" && question.resolution.result?.outcome === side;
+}
+
+/** Every "Called it!" card that exists right now: one per resolved question, for the side that happened. */
+export function calledItCards(questions: readonly Question[], now: Date): { slug: string; side: CallSide }[] {
+  return questions.flatMap((q) => callSides.filter((side) => hasCalledItCard(q, side, now)).map((side) => ({ slug: q.slug, side })));
+}
 
 /**
  * The crowd number a share card may show: only a real one, from at least 5 calls (the same floor as every other

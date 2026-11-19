@@ -332,6 +332,11 @@ const en = {
     cardCalls: "Average of {n} calls",
     cardCloses: "Closes {date}",
     cardClosed: "Closed",
+    calledItTitle: "Share your call",
+    calledItText: "I called it on Cansensa: {question} Free. No prizes.",
+    calledItLead: "This call landed on the right side of the official result.",
+    calledItResult: "Result published {date}",
+    calledItPageTitle: "Called it! {question}",
   },
   social: {
     title: "On social media",

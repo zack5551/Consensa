@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CallPanel } from "@/components/call-panel";
+import { CallPanel, type CalledItShare } from "@/components/call-panel";
 import { CrowdBar } from "@/components/crowd-bar";
 import { ForecastChart } from "@/components/forecast-chart";
 import { LanguageSplit } from "@/components/language-split";
@@ -29,7 +29,8 @@ import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatSh
 import { callsCloseAt, crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
-import { socialPollLine, questionShareUrl, shareLinks } from "@/lib/social";
+import { hasCalledItCard } from "@/lib/share";
+import { calledItShareUrl, socialPollLine, questionShareUrl, shareLinks } from "@/lib/social";
 import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
 import { schemaOrg } from "@/lib/json-ld";
@@ -138,6 +139,15 @@ export default async function QuestionPage({ params }: { params: Params }) {
     ],
   });
 
+  // "Share your call": offered by the panel only when this browser's call was right. The link names the question and
+  // the side that happened, so it is worked out here from the result alone, with no tracking and nothing personal.
+  let calledItShare: CalledItShare | undefined;
+  if (result && hasCalledItCard(q, result.outcome, SAMPLE_NOW)) {
+    const url = calledItShareUrl(siteUrl(), locale, q.slug, result.outcome);
+    const text = fill(t.share.calledItText, { question: q.question[locale] });
+    calledItShare = { t: t.share, text, url, links: shareLinks(text, url) };
+  }
+
   const panel = (
     <CallPanel
       slug={q.slug}
@@ -150,6 +160,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
       outcome={result?.outcome}
       closedOn={formatLongDate(callsCloseAt(q), locale)}
       regions={{ values: q.provinces, hidden: q.hiddenProvinces, names: t.province.names }}
+      calledItShare={calledItShare}
     />
   );
 
