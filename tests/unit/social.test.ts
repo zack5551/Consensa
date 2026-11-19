@@ -68,7 +68,7 @@ describe("socialPolls schema", () => {
   });
 
   it("allows only the four platforms' hosts", () => {
-    expect(["https://threads.net/a", "https://www.instagram.com/p/1", "https://x.com/a"].every(isAllowedPostUrl)).toBe(true);
+    expect(["https://threads.net/a", "https://www.threads.com/@cansensa/post/1", "https://www.instagram.com/p/1", "https://x.com/a"].every(isAllowedPostUrl)).toBe(true);
     expect(["https://twitter.com/a", "https://youtube.com/a", "not a url"].some(isAllowedPostUrl)).toBe(false);
   });
 

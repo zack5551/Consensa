@@ -148,12 +148,20 @@ const allowedDomains = [
   // reads a local file on our server; the database is fetched at build time by scripts/fetch-ip2proxy.mjs, not at run time.
   "lite.ip2location.com",
   "creativecommons.org",
-  // Share and poll links, and nothing else: plain links a person follows from the question page (intent URLs and our
-  // own post URLs). We load no script, SDK or image from them and send no data, so nothing leaves until a click.
-  "twitter.com", "x.com", "threads.net", "instagram.com", "facebook.com",
   // Not network calls: the SVG namespace, the structured-data vocabulary name and the local dev fallback
   "www.w3.org", "schema.org", "localhost",
 ];
+
+/**
+ * Share and poll links, and nothing else: plain links a person follows from the question page (intent URLs and our
+ * own post URLs). We load no script, SDK or image from them and send no data, so nothing leaves until a click.
+ * These match the exact host only, never a subdomain, so an API or embed host (api.x.com, graph.facebook.com,
+ * platform.twitter.com) still fails this test until it is added on purpose, with its own check.
+ */
+const allowedExactHosts = new Set([
+  "twitter.com", "x.com", "www.x.com", "threads.net", "www.threads.net", "threads.com", "www.threads.com",
+  "instagram.com", "www.instagram.com", "facebook.com", "www.facebook.com",
+]);
 
 /** Packages that send visitor data to a third party. Rule 7: none without a privacy review and LEX's check. */
 const trackerPackages = [
@@ -163,7 +171,14 @@ const trackerPackages = [
 ];
 
 describe("outside hosts", () => {
-  const allowed = (host: string) => allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
+  const allowed = (host: string) => allowedExactHosts.has(host) || allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
+
+  it("share hosts match exactly: no social API or embed host gets through", () => {
+    for (const host of ["api.x.com", "api.twitter.com", "platform.twitter.com", "graph.facebook.com", "connect.facebook.net", "graph.threads.net", "graph.instagram.com"]) {
+      expect(allowed(host), host).toBe(false);
+    }
+    expect(allowed("www.facebook.com")).toBe(true);
+  });
 
   for (const file of source) {
     const hosts = [...read(file).matchAll(/https?:\/\/([a-z0-9.-]+)/gi)].map((m) => m[1]!.toLowerCase());

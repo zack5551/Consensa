@@ -14,7 +14,8 @@ export type SocialPlatform = (typeof socialPlatforms)[number];
 /** Hosts a poll's post URL may point to (LEX): the four platforms, with or without "www.". */
 const postHosts: Record<SocialPlatform, readonly string[]> = {
   x: ["x.com"],
-  threads: ["threads.net"],
+  // Threads moved to threads.com; threads.net still redirects there, so both are real post addresses.
+  threads: ["threads.net", "threads.com"],
   instagram: ["instagram.com"],
   facebook: ["facebook.com"],
 };
@@ -39,7 +40,7 @@ export const socialPollSchema = z
     no: count,
     /** When the platform's poll closed. */
     closedAt: z.iso.datetime(),
-    url: z.string().refine(isAllowedPostUrl, { message: "Post URL must be https on x.com, threads.net, instagram.com or facebook.com." }),
+    url: z.string().refine(isAllowedPostUrl, { message: "Post URL must be https on x.com, threads.net, threads.com, instagram.com or facebook.com." }),
     /** True for made-up preview numbers, so they are never mistaken for real totals. */
     sample: z.boolean().optional(),
   })
