@@ -1,7 +1,7 @@
 -- Social sweep approval (AEGIS): a one-time, 36-hour go-ahead for a daily sweep that the removal ceiling stopped.
 -- How zack uses it: after looking at a halted sweep, run `select public.approve_social_sweep();` in the Supabase SQL editor.
 -- Run after 20261119000000_social_voting.sql, and BEFORE turning on SOCIAL_VOTING. Safe to run again.
--- Not run on any Postgres yet (written and read only): try it on a local database before the real project.
+-- Checked on local Postgres 16 by AEGIS (2026-11-19).
 --
 -- Shape: one row at most, holding the time the approval ends. The sweep asks for it only when its removal ceiling
 -- trips (more than max(10, 20% of the replies checked) reported deleted in one run), and asking uses it up. A
