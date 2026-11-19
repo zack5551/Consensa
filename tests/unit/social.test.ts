@@ -96,7 +96,7 @@ describe("share card", () => {
   });
 
   it("keeps every sample question and card label whole, and drops what the brand fonts cannot draw", () => {
-    const labels = [en, fr].flatMap((t) => [t.share.cardNoValue, t.share.cardSports, t.share.cardCancelled, t.legal.sportsFooter, t.question.makeYourCall, t.question.canadaSays, t.question.canadaSaid, t.question.chance]);
+    const labels = [en, fr].flatMap((t) => [t.share.cardNoValue, t.share.cardSports, t.legal.sportsFooter, t.question.makeYourCall, t.question.canadaSays, t.question.canadaSaid, t.question.yes, t.question.no, t.share.cardCalls, t.share.cardCloses, t.share.cardClosed, t.share.cardCancelled]);
     for (const text of [...sampleQuestions.flatMap((q) => [q.question.en, q.question.fr]), ...labels]) expect(cardSafe(text)).toBe(text);
     expect(cardSafe("38\u202F% \u{1F3D2} 日本")).toBe("38\u00A0%  ");
   });

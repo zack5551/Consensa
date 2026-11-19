@@ -22,6 +22,14 @@ export function termsCurrent(rows: readonly ConsentRow[], termsVersion: string):
   return rows.some((r) => r.kind === "terms" && r.withdrawn_at === null && typeof r.version === "string" && r.version >= termsVersion);
 }
 
+/**
+ * True once the Terms version has taken effect: the calls route asks for acceptance only from that day (UTC). During
+ * the 30-day notice period before it, calls under the old Terms still count (LEX, item 13).
+ */
+export function termsGateOn(termsVersion: string, now: Date): boolean {
+  return now.toISOString().slice(0, 10) >= termsVersion;
+}
+
 /** Accepting new Terms names the exact version shown, so a stale page can't accept a version it never displayed. */
 export const acceptTermsSchema = z.object({ version: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).strict();
 
