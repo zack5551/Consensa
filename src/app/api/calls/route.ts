@@ -1,7 +1,7 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getQuestion, SAMPLE_NOW } from "@/content/sample-questions";
-import { termsCurrent, type ConsentRow } from "@/lib/account";
+import { termsCurrent, termsGateOn, type ConsentRow } from "@/lib/account";
 import { callsCountFrom, COUNTRY_HEADER, PROXY_CHECK_TIMEOUT_MS, withinTime } from "@/lib/call-origin";
 import { callsCloseAt, isOpen, questionState } from "@/lib/question";
 import { rateLimiter } from "@/lib/rate-limit";
@@ -75,13 +75,16 @@ export async function POST(request: NextRequest) {
   // The site's clock: the same one every page uses to show a question as open or closed.
   if (!isOpen(questionState(q, SAMPLE_NOW))) return NextResponse.json({ error: "closed" }, { status: 409, headers: noStore });
 
-  // Calls need the current Terms (Terms s. 18). Sign-in and the Terms page already ask again after a change, but a
-  // session that stayed open across the change would otherwise keep calling under the old Terms. Read with the
-  // person's own session: row-level security returns only their consent rows. A failed read refuses the call
-  // (fail closed) rather than counting it under Terms nobody checked.
-  const terms = await supabase.from("consent_log").select("kind, version, given_at, withdrawn_at").eq("kind", "terms");
-  if (terms.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
-  if (!termsCurrent((terms.data ?? []) as ConsentRow[], TERMS_VERSION)) return NextResponse.json({ error: "terms" }, { status: 403, headers: noStore });
+  // Calls need the current Terms (Terms s. 18) once they take effect. Sign-in and the Terms page already ask again
+  // after a change, but a session that stayed open across the change would otherwise keep calling under the old
+  // Terms. Before the effective date (the 30-day notice period) calls under the old Terms still count (LEX, item 13).
+  // Read with the person's own session: row-level security returns only their consent rows. A failed read refuses
+  // the call (fail closed) rather than counting it under Terms nobody checked.
+  if (termsGateOn(TERMS_VERSION, new Date())) {
+    const terms = await supabase.from("consent_log").select("kind, version, given_at, withdrawn_at").eq("kind", "terms");
+    if (terms.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
+    if (!termsCurrent((terms.data ?? []) as ConsentRow[], TERMS_VERSION)) return NextResponse.json({ error: "terms" }, { status: 403, headers: noStore });
+  }
 
   // The database checks the close time itself (and refuses late calls whatever the app says), so it needs the
   // question's close time. Content is the source of truth, so a changed close date is copied over.

@@ -206,6 +206,20 @@ describe("POST /api/calls needs the current Terms (Terms s. 18)", () => {
     expect(upsert).not.toHaveBeenCalled();
   });
 
+  it("still counts calls under the old Terms before the new ones take effect (30-day notice period, LEX)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const dayBefore = new Date(`${TERMS_VERSION}T00:00:00Z`);
+      dayBefore.setUTCDate(dayBefore.getUTCDate() - 1);
+      vi.setSystemTime(dayBefore);
+      terms.result = { data: [], error: { message: "not even read" } };
+      expect((await post()).status).toBe(200);
+      expect(upsert).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("refuses with 503 when the Terms can't be read: fail closed, nothing written", async () => {
     terms.result = { data: null, error: { message: "down" } };
     const res = await post();

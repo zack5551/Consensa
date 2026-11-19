@@ -37,9 +37,13 @@ export function safeNext(next: string | null | undefined, fallback = "/en/today"
 export const CONSENT_VERSION = "2026-11-11";
 
 /**
- * The date of the Terms people must have accepted. When the Terms change materially, set this to the new date (and
- * CONSENT_VERSION to at least the same date): everyone who accepted an older version is asked again at their next
- * sign-in (Terms s. 18). A unit test keeps CONSENT_VERSION from falling behind.
+ * The Terms version people must have accepted, written as the date that version TAKES EFFECT. Rules (LEX, item 13):
+ * - Change it only for a material change to the Terms. A typo, wording or contact fix updates the page's date and
+ *   changelog only. Privacy Policy changes never touch it (the policy is a notice, not a contract), and a new purpose
+ *   gets its own consent box, never a bundled "accept".
+ * - The in-app notice goes out at least 30 days before this date. Until the date arrives, calls under the old Terms
+ *   still count (`termsGateOn`); from that day, calls wait for acceptance (Terms s. 18).
+ * - Set CONSENT_VERSION to at least the same date: a unit test keeps it from falling behind.
  */
 export const TERMS_VERSION = "2026-11-11";
 
