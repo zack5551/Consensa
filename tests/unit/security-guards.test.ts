@@ -55,7 +55,7 @@ describe("API routes", () => {
   }
 
   it("every account route answers with no-store, so personal data is never cached", () => {
-    for (const file of routes.filter((f) => /api\/(account|calls)/.test(f))) {
+    for (const file of routes.filter((f) => /api\/(account|calls|session)/.test(f))) {
       expect(read(file), rel(file)).toMatch(/noStore/);
     }
   });
