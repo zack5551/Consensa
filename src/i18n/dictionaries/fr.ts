@@ -30,7 +30,7 @@ const fr = {
     resolutionsDescription: "Chaque question fermée de Cansensa, son résultat officiel et la précision de la foule. Les corrections et les révisions y sont aussi consignées.",
     methodologyDescription: "Comment fonctionne Cansensa : le calcul de la prévision du Canada, la notation des prévisions par le score de Brier et la résolution à partir de sources officielles.",
     termsDescription: "Les conditions d’utilisation de Cansensa, une application canadienne de prévisions gratuite pour adultes. Sans argent, sans achat, sans prix à gagner.",
-    privacyDescription: "Ce que Cansensa conserve à votre sujet, où c’est stocké et comment le consulter, le corriger ou le supprimer. Les comptes, les prévisions et les analyses sont stockés à Montréal.",
+    privacyDescription: "Ce que Cansensa conserve à votre sujet, où c’est stocké et comment le consulter, le corriger ou le supprimer. Votre compte et vos prévisions sont conservés à Montréal, au Canada.",
     leaderboardDescription: "Les prévisionnistes les plus précis du Canada sur Cansensa, classés selon leur score de Brier par rapport à la foule, pas selon des points.",
     provincesDescription: "Les prévisions de chaque région du Canada sur Cansensa : où elles s’entendent, où elles divergent et quelle foule a vu le plus juste.",
     recordDescription: "Votre bilan Cansensa : la précision de vos prévisions, comparée à celle du Canada.",
