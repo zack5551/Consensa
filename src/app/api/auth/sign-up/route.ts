@@ -4,12 +4,13 @@ import { rateLimiter } from "@/lib/rate-limit";
 import { logErrorCode } from "@/lib/server/error-code-log";
 import { verifyBotCheck } from "@/lib/server/bot-check";
 import { noStore, sameOrigin } from "@/lib/supabase/account-server";
-import { signupMetadataSchema } from "@/lib/supabase/config";
+import { MAX_NEXT_LENGTH, signupMetadataSchema } from "@/lib/supabase/config";
+import { landingPath } from "@/lib/return-path";
 import { serverSupabase } from "@/lib/supabase/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { callerIp } from "@/lib/server/proxy-check";
 
-const bodySchema = z.object({ email: z.string().trim().email().max(254), data: signupMetadataSchema, altcha: z.string().max(4096).nullable().optional() }).strict();
+const bodySchema = z.object({ email: z.string().trim().email().max(254), data: signupMetadataSchema, altcha: z.string().max(4096).nullable().optional(), next: z.string().max(MAX_NEXT_LENGTH).optional() }).strict();
 
 /** At most 10 sign-up attempts a minute per caller on this server instance. The address is only a key in memory: never logged or stored. */
 const allowSignUp = rateLimiter({ limit: 10, windowMs: 60_000 });
@@ -37,6 +38,8 @@ export async function POST(request: NextRequest) {
   if (!admin) return NextResponse.json({ error: "accounts off" }, { status: 404, headers: noStore });
 
   const { email, data } = parsed.data;
+  // Where the link lands: the page the person came from when it passes returnPath, else today. Never the raw client value.
+  const next = landingPath(data.locale, parsed.data.next);
   // Accounts are created only here, after the bot check, with the server key. Public sign-up is turned off in Supabase,
   // so the publishable key can only send links to accounts that already exist. The sign-up trigger still checks
   // adult and terms in the metadata, so it stays the gate.
@@ -49,7 +52,7 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: false, emailRedirectTo: `${linkOrigin(request)}/api/auth/callback?next=/${data.locale}/today` },
+    options: { shouldCreateUser: false, emailRedirectTo: `${linkOrigin(request)}/api/auth/callback?next=${next}` },
   });
   if (error) {
     // Only the code is logged, never the address. A rate limit gets a generic answer; every other error looks like success,

@@ -68,3 +68,34 @@ for (const locale of ["en", "fr"] as const) {
     await expect(page.getByRole("heading", { level: 2 })).toHaveText(locale === "en" ? "Check your email" : "Vérifiez vos courriels");
   });
 }
+
+test("sign-in and onboarding carry the question page through, and finish there", async ({ page }) => {
+  const question = "/en/q/boc-cut-dec-2026";
+  await page.goto(`/en/sign-in?next=${question}`);
+  await expect(page.getByRole("main").getByRole("link", { name: "Get started" })).toHaveAttribute("href", `/en/welcome?next=${question}`);
+  await page.getByRole("main").getByRole("link", { name: "Get started" }).click();
+  await expect(page).toHaveURL(new RegExp(`/en/welcome\\?next=${question}$`));
+
+  // The other language keeps the same question, in that language.
+  await expect(page.getByRole("main").getByRole("link", { name: "Français" })).toHaveAttribute("href", "/fr/welcome?step=age&next=/fr/q/boc-cut-dec-2026");
+
+  await page.getByRole("button", { name: "English" }).click();
+  await page.getByLabel("Date of birth").fill("1990-05-01");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("radio").first().check();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Skip" }).click();
+  await page.getByLabel("Email", { exact: true }).fill("sam@example.ca");
+  await page.getByRole("checkbox").first().check();
+  await page.getByRole("button", { name: "Create my account" }).click();
+  await expect(page.getByRole("main").getByRole("link", { name: "Make your first call" })).toHaveAttribute("href", question);
+});
+
+test("a next that leaves the site, or carries a query, is dropped", async ({ page }) => {
+  for (const next of ["//evil.com", "https://evil.com", "/en/../..", "/en/q/boc-cut-dec-2026?utm_source=mail"]) {
+    await page.goto(`/en/sign-in?next=${encodeURIComponent(next)}`);
+    await expect(page.getByRole("main").getByRole("link", { name: "Get started" })).toHaveAttribute("href", "/en/welcome");
+  }
+  await page.goto(`/en/welcome?next=${encodeURIComponent("//evil.com")}`);
+  await expect(page.getByRole("main").getByRole("link", { name: "Français" })).toHaveAttribute("href", "/fr/welcome?step=age");
+});

@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AskedByLabel } from "@/components/asked-by-label";
 import { ScreenView } from "@/components/screen-view";
 import { SourceCredit } from "@/components/source-credit";
 import { StateBadge } from "@/components/state-badge";
@@ -16,6 +17,7 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { formatBrier, formatLongDate, formatPercent } from "@/lib/format";
 import { crowdBrier, crowdNow, isOpen, questionState } from "@/lib/question";
 import { fill } from "@/lib/text";
+import { askedByLabel } from "@/lib/asked-by";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -58,6 +60,7 @@ export default async function ResolutionsPage({ params }: { params: Promise<{ lo
                 <StateBadge state={state} label={t.states[state]} />
                 <span>{formatLongDate(r?.publishedAt ?? q.resolution.resolvesAt, locale)}</span>
               </div>
+              <AskedByLabel label={q.askedBy && askedByLabel(q.askedBy, t.question.askedBy)} />
               <h2 className="m-0 font-display text-title-sm font-bold leading-snug tracking-tight text-balance sm:text-title">
                 <Link href={`/${locale}/q/${q.slug}`} className="hover:underline">
                   {q.question[locale]}

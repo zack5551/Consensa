@@ -3,6 +3,8 @@
  * One message: where Canada lands on this question right now, by province.
  * One action: make your call on Cansensa (opens in a new tab, tagged utm_source=embed).
  */
+import { askedByLabel } from "@/lib/asked-by";
+import { AskedByLabel } from "@/components/asked-by-label";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CrowdBar } from "@/components/crowd-bar";
@@ -53,6 +55,7 @@ export default async function EmbedPage({ params }: { params: Params }) {
         <Wordmark className="text-body" />
         <span>{t.embed.poweredBy}</span>
       </p>
+      <AskedByLabel label={q.askedBy && askedByLabel(q.askedBy, t.question.askedBy)} />
       <h1 className="m-0 font-display text-title-sm font-bold leading-snug text-balance">{q.question[locale]}</h1>
       {state === "cancelled" && <p className="m-0 text-body-sm text-ink-2">{t.share.cardCancelled}</p>}
       <p className="m-0 flex flex-wrap items-baseline gap-x-2">

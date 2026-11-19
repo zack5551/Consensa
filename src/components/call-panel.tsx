@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { ShareBar } from "@/components/share-bar";
 import type { Locale } from "@/i18n/config";
@@ -15,6 +16,7 @@ import { hasStarted, provinces, type Province, type QuestionOutcome, type Questi
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
 import type { ShareLinks } from "@/lib/social";
 import { accountsEnabled } from "@/lib/supabase/env";
+import { welcomeHref } from "@/lib/return-path";
 import { fill } from "@/lib/text";
 
 type Props = {
@@ -81,7 +83,7 @@ const sideOrder = ["yes", "no"] as const;
 /** Asked once per page load, and only after a call is saved: is this visitor signed in? null when the answer isn't known. */
 let accountCheck: Promise<boolean | null> | null = null;
 function signedInOnce(): Promise<boolean | null> {
-  accountCheck ??= fetch("/api/account", { cache: "no-store" })
+  accountCheck ??= fetch("/api/session", { cache: "no-store" })
     .then((res) => (res.ok ? (res.json() as Promise<{ signedIn?: unknown } | null>) : null))
     .then((body) => (typeof body?.signedIn === "boolean" ? body.signedIn : null))
     .catch(() => null);
@@ -108,6 +110,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   const vpn = useSyncExternalStore(subscribeOutsideCanada, isVpnRefused, () => false);
   const termsOld = useSyncExternalStore(subscribeOutsideCanada, isTermsOutdated, () => false);
   const id = useId();
+  // The nudge brings people back here after signing up (checked with returnPath: a plain path only).
+  const pathname = usePathname();
   const sliderRef = useRef<HTMLInputElement>(null);
   const changeRef = useRef<HTMLButtonElement>(null);
   // Where keyboard focus goes after a step changes, so it never falls back to the top of the page.
@@ -223,7 +227,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
           {signedIn === false && (
             <p className="m-0 text-body-sm text-ink-2">
               {t.nudge.before}{" "}
-              <Link href={`/${locale}/welcome`} className="font-semibold text-link underline underline-offset-2">
+              <Link href={welcomeHref(locale, pathname)} className="font-semibold text-link underline underline-offset-2">
                 {t.nudge.link}
               </Link>{" "}
               {t.nudge.after}

@@ -8,7 +8,7 @@ for (const locale of ["en", "fr"] as const) {
     test(`${path} summary renders in ${locale} with the shell and no accessibility violations`, async ({ page }) => {
       await page.goto(`/${locale}/${path}`);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(page.getByRole("contentinfo")).toContainText(locale === "en" ? "Free · No money · No prizes · 18+" : "Gratuit · Sans argent · Sans prix");
+      await expect(page.getByRole("contentinfo")).toContainText(locale === "en" ? "Free · No money · No prizes · 18+" : "Gratuit · Sans argent · Sans prix à gagner");
       const results = await axe(page);
       expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
     });

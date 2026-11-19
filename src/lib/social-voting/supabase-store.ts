@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { CountOutcome, CountStore, OfficialPost } from "./count";
 import { idHmac, recheckCutoff } from "./link-rules";
 import type { SpendStore } from "./spend";
+import { removeOutcomes, type RemoveOutcome, type SweepStore } from "./sweep";
 import type { Platform, PollTotals } from "./types";
 
 const outcomes = ["counted", "duplicate", "website_wins", "older_reply", "closed", "before_link", "unlinked"] as const;
@@ -14,7 +15,7 @@ const PAGE = 1000;
  * matters (linked, confirmed, open, one call per person, website wins) is enforced by the database functions in
  * the sprint-11 migration; this only carries the calls. It never logs.
  */
-export class SupabaseSocialStore implements CountStore, SpendStore {
+export class SupabaseSocialStore implements CountStore, SweepStore, SpendStore {
   constructor(
     private readonly admin: SupabaseClient,
     private readonly hmacSecret: string,
@@ -76,18 +77,31 @@ export class SupabaseSocialStore implements CountStore, SpendStore {
     return outcome.success ? outcome.data : "retry";
   }
 
-  async ledgerReplyIds(platform: Platform, postId: string): Promise<string[]> {
-    const { data, error } = await this.admin.from("social_votes").select("reply_id").eq("platform", platform).eq("post_id", postId).limit(PAGE);
-    if (error) throw new Error("ledger unavailable");
-    return z
-      .array(z.object({ reply_id: z.string() }))
-      .parse(data ?? [])
-      .map((r) => r.reply_id);
+  async ledgerReplyIds(platform: Platform, postId: string, limit: number): Promise<string[]> {
+    const ids: string[] = [];
+    for (let from = 0; ids.length < limit; from += PAGE) {
+      const to = Math.min(from + PAGE, limit) - 1;
+      const { data, error } = await this.admin.from("social_votes").select("reply_id").eq("platform", platform).eq("post_id", postId).order("reply_id").range(from, to);
+      if (error) throw new Error("ledger unavailable");
+      const rows = z.array(z.object({ reply_id: z.string() })).parse(data ?? []);
+      for (const r of rows) ids.push(r.reply_id);
+      if (rows.length < to - from + 1) break;
+    }
+    return ids;
   }
 
-  async removeReply(platform: Platform, replyId: string): Promise<void> {
-    const { error } = await this.admin.rpc("remove_social_reply", { p_platform: platform, p_reply_id: replyId });
-    if (error) throw new Error("remove unavailable");
+  async removeReply(platform: Platform, replyId: string): Promise<RemoveOutcome> {
+    const { data, error } = await this.admin.rpc("remove_social_reply", { p_platform: platform, p_reply_id: replyId });
+    // The 2-second rule on calls refused the change: the database kept everything as it was, so it can be tried again.
+    // The question closing mid-run is the same answer the function gives itself.
+    if (error) {
+      if (error.hint === "rate") return "retry";
+      if (error.hint === "closed") return "closed";
+      throw new Error("remove unavailable");
+    }
+    const outcome = z.enum(removeOutcomes).safeParse(data);
+    if (!outcome.success) throw new Error("remove unavailable");
+    return outcome.data;
   }
 
   async pauseStaleLinks(now: Date): Promise<number> {

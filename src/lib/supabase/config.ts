@@ -22,14 +22,44 @@ export function publicSupabase(env: { NEXT_PUBLIC_SUPABASE_URL?: string; NEXT_PU
   return parsed.success ? { url: new URL(parsed.data.NEXT_PUBLIC_SUPABASE_URL).origin, key: parsed.data.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.trim() } : null;
 }
 
+/** Longer than any page in the app: a longer `next` is refused rather than cut. */
+export const MAX_NEXT_LENGTH = 512;
+
 /**
  * Where to land after the email link. Only a path inside the app, in one of our two languages: never another
  * site (an open redirect would let a phishing email borrow our domain).
  */
 export function safeNext(next: string | null | undefined, fallback = "/en/today"): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;
+  if (!next || next.length > MAX_NEXT_LENGTH || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;
+  // Browsers drop tabs and line breaks from a URL, so "/\t/evil.example" would become "//evil.example": refuse any control character.
+  if (/\p{Cc}/u.test(next)) return fallback;
+  const path = next.split(/[?#]/)[0] ?? "";
+  // An encoded slash or backslash, or a "." or ".." segment (plain or encoded), could step out of the locale folder.
+  if (/%(?:2f|5c)/i.test(path)) return fallback;
+  for (const segment of path.split("/")) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      return fallback;
+    }
+    if (decoded === "." || decoded === "..") return fallback;
+  }
   const first = next.split(/[/?#]/)[1] ?? "";
   return isLocale(first) ? next : fallback;
+}
+
+const plainPath = /^\/[a-z]{2}(?:\/[A-Za-z0-9._~-]+)*\/?$/;
+
+/**
+ * The page to come back to after signing up or signing in, e.g. the question someone was on. It must pass `safeNext`
+ * and be a plain path: no query or fragment (so nothing for tracking rides along), and only characters that need no
+ * encoding inside the email link. Anything else gives null, and the caller uses its default (`/{locale}/today`).
+ */
+export function returnPath(next: string | null | undefined): string | null {
+  if (!next) return null;
+  const safe = safeNext(next, "");
+  return safe && plainPath.test(safe) ? safe : null;
 }
 
 /** What onboarding sends as user metadata; the database trigger refuses a signup without adult and terms. */

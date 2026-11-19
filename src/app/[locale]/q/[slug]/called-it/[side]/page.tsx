@@ -10,10 +10,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AskedByLabel } from "@/components/asked-by-label";
 import { SportsNotice } from "@/components/sports-notice";
 import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { askedByLabel } from "@/lib/asked-by";
 import { BRAND_NAME } from "@/lib/brand";
 import { formatCount, formatLongDate, formatPercent } from "@/lib/format";
 import { withLiveQuestion } from "@/lib/live";
@@ -69,6 +71,7 @@ export default async function CalledItPage({ params }: { params: Params }) {
           <h1 id="called-it-title" className="m-0 font-display text-display font-bold leading-none tracking-tight text-side-a-text">
             {t.call.calledIt}
           </h1>
+          <AskedByLabel label={q.askedBy && askedByLabel(q.askedBy, t.question.askedBy)} className="text-body-sm" />
           <p className="m-0 font-display text-title font-bold leading-tight tracking-tight text-balance">{q.question[locale]}</p>
           <p className="m-0 max-w-[62ch] text-body text-ink-2">{t.share.calledItLead}</p>
         </header>

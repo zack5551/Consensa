@@ -9,6 +9,7 @@ import { ScreenView } from "@/components/screen-view";
 import { SignInForm } from "@/components/sign-in-form";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { returnPath } from "@/lib/supabase/config";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -19,9 +20,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-export default async function SignInPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ link?: string }> }) {
+export default async function SignInPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ link?: string | string[]; next?: string | string[] }> }) {
   const { locale: raw } = await params;
-  const { link } = await searchParams;
+  const { link, next } = await searchParams;
   if (!isLocale(raw)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
@@ -34,7 +35,7 @@ export default async function SignInPage({ params, searchParams }: { params: Pro
         <p className="m-0 text-body-lg text-ink-2">{t.signIn.body}</p>
       </header>
       <div className="rounded-card border border-line border-t-4 border-t-ink bg-surface p-5 sm:p-6">
-        <SignInForm locale={locale} t={t.signIn} expired={link === "expired"} />
+        <SignInForm locale={locale} t={t.signIn} expired={link === "expired"} next={typeof next === "string" ? returnPath(next) : null} />
       </div>
       <p className="m-0 text-caption text-ink-2">{t.legal.footer}</p>
     </div>

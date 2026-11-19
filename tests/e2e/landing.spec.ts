@@ -19,7 +19,7 @@ test("the main action goes to today's five", async ({ page }) => {
 
 test("the live question opens its page, and FAQ answers expand", async ({ page }) => {
   await page.goto("/fr");
-  await page.getByText("Y a-t-il des prix?").click();
+  await page.getByText("Y a-t-il des prix à gagner?").click();
   await expect(page.getByText(/aucune valeur monétaire et ne s’échangent/)).toBeVisible();
   await page.getByRole("heading", { level: 2, name: /Banque du Canada/ }).getByRole("link").click();
   await expect(page).toHaveURL(/\/fr\/q\//);
