@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
+import { AskedByLabel } from "@/components/asked-by-label";
 import { readAllCalls, subscribeCalls } from "@/lib/calls-store";
 
-type Item = { slug: string; href: string; question: string; closes: string };
+/** `askedBy`: a guest or brand question's label, already built (LEX: it goes wherever the question goes). */
+type Item = { slug: string; href: string; question: string; askedBy?: string | undefined; closes: string };
 
 type Props = {
   items: readonly Item[];
@@ -52,6 +54,7 @@ export function PendingCalls({ items, title, help, empty, action, locale }: Prop
           {mine.map((i) => (
             <li key={i.slug} className="flex items-center justify-between gap-3 border-b border-line py-3">
               <span className="grid min-w-0 gap-0.5">
+                <AskedByLabel label={i.askedBy} />
                 <Link href={i.href} className="truncate text-body-sm font-semibold hover:underline">
                   {i.question}
                 </Link>

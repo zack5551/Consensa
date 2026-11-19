@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { askedBySchema } from "@/lib/asked-by";
 import { socialPollSchema } from "@/lib/social";
 import { socialPostSchema } from "@/lib/social-voting/types";
 
@@ -31,6 +32,11 @@ export const questionSchema = z.object({
    * while SOCIAL_VOTING is on.
    */
   socialPosts: z.array(socialPostSchema).optional(),
+  /**
+   * A guest or brand question's "Asked by" / "Sponsored by" label (LEX). Shown on the page, the embed, the share card
+   * and the share post. No shipped question has one yet.
+   */
+  askedBy: askedBySchema.optional(),
   /** A political question is never included in sponsor numbers. */
   political: z.boolean().optional(),
   events: z.array(z.object({ dayIndex: z.number().int().nonnegative(), label: bilingual })).default([]),
@@ -48,7 +54,10 @@ export const questionSchema = z.object({
       .object({ outcome: z.enum(["yes", "no"]), publishedAt: z.iso.datetime(), disputed: z.boolean().default(false) })
       .optional(),
   }),
-}).refine((q) => q.category !== "sports" || q.startsAt !== undefined, { path: ["startsAt"], message: "Sports questions need startsAt." });
+})
+  .refine((q) => q.category !== "sports" || q.startsAt !== undefined, { path: ["startsAt"], message: "Sports questions need startsAt." })
+  // LEX: no political sponsors, so a political question can never carry a sponsor.
+  .refine((q) => q.askedBy?.kind !== "sponsor" || q.political !== true, { path: ["askedBy"], message: "A political question cannot be sponsored." });
 
 export type Question = z.infer<typeof questionSchema>;
 

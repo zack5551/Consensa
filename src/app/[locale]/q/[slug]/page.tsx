@@ -29,8 +29,10 @@ import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatSh
 import { callsCloseAt, crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
+import { askedByLabel } from "@/lib/asked-by";
 import { hasCalledItCard } from "@/lib/share";
-import { calledItShareUrl, socialPollLine, questionShareUrl, shareLinks } from "@/lib/social";
+import { calledItShareUrl, socialPollLine, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
+import { AskedByLabel } from "@/components/asked-by-label";
 import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
 import { schemaOrg } from "@/lib/json-ld";
@@ -141,10 +143,13 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
   // "Share your call": offered by the panel only when this browser's call was right. The link names the question and
   // the side that happened, so it is worked out here from the result alone, with no tracking and nothing personal.
+  // LEX: a guest or brand question carries its "Asked by" / "Sponsored by" label on the page, the cards and the posts.
+  const askedBy = q.askedBy ? askedByLabel(q.askedBy, t.question.askedBy) : undefined;
+
   let calledItShare: CalledItShare | undefined;
   if (result && hasCalledItCard(q, result.outcome, SAMPLE_NOW)) {
     const url = calledItShareUrl(siteUrl(), locale, q.slug, result.outcome);
-    const text = fill(t.share.calledItText, { question: q.question[locale] });
+    const text = withAskedBy(fill(t.share.calledItText, { question: q.question[locale] }), askedBy);
     calledItShare = { t: t.share, text, url, links: shareLinks(text, url) };
   }
 
@@ -175,7 +180,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
   // Social v1: plain question link, no tracking. Native poll totals sit apart from the crowd.
   const shareUrl = questionShareUrl(siteUrl(), locale, q.slug);
-  const shareText = fill(t.share.text, { question: q.question[locale] });
+  const shareText = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", askedBy });
   const polls = q.socialPolls ?? [];
   const social = (
     <SocialPolls
@@ -215,6 +220,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
               </>
             )}
           </div>
+          <AskedByLabel label={askedBy} className="text-body-sm" />
           <h1 className="m-0 font-display text-headline font-bold leading-tight tracking-tight text-balance">{q.question[locale]}</h1>
           <StateNote state={state} title={t.states[state]}>
             {note}
