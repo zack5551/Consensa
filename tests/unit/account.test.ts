@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptTermsSchema, consentChangeSchema, consentState, deleteAccountSchema, exportFileName, signedInRecently, termsCurrent } from "@/lib/account";
+import { acceptTermsSchema, consentChangeSchema, consentState, deleteAccountSchema, exportFileName, signedInRecently, termsCurrent, termsGateOn } from "@/lib/account";
 import { CONSENT_VERSION, TERMS_VERSION } from "@/lib/supabase/config";
 
 describe("consentState", () => {
@@ -45,6 +45,12 @@ describe("account request bodies", () => {
     expect(termsCurrent([{ kind: "marketing", version: "2027-01-15", given_at: "x", withdrawn_at: null }], "2027-01-15")).toBe(false);
     expect(acceptTermsSchema.safeParse({ version: "2026-11-11" }).success).toBe(true);
     expect(acceptTermsSchema.safeParse({ version: "latest" }).success).toBe(false);
+  });
+
+  it("asks for new Terms only from the day they take effect, not during the notice period (LEX, item 13)", () => {
+    expect(termsGateOn("2027-01-15", new Date("2027-01-14T23:59:59Z"))).toBe(false);
+    expect(termsGateOn("2027-01-15", new Date("2027-01-15T00:00:00Z"))).toBe(true);
+    expect(termsGateOn("2027-01-15", new Date("2027-03-01T12:00:00Z"))).toBe(true);
   });
 
   it("never signs new people up under Terms older than the current version", () => {

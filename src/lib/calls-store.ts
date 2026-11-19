@@ -13,6 +13,7 @@ const OUTSIDE_EVENT = "consensa:calls-outside";
 let outsideCanada = false;
 let botCheckFailed = false;
 let vpnRefused = false;
+let termsOutdated = false;
 const memory = new Map<string, number>();
 
 function valid(n: number): boolean {
@@ -85,6 +86,11 @@ export function isVpnRefused(): boolean {
   return vpnRefused;
 }
 
+/** True while the server's latest answer was that the Terms changed and this person hasn't accepted them yet. */
+export function isTermsOutdated(): boolean {
+  return termsOutdated;
+}
+
 export function subscribeOutsideCanada(onChange: () => void): () => void {
   window.addEventListener(OUTSIDE_EVENT, onChange);
   return () => window.removeEventListener(OUTSIDE_EVENT, onChange);
@@ -143,12 +149,16 @@ async function sendCall(slug: string, probability: number, altcha: string | null
     const refused = res.status === 403 ? ((await res.json().catch(() => null)) as { error?: unknown } | null)?.error : null;
     // A later call that counted clears both notes: back in Canada, or a one-off bad read, so they would now be wrong.
     // A refusal for one reason replaces the note for another; other failures (offline, closed) keep the current note.
-    const reason = res.ok ? null : refused === "outside canada" ? "outside" : refused === "vpn" ? "vpn" : refused === "bot check" ? "bot" : undefined;
-    const next = reason === undefined ? { outside: outsideCanada, vpn: vpnRefused, bot: botCheckFailed } : { outside: reason === "outside", vpn: reason === "vpn", bot: reason === "bot" };
-    if (next.outside !== outsideCanada || next.vpn !== vpnRefused || next.bot !== botCheckFailed) {
+    const reason = res.ok ? null : refused === "outside canada" ? "outside" : refused === "vpn" ? "vpn" : refused === "bot check" ? "bot" : refused === "terms" ? "terms" : undefined;
+    const next =
+      reason === undefined
+        ? { outside: outsideCanada, vpn: vpnRefused, bot: botCheckFailed, terms: termsOutdated }
+        : { outside: reason === "outside", vpn: reason === "vpn", bot: reason === "bot", terms: reason === "terms" };
+    if (next.outside !== outsideCanada || next.vpn !== vpnRefused || next.bot !== botCheckFailed || next.terms !== termsOutdated) {
       outsideCanada = next.outside;
       vpnRefused = next.vpn;
       botCheckFailed = next.bot;
+      termsOutdated = next.terms;
       window.dispatchEvent(new Event(OUTSIDE_EVENT));
     }
     return res.ok;
