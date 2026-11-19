@@ -243,7 +243,7 @@ export class MemoryStore implements CountStore, SweepStore {
       return "counted";
     };
     const result = work();
-    this.restoreLog.push({ restoredAt: this.clock, restoredBy: by, restoredName: name, origin, platform, replyId, userId, result, afterClose: closed });
+    this.restoreLog.push({ restoredAt: this.clock, restoredBy: by, restoredName: name, origin, platform, replyId: result === "unknown" ? null : replyId, userId, result, afterClose: closed });
     return result;
   }
   /** restore_social_reply(platform, reply, name): zack's way back, by hand, before or after the close. The name is required. */

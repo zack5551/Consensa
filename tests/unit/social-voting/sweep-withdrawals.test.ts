@@ -293,7 +293,7 @@ describe("restoring after the close, and the restore log (LEX on review)", () =>
     expect(hand).toEqual([
       { restoredAt: at(HOUR_MS), restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: "9000", userId: "user-0", result: "counted", afterClose: false },
       { restoredAt: at(HOUR_MS), restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: "9000", userId: "user-0", result: "live", afterClose: false },
-      { restoredAt: at(HOUR_MS), restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: "1", userId: null, result: "unknown", afterClose: false },
+      { restoredAt: at(HOUR_MS), restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: null, userId: null, result: "unknown", afterClose: false },
       { restoredAt: at(2 * DAY_MS), restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: "9003", userId: "user-3", result: "counted", afterClose: true },
     ]);
     const swept = store.restoreLog.filter((r) => r.origin === "sweep");
@@ -846,7 +846,7 @@ describe("the withdrawals migration", () => {
     const back = fn("put_back_social_reply");
     // One way out of the function: every answer is set inside the block, then logged, then returned.
     expect(back.match(/\breturn\b/g)).toHaveLength(1);
-    expect(back).toMatch(/values \(session_user, p_name, p_origin, p_platform, p_reply_id, back\.user_id, result, closed\);\s+return result;\s+end;/);
+    expect(back).toMatch(/values \(session_user, p_name, p_origin, p_platform, case when result = 'unknown' then null else p_reply_id end, back\.user_id, result, closed\);\s+return result;\s+end;/);
     expect(sql.match(/insert into public\.social_reply_restore_log/g)).toHaveLength(1);
   });
 
@@ -969,5 +969,12 @@ describe("the withdrawals migration", () => {
     const settle = fn("settle_social_sweep_halt");
     expect(settle).toMatch(/where v\.held_at is not null and w\.closes_at > now\(\)/);
     expect(settle).toMatch(/delete from public\.social_sweep_halt h where h\.id;\s+return null;/);
+  });
+});
+
+describe("restore log: an unknown reply keeps no id (LEX)", () => {
+  it("the migration stores reply_id as null when the restore answers 'unknown'", () => {
+    const sql = readFileSync(join(process.cwd(), "supabase/migrations/20261120001000_social_sweep_withdrawals.sql"), "utf8");
+    expect(sql).toMatch(/case when result = 'unknown' then null else p_reply_id end/);
   });
 });

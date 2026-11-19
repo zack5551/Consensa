@@ -318,7 +318,8 @@ begin
   end;
 
   insert into public.social_reply_restore_log (restored_by, restored_name, origin, platform, reply_id, user_id, result, after_close)
-  values (session_user, p_name, p_origin, p_platform, p_reply_id, back.user_id, result, closed);
+  -- A reply that isn't in the ledger can't be tied to a person, so its typed id is not kept (LEX).
+  values (session_user, p_name, p_origin, p_platform, case when result = 'unknown' then null else p_reply_id end, back.user_id, result, closed);
   return result;
 end;
 $$;
