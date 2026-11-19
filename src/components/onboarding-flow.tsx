@@ -10,6 +10,7 @@ import { CONSENT_VERSION, type SignupMetadata } from "@/lib/supabase/config";
 import { accountsEnabled } from "@/lib/supabase/env";
 import { emailSchema, isAdult, PROFILE_STORAGE_KEY, regionChoices, stepNumber, steps, todayInToronto, type RegionChoice, type Step } from "@/lib/onboarding";
 import { categories, type Category } from "@/lib/question";
+import { inLocale, landingPath, welcomeHref } from "@/lib/return-path";
 import { fill } from "@/lib/text";
 
 type Props = {
@@ -17,6 +18,8 @@ type Props = {
   t: Dictionary["onboarding"];
   regionNames: Dictionary["province"]["names"];
   categoryNames: Dictionary["board"]["categories"];
+  /** The page to come back to (already checked with returnPath on the page), e.g. the question someone was on. */
+  next?: string | null;
 };
 
 /** What the preview remembers on this device. No birth date: only that the age check passed (LEX §6). */
@@ -51,9 +54,10 @@ function readDraft(): Draft {
  * Onboarding: language → 18+ check → region → topics → account with four separate, unticked consents → done.
  * Each step is one question with one action. Focus moves to the new step's heading so screen-reader and
  * keyboard users always know where they are. In preview mode nothing is sent anywhere; with accounts on, the
- * last step emails a link that finishes creating the account.
+ * last step emails a link that finishes creating the account. With `next`, the link and the last step bring
+ * people back to that page (the question they were on) instead of today.
  */
-export function OnboardingFlow({ locale, t, regionNames, categoryNames }: Props) {
+export function OnboardingFlow({ locale, t, regionNames, categoryNames, next = null }: Props) {
   const [step, setStep] = useState<Step>("language");
   const [blocked, setBlocked] = useState(false);
   const [draft, setDraft] = useState<Draft>({ region: null, topics: [] });
@@ -91,7 +95,7 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames }: Props)
     heading.current?.focus();
   }, [step, blocked]);
 
-  const go = (next: Step) => setStep(next);
+  const go = (to: Step) => setStep(to);
   const back = () => go(steps[Math.max(0, steps.indexOf(step) - 1)] ?? "language");
 
   if (blocked) {
@@ -138,7 +142,7 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames }: Props)
               ) : (
                 <a
                   key={l}
-                  href={`/${l}/welcome?step=age`}
+                  href={welcomeHref(l, inLocale(next, l), "step=age")}
                   lang={l}
                   hrefLang={l}
                   onClick={() => {
@@ -268,7 +272,7 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames }: Props)
             setLinkFailed(null);
             setBotWidgetStrings(locale, t.botWidget);
             void solveBotCheck()
-              .then((altcha) => fetch("/api/auth/sign-up", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, data, altcha }) }))
+              .then((altcha) => fetch("/api/auth/sign-up", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, data, altcha, ...(next ? { next } : {}) }) }))
               .then(async (res) => {
                 const body = res.ok ? null : ((await res.json().catch(() => null)) as { error?: string } | null);
                 setLinkFailed(res.ok ? null : (body?.error ?? `http_${res.status}`).replace(/\s/g, "_"));
@@ -289,7 +293,7 @@ export function OnboardingFlow({ locale, t, regionNames, categoryNames }: Props)
               value={fill(t.done.consents, { data: saved.consents.dataLicensing ? t.done.yes : t.done.no, analytics: saved.consents.analytics ? t.done.yes : t.done.no, marketing: saved.consents.marketing ? t.done.yes : t.done.no })}
             />
           </dl>
-          <Link href={`/${locale}/today`} className="inline-flex items-center justify-center gap-2 rounded-control bg-ink px-5 py-3 text-body font-bold text-paper hover:opacity-90 sm:justify-self-start">
+          <Link href={landingPath(locale, next)} className="inline-flex items-center justify-center gap-2 rounded-control bg-ink px-5 py-3 text-body font-bold text-paper hover:opacity-90 sm:justify-self-start">
             {t.done.action}
             <Icon name="arrow" className="size-4" />
           </Link>
