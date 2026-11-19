@@ -119,7 +119,7 @@ test("the panel asks like a poll: two answers first, then how sure, then Canada'
   await expect(bars).toContainText("38%");
   await expect(bars).toContainText("62%");
   await expect(page.getByText("Canada says · Average of 18,420 calls · Closes Dec 9").locator("visible=true")).toBeVisible();
-  await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Call saved: Yes, 75% chance. You’re 37 points more sure than Canada.");
+  await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Call saved: Yes, 75% chance. Canada leans the other way: 38% chance of yes.");
   // Accounts are off locally, so there is no sign-up line.
   await expect(page.getByRole("link", { name: "Create a free account" })).toHaveCount(0);
   const results = await new AxeBuilder({ page }).withTags(tags).analyze();

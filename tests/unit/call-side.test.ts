@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { crowdOnSide, fromProbability, SURE_DEFAULT, sureGap, toProbability } from "@/lib/call-side";
+import { crowdLeansOtherWay, crowdOnSide, fromProbability, SURE_DEFAULT, sureGap, toProbability } from "@/lib/call-side";
 
 describe("side and sureness to a stored probability", () => {
   it("keeps yes as it is and flips no", () => {
@@ -50,5 +50,14 @@ describe("comparing with the crowd on your own side", () => {
     expect(sureGap("no", 80, 38)).toBe(18);
     expect(sureGap("yes", 60, 80)).toBe(-20);
     expect(sureGap("no", 62, 38)).toBe(0);
+  });
+
+  it("knows when the crowd leans to the other answer", () => {
+    expect(crowdLeansOtherWay("no", 64)).toBe(true);
+    expect(crowdLeansOtherWay("yes", 64)).toBe(false);
+    expect(crowdLeansOtherWay("yes", 38)).toBe(true);
+    expect(crowdLeansOtherWay("no", 38)).toBe(false);
+    expect(crowdLeansOtherWay("yes", 50)).toBe(false);
+    expect(crowdLeansOtherWay("no", 50)).toBe(false);
   });
 });
