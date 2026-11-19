@@ -8,6 +8,7 @@
  * that happened. An open, disputed, unscored, cancelled or voided question has no page (404) and no card.
  */
 import type { Metadata } from "next";
+import { notFoundMetadata } from "@/lib/not-found-metadata";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AskedByLabel } from "@/components/asked-by-label";
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { locale, slug, side } = await params;
   // The same live source as the page, so a live result gets matching metadata.
   const q = await withLiveQuestion(getQuestion(slug));
-  if (!isLocale(locale) || !q || !hasCalledItCard(q, side, SAMPLE_NOW)) return {};
+  if (!isLocale(locale) || !q || !hasCalledItCard(q, side, SAMPLE_NOW)) return notFoundMetadata(locale);
   const t = getDictionary(locale);
   const title = fill(t.share.calledItPageTitle, { question: q.question[locale] });
   const description = `${fill(t.resolution.answerIs, { answer: side === "yes" ? t.question.yes : t.question.no })}. ${t.legal.noValue}`;

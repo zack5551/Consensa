@@ -4,6 +4,7 @@
  * One action: make your call (tap Yes or No, say how sure, save). Once it closes, the action becomes "see how your call did".
  */
 import type { Metadata } from "next";
+import { notFoundMetadata } from "@/lib/not-found-metadata";
 import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -51,7 +52,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale, slug } = await params;
   const q = getQuestion(slug);
-  if (!isLocale(locale) || !q) return {};
+  if (!isLocale(locale) || !q) return notFoundMetadata(locale);
   return {
     title: q.question[locale],
     description: q.resolution.rule[locale],

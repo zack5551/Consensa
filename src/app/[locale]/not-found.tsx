@@ -6,14 +6,15 @@
  */
 import type { Metadata } from "next";
 import { NotFoundView } from "@/components/shell/not-found-view";
-import { defaultLocale, isLocale } from "@/i18n/config";
-import { getDictionary } from "@/i18n/get-dictionary";
+import { notFoundMetadata } from "@/lib/not-found-metadata";
 
-/** Next.js hands the not-found file the [locale] segment's params. Anything unexpected falls back to the default locale. */
+/**
+ * Next.js hands the not-found file the [locale] segment's params; anything unexpected falls back to the default locale.
+ * This sets the server-rendered head. Pages that can 404 also return notFoundMetadata(), because Next.js sends the
+ * page's own metadata to the browser too.
+ */
 export async function generateMetadata(props: { params?: Promise<{ locale?: string }> }): Promise<Metadata> {
-  const raw = (await props.params)?.locale;
-  const locale = raw && isLocale(raw) ? raw : defaultLocale;
-  return { title: getDictionary(locale).meta.notFoundTitle, robots: { index: false } };
+  return notFoundMetadata((await props.params)?.locale);
 }
 
 export default function NotFound() {

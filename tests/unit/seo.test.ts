@@ -2,9 +2,11 @@ import { BRAND_NAME } from "@/lib/brand";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("server-only", () => ({}));
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { pageAlternates } from "@/lib/alternates";
+import { notFoundMetadata } from "@/lib/not-found-metadata";
 import { jsonLdString } from "@/lib/json-ld";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
@@ -122,5 +124,14 @@ describe("page descriptions", () => {
         expect(text.length).toBeLessThanOrEqual(180);
       }
     }
+  });
+});
+
+describe("not-found metadata", () => {
+  it("names the 404 in each language, falls back to English, and is never indexed", () => {
+    expect(notFoundMetadata("en")).toEqual({ title: "Page not found", robots: { index: false } });
+    expect(notFoundMetadata("fr")).toEqual({ title: "Page introuvable", robots: { index: false } });
+    expect(notFoundMetadata("de")).toEqual(notFoundMetadata("en"));
+    expect(notFoundMetadata(undefined)).toEqual(notFoundMetadata("en"));
   });
 });

@@ -5,6 +5,7 @@
  * Hidden (404) while SOCIAL_VOTING is off. The flag is read on each request, so this page is never prerendered.
  */
 import type { Metadata } from "next";
+import { notFoundMetadata } from "@/lib/not-found-metadata";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ScreenView } from "@/components/screen-view";
@@ -19,8 +20,8 @@ type Params = Promise<{ locale: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
-  // While the page 404s, it claims no title of its own: the not-found screen's title stands.
-  if (!isLocale(locale) || !socialVotingOn()) return { robots: { index: false } };
+  // While the page 404s, it claims no title of its own: it carries the not-found title.
+  if (!isLocale(locale) || !socialVotingOn()) return notFoundMetadata(locale);
   return { title: getDictionary(locale).meta.socialTitle, robots: { index: false } };
 }
 

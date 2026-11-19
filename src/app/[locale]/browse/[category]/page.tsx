@@ -4,6 +4,7 @@
  * One action: open a question.
  */
 import type { Metadata } from "next";
+import { notFoundMetadata } from "@/lib/not-found-metadata";
 import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -33,7 +34,7 @@ function isCategory(value: string): value is Category {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale, category } = await params;
-  if (!isLocale(locale) || !isCategory(category)) return {};
+  if (!isLocale(locale) || !isCategory(category)) return notFoundMetadata(locale);
   const t = getDictionary(locale);
   return {
     title: t.board.categories[category],
