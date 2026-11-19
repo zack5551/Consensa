@@ -14,7 +14,10 @@ export async function GET() {
   const supabase = await serverSupabase();
   if (!supabase) return NextResponse.json({ signedIn: false }, { headers: noStore });
   try {
-    const { data } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
+    // supabase-js reports most failures as `error` rather than throwing. No session cookie is a plain "signed out";
+    // any other error (an outage, say) is unknown, the same as a throw.
+    if (error && !data.user && error.name !== "AuthSessionMissingError") throw error;
     return NextResponse.json({ signedIn: Boolean(data.user?.email) }, { headers: noStore });
   } catch {
     // Unknown, not "signed out": the page then leaves the answer open instead of guessing.

@@ -7,12 +7,12 @@ vi.mock("@/lib/supabase/server", () => ({ serverSupabase: async () => session.cl
 const { GET } = await import("@/app/api/session/route");
 
 /** A session client whose getUser() answers with this user (or throws). */
-function client(user: unknown, fail = false) {
+function client(user: unknown, fail = false, errorName = "AuthSessionMissingError") {
   return {
     auth: {
       getUser: async () => {
         if (fail) throw new Error("network down at 10.0.0.1");
-        return { data: { user }, error: user ? null : { name: "AuthSessionMissingError" } };
+        return { data: { user }, error: user ? null : { name: errorName } };
       },
     },
   };
@@ -69,5 +69,12 @@ describe("/api/session (light signed-in check)", () => {
     expect(res.status).toBe(503);
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(await res.text()).not.toMatch(/10\.0\.0\.1|network/);
+  });
+
+  it("answers 503 when Supabase returns an error other than a missing session", async () => {
+    session.client = client(null, false, "AuthRetryableFetchError");
+    const res = await GET();
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "unavailable" });
   });
 });
