@@ -1,8 +1,8 @@
 /*
  * Screen: not found (a stale link, a moved question, a typo).
  * One message: this page isn't here, but everything else is. One action: go back to today's five.
- * The screen itself is NotFoundView. This file gives every 404 its own title, "Page not found · Cansensa" /
- * « Page introuvable · Cansensa », so it never shows the home title or the title of the page that 404'd.
+ * The screen itself is NotFoundView. This file gives every 404 its own title, "Page not found · CANsensus" /
+ * « Page introuvable · CANsensus », so it never shows the home title or the title of the page that 404'd.
  */
 import type { Metadata } from "next";
 import { NotFoundView } from "@/components/shell/not-found-view";

@@ -140,7 +140,7 @@ export async function fetchFeeds(list: readonly Source[], fetcher: FetchLike, ti
     list.map(async (source): Promise<FeedResult> => {
       try {
         const res = await fetcher(source.url, {
-          headers: { "user-agent": "CansensaPulse/0.1", accept: "application/rss+xml, application/atom+xml, application/xml" },
+          headers: { "user-agent": "CANsensusPulse/0.1", accept: "application/rss+xml, application/atom+xml, application/xml" },
           signal: AbortSignal.timeout(timeoutMs),
         });
         if (!res.ok) return { sourceId: source.id, signals: [], dropped: 0, error: `HTTP ${res.status}` };

@@ -64,7 +64,7 @@ export function returnPath(next: string | null | undefined): string | null {
 
 /** What onboarding sends as user metadata; the database trigger refuses a signup without adult and terms. */
 /** The date of the consent wording people see in onboarding. Bump it when that wording changes (AEGIS rule 6). */
-export const CONSENT_VERSION = "2026-11-11";
+export const CONSENT_VERSION = "2026-11-19";
 
 /**
  * The Terms version people must have accepted, written as the date that version TAKES EFFECT. Rules (LEX, item 13):

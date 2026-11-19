@@ -27,7 +27,7 @@ test.describe("flag off", () => {
       const res = await page.goto(`/${locale}/account/social`);
       expect(res?.status()).toBe(404);
       // A hidden page claims no title of its own: the 404's title stands.
-      await expect(page).toHaveTitle(locale === "en" ? "Page not found · Cansensa" : "Page introuvable · Cansensa");
+      await expect(page).toHaveTitle(locale === "en" ? "Page not found · CANsensus" : "Page introuvable · CANsensus");
     });
   }
 

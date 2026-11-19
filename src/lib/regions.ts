@@ -1,5 +1,5 @@
 /**
- * Province views. Cansensa reports six regions (BC, Alberta, the Prairies, Ontario, Quebec, Atlantic),
+ * Province views. CANsensus reports six regions (BC, Alberta, the Prairies, Ontario, Quebec, Atlantic),
  * the same set the question schema uses. Everything here works on aggregates only, and any cell built
  * from fewer than MIN_CELL forecasters is suppressed (LEX: aggregates only, minimum cell size).
  */

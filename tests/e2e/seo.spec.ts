@@ -52,11 +52,11 @@ for (const locale of ["en", "fr"]) {
 }
 
 test("a 404 has its own title in each language, not the home title", async ({ page }) => {
-  for (const [locale, title] of [["en", "Page not found · Cansensa"], ["fr", "Page introuvable · Cansensa"]] as const) {
+  for (const [locale, title] of [["en", "Page not found · CANsensus"], ["fr", "Page introuvable · CANsensus"]] as const) {
     const res = await page.goto(`/${locale}/no-such-page`);
     expect(res?.status()).toBe(404);
     await expect(page).toHaveTitle(title);
   }
   await page.goto("/en/q/no-such-question");
-  await expect(page).toHaveTitle("Page not found · Cansensa");
+  await expect(page).toHaveTitle("Page not found · CANsensus");
 });

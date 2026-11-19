@@ -1,6 +1,6 @@
 /**
- * Social voting (sprint 11): a YES or NO reply to an official @Cansensa post counts as a call when its author has
- * linked that social account to a confirmed Cansensa account. Framework-free types shared by the adapters, the
+ * Social voting (sprint 11): a YES or NO reply to an official @CANsensus post counts as a call when its author has
+ * linked that social account to a confirmed CANsensus account. Framework-free types shared by the adapters, the
  * counting step and the tests.
  */
 import { z } from "zod";

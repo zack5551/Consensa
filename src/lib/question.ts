@@ -57,7 +57,7 @@ export const questionSchema = z.object({
   why: z
     .object({ body: bilingual, sources: z.array(bilingual).min(1) })
     .optional(),
-  /** Hand-entered native poll totals from official Cansensa posts. Shown apart from the crowd, never mixed into it. */
+  /** Hand-entered native poll totals from official CANsensus posts. Shown apart from the crowd, never mixed into it. */
   socialPolls: z.array(socialPollSchema).optional(),
   resolution: z.object({
     /** `url` is the source's English page. `urlFr` is the same page in French, when the publisher has one; /fr links to it. */

@@ -51,10 +51,10 @@ describe("POST /api/auth/sign-up", () => {
   });
 
   it("points the link at the fixed site address when it is set", async () => {
-    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://cansensa.test/");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://cansensus.test/");
     signInWithOtp.mockClear();
     await post({ email: "a@example.com", data });
-    expect(signInWithOtp).toHaveBeenCalledWith({ email: "a@example.com", options: expect.objectContaining({ emailRedirectTo: "https://cansensa.test/api/auth/callback?next=/fr/today" }) });
+    expect(signInWithOtp).toHaveBeenCalledWith({ email: "a@example.com", options: expect.objectContaining({ emailRedirectTo: "https://cansensus.test/api/auth/callback?next=/fr/today" }) });
     vi.unstubAllEnvs();
   });
 

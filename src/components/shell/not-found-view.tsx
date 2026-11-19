@@ -2,7 +2,7 @@
 
 /*
  * The not-found screen's body, rendered by src/app/[locale]/not-found.tsx (which also sets the page title).
- * The Cansensa mark, split apart with a "?" where the halves should meet — a forecast
+ * The CANsensus mark, split apart with a "?" where the halves should meet — a forecast
  * that missed. One message: this page isn't here, but everything else is. One action: go back to today's five.
  * Bilingual through the [locale] shell: the layout fills the notFound strings from the dictionary.
  */

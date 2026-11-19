@@ -9,7 +9,7 @@ describe("sports labels", () => {
     expect(en.legal.sportsLabel).toBe("Fan forecasts only. Not advice.");
     expect(en.legal.sportsFooter).toBe("Not affiliated with or endorsed by any league, team or player.");
     expect(fr.legal.sportsLabel).toBe("Prévisions de partisans seulement. Ce ne sont pas des conseils.");
-    expect(fr.legal.sportsFooter).toBe("Cansensa n’est affilié à aucune ligue, équipe ou joueur, et n’est approuvé par aucun d’eux.");
+    expect(fr.legal.sportsFooter).toBe("CANsensus n’est affilié à aucune ligue, équipe ou joueur, et n’est approuvé par aucun d’eux.");
   });
 
   it("shows them on sports screens only", () => {

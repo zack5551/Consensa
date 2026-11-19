@@ -36,7 +36,7 @@ export function CardWordmark() {
         <path fill={c.sideB} d="M53 .09a50 50 0 0 1 0 99.82V59.014a9.5 9.5 0 0 0 0-18.028Z" />
         <circle fill={c.canada} cx="50" cy="50" r="6.5" />
       </svg>
-      <span>cansensa</span>
+      <span>CANsensus</span>
     </div>
   );
 }
