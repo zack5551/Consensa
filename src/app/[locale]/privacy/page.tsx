@@ -11,7 +11,7 @@ import { ScreenView } from "@/components/screen-view";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 
-const UPDATED_ON = "2026-11-06T12:00:00Z";
+const UPDATED_ON = "2026-11-18T12:00:00Z";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;

@@ -271,6 +271,7 @@ const fr = {
         noMoney: { title: "Rien ici ne vaut de l’argent", body: "Il n’y a aucun achat ni aucun prix. Votre bilan n’a aucune valeur monétaire et ne peut pas être transféré." },
         languages: { title: "Le français et l’anglais, à égalité", body: "Ce résumé, la politique complète, nos conditions et notre soutien sont offerts dans les deux langues." },
         botCheck: { title: "Une vérification rapide bloque les robots", body: "Une courte vérification s’exécute sur votre appareil pour distinguer les gens des robots. Rien à votre sujet n’est envoyé ailleurs." },
+        connection: { title: "Une vérification garde la foule canadienne", body: "Quand vous faites une prévision, notre serveur de Montréal vérifie si elle provient de l’extérieur du Canada ou passe par un RPV (VPN) ou un mandataire (proxy), à l’aide d’une base de données conservée sur ce serveur : votre adresse IP n’est transmise à personne. Ces prévisions ne sont pas acceptées. Nous ne gardons aucune trace de la vérification pour une personne, seulement des totaux quotidiens anonymes." },
       },
     },
     terms: {
@@ -283,6 +284,7 @@ const fr = {
         fair: { title: "Une personne, un compte", body: "Faites vos propres prévisions. Ne les automatisez pas et n’utilisez qu’un seul compte." },
         respect: { title: "Des questions, pas des cibles", body: "Nous ne posons aucune question sur la vie privée, les crimes ou les tragédies. Les commentaires doivent rester respectueux." },
         ai: { title: "L’IA explique, sans jamais conseiller", body: "Les notes « Pourquoi ça a bougé » sont rédigées par l’IA et révisées par un membre de l’équipe éditoriale. Elles décrivent ce qui a changé, jamais quoi prévoir." },
+        canada: { title: "Depuis le Canada, sans RPV", body: "Les prévisions ne peuvent être faites qu’à partir d’une connexion au Canada, sans RPV (VPN) ni mandataire (proxy). Les prévisions faites d’ailleurs ne sont pas acceptées." },
         sources: { title: "Des sources officielles tranchent chaque question", body: "Chaque question nomme sa source. Si un résultat est contesté, nous l’examinons et publions la décision." },
       },
     },
@@ -433,7 +435,8 @@ const fr = {
       level: "Score du Canada : {crowd}, à égalité avec vous.",
     },
     waiting: "Elle sera évaluée à la publication du résultat.",
-    outsideCanada: "Seules les prévisions faites depuis le Canada comptent dans la foule. Celle-ci reste sur cet appareil.",
+    outsideCanada: "Les prévisions doivent provenir d’une connexion au Canada, sans RPV (VPN) ni mandataire (proxy). Celle-ci reste sur cet appareil et ne compte pas dans la foule.",
+    vpnRefused: "Les prévisions doivent provenir d’une connexion au Canada, sans RPV (VPN) ni mandataire (proxy). Désactivez votre RPV ou votre mandataire pour que celle-ci compte. D’ici là, elle reste sur cet appareil.",
     botCheckFailed: "La vérification rapide sur votre appareil n’a pas réussi. Cette prévision reste donc sur cet appareil pour l’instant. Rechargez la page et réessayez.",
     botWidget,
     disputed: "L’évaluation attend la fin de la révision.",
@@ -494,7 +497,7 @@ const fr = {
       brier: "Score de Brier moyen de la foule",
       resolved: "Questions résolues",
       rightSide: "Foule du bon côté",
-      vpnShare: "{value} des prévisions des 30 derniers jours sont passées par un VPN ou un proxy.",
+      vpnShare: "{value} des tentatives de prévision des 30 derniers jours passaient par un RPV (VPN) ou un mandataire (proxy) et n’ont pas été acceptées.",
       vpnCredit: "Ce site comprend des données IP2Proxy LITE d’IP2Location, lues sur notre propre serveur : aucune adresse ne quitte le Canada."
     },
     money: {
