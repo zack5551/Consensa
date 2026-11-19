@@ -11,8 +11,10 @@ import { setBotWidgetStrings } from "@/lib/bot-check-client";
 import { crowdLeansOtherWay, crowdOnSide, fromProbability, SURE_DEFAULT, SURE_MAX, SURE_MIN, sureGap, toProbability, type Side } from "@/lib/call-side";
 import { isBotCheckFailed, isOutsideCanada, isTermsOutdated, isVpnRefused, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
 import { formatBrier, formatCount, formatPercent } from "@/lib/format";
+import { MIN_CROWD } from "@/lib/live-crowd";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
 import { hasStarted, provinces, type Province, type QuestionOutcome, type QuestionState } from "@/lib/question";
+import { parseRegionCount, regionCallsLine, regionCountUrl } from "@/lib/region-calls";
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
 import type { ShareLinks } from "@/lib/social";
 import { accountsEnabled } from "@/lib/supabase/env";
@@ -41,7 +43,7 @@ type Props = {
   /** Already formatted for the locale, e.g. "October 21, 2026". */
   closedOn?: string;
   /** This question's region numbers. With the region from onboarding, your own region shows beside Canada. */
-  regions?: { values: Record<Province, number>; hidden?: readonly Province[]; names: Record<Province, string> };
+  regions?: { values: Record<Province, number>; hidden?: readonly Province[]; names: Record<Province, string>; live?: boolean };
   /** Set on a resolved question: what "Share your call" posts if this browser's call was on the right side. */
   calledItShare?: CalledItShare;
 };
@@ -103,6 +105,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   const [saved, setSaved] = useState(false);
   const [stored, setStored] = useState<number | null>(null);
   const [region, setRegion] = useState<Province | null>(null);
+  const [regionCount, setRegionCount] = useState<number | undefined>(undefined);
   // null until the answer is known. A call is only scored on a record once it is saved to an account (LEX).
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const outside = useSyncExternalStore(subscribeOutsideCanada, isOutsideCanada, () => false);
@@ -137,6 +140,22 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   useEffect(() => {
     setRegion(myRegion());
   }, []);
+
+  // Only the visitor's own region's count is fetched, so the page never carries every region's count.
+  const askCount = saved && region !== null && regions?.live === true && !regions.hidden?.includes(region);
+  useEffect(() => {
+    if (!askCount || region === null) return;
+    let live = true;
+    fetch(regionCountUrl(slug, region))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: unknown) => {
+        if (live) setRegionCount(parseRegionCount(body));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [askCount, slug, region]);
 
   useEffect(() => {
     setBotWidgetStrings(locale, t.botWidget);
@@ -203,6 +222,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   ));
   // Your region's number shows once you've saved a call, so it informs the result, not the call itself.
   const regionValue = saved && region !== null && regions && !regions.hidden?.includes(region) ? regions.values[region] : null;
+  // The count shows only at or above the privacy floor; below it (or with no count yet) the row keeps its countless wording.
+  const regionLine = region !== null && regions ? regionCallsLine(t, regions.names[region], regionCount !== undefined && regionCount >= MIN_CROWD ? regionCount : undefined, locale) : null;
 
   return (
     <section aria-labelledby={`${id}-title`} className="rounded-card border border-line border-t-4 border-t-ink bg-surface p-5">
@@ -235,8 +256,12 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
           )}
           {regionValue !== null && region !== null && regions ? (
             <p className="m-0 flex items-baseline justify-between gap-3 border-t border-line pt-3 text-body-sm text-ink-2">
-              <span>{fill(t.yourRegion, { region: regions.names[region] })}</span>
-              <span className="font-display text-title-sm font-bold text-ink tabular">
+              <span>
+                {regionLine?.before}
+                {regionLine?.n != null && <span className="tabular">{regionLine.n}</span>}
+                {regionLine?.after}
+              </span>
+              <span className="shrink-0 whitespace-nowrap font-display text-title-sm font-bold text-ink tabular">
                 {sides.yes} {pct(regionValue)}
               </span>
             </p>

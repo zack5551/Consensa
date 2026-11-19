@@ -439,6 +439,8 @@ const en = {
     resultsYou: "Your answer: {side}.",
     ifResult: "If the answer is yes, you’d score {yes}. If it’s no, {no}. Lower is better.",
     yourRegion: "Your region · {region} · average of calls",
+    yourRegionCount: "Your region · {region} · average of {n} calls",
+    yourRegionCountOne: "Your region · {region} · average of {n} call",
     you: "You",
     save: "Save my call",
     saved: "Call saved: {side}, {value} chance.",

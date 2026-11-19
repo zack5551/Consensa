@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sampleQuestions } from "@/content/sample-questions";
-import { applyLive, MIN_CROWD, summarize } from "@/lib/live-crowd";
+import { applyLive, MIN_CROWD, parseCrowdRows, regionCallCount, summarize } from "@/lib/live-crowd";
+import { questionSchema } from "@/lib/question";
 import { crowdNow } from "@/lib/question";
 
 describe("summarize", () => {
@@ -52,8 +53,63 @@ describe("live splits", () => {
     expect(out.languages).toEqual({ en: 52, fr: 60 });
   });
 
+  it("publishes no region counts when 1 to 4 calls sit outside the shown regions (the total would give them away)", () => {
+    // 14 calls, 11 in shown regions: the 3 left over (2 in BC, 1 with no region) would be total − shown.
+    expect(summarize(rows).get(q.slug)!.provinceCounts).toBeUndefined();
+    for (let hidden = 1; hidden < MIN_CROWD; hidden += 1) {
+      const live = summarize([...rows.slice(0, 2), { slug: q.slug, region: "BC", locale: "en", n: hidden, total: hidden * 50 }]).get(q.slug)!;
+      expect(live.provinceCounts, `${hidden} hidden`).toBeUndefined();
+      expect(live.provinces).toEqual({ QC: 60, ON: 40 });
+    }
+  });
+
+  it("publishes region counts when nothing is left over", () => {
+    expect(summarize(rows.slice(0, 2)).get(q.slug)!.provinceCounts).toEqual({ QC: 5, ON: 6 });
+  });
+
+  it("publishes region counts when at least 5 calls are left over, and never counts a thin region", () => {
+    const live = summarize([...rows, { slug: q.slug, region: "AT", locale: "fr", n: 2, total: 100 }]).get(q.slug)!;
+    expect(live.provinceCounts).toEqual({ QC: 5, ON: 6 });
+  });
+
+  it("keeps region counts off the question, so the page payload never carries them", () => {
+    const out = applyLive(q, summarize(rows.slice(0, 2)).get(q.slug));
+    expect(JSON.stringify(out)).not.toContain("provinceCounts");
+    expect(questionSchema.safeParse(out).success).toBe(true);
+  });
+
+  it("gives out one region's count at a time, or null when it isn't published", () => {
+    const live = summarize(rows.slice(0, 2)).get(q.slug);
+    expect(regionCallCount(live, "ON")).toBe(6);
+    expect(regionCallCount(live, "BC")).toBeNull();
+    expect(regionCallCount(summarize(rows).get(q.slug), "ON")).toBeNull();
+    expect(regionCallCount(undefined, "ON")).toBeNull();
+  });
+
   it("drops the language split when one language is below the floor", () => {
     const out = applyLive(q, summarize(rows.filter((r) => r.region !== "QC")).get(q.slug));
     expect(out.languages).toBeUndefined();
+  });
+});
+
+describe("parseCrowdRows", () => {
+  it("reads bigint counts sent as strings", () => {
+    expect(parseCrowdRows([{ slug: "a-q", region: "QC", locale: "fr", n: "7", total: "420" }])).toEqual([
+      { slug: "a-q", region: "QC", locale: "fr", n: 7, total: 420 },
+    ]);
+  });
+  it("drops malformed rows instead of trusting them", () => {
+    const rows = parseCrowdRows([
+      { slug: "a-q", region: null, locale: "en", n: 5, total: 250 },
+      { slug: "a-q", region: "ON", locale: "en", n: -1, total: 10 },
+      { slug: "a-q", region: "ON", locale: "en", n: "many", total: 10 },
+      { region: "ON", locale: "en", n: 5, total: 10 },
+      null,
+    ]);
+    expect(rows).toEqual([{ slug: "a-q", region: null, locale: "en", n: 5, total: 250 }]);
+  });
+  it("returns nothing for anything but an array", () => {
+    expect(parseCrowdRows(null)).toEqual([]);
+    expect(parseCrowdRows({ slug: "a-q" })).toEqual([]);
   });
 });
