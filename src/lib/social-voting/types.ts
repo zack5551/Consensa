@@ -54,4 +54,4 @@ export const socialPostSchema = z.object({
 export type SocialPost = z.infer<typeof socialPostSchema>;
 
 /** The probability a plain YES or NO reply is recorded as. One place, so a product change is one line. */
-export const REPLY_PROBABILITY: Record<Vote, number> = { yes: 99, no: 1 };
+export const REPLY_PROBABILITY: Record<Vote, number> = { yes: 75, no: 25 };

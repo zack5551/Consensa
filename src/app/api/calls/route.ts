@@ -1,7 +1,7 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getQuestion, SAMPLE_NOW } from "@/content/sample-questions";
-import { callsCountFrom, COUNTRY_HEADER } from "@/lib/call-origin";
+import { callsCountFrom, COUNTRY_HEADER, PROXY_CHECK_TIMEOUT_MS, withinTime } from "@/lib/call-origin";
 import { callsCloseAt, isOpen, questionState } from "@/lib/question";
 import { rateLimiter } from "@/lib/rate-limit";
 import { verifyBotCheck } from "@/lib/server/bot-check";
@@ -54,6 +54,18 @@ export async function POST(request: NextRequest) {
   // Skipped when the server has no ALTCHA_HMAC_KEY (local dev, CI). Runs after the Canada check so that 403 stays its own.
   if ((await verifyBotCheck(request.headers.get("x-altcha"))) === "fail") return NextResponse.json({ error: "bot check" }, { status: 403, headers: noStore });
 
+  // Calls through a VPN or proxy don't count (zack, 2026-11-18): a VPN can make a visitor abroad look Canadian. The
+  // lookup reads a database file on this server; the address goes nowhere. The refused attempt is only counted, one
+  // number per day, never per person. A slow or missing database (150 ms) is "unknown" and lets the call through,
+  // so a lookup problem never blocks people in Canada.
+  const { vpn } = await withinTime(checkProxy(request.headers), PROXY_CHECK_TIMEOUT_MS, { vpn: "unknown" as const });
+  if (vpn === true) {
+    after(async () => {
+      await admin.rpc("count_call_origin", { p_vpn: "yes" });
+    });
+    return NextResponse.json({ error: "vpn" }, { status: 403, headers: noStore });
+  }
+
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400, headers: noStore });
   const q = getQuestion(parsed.data.slug);
@@ -66,9 +78,6 @@ export async function POST(request: NextRequest) {
   const closeTime = await admin.from("question_windows").upsert({ slug: q.slug, closes_at: callsCloseAt(q) }, { onConflict: "slug" });
   if (closeTime.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
 
-  // A VPN doesn't stop a call; it is only counted, one number per day, never per person or per call.
-  const { vpn } = await checkProxy(request.headers);
-
   // With social voting on, a call made here is marked as a website call, so it wins over any reply on the same question
   // (the database refuses to let a reply overwrite it). The column exists only after the sprint-11 migration, so it is
   // written only when the flag is on.
@@ -80,10 +89,11 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
   // Best effort, after the answer is sent: a failed or slow counter never fails or delays a saved call.
   after(async () => {
-    await admin.rpc("count_call_origin", { p_vpn: vpn === "unknown" ? "unknown" : vpn ? "yes" : "no" });
-    // The monthly re-check of a linked social account (AEGIS note 5): a call from Canada, not through a VPN, is the
-    // proof. It refreshes the person's own links and lifts a pause; without any link it changes nothing.
-    if (social && vpn !== true) await admin.from("social_links").update({ last_checked_at: new Date().toISOString(), paused: false }).eq("user_id", userId);
+    await admin.rpc("count_call_origin", { p_vpn: vpn === "unknown" ? "unknown" : "no" });
+    // The monthly re-check of a linked social account (AEGIS note 5): a call that got this far came from Canada and
+    // not through a VPN, which is the proof. It refreshes the person's own links and lifts a pause; without any link
+    // it changes nothing.
+    if (social) await admin.from("social_links").update({ last_checked_at: new Date().toISOString(), paused: false }).eq("user_id", userId);
   });
   return NextResponse.json({ ok: true }, { headers: noStore });
 }

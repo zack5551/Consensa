@@ -29,8 +29,8 @@ describe("counting replies from linked accounts", () => {
     expect(report).toMatchObject({ posts: 1, repliesRead: 4, unlinkedDropped: 1, outcomes: { counted: 2 }, pollsRead: 1, incomplete: 0, autoReplies: 0 });
     // user-a replied YES then NO: only the newest is handed on. user-b said NO.
     expect([...store.calls.entries()]).toEqual([
-      ["user-b:boc-cut-dec-2026", { probability: 1, source: "x" }],
-      ["user-a:boc-cut-dec-2026", { probability: 1, source: "x" }],
+      ["user-b:boc-cut-dec-2026", { probability: 25, source: "x" }],
+      ["user-a:boc-cut-dec-2026", { probability: 25, source: "x" }],
     ]);
     expect(store.ledger.map((l) => l.replyId)).toEqual(["1990000000000000002", "1990000000000000007"]);
     expect(store.reads.get(`x:${OUR_POST}`)).toEqual({ poll: { yes: 412, no: 655 }, readThrough: new Date("2026-11-18T16:00:00.000Z") });

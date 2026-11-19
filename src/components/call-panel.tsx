@@ -5,7 +5,7 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
 import { setBotWidgetStrings } from "@/lib/bot-check-client";
-import { isBotCheckFailed, isOutsideCanada, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
+import { isBotCheckFailed, isOutsideCanada, isVpnRefused, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
 import { formatBrier, formatPercent } from "@/lib/format";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
 import { provinces, type Province, type QuestionState } from "@/lib/question";
@@ -52,6 +52,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
   const [region, setRegion] = useState<Province | null>(null);
   const outside = useSyncExternalStore(subscribeOutsideCanada, isOutsideCanada, () => false);
   const botFailed = useSyncExternalStore(subscribeOutsideCanada, isBotCheckFailed, () => false);
+  const vpn = useSyncExternalStore(subscribeOutsideCanada, isVpnRefused, () => false);
   const id = useId();
   const pct = (v: number) => formatPercent(v, locale);
   const accepting = state === "open" || state === "closingSoon";
@@ -181,7 +182,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
           {t.save}
         </button>
       )}
-      <p role="status" className="mt-3 mb-0 text-caption text-ink-2 empty:hidden">{outside ? t.outsideCanada : botFailed ? t.botCheckFailed : null}</p>
+      <p role="status" className="mt-3 mb-0 text-caption text-ink-2 empty:hidden">{outside ? t.outsideCanada : vpn ? t.vpnRefused : botFailed ? t.botCheckFailed : null}</p>
       {!accountsEnabled && <p className="mt-3 mb-0 text-caption text-ink-2">{t.demoNote}</p>}
     </section>
   );
