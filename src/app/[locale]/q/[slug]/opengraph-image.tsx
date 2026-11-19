@@ -1,6 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { CardFrame, CardWordmark, cardFonts } from "@/components/share-card-parts";
 import { BRAND_NAME } from "@/lib/brand";
 import { notFound } from "next/navigation";
 import { getQuestion, sampleQuestions, SAMPLE_NOW } from "@/content/sample-questions";
@@ -30,18 +29,6 @@ export function generateStaticParams() {
   return locales.flatMap((locale) => sampleQuestions.map((q) => ({ locale, slug: q.slug })));
 }
 
-/**
- * PRISM's fonts, read from brand/fonts. The image renderer reads ttf, otf and woff but not woff2, so brand/fonts/ttf
- * holds the three faces the card uses (Manrope 700 and 800, Inter 600), unpacked from the woff2 files beside them with
- * fontTools: same glyphs, same tables, nothing downloaded. next.config.ts (outputFileTracingIncludes) ships them with this route.
- */
-const fonts = () =>
-  Promise.all([
-    readFile(join(process.cwd(), "brand/fonts/ttf/manrope-latin-700-normal.ttf")),
-    readFile(join(process.cwd(), "brand/fonts/ttf/manrope-latin-800-normal.ttf")),
-    readFile(join(process.cwd(), "brand/fonts/ttf/inter-latin-600-normal.ttf")),
-  ]);
-
 export default async function Image({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
   const q = await withLiveQuestion(getQuestion(slug));
@@ -57,7 +44,7 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
   const closes = settled ? t.share.cardClosed : fill(t.share.cardCloses, { date: formatShortDate(callsCloseAt(q), locale) });
   const meta = cardSafe(crowd === null ? closes : `${fill(t.share.cardCalls, { n: formatCount(q.forecasters, locale) })} · ${closes}`);
 
-  const [manrope700, manrope800, inter600] = await fonts();
+  const fonts = await cardFonts();
 
   /** One answer row, read like a poll: a track, a fill as wide as the answer's share, the answer inside, the percent beside it. */
   const row = (label: string, share: number | null, fillColor: string, soft: string, textColor: string) => (
@@ -76,51 +63,29 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: c.sunken, color: c.ink, fontFamily: "Inter", borderTop: `14px solid ${c.canada}`, padding: sports ? "20px 40px 14px" : "26px 40px 20px" }}>
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, background: c.surface, border: `2px solid ${c.line}`, borderRadius: 28, padding: sports ? "22px 40px 20px" : "28px 40px 24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, fontFamily: "Manrope", fontWeight: 800, fontSize: 32, letterSpacing: -0.7 }}>
-              <svg viewBox="0 0 100 100" width="36" height="36">
-                <path fill={c.sideA} d="M47 .09A50 50 0 0 0 47 99.91V59.014a9.5 9.5 0 0 1 0-18.028Z" />
-                <path fill={c.sideB} d="M53 .09a50 50 0 0 1 0 99.82V59.014a9.5 9.5 0 0 0 0-18.028Z" />
-                <circle fill={c.canada} cx="50" cy="50" r="6.5" />
-              </svg>
-              <span>cansensa</span>
-            </div>
-            {!settled && (
-              <div style={{ display: "flex", fontFamily: "Manrope", fontSize: 22, fontWeight: 700, color: c.paper, background: c.ink, padding: "10px 24px", borderRadius: 999 }}>{cardSafe(t.question.makeYourCall)}</div>
-            )}
-          </div>
-
-          <div style={{ display: "flex", flex: 1, alignItems: "center", fontFamily: "Manrope", fontWeight: 800, fontSize: questionSize, lineHeight: 1.12, letterSpacing: -1, maxHeight: 200, overflow: "hidden" }}>{text}</div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {row(t.question.yes, crowd, c.sideA, c.sideASoft, c.sideAText)}
-            {row(t.question.no, crowd === null ? null : 100 - crowd, c.sideB, c.sideBSoft, c.sideBText)}
-          </div>
-
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 14, fontSize: 22, fontWeight: 600, color: c.inkMuted }}>
-            {crowd !== null && (
-              <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 19, letterSpacing: 1.6, textTransform: "uppercase", color: c.canada }}>{cardSafe(settled ? t.question.canadaSaid : t.question.canadaSays)}</span>
-            )}
-            <span>{crowd !== null ? `· ${meta}` : meta}</span>
-          </div>
+      <CardFrame footer={footer} sportsFooter={sports ? cardSafe(t.legal.sportsFooter) : undefined}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <CardWordmark />
+          {!settled && (
+            <div style={{ display: "flex", fontFamily: "Manrope", fontSize: 22, fontWeight: 700, color: c.paper, background: c.ink, padding: "10px 24px", borderRadius: 999 }}>{cardSafe(t.question.makeYourCall)}</div>
+          )}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "10px 12px 0", fontSize: 19, fontWeight: 600, color: c.inkMuted }}>
-          <span>{footer}</span>
-          {/* LEX: sports cards also carry the non-affiliation line, at the same size so it stays readable in a feed. */}
-          {sports && <span>{cardSafe(t.legal.sportsFooter)}</span>}
+        <div style={{ display: "flex", flex: 1, alignItems: "center", fontFamily: "Manrope", fontWeight: 800, fontSize: questionSize, lineHeight: 1.12, letterSpacing: -1, maxHeight: 200, overflow: "hidden" }}>{text}</div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {row(t.question.yes, crowd, c.sideA, c.sideASoft, c.sideAText)}
+          {row(t.question.no, crowd === null ? null : 100 - crowd, c.sideB, c.sideBSoft, c.sideBText)}
         </div>
-      </div>
+
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 14, fontSize: 22, fontWeight: 600, color: c.inkMuted }}>
+          {crowd !== null && (
+            <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 19, letterSpacing: 1.6, textTransform: "uppercase", color: c.canada }}>{cardSafe(settled ? t.question.canadaSaid : t.question.canadaSays)}</span>
+          )}
+          <span>{crowd !== null ? `· ${meta}` : meta}</span>
+        </div>
+      </CardFrame>
     ),
-    {
-      ...size,
-      fonts: [
-        { name: "Manrope", data: manrope700, weight: 700, style: "normal" },
-        { name: "Manrope", data: manrope800, weight: 800, style: "normal" },
-        { name: "Inter", data: inter600, weight: 600, style: "normal" },
-      ],
-    },
+    { ...size, fonts: [...fonts] },
   );
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { ShareBar } from "@/components/share-bar";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
@@ -12,6 +13,7 @@ import { formatBrier, formatCount, formatPercent } from "@/lib/format";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
 import { provinces, type Province, type QuestionState } from "@/lib/question";
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
+import type { ShareLinks } from "@/lib/social";
 import { accountsEnabled } from "@/lib/supabase/env";
 import { fill } from "@/lib/text";
 
@@ -36,7 +38,12 @@ type Props = {
   closedOn?: string;
   /** This question's region numbers. With the region from onboarding, your own region shows beside Canada. */
   regions?: { values: Record<Province, number>; hidden?: readonly Province[]; names: Record<Province, string> };
+  /** Set on a resolved question: what "Share your call" posts if this browser's call was on the right side. */
+  calledItShare?: CalledItShare;
 };
+
+/** The called-it page address (question and side only), the post line already filled, and the plain share links. */
+export type CalledItShare = { t: Dictionary["share"]; text: string; url: string; links: ShareLinks };
 
 /** The region chosen at onboarding, if this browser has one. */
 function myRegion(): Province | null {
@@ -85,7 +92,7 @@ function signedInOnce(): Promise<boolean | null> {
  * probability of yes (see src/lib/call-side.ts).
  * Once a question closes, the panel shows your call and, after the result, "Called it!" or "Not this time."
  */
-export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, closes = "", crowdShown = true, state = "open", scored = true, outcome, closedOn = "", regions }: Props) {
+export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, closes = "", crowdShown = true, state = "open", scored = true, outcome, closedOn = "", regions, calledItShare }: Props) {
   const [side, setSide] = useState<Side | null>(null);
   const [sure, setSure] = useState<number>(SURE_DEFAULT);
   const [saved, setSaved] = useState(false);
@@ -148,7 +155,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
           {t.closedTitle}
         </h2>
         <p className="mt-1 text-body-sm text-ink-2">{fill(t.closedBody, { date: closedOn })}</p>
-        <ClosedResult stored={stored} crowd={crowd} state={state} outcome={outcome} scored={scored} t={t} canadaSays={canadaSays} pct={pct} locale={locale} />
+        <ClosedResult stored={stored} crowd={crowd} state={state} outcome={outcome} scored={scored} t={t} canadaSays={canadaSays} pct={pct} locale={locale} calledItShare={calledItShare} />
       </section>
     );
   }
@@ -365,6 +372,7 @@ function ClosedResult({
   canadaSays,
   pct,
   locale,
+  calledItShare,
 }: {
   stored: number | null;
   crowd: number;
@@ -375,6 +383,7 @@ function ClosedResult({
   canadaSays: string;
   pct: (v: number) => string;
   locale: Locale;
+  calledItShare?: CalledItShare;
 }) {
   const resolved = state === "resolved" && outcome !== undefined;
   let verdict: string | null = null;
@@ -413,6 +422,8 @@ function ClosedResult({
         {state === "closed" && stored !== null && <p className="m-0 mt-1 text-ink-2">{t.waiting}</p>}
         {state === "disputed" && <p className="m-0 mt-1 text-ink-2">{t.disputed}</p>}
       </div>
+      {/* "Share your call", only beside a "Called it!": the link names the question and the side that happened, never the person or their number. */}
+      {hit && calledItShare && <ShareBar t={calledItShare.t} title={calledItShare.t.calledItTitle} text={calledItShare.text} url={calledItShare.url} links={calledItShare.links} />}
     </div>
   );
 }
