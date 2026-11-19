@@ -329,7 +329,7 @@ const en = {
     text: "{question} Make your call on Cansensa. Free. No prizes.",
     cardNoValue: "Free to play. No cash value.",
     cardSports: "Free. No prizes. Fan forecasts only.",
-    cardCalls: "{n} calls",
+    cardCalls: "Average of {n} calls",
     cardCloses: "Closes {date}",
     cardClosed: "Closed",
   },

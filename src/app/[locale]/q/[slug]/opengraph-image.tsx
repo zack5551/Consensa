@@ -76,8 +76,8 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: c.sunken, color: c.ink, fontFamily: "Inter", borderTop: `14px solid ${c.canada}`, padding: "26px 40px 20px" }}>
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, background: c.surface, border: `2px solid ${c.line}`, borderRadius: 28, padding: "28px 40px 24px" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: c.sunken, color: c.ink, fontFamily: "Inter", borderTop: `14px solid ${c.canada}`, padding: sports ? "20px 40px 14px" : "26px 40px 20px" }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, background: c.surface, border: `2px solid ${c.line}`, borderRadius: 28, padding: sports ? "22px 40px 20px" : "28px 40px 24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, fontFamily: "Manrope", fontWeight: 800, fontSize: 32, letterSpacing: -0.7 }}>
               <svg viewBox="0 0 100 100" width="36" height="36">
@@ -107,10 +107,10 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 24, padding: "12px 12px 0", fontWeight: 600, color: c.inkMuted }}>
-          <span style={{ fontSize: 19 }}>{footer}</span>
-          {/* LEX: sports cards also carry the non-affiliation line. */}
-          {sports && <span style={{ display: "flex", flex: 1, justifyContent: "flex-end", textAlign: "right", fontSize: 14 }}>{cardSafe(t.legal.sportsFooter)}</span>}
+        <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "10px 12px 0", fontSize: 19, fontWeight: 600, color: c.inkMuted }}>
+          <span>{footer}</span>
+          {/* LEX: sports cards also carry the non-affiliation line, at the same size so it stays readable in a feed. */}
+          {sports && <span>{cardSafe(t.legal.sportsFooter)}</span>}
         </div>
       </div>
     ),
