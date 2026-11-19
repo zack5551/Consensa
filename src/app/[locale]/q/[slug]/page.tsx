@@ -168,7 +168,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
       scored={q.scored}
       outcome={result?.outcome}
       closedOn={formatLongDate(callsCloseAt(q), locale)}
-      regions={{ values: q.provinces, hidden: q.hiddenProvinces, names: t.province.names, counts: q.provinceCounts }}
+      regions={{ values: q.provinces, hidden: q.hiddenProvinces, names: t.province.names, live: q.hiddenProvinces !== undefined }}
       calledItShare={calledItShare}
     />
   );

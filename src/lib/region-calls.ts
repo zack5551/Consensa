@@ -4,6 +4,7 @@
  * The count comes apart from the words so the panel can set it in tabular digits. Without a count (sample data, or
  * a database that doesn't return one yet), the row keeps its countless wording.
  */
+import { z } from "zod";
 import type { Locale } from "@/i18n/config";
 import { formatCount } from "@/lib/format";
 import { fill } from "@/lib/text";
@@ -19,4 +20,17 @@ export function regionCallsLine(t: Strings, region: string, count: number | unde
   const at = template.indexOf("{n}");
   if (at === -1) return { before: template, n: null, after: "" };
   return { before: template.slice(0, at), n: formatCount(count, locale), after: template.slice(at + 3) };
+}
+
+/** The answer from `/api/crowd/region`: one region's count, or null when it isn't published. */
+const regionCountResponse = z.object({ n: z.number().int().nonnegative().nullable() });
+
+/** Reads that answer. Anything malformed counts as "no count", so the row falls back to its countless wording. */
+export function parseRegionCount(body: unknown): number | undefined {
+  const parsed = regionCountResponse.safeParse(body);
+  return parsed.success && parsed.data.n !== null ? parsed.data.n : undefined;
+}
+
+export function regionCountUrl(slug: string, region: string): string {
+  return `/api/crowd/region?${new URLSearchParams({ slug, region }).toString()}`;
 }

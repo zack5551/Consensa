@@ -36,7 +36,12 @@ export type LiveCrowd = {
   mean: number;
   /** Region and language averages, each only where at least MIN_CROWD people are behind it. */
   provinces?: Partial<Record<Province, number>>;
-  /** How many calls each shown region average is built from: only regions that reach MIN_CROWD. */
+  /**
+   * How many calls each shown region average is built from. Server-side only: it never goes onto the question, and
+   * a visitor gets just their own region's count (see `regionCallCount`). Left out entirely when the calls outside
+   * the shown regions (hidden regions plus calls with no region) number 1 to MIN_CROWD − 1, because Canada's total
+   * minus the shown counts would then single those few people out.
+   */
   provinceCounts?: Partial<Record<Province, number>>;
   languages?: { en?: number; fr?: number };
 };
@@ -80,11 +85,15 @@ export function summarize(rows: readonly CrowdRow[]): Map<string, LiveCrowd> {
     if (a.n < MIN_CROWD) continue;
     const mine = rows.filter((r) => r.slug === slug);
     const regionCells = cells(mine, (r) => (isProvince(r.region) ? r.region : null));
+    const counts = pick(regionCells, "n");
+    // Complementary suppression: the remainder is everyone not in a shown region, and it is derivable from the total.
+    const remainder = a.n - Object.values(counts).reduce((sum, n) => sum + n, 0);
+    const countsSafe = remainder === 0 || remainder >= MIN_CROWD;
     out.set(slug, {
       n: a.n,
       mean: Math.round(a.total / a.n),
       provinces: pick(regionCells, "mean"),
-      provinceCounts: pick(regionCells, "n"),
+      ...(countsSafe ? { provinceCounts: counts } : {}),
       languages: pick(cells(mine, (r) => (r.locale === "en" || r.locale === "fr" ? r.locale : null)), "mean"),
     });
   }
@@ -110,7 +119,11 @@ export function applyLive<T extends Question>(q: T, live: LiveCrowd | undefined)
     history: [live.mean, live.mean],
     provinces: shown,
     hiddenProvinces,
-    provinceCounts: live.provinceCounts,
     languages: en !== undefined && fr !== undefined ? { en, fr } : undefined,
   };
+}
+
+/** One region's call count for the call panel, or null when it isn't published (thin region or suppressed). */
+export function regionCallCount(live: LiveCrowd | undefined, region: Province): number | null {
+  return live?.provinceCounts?.[region] ?? null;
 }

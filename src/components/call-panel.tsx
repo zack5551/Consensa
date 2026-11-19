@@ -14,7 +14,7 @@ import { formatBrier, formatCount, formatPercent } from "@/lib/format";
 import { MIN_CROWD } from "@/lib/live-crowd";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
 import { provinces, type Province, type QuestionState } from "@/lib/question";
-import { regionCallsLine } from "@/lib/region-calls";
+import { parseRegionCount, regionCallsLine, regionCountUrl } from "@/lib/region-calls";
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
 import type { ShareLinks } from "@/lib/social";
 import { accountsEnabled } from "@/lib/supabase/env";
@@ -41,7 +41,7 @@ type Props = {
   /** Already formatted for the locale, e.g. "October 21, 2026". */
   closedOn?: string;
   /** This question's region numbers. With the region from onboarding, your own region shows beside Canada. */
-  regions?: { values: Record<Province, number>; hidden?: readonly Province[]; names: Record<Province, string>; counts?: Partial<Record<Province, number>> };
+  regions?: { values: Record<Province, number>; hidden?: readonly Province[]; names: Record<Province, string>; live?: boolean };
   /** Set on a resolved question: what "Share your call" posts if this browser's call was on the right side. */
   calledItShare?: CalledItShare;
 };
@@ -102,6 +102,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   const [saved, setSaved] = useState(false);
   const [stored, setStored] = useState<number | null>(null);
   const [region, setRegion] = useState<Province | null>(null);
+  const [regionCount, setRegionCount] = useState<number | undefined>(undefined);
   // null until the answer is known. A call is only scored on a record once it is saved to an account (LEX).
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const outside = useSyncExternalStore(subscribeOutsideCanada, isOutsideCanada, () => false);
@@ -121,6 +122,22 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   useEffect(() => {
     setRegion(myRegion());
   }, []);
+
+  // Only the visitor's own region's count is fetched, so the page never carries every region's count.
+  const askCount = saved && region !== null && regions?.live === true && !regions.hidden?.includes(region);
+  useEffect(() => {
+    if (!askCount || region === null) return;
+    let live = true;
+    fetch(regionCountUrl(slug, region))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: unknown) => {
+        if (live) setRegionCount(parseRegionCount(body));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [askCount, slug, region]);
 
   useEffect(() => {
     setBotWidgetStrings(locale, t.botWidget);
@@ -188,7 +205,6 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   // Your region's number shows once you've saved a call, so it informs the result, not the call itself.
   const regionValue = saved && region !== null && regions && !regions.hidden?.includes(region) ? regions.values[region] : null;
   // The count shows only at or above the privacy floor; below it (or with no count yet) the row keeps its countless wording.
-  const regionCount = region !== null ? regions?.counts?.[region] : undefined;
   const regionLine = region !== null && regions ? regionCallsLine(t, regions.names[region], regionCount !== undefined && regionCount >= MIN_CROWD ? regionCount : undefined, locale) : null;
 
   return (

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
 import { formatCount } from "@/lib/format";
-import { regionCallsLine } from "@/lib/region-calls";
+import { parseRegionCount, regionCallsLine, regionCountUrl } from "@/lib/region-calls";
 
 const text = (l: { before: string; n: string | null; after: string }) => `${l.before}${l.n ?? ""}${l.after}`;
 
@@ -31,5 +31,18 @@ describe("regionCallsLine", () => {
       expect(text(line)).toBe("Your region · Ontario · average of calls");
     }
     expect(text(regionCallsLine(fr.call, "Ontario", undefined, "fr"))).toBe("Votre région · Ontario · moyenne des prévisions");
+  });
+});
+
+describe("parseRegionCount", () => {
+  it("reads one count, and treats null or anything malformed as no count", () => {
+    expect(parseRegionCount({ n: 12 })).toBe(12);
+    expect(parseRegionCount({ n: null })).toBeUndefined();
+    expect(parseRegionCount({ n: -1 })).toBeUndefined();
+    expect(parseRegionCount({ n: "12" })).toBeUndefined();
+    expect(parseRegionCount(null)).toBeUndefined();
+  });
+  it("asks for one question and one region", () => {
+    expect(regionCountUrl("boc-cut-dec-2026", "QC")).toBe("/api/crowd/region?slug=boc-cut-dec-2026&region=QC");
   });
 });

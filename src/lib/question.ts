@@ -26,8 +26,6 @@ export const questionSchema = z.object({
   languages: z.object({ en: percent, fr: percent }).optional(),
   /** Regions with too few real calls to show (privacy floor). Their tiles read "—" and the summary skips them. */
   hiddenProvinces: z.array(z.enum(provinces)).optional(),
-  /** Real calls behind each shown region number (set only from live data, never below the privacy floor). */
-  provinceCounts: z.partialRecord(z.enum(provinces), z.number().int().nonnegative()).optional(),
   /**
    * Our own official posts for this question (sprint 11). Only posts listed here are ever read for replies, and only
    * while SOCIAL_VOTING is on.

@@ -1,8 +1,8 @@
 import "server-only";
 import { z } from "zod";
 import { vpnSharePercent } from "@/lib/call-origin";
-import type { Question } from "@/lib/question";
-import { applyLive, parseCrowdRows, summarize } from "@/lib/live-crowd";
+import type { Province, Question } from "@/lib/question";
+import { applyLive, parseCrowdRows, regionCallCount, summarize } from "@/lib/live-crowd";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 /** Questions with real crowd numbers where at least 5 people have called. Preview mode returns them unchanged. */
@@ -19,6 +19,15 @@ export async function withLiveQuestion<T extends Question>(q: T | undefined): Pr
   if (!q) return q;
   const [one] = await withLiveCrowd([q]);
   return one;
+}
+
+/** One region's call count for one question, or null in preview mode, on an error, or when it isn't published. */
+export async function liveRegionCallCount(slug: string, region: Province): Promise<number | null> {
+  const admin = adminSupabase();
+  if (!admin) return null;
+  const { data, error } = await admin.rpc("crowd_summary", { p_slugs: [slug] });
+  if (error) return null;
+  return regionCallCount(summarize(parseCrowdRows(data)).get(slug), region);
 }
 
 const count = z.coerce.number().int().nonnegative();
