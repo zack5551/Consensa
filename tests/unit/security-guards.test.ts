@@ -4,7 +4,7 @@
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import nextConfig from "../../next.config";
 
 const root = join(__dirname, "..", "..");
@@ -121,6 +121,17 @@ describe("headers", async () => {
     }
   });
 
+  it("social hosts are in the policy only while SOCIAL_VOTING is on (sprint 11)", async () => {
+    for (const host of ["api.x.com", "graph.facebook.com", "graph.threads.net"]) expect(appCsp).not.toContain(host);
+    vi.stubEnv("SOCIAL_VOTING", "1");
+    vi.resetModules();
+    const on = (await (await import("../../next.config")).default.headers!()).flatMap((r) => r.headers).filter((h) => h.key === "Content-Security-Policy");
+    vi.unstubAllEnvs();
+    vi.resetModules();
+    expect(on.length).toBe(2);
+    for (const h of on) expect(h.value).toMatch(/connect-src 'self'[^;]* https:\/\/api\.x\.com https:\/\/graph\.facebook\.com https:\/\/graph\.threads\.net/);
+  });
+
   it("only the embed can be framed", () => {
     expect(appCsp).toMatch(/frame-ancestors 'none'/);
     expect(header("/((?!embed/).*)", "X-Frame-Options")).toBe("DENY");
@@ -163,6 +174,17 @@ const allowedExactHosts = new Set([
   "instagram.com", "www.instagram.com", "facebook.com", "www.facebook.com",
 ]);
 
+/**
+ * Social voting (sprint 11), added on purpose: LEX cleared it (data only comes in, rule 7 holds) and AEGIS note 8
+ * says these hosts go into the allowlist and the CSP in this PR only. Called by our server only, never by a page
+ * script, and only while SOCIAL_VOTING is on. Exact hosts, like the share links above:
+ * - api.x.com: replies and poll totals on our own posts, and the numeric id once when a person links;
+ * - graph.facebook.com: comments on our own Facebook Page and Instagram posts;
+ * - graph.threads.net: replies on our own Threads posts.
+ * (Signing in to link happens on x.com itself, already listed above as a plain link the person follows.)
+ */
+const allowedApiHosts = new Set(["api.x.com", "graph.facebook.com", "graph.threads.net"]);
+
 /** Packages that send visitor data to a third party. Rule 7: none without a privacy review and LEX's check. */
 const trackerPackages = [
   /^@vercel\/(analytics|speed-insights)$/, /google-analytics|^react-ga|gtag|^@next\/third-parties$/, /^@segment\//,
@@ -171,13 +193,20 @@ const trackerPackages = [
 ];
 
 describe("outside hosts", () => {
-  const allowed = (host: string) => allowedExactHosts.has(host) || allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
+  const allowed = (host: string) => allowedExactHosts.has(host) || allowedApiHosts.has(host) || allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
 
-  it("share hosts match exactly: no social API or embed host gets through", () => {
-    for (const host of ["api.x.com", "api.twitter.com", "platform.twitter.com", "graph.facebook.com", "connect.facebook.net", "graph.threads.net", "graph.instagram.com"]) {
+  it("share hosts match exactly: no other social API or embed host gets through", () => {
+    for (const host of ["api.twitter.com", "platform.twitter.com", "upload.x.com", "ads-api.x.com", "connect.facebook.net", "graph.instagram.com", "www.graph.facebook.com", "pixel.facebook.com"]) {
       expect(allowed(host), host).toBe(false);
     }
     expect(allowed("www.facebook.com")).toBe(true);
+  });
+
+  it("the three social-voting API hosts are used only by the server-side adapters in src/lib/social-voting", () => {
+    expect([...allowedApiHosts].sort()).toEqual(["api.x.com", "graph.facebook.com", "graph.threads.net"]);
+    const users = source.filter((f) => [...allowedApiHosts].some((host) => read(f).includes(host))).map(rel);
+    expect(users.sort()).toEqual(["src/lib/social-voting/link-providers.ts", "src/lib/social-voting/providers/meta.ts", "src/lib/social-voting/providers/x.ts"]);
+    for (const f of users) expect(read(join(root, f)), f).not.toMatch(/^["']use client["']/m);
   });
 
   for (const file of source) {

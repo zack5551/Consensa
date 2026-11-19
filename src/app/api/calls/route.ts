@@ -5,6 +5,7 @@ import { callsCountFrom, COUNTRY_HEADER } from "@/lib/call-origin";
 import { callsCloseAt, isOpen, questionState } from "@/lib/question";
 import { rateLimiter } from "@/lib/rate-limit";
 import { verifyBotCheck } from "@/lib/server/bot-check";
+import { socialVotingOn } from "@/lib/social-voting/env";
 import { checkProxy } from "@/lib/server/proxy-check";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { serverSupabase } from "@/lib/supabase/server";
@@ -68,13 +69,21 @@ export async function POST(request: NextRequest) {
   // A VPN doesn't stop a call; it is only counted, one number per day, never per person or per call.
   const { vpn } = await checkProxy(request.headers);
 
-  const { error } = await admin.from("calls").upsert({ user_id: auth.user.id, slug: q.slug, probability: parsed.data.probability }, { onConflict: "user_id,slug" });
+  // With social voting on, a call made here is marked as a website call, so it wins over any reply on the same question
+  // (the database refuses to let a reply overwrite it). The column exists only after the sprint-11 migration, so it is
+  // written only when the flag is on.
+  const social = socialVotingOn();
+  const userId = auth.user.id;
+  const { error } = await admin.from("calls").upsert({ user_id: userId, slug: q.slug, probability: parsed.data.probability, ...(social ? { source: "web" } : {}) }, { onConflict: "user_id,slug" });
   if (error?.hint === "closed") return NextResponse.json({ error: "closed" }, { status: 409, headers: noStore });
   if (error?.hint === "rate") return NextResponse.json({ error: "slow down" }, { status: 429, headers: { ...noStore, "Retry-After": "2" } });
   if (error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
   // Best effort, after the answer is sent: a failed or slow counter never fails or delays a saved call.
   after(async () => {
     await admin.rpc("count_call_origin", { p_vpn: vpn === "unknown" ? "unknown" : vpn ? "yes" : "no" });
+    // The monthly re-check of a linked social account (AEGIS note 5): a call from Canada, not through a VPN, is the
+    // proof. It refreshes the person's own links and lifts a pause; without any link it changes nothing.
+    if (social && vpn !== true) await admin.from("social_links").update({ last_checked_at: new Date().toISOString(), paused: false }).eq("user_id", userId);
   });
   return NextResponse.json({ ok: true }, { headers: noStore });
 }

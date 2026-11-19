@@ -10,6 +10,7 @@ import { LegalSummary } from "@/components/legal-summary";
 import { ScreenView } from "@/components/screen-view";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { socialVotingOn } from "@/lib/social-voting/env";
 
 const UPDATED_ON = "2026-11-06T12:00:00Z";
 
@@ -26,10 +27,13 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale).legalPages;
+  // LEX's linked-account rows describe a collection that only exists with social voting, so they show only while it is on.
+  const hidden: readonly string[] = socialVotingOn() ? [] : ["social", "socialKept"];
+  const points = Object.fromEntries(Object.entries(t.privacy.points).filter(([k]) => !hidden.includes(k)));
   return (
     <>
       <ScreenView locale={locale} screen="privacy" />
-      <LegalSummary locale={locale} title={t.privacy.title} intro={t.privacy.intro} draft={t.draft} updated={t.updated} updatedOn={UPDATED_ON} points={t.privacy.points} />
+      <LegalSummary locale={locale} title={t.privacy.title} intro={t.privacy.intro} draft={t.draft} updated={t.updated} updatedOn={UPDATED_ON} points={points} />
     </>
   );
 }

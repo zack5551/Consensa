@@ -11,6 +11,7 @@ import { ScreenView } from "@/components/screen-view";
 import { TermsReview } from "@/components/terms-review";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { socialVotingOn } from "@/lib/social-voting/env";
 
 const UPDATED_ON = "2026-11-06T12:00:00Z";
 
@@ -27,11 +28,14 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale).legalPages;
+  // LEX's linked-account rows describe a collection that only exists with social voting, so they show only while it is on.
+  const hidden: readonly string[] = socialVotingOn() ? [] : ["social"];
+  const points = Object.fromEntries(Object.entries(t.terms.points).filter(([k]) => !hidden.includes(k)));
   return (
     <>
       <ScreenView locale={locale} screen="terms" />
       <TermsReview locale={locale} t={t.termsReview} />
-      <LegalSummary locale={locale} title={t.terms.title} intro={t.terms.intro} draft={t.draft} updated={t.updated} updatedOn={UPDATED_ON} points={t.terms.points} />
+      <LegalSummary locale={locale} title={t.terms.title} intro={t.terms.intro} draft={t.draft} updated={t.updated} updatedOn={UPDATED_ON} points={points} />
     </>
   );
 }

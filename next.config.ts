@@ -28,13 +28,20 @@ function supabaseOrigins(): string {
     return "";
   }
 }
+/**
+ * Social voting (sprint 11, AEGIS note 8): the three platform APIs, added in this PR only and only while
+ * SOCIAL_VOTING=1, so with the flag off the policy is unchanged. Today only our server calls them (linking and the
+ * daily reader); no page script does, and the person's own sign-in on X is a normal page visit that the policy
+ * doesn't govern. Data only comes in (LEX: rule 7 holds). Remove a host here if the browser never needs it.
+ */
+const socialOrigins = process.env.SOCIAL_VOTING === "1" ? " https://api.x.com https://graph.facebook.com https://graph.threads.net" : "";
 const baseCsp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  `connect-src 'self'${supabaseOrigins()}${dev ? " ws:" : ""}`,
+  `connect-src 'self'${supabaseOrigins()}${socialOrigins}${dev ? " ws:" : ""}`,
   "frame-src 'none'",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
@@ -51,6 +58,9 @@ const nextConfig: NextConfig = {
     "/api/calls": ["./data/ip2proxy/**"],
     // The share card reads its three brand fonts from disk at run time, and the build does not find them on its own.
     "/[locale]/q/[slug]/opengraph-image": ["./brand/fonts/ttf/*.ttf"],
+    // Linking a social account runs the same VPN check (sprint 11).
+    "/api/account/social/start": ["./data/ip2proxy/**"],
+    "/api/account/social/callback": ["./data/ip2proxy/**"],
   },
   async headers() {
     return [
