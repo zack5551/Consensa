@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CountOutcome, CountStore, OfficialPost } from "@/lib/social-voting/count";
 import type { SpendStore } from "@/lib/social-voting/spend";
+import type { RemoveOutcome, SweepStore } from "@/lib/social-voting/sweep";
 import type { FetchFn, Platform, PollTotals } from "@/lib/social-voting/types";
 
 export function fixture(name: string): unknown {
@@ -44,9 +45,10 @@ type Ledger = { platform: Platform; replyId: string; postId: string; userId: str
 /**
  * An in-memory stand-in for the database side, following count_social_reply() in the sprint-11 migration: linked
  * accounts only, idempotent on the reply id, a website call wins, the latest reply wins. `written` records every
- * value any method was given, so a test can prove what could ever have been stored.
+ * value any method was given, so a test can prove what could ever have been stored. `removeReply` follows
+ * remove_social_reply() in the same migration, branch for branch.
  */
-export class MemoryStore implements CountStore {
+export class MemoryStore implements CountStore, SweepStore {
   links = new Map<string, string>(); // "platform:platformUserId" -> user id
   ledger: Ledger[] = [];
   calls = new Map<string, { probability: number; source: string }>(); // "user:slug"
@@ -55,6 +57,10 @@ export class MemoryStore implements CountStore {
   autoReplied = new Set<string>();
   written: unknown[] = [];
   retryOnce = new Set<string>();
+  /** The database's clock, for "is the question still open". */
+  clock = NOW;
+  removeRetryOnce = new Set<string>();
+  removeFails = new Set<string>();
   paused = 0;
 
   link(platform: Platform, platformUserId: string, userId: string): this {
@@ -90,11 +96,37 @@ export class MemoryStore implements CountStore {
     this.calls.set(key, { probability: input.probability, source: input.platform });
     return "counted";
   }
-  async ledgerReplyIds(platform: Platform, postId: string): Promise<string[]> {
-    return this.ledger.filter((l) => l.platform === platform && l.postId === postId).map((l) => l.replyId);
+  async ledgerReplyIds(platform: Platform, postId: string, limit: number): Promise<string[]> {
+    return this.ledger
+      .filter((l) => l.platform === platform && l.postId === postId)
+      .map((l) => l.replyId)
+      .sort()
+      .slice(0, limit);
   }
-  async removeReply(platform: Platform, replyId: string): Promise<void> {
-    this.ledger = this.ledger.filter((l) => !(l.platform === platform && l.replyId === replyId));
+  private latestReply(userId: string, slug: string): Ledger | undefined {
+    return this.ledger.filter((l) => l.userId === userId && l.slug === slug).sort((x, y) => Date.parse(y.at) - Date.parse(x.at))[0];
+  }
+  async removeReply(platform: Platform, replyId: string): Promise<RemoveOutcome> {
+    this.written.push({ platform, replyId });
+    if (this.removeFails.has(replyId)) throw new Error("remove unavailable");
+    if (this.removeRetryOnce.delete(replyId)) return "retry";
+    const gone = this.ledger.find((l) => l.platform === platform && l.replyId === replyId);
+    if (!gone) return "unknown";
+    const closes = this.windows.get(gone.slug);
+    if (!closes || this.clock.getTime() >= Date.parse(closes)) return "closed";
+    const key = `${gone.userId}:${gone.slug}`;
+    const source = this.calls.get(key)?.source;
+    const wasLatest = this.latestReply(gone.userId, gone.slug) === gone;
+    this.ledger = this.ledger.filter((l) => l !== gone);
+    // A website call, or a newer reply, set the current call: nothing else changes.
+    if (!source || source === "web" || !wasLatest) return "removed";
+    const latest = this.latestReply(gone.userId, gone.slug);
+    if (latest) {
+      this.calls.set(key, { probability: latest.probability, source: latest.platform });
+      return "restored";
+    }
+    this.calls.delete(key);
+    return "call_removed";
   }
   async pauseStaleLinks(): Promise<number> {
     return this.paused;

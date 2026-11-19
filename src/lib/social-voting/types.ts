@@ -26,6 +26,15 @@ export interface ReadReplies {
   complete: boolean;
 }
 
+/** What a deleted-reply check found. Only a reply the platform itself reports as not found is ever listed as gone. */
+export interface DeletedCheck {
+  gone: string[];
+  /** How many of the ids the platform answered for. */
+  checked: number;
+  /** False when the spend cap or a failed request stopped the check early; the rest is checked on a later day. */
+  complete: boolean;
+}
+
 /** A native poll's totals as the platform reports them. Never mixed into "Canada says". */
 export interface PollTotals {
   yes: number;
@@ -37,8 +46,8 @@ export interface SocialProvider {
   readonly platform: Platform;
   readReplies(ourPostId: string, since: Date | null, now: Date): Promise<ReadReplies>;
   readPollTotals(ourPostId: string, now: Date): Promise<PollTotals | null>;
-  /** Which of these counted replies have since been deleted. Null when the platform or the cap doesn't allow the check. */
-  findDeleted?(replyIds: readonly string[], now: Date): Promise<string[] | null>;
+  /** Which of these counted replies have since been deleted on the platform (the daily sweep). */
+  findDeleted?(replyIds: readonly string[], now: Date): Promise<DeletedCheck>;
   /** A public reply under a reply on our own post (the auto-reply). True when it was posted. */
   postReply?(replyId: string, text: string): Promise<boolean>;
 }

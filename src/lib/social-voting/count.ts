@@ -5,6 +5,8 @@
  *
  * Privacy: a reply from an account that isn't linked is dropped here, in memory, before anything is stored. The
  * report holds counts only: no ids, no text, nothing to log about a person.
+ *
+ * Deleted replies are handled by the daily sweep in `sweep.ts`, which the cycle runs before this step.
  */
 import { callsCloseAt, isOpen, questionState, type Question } from "@/lib/question";
 import { REPLY_PROBABILITY, socialPostSchema, type ParsedReply, type Platform, type PollTotals, type SocialProvider } from "./types";
@@ -42,8 +44,6 @@ export interface CountStore {
   saveRead(post: OfficialPost, patch: { readThrough?: Date; poll?: PollTotals }, now: Date): Promise<void>;
   /** "retry" when the database's 2-second rule refused it for now. */
   countReply(input: { platform: Platform; replyId: string; postId: string; authorId: string; slug: string; probability: number; at: string }): Promise<CountOutcome>;
-  ledgerReplyIds(platform: Platform, postId: string): Promise<string[]>;
-  removeReply(platform: Platform, replyId: string): Promise<void>;
   /** Pauses links not re-checked since the cut-off. Returns how many. Never deletes a link (AEGIS note 5). */
   pauseStaleLinks(now: Date): Promise<number>;
   /** Records "we replied to this account on this post" by keyed hash. False when it was already there. */
@@ -61,8 +61,6 @@ export interface CountOptions {
   providers: Partial<Record<Platform, SocialProvider>>;
   store: CountStore;
   now: Date;
-  /** Check counted replies for deletion this run (it costs a read per reply on X, so the cycle does it weekly). */
-  sweepDeleted?: boolean;
   /** Present only when SOCIAL_AUTO_REPLY is on. */
   autoReply?: AutoReplyConfig;
   /** Waits out the database's 2-second rule before one retry. Injected so tests don't sleep. */
@@ -75,7 +73,6 @@ export interface CountReport {
   unlinkedDropped: number;
   outcomes: Partial<Record<CountOutcome, number>>;
   pollsRead: number;
-  removed: number;
   paused: number;
   autoReplies: number;
   /** Posts whose read stopped early (spend cap or a failed request); they are read again next cycle. */
@@ -98,7 +95,7 @@ function latestPerAuthor(replies: readonly ParsedReply[]): ParsedReply[] {
 export async function countSocialReplies(opts: CountOptions): Promise<CountReport> {
   const { store, now } = opts;
   const wait = opts.wait ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
-  const report: CountReport = { posts: 0, repliesRead: 0, unlinkedDropped: 0, outcomes: {}, pollsRead: 0, removed: 0, paused: 0, autoReplies: 0, incomplete: 0 };
+  const report: CountReport = { posts: 0, repliesRead: 0, unlinkedDropped: 0, outcomes: {}, pollsRead: 0, paused: 0, autoReplies: 0, incomplete: 0 };
   const linkedCache = new Map<Platform, ReadonlySet<string>>();
   const tally = (o: CountOutcome) => (report.outcomes[o] = (report.outcomes[o] ?? 0) + 1);
 
@@ -160,15 +157,6 @@ export async function countSocialReplies(opts: CountOptions): Promise<CountRepor
       const newest = read.replies.reduce((max, r) => Math.max(max, Date.parse(r.at)), 0);
       if (!read.complete || failed) report.incomplete += 1;
       else if (newest > 0) await store.saveRead(post, { readThrough: new Date(newest) }, now);
-
-      if (opts.sweepDeleted && provider.findDeleted) {
-        const ids = await store.ledgerReplyIds(post.platform, post.postId);
-        const gone = ids.length > 0 ? await provider.findDeleted(ids, now) : [];
-        for (const replyId of gone ?? []) {
-          await store.removeReply(post.platform, replyId);
-          report.removed += 1;
-        }
-      }
     } catch {
       report.incomplete += 1; // one post failing never stops the others
     }
