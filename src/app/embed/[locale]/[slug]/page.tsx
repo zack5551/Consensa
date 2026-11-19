@@ -82,7 +82,10 @@ export default async function EmbedPage({ params }: { params: Params }) {
           {open ? t.embed.cta : t.embed.closed} ↗
         </a>
       </div>
-      <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
+      {/* Every surface carries the no-money line, the embed on a newsroom's page included (LEX). */}
+      <p className="m-0 text-caption text-ink-2">
+        <span className="font-bold text-ink">{t.legal.footer}</span> {t.legal.noValue}
+      </p>
       {q.category === "sports" && <SportsNotice label={t.legal.sportsLabel} footer={t.legal.sportsFooter} />}
     </main>
   );
