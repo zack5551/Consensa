@@ -61,7 +61,7 @@ export const questionSchema = z.object({
   socialPolls: z.array(socialPollSchema).optional(),
   resolution: z.object({
     /** `url` is the source's English page. `urlFr` is the same page in French, when the publisher has one; /fr links to it. */
-    source: z.object({ name: bilingual, url: z.url(), urlFr: z.url().optional() }),
+    source: z.object({ name: bilingual, url: z.url({ protocol: /^https$/ }), urlFr: z.url({ protocol: /^https$/ }).optional() }),
     rule: bilingual,
     resolvesAt: z.iso.datetime(),
     /** Set once the official source has published. `disputed` means the result is under review. */

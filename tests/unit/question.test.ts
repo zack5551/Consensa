@@ -263,6 +263,16 @@ describe("French source links", () => {
     expect(questionSchema.safeParse(bad).success).toBe(false);
   });
 
+  it("accepts only https source links, in English and French (AEGIS)", () => {
+    const raw = fixtureQuestions()[0]!;
+    for (const url of ["javascript:alert(1)", "data:text/html,hi", "http://example.ca/"]) {
+      const asUrl = { ...raw, resolution: { ...raw.resolution, source: { ...raw.resolution.source, url } } };
+      const asFr = { ...raw, resolution: { ...raw.resolution, source: { ...raw.resolution.source, urlFr: url } } };
+      expect(questionSchema.safeParse(asUrl).success).toBe(false);
+      expect(questionSchema.safeParse(asFr).success).toBe(false);
+    }
+  });
+
   it("links /fr to the French page when there is one, and to the English page otherwise", () => {
     const both = { url: "https://www.bankofcanada.ca/x/", urlFr: "https://www.banqueducanada.ca/x/" };
     expect(sourceUrl(both, "fr")).toBe("https://www.banqueducanada.ca/x/");

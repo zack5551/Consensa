@@ -48,3 +48,14 @@ describe("validateDraft", () => {
     expect(codes(goodDraft({ resolver: { kind: "manual", check: "Winner on the prize site" } }))).toContain("review:manualResolver");
   });
 });
+
+describe("draftSchema source link (AEGIS)", () => {
+  it("accepts only https", async () => {
+    const { draftSchema } = await import("@/engine/types");
+    const d = goodDraft();
+    expect(draftSchema.safeParse(d).success).toBe(true);
+    for (const url of ["javascript:alert(1)", "data:text/html,hi", "http://example.ca/"]) {
+      expect(draftSchema.safeParse({ ...d, resolution: { ...d.resolution, source: { ...d.resolution.source, url } } }).success).toBe(false);
+    }
+  });
+});

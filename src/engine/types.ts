@@ -122,7 +122,7 @@ export const draftSchema = z.object({
   /** Start of the game or event. Required for sports (checked in `validate.ts`, so a miss is a block flag, not a crash). */
   startsAt: z.iso.datetime().optional(),
   resolution: z.object({
-    source: z.object({ name: bilingual, url: z.url() }),
+    source: z.object({ name: bilingual, url: z.url({ protocol: /^https$/ }) }),
     rule: bilingual,
     resolvesAt: z.iso.datetime(),
   }),
