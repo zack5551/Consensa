@@ -11,6 +11,7 @@ import { ScreenView } from "@/components/screen-view";
 import { Wordmark } from "@/components/wordmark";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { returnPath } from "@/lib/supabase/config";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -21,8 +22,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-export default async function WelcomePage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function WelcomePage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ next?: string | string[] }> }) {
   const { locale: raw } = await params;
+  const { next } = await searchParams;
   if (!isLocale(raw)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
@@ -34,7 +36,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
         <Wordmark className="text-title" />
         <h1 className="m-0 text-body font-semibold text-ink-2">{t.onboarding.title}</h1>
       </header>
-      <OnboardingFlow locale={locale} t={t.onboarding} regionNames={t.province.names} categoryNames={t.board.categories} />
+      <OnboardingFlow locale={locale} t={t.onboarding} regionNames={t.province.names} categoryNames={t.board.categories} next={typeof next === "string" ? returnPath(next) : null} />
     </div>
   );
 }

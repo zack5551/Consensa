@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Locale } from "@/i18n/config";
+import type { Side } from "@/lib/call-side";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
 import { fill } from "@/lib/text";
 
@@ -73,6 +74,11 @@ export function socialPollLine(poll: SocialPoll, labels: SocialPollLabels, local
 /** The plain question page address: no user ID, no tracking parameters. */
 export function questionShareUrl(base: string, locale: Locale, slug: string): string {
   return `${base.replace(/\/+$/, "")}/${locale}/q/${slug}`;
+}
+
+/** The "Called it!" page for a resolved question: the slug and the side that happened, nothing about who called it. */
+export function calledItShareUrl(base: string, locale: Locale, slug: string, side: Side): string {
+  return `${questionShareUrl(base, locale, slug)}/called-it/${side}`;
 }
 
 export type ShareLinks = { x: string; threads: string; facebook: string };

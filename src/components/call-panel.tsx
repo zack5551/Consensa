@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { ShareBar } from "@/components/share-bar";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
@@ -14,7 +16,9 @@ import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
 import { provinces, type Province, type QuestionState } from "@/lib/question";
 import { regionCallsLine } from "@/lib/region-calls";
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
+import type { ShareLinks } from "@/lib/social";
 import { accountsEnabled } from "@/lib/supabase/env";
+import { welcomeHref } from "@/lib/return-path";
 import { fill } from "@/lib/text";
 
 type Props = {
@@ -38,7 +42,12 @@ type Props = {
   closedOn?: string;
   /** This question's region numbers. With the region from onboarding, your own region shows beside Canada. */
   regions?: { values: Record<Province, number>; hidden?: readonly Province[]; names: Record<Province, string>; counts?: Partial<Record<Province, number>> };
+  /** Set on a resolved question: what "Share your call" posts if this browser's call was on the right side. */
+  calledItShare?: CalledItShare;
 };
+
+/** The called-it page address (question and side only), the post line already filled, and the plain share links. */
+export type CalledItShare = { t: Dictionary["share"]; text: string; url: string; links: ShareLinks };
 
 /** The region chosen at onboarding, if this browser has one. */
 function myRegion(): Province | null {
@@ -87,7 +96,7 @@ function signedInOnce(): Promise<boolean | null> {
  * probability of yes (see src/lib/call-side.ts).
  * Once a question closes, the panel shows your call and, after the result, "Called it!" or "Not this time."
  */
-export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, closes = "", crowdShown = true, state = "open", scored = true, outcome, closedOn = "", regions }: Props) {
+export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, closes = "", crowdShown = true, state = "open", scored = true, outcome, closedOn = "", regions, calledItShare }: Props) {
   const [side, setSide] = useState<Side | null>(null);
   const [sure, setSure] = useState<number>(SURE_DEFAULT);
   const [saved, setSaved] = useState(false);
@@ -100,6 +109,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   const vpn = useSyncExternalStore(subscribeOutsideCanada, isVpnRefused, () => false);
   const termsOld = useSyncExternalStore(subscribeOutsideCanada, isTermsOutdated, () => false);
   const id = useId();
+  // The nudge brings people back here after signing up (checked with returnPath: a plain path only).
+  const pathname = usePathname();
   const sliderRef = useRef<HTMLInputElement>(null);
   const changeRef = useRef<HTMLButtonElement>(null);
   // Where keyboard focus goes after a step changes, so it never falls back to the top of the page.
@@ -150,7 +161,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
           {t.closedTitle}
         </h2>
         <p className="mt-1 text-body-sm text-ink-2">{fill(t.closedBody, { date: closedOn })}</p>
-        <ClosedResult stored={stored} crowd={crowd} state={state} outcome={outcome} scored={scored} t={t} canadaSays={canadaSays} pct={pct} locale={locale} />
+        <ClosedResult stored={stored} crowd={crowd} state={state} outcome={outcome} scored={scored} t={t} canadaSays={canadaSays} pct={pct} locale={locale} calledItShare={calledItShare} />
       </section>
     );
   }
@@ -203,7 +214,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
           {signedIn === false && (
             <p className="m-0 text-body-sm text-ink-2">
               {t.nudge.before}{" "}
-              <Link href={`/${locale}/welcome`} className="font-semibold text-link underline underline-offset-2">
+              <Link href={welcomeHref(locale, pathname)} className="font-semibold text-link underline underline-offset-2">
                 {t.nudge.link}
               </Link>{" "}
               {t.nudge.after}
@@ -374,6 +385,7 @@ function ClosedResult({
   canadaSays,
   pct,
   locale,
+  calledItShare,
 }: {
   stored: number | null;
   crowd: number;
@@ -384,6 +396,7 @@ function ClosedResult({
   canadaSays: string;
   pct: (v: number) => string;
   locale: Locale;
+  calledItShare?: CalledItShare;
 }) {
   const resolved = state === "resolved" && outcome !== undefined;
   let verdict: string | null = null;
@@ -422,6 +435,8 @@ function ClosedResult({
         {state === "closed" && stored !== null && <p className="m-0 mt-1 text-ink-2">{t.waiting}</p>}
         {state === "disputed" && <p className="m-0 mt-1 text-ink-2">{t.disputed}</p>}
       </div>
+      {/* "Share your call", only beside a "Called it!": the link names the question and the side that happened, never the person or their number. */}
+      {hit && calledItShare && <ShareBar t={calledItShare.t} title={calledItShare.t.calledItTitle} text={calledItShare.text} url={calledItShare.url} links={calledItShare.links} />}
     </div>
   );
 }

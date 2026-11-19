@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { publicSupabase, safeNext, signupMetadataSchema } from "@/lib/supabase/config";
+import { MAX_NEXT_LENGTH, publicSupabase, returnPath, safeNext, signupMetadataSchema } from "@/lib/supabase/config";
 
 describe("publicSupabase", () => {
   it("is off without both public values, so preview mode and CI need no keys", () => {
@@ -31,6 +31,57 @@ describe("safeNext", () => {
   it("never sends people to another site", () => {
     for (const bad of ["https://evil.example", "//evil.example", "/\\evil.example", "/de/today", "today", "", null, undefined]) {
       expect(safeNext(bad)).toBe("/en/today");
+    }
+  });
+});
+
+/** Each one tries to leave the site, or the locale folder, once a browser or `new URL` reads it. */
+const hostile = [
+  "//evil.com",
+  "///evil.com",
+  "/\\evil.com",
+  "/\\/evil.com",
+  "https://evil.com",
+  "javascript:alert(1)",
+  "/en/../..",
+  "/en/../../evil.com",
+  "/en/./q",
+  "/en/%2e%2e/%2e%2e",
+  "/en/%2E%2E",
+  "/en/%2F%2Fevil.com",
+  "/%2F%2Fevil.com",
+  "/en/q/%5cevil.com",
+  "/en/%",
+  "/\t/evil.com",
+  "/en\r\nSet-Cookie: x=1",
+  "/en/q/x\nLocation: https://evil.com",
+  "/en/\u0000",
+  `/en/q/${"a".repeat(MAX_NEXT_LENGTH)}`,
+];
+
+describe("safeNext against hostile values", () => {
+  it.each(hostile)("refuses %j", (bad) => {
+    expect(safeNext(bad)).toBe("/en/today");
+    expect(returnPath(bad)).toBeNull();
+  });
+  it("never resolves to another origin, even read the way a browser would", () => {
+    for (const bad of hostile) expect(new URL(safeNext(bad), "https://cansensa.ca").origin).toBe("https://cansensa.ca");
+  });
+  it("still keeps a long but reasonable path", () => {
+    const path = `/en/q/${"a".repeat(MAX_NEXT_LENGTH - 10)}`;
+    expect(safeNext(path)).toBe(path);
+  });
+});
+
+describe("returnPath", () => {
+  it("keeps a plain path in one of our languages", () => {
+    expect(returnPath("/en/q/boc-cut-dec-2026")).toBe("/en/q/boc-cut-dec-2026");
+    expect(returnPath("/fr/today")).toBe("/fr/today");
+    expect(returnPath("/fr")).toBe("/fr");
+  });
+  it("drops anything that isn't a plain path: queries, fragments, other languages, spaces, nothing", () => {
+    for (const bad of ["/en/q/x?utm_source=mail", "/en/q/x#top", "/en/q/x?next=//evil.com", "/de/q/x", "/en/q/a b", "/en/q/é", "", null, undefined]) {
+      expect(returnPath(bad)).toBeNull();
     }
   });
 });
