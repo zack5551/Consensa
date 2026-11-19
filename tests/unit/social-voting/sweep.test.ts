@@ -294,7 +294,7 @@ describe("the daily sweep of deleted replies", () => {
 
 describe("the sweep in the daily step", () => {
   const SECRET = "s".repeat(40);
-  const h = { ops: [] as string[], steps: [] as string[], spent: 0, posts: [] as OfficialPost[], sweepArgs: [] as SweepOptions[] };
+  const h = { ops: [] as string[], steps: [] as string[], spent: 0, posts: [] as OfficialPost[], sweepArgs: [] as SweepOptions[], halted: false, sweepFails: false };
 
   beforeEach(() => {
     vi.resetModules();
@@ -304,6 +304,9 @@ describe("the sweep in the daily step", () => {
     h.spent = 0;
     h.posts = [];
     h.sweepArgs.length = 0;
+    h.halted = false;
+    h.sweepFails = false;
+    vi.restoreAllMocks();
     vi.doMock("server-only", () => ({}));
     vi.doMock("@/lib/supabase/admin", () => ({
       adminSupabase: () => ({
@@ -319,7 +322,12 @@ describe("the sweep in the daily step", () => {
     }));
     vi.doMock("@/lib/social-voting/sweep", async (original) => ({
       ...(await original<Record<string, unknown>>()),
-      sweepDeletedReplies: async (o: SweepOptions) => (h.steps.push("sweep"), h.sweepArgs.push(o), { posts: 0, checked: 0, gone: 0, outcomes: {}, incomplete: 0, halted: false }),
+      sweepDeletedReplies: async (o: SweepOptions) => {
+        h.steps.push("sweep");
+        h.sweepArgs.push(o);
+        if (h.sweepFails) throw new Error("sweep unavailable");
+        return { posts: 0, checked: 0, gone: 0, outcomes: {}, incomplete: 0, halted: h.halted };
+      },
     }));
     vi.doMock("@/lib/social-voting/count", async (original) => ({
       ...(await original<Record<string, unknown>>()),
@@ -362,5 +370,24 @@ describe("the sweep in the daily step", () => {
     h.spent = 25_000_000; // cap used up: the sweep gets nothing
     await runSocialStep(NOW, { ...keys, SOCIAL_VOTING: "1" });
     expect(h.sweepArgs[1]?.allowanceMicros).toEqual({ x: 0 });
+  });
+
+  it("a halted sweep logs the code social-sweep: halted, and nothing else", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { runSocialStep } = await import("@/lib/social-voting/run");
+    h.halted = true;
+    const report = await runSocialStep(NOW, { ...keys, SOCIAL_VOTING: "1" });
+    expect(report?.sweep?.halted).toBe(true);
+    expect(warn.mock.calls).toEqual([["social-sweep: halted"]]);
+    expect(h.steps).toEqual(["sweep", "count"]); // the count still runs
+  });
+
+  it("a sweep that isn't halted logs nothing, and neither does one that failed", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { runSocialStep } = await import("@/lib/social-voting/run");
+    await runSocialStep(NOW, { ...keys, SOCIAL_VOTING: "1" });
+    h.sweepFails = true;
+    expect((await runSocialStep(NOW, { ...keys, SOCIAL_VOTING: "1" }))?.sweep).toBeNull();
+    expect(warn).not.toHaveBeenCalled();
   });
 });

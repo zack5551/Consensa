@@ -2,6 +2,7 @@ import "server-only";
 import { sampleQuestions } from "@/content/sample-questions";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
+import { logErrorCode } from "@/lib/server/error-code-log";
 import { siteUrl } from "@/lib/site-url";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { fill } from "@/lib/text";
@@ -33,6 +34,9 @@ export type SocialReport = CountReport & { sweep: SweepReport | null };
  * Two parts, every day: the sweep of deleted replies, then the count of new replies. The sweep goes first so that
  * a deleted reply is taken out before new ones come in. It may use at most half of what is left under the monthly
  * spend cap, so the count always keeps the other half.
+ *
+ * A sweep stopped by its removal ceiling logs the code "social-sweep: halted". The way past it is
+ * approve_social_sweep(), run by hand in the database (see sweep.ts).
  */
 export async function runSocialStep(now: Date, env: Record<string, string | undefined> = process.env): Promise<SocialReport | null> {
   if (!socialVotingOn(env)) return null;
@@ -54,6 +58,8 @@ export async function runSocialStep(now: Date, env: Record<string, string | unde
   const sweepsX = Boolean(providers.x) && posts.some((p) => p.platform === "x");
   const allowanceMicros = sweepsX ? { x: Math.floor((await xSpend.remaining(now)) * SWEEP_BUDGET_SHARE) } : {};
   const sweep = await sweepDeletedReplies({ posts, providers, store, now, allowanceMicros }).catch(() => null);
+  // AEGIS: a halted sweep is logged by code, so a person sees it. Nothing but the code is logged.
+  if (sweep?.halted) logErrorCode("social-sweep", "halted");
   const count = await countSocialReplies({
     posts,
     providers,

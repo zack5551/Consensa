@@ -65,6 +65,11 @@ export class MemoryStore implements CountStore, SweepStore {
   removeRetryOnce = new Set<string>();
   removeFails = new Set<string>();
   paused = 0;
+  /** The hand-given sweep approval as the database keeps it: the time it ends, or null when there is none. */
+  sweepApprovedUntil: Date | null = null;
+  /** How many times the sweep asked for the approval. */
+  approvalAsked = 0;
+  approvalFails = false;
 
   link(platform: Platform, platformUserId: string, userId: string): this {
     this.links.set(`${platform}:${platformUserId}`, userId);
@@ -130,6 +135,14 @@ export class MemoryStore implements CountStore, SweepStore {
     }
     this.calls.delete(key);
     return "call_removed";
+  }
+  /** Follows consume_social_sweep_approval(): the approval always goes, and it counts only while still in time. */
+  async consumeSweepApproval(): Promise<boolean> {
+    this.approvalAsked += 1;
+    if (this.approvalFails) throw new Error("approval unavailable");
+    const until = this.sweepApprovedUntil;
+    this.sweepApprovedUntil = null;
+    return until !== null && until.getTime() > this.clock.getTime();
   }
   async pauseStaleLinks(): Promise<number> {
     return this.paused;

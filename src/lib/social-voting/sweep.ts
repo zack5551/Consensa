@@ -16,6 +16,11 @@
  * removes nothing, sets `halted` in the report and leaves it for a person: that pattern looks like the platform
  * answering wrongly, and a wrongly removed call can't always be counted again.
  *
+ * The way past a halt (AEGIS): once a person has looked, zack runs approve_social_sweep() by hand in the database.
+ * That approval lasts 36 hours and is used up by the next run whose ceiling trips, which then removes what it found
+ * and says `approvedOverride` in its report. A run under the ceiling never asks for the approval, so it can't use
+ * one up. There is no env var and no route for this.
+ *
  * Cost and limits: on X each reply checked is a paid read, taken from the same monthly spend cap as every other
  * read (the provider reserves before each request and stops when the cap refuses). X's lookup takes 100 ids a
  * request, and a run checks at most SWEEP_MAX_REPLIES_PER_RUN replies. When a run can't finish, the starting post
@@ -35,6 +40,11 @@ export interface SweepStore {
   ledgerReplyIds(platform: Platform, postId: string, limit: number): Promise<string[]>;
   /** Takes a deleted reply out. The database keeps a site call, falls back to an earlier reply, or removes the call. */
   removeReply(platform: Platform, replyId: string): Promise<RemoveOutcome>;
+  /**
+   * Uses up the hand-given approval for a run over the removal ceiling (consume_social_sweep_approval() in the
+   * database). True only when there was one and it was still in time. Single-use: asking clears it either way.
+   */
+  consumeSweepApproval(): Promise<boolean>;
 }
 
 export interface SweepOptions {
@@ -66,6 +76,11 @@ export interface SweepReport {
   incomplete: number;
   /** True when the removal ceiling stopped the run: nothing was removed, and a person must look (AEGIS). */
   halted: boolean;
+  /**
+   * Present, and true, only when the removal ceiling tripped and a hand-given approval let the run go ahead
+   * (AEGIS). `halted` is then false. Absent on every other run.
+   */
+  approvedOverride?: true;
 }
 
 /**
@@ -134,10 +149,16 @@ export async function sweepDeletedReplies(opts: SweepOptions): Promise<SweepRepo
   }
 
   // 2. The removal ceiling: too many at once looks like the platform answering wrongly, not like people deleting.
-  // Nothing is removed this run; the cycle report says so, and a person decides.
+  // Nothing is removed unless a person has approved it by hand (approve_social_sweep() in the database). The
+  // approval is asked for here and nowhere else, so a run under the ceiling can't use it up. If the database can't
+  // answer, that is no approval. Without one the run stops; the cycle report says so, and a person decides.
   if (report.gone > removalCeiling(report.checked)) {
-    report.halted = true;
-    return report;
+    const approved = await store.consumeSweepApproval().catch(() => false);
+    if (approved !== true) {
+      report.halted = true;
+      return report;
+    }
+    report.approvedOverride = true;
   }
 
   // 3. Hand each deleted reply to the database.
