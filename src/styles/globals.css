@@ -52,10 +52,32 @@
   --shadow-card: var(--cn-shadow-md);
   --font-display: var(--cn-font-display);
   --font-sans: var(--font-inter), var(--cn-font-sans);
+
+  /* The shell's two bars, as sizes: h-header, min-h-tab-bar. */
+  --spacing-header: var(--app-header-height);
+  --spacing-tab-bar: var(--app-tab-bar-height);
+}
+
+/*
+ * The sticky header and the phone tab bar, sized once. Scroll padding keeps a focused control (or a #fragment target)
+ * clear of both bars, with a small gap. The tab bar is gone from tablet width up, so the bottom padding drops with it.
+ */
+:root {
+  --app-header-height: 3.5rem;
+  --app-tab-bar-height: 3.5rem;
+  --app-tab-bar-space: calc(var(--app-tab-bar-height) + env(safe-area-inset-bottom));
 }
 
 @layer base {
-  html { -webkit-text-size-adjust: 100%; scrollbar-color: var(--cn-text-subtle) var(--cn-bg); }
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-color: var(--cn-text-subtle) var(--cn-bg);
+    scroll-padding-top: calc(var(--app-header-height) + var(--cn-space-2));
+    scroll-padding-bottom: calc(var(--app-tab-bar-space) + var(--cn-space-2));
+  }
+  @media (width >= 48rem) {
+    html { scroll-padding-bottom: var(--cn-space-2); }
+  }
   body {
     background: var(--cn-bg);
     color: var(--cn-text);

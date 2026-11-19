@@ -94,7 +94,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
           </main>
         </ShellProvider>
         {/* Room for the phone tab bar so the footer is never hidden behind it. */}
-        <div className="pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+        <div className="pb-[var(--app-tab-bar-space)] md:pb-0">
           <SiteFooter locale={locale} t={t} />
         </div>
         <TabBar
