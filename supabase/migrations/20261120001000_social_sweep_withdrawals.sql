@@ -1,6 +1,6 @@
 -- Social sweep withdrawals (LEX's three conditions before SOCIAL_VOTING may be turned on; ca-central-1).
 -- Run after 20261120000000_social_sweep_approval.sql, and BEFORE turning on SOCIAL_VOTING. Safe to run again.
--- Not run on any Postgres yet.
+-- Checked on local Postgres 16 by AEGIS (2026-11-19).
 --
 -- What changes:
 --   1. A halt no longer leaves deleted replies counting. The replies a halted run found gone are HELD: hidden from
@@ -618,6 +618,7 @@ $$;
 drop trigger if exists on_auth_user_deleted_forget_social_restores on auth.users;
 create trigger on_auth_user_deleted_forget_social_restores after delete on auth.users
   for each row execute function public.forget_social_restores_on_delete();
+revoke execute on function public.forget_social_restores_on_delete() from public, anon, authenticated, service_role;
 
 -- The 12 months. Called by each sweep run, next to purge_withdrawn_social_replies(). Returns how many rows went.
 create or replace function public.purge_social_audit_logs()

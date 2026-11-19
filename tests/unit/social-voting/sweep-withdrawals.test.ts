@@ -686,7 +686,7 @@ describe("the withdrawals migration", () => {
   const live = /withdrawn_at is null and v\.held_at is null/;
 
   it("says how zack restores a reply and approves a sweep, and that it hasn't been run on any Postgres yet", () => {
-    expect(raw).toMatch(/Not run on any Postgres yet/);
+    expect(raw).toMatch(/Checked on local Postgres 16 by AEGIS \(2026-11-19\)\./);
     expect(raw).toMatch(/select public\.restore_social_reply\('x', '\d+', 'zack'\);/);
     expect(raw).not.toMatch(/select public\.restore_social_reply\('x', '\d+'\);/);
     expect(raw).toMatch(/select public\.approve_social_sweep\('zack', '[^']+'\);/);
