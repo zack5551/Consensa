@@ -1,6 +1,8 @@
 /**
  * The way past a halted sweep (AEGIS). When the removal ceiling trips, the run removes nothing unless zack has run
  * approve_social_sweep() by hand in the database. That approval lasts 36 hours and one run uses it up.
+ * Since LEX's conditions a removal is a withdrawal (the reply is marked, not deleted) and a halted run hides what
+ * it found; sweep-withdrawals.test.ts covers those rules themselves.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -33,7 +35,7 @@ function setup(total: number) {
   });
   /** One run in which the platform reports the first `gone` of the replies still counted as deleted. */
   const run = (gone: number) =>
-    sweepDeletedReplies({ posts: [post], providers: { x: reporting(store.ledger.map((l) => l.replyId).sort().slice(0, gone)) }, store, now: NOW });
+    sweepDeletedReplies({ posts: [post], providers: { x: reporting(store.live().map((l) => l.replyId).sort().slice(0, gone)) }, store, now: NOW });
   return { store, run };
 }
 
@@ -44,7 +46,8 @@ describe("the sweep approval (AEGIS)", () => {
     const report = await run(21); // one over the ceiling of 20
     expect(report).toEqual({ posts: 1, checked: 100, gone: 21, outcomes: { call_removed: 21 }, incomplete: 0, halted: false, approvedOverride: true });
     expect(store.calls.size).toBe(79);
-    expect(store.ledger).toHaveLength(79);
+    expect(store.live()).toHaveLength(79);
+    expect(store.ledger.filter((l) => l.withdrawnAt)).toHaveLength(21);
     expect(store.approvalAsked).toBe(1);
     expect(store.sweepApprovedUntil).toBeNull();
   });
@@ -57,11 +60,13 @@ describe("the sweep approval (AEGIS)", () => {
 
     store.written.length = 0;
     const second = await run(30); // 30 of the 79 left: over the ceiling again
-    expect(second).toEqual({ posts: 1, checked: 79, gone: 30, outcomes: {}, incomplete: 0, halted: true });
+    expect(second).toEqual({ posts: 1, checked: 79, gone: 30, outcomes: {}, incomplete: 0, halted: true, held: 30 });
     expect(second).not.toHaveProperty("approvedOverride");
-    expect(store.calls.size).toBe(79);
-    expect(store.ledger).toHaveLength(79);
-    expect(store.written).toEqual([]); // the database wasn't asked to remove anything
+    // Nothing more is withdrawn. The 30 are held: hidden from the count while a person decides.
+    expect(store.ledger.filter((l) => l.withdrawnAt)).toHaveLength(21);
+    expect(store.ledger.filter((l) => l.heldAt)).toHaveLength(30);
+    expect(store.calls.size).toBe(49);
+    expect(store.written).toHaveLength(30); // 30 holds, and the database wasn't asked to withdraw anything
     expect(store.approvalAsked).toBe(2);
   });
 
@@ -69,15 +74,16 @@ describe("the sweep approval (AEGIS)", () => {
     const { store, run } = setup(100);
     store.sweepApprovedUntil = new Date(NOW.getTime() - 1);
     const report = await run(21);
-    expect(report).toEqual({ posts: 1, checked: 100, gone: 21, outcomes: {}, incomplete: 0, halted: true });
-    expect(store.calls.size).toBe(100);
+    expect(report).toEqual({ posts: 1, checked: 100, gone: 21, outcomes: {}, incomplete: 0, halted: true, held: 21 });
     expect(store.ledger).toHaveLength(100);
+    expect(store.ledger.filter((l) => l.withdrawnAt)).toEqual([]);
+    expect(store.calls.size).toBe(79); // held, not withdrawn
     expect(store.sweepApprovedUntil).toBeNull();
 
     // An approval that ends at this very moment is past its time too.
     store.sweepApprovedUntil = new Date(NOW.getTime());
     expect(await run(21)).toMatchObject({ halted: true });
-    expect(store.calls.size).toBe(100);
+    expect(store.ledger.filter((l) => l.withdrawnAt)).toEqual([]);
   });
 
   it("a run under the ceiling never asks for the approval, so it can't use one up", async () => {
@@ -100,7 +106,8 @@ describe("the sweep approval (AEGIS)", () => {
     const none = setup(100);
     expect(await none.run(21)).toMatchObject({ outcomes: {}, halted: true });
     expect(none.store.approvalAsked).toBe(1);
-    expect(none.store.calls.size).toBe(100);
+    expect(none.store.ledger.filter((l) => l.withdrawnAt)).toEqual([]);
+    expect(none.store.ledger.filter((l) => l.heldAt)).toHaveLength(21);
 
     const down = setup(100);
     down.store.sweepApprovedUntil = new Date(NOW.getTime() + 36 * HOUR_MS);
@@ -108,7 +115,8 @@ describe("the sweep approval (AEGIS)", () => {
     const report = await down.run(21);
     expect(report).toMatchObject({ outcomes: {}, halted: true });
     expect(report).not.toHaveProperty("approvedOverride");
-    expect(down.store.calls.size).toBe(100);
+    expect(down.store.ledger.filter((l) => l.withdrawnAt)).toEqual([]);
+    expect(down.store.ledger.filter((l) => l.heldAt)).toHaveLength(21);
   });
 
   it("privacy: an approved run's report is still counts only", async () => {

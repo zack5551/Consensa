@@ -8,13 +8,14 @@ const SECRET = "s".repeat(40);
 
 /** Records what the store sends to Supabase and answers each call from `answers`, in order. */
 function fakeAdmin(answers: Array<{ data?: unknown; error?: { hint?: string } | null }>) {
-  const sent: Array<{ table?: string; rpc?: string; action?: string; values?: unknown }> = [];
+  const sent: Array<{ table?: string; rpc?: string; action?: string; values?: unknown; filters?: unknown[][] }> = [];
   const next = () => ({ data: null, error: null, ...answers.shift() });
   const from = (table: string) => {
-    const op = { table, action: "select", values: undefined as unknown };
+    const op: (typeof sent)[number] = { table, action: "select", values: undefined };
     sent.push(op);
     const b: Record<string, unknown> = {};
     for (const m of ["select", "eq", "order", "range", "lt", "limit"]) b[m] = () => b;
+    for (const m of ["is", "not"]) b[m] = (...args: unknown[]) => ((op.filters ??= []).push([m, ...args]), b);
     for (const m of ["insert", "update", "upsert"]) b[m] = (values: unknown) => ((op.action = m), (op.values = values), b);
     b.maybeSingle = async () => next();
     b.then = (resolve: (v: unknown) => unknown) => Promise.resolve(next()).then(resolve);
@@ -76,6 +77,60 @@ describe("the social store in Supabase", () => {
     expect(await s.ledgerReplyIds("x", "500", 1)).toEqual(["9001"]);
     expect(sent).toHaveLength(2);
     await expect(s.ledgerReplyIds("x", "500", 5)).rejects.toThrow();
+  });
+
+  it("never lists a withdrawn reply for checking, and lists the held ones on their own", async () => {
+    const { store: s, sent } = await store([{ data: [{ reply_id: "9001" }, { reply_id: "9002" }] }, { data: [{ reply_id: "9002" }] }, { error: {} }]);
+    expect(await s.ledgerReplyIds("x", "500", 5)).toEqual(["9001", "9002"]);
+    expect(sent[0]?.filters).toEqual([["is", "withdrawn_at", null]]);
+    expect(await s.heldReplyIds("x", "500", 5)).toEqual(["9002"]);
+    expect(sent[1]).toMatchObject({ table: "social_votes", action: "select", filters: [["is", "withdrawn_at", null], ["not", "held_at", "is", null]] });
+    await expect(s.heldReplyIds("x", "500", 5)).rejects.toThrow();
+  });
+
+  it("holds through hold_social_reply() and releases through release_social_reply(), and never guesses an answer", async () => {
+    const { store: s, sent } = await store([{ data: "call_removed" }, { data: "held" }, { error: { hint: "rate" } }, { error: {} }, { data: "counted" }, { data: "unknown" }, { error: { hint: "rate" } }, { error: { hint: "closed" } }, { error: {} }, { data: "something new" }]);
+    expect(await s.holdReply("x", "9003")).toBe("call_removed");
+    expect(sent[0]).toEqual({ rpc: "hold_social_reply", values: { p_platform: "x", p_reply_id: "9003" } });
+    expect(await s.holdReply("x", "9003")).toBe("held"); // already held: nothing changed
+    expect(await s.holdReply("x", "9003")).toBe("retry");
+    await expect(s.holdReply("x", "9003")).rejects.toThrow();
+
+    expect(await s.releaseReply("x", "9003")).toBe("counted");
+    expect(sent[4]).toEqual({ rpc: "release_social_reply", values: { p_platform: "x", p_reply_id: "9003" } });
+    expect(await s.releaseReply("x", "9003")).toBe("unknown");
+    expect(await s.releaseReply("x", "9003")).toBe("retry");
+    expect(await s.releaseReply("x", "9003")).toBe("closed");
+    await expect(s.releaseReply("x", "9003")).rejects.toThrow();
+    await expect(s.releaseReply("x", "9003")).rejects.toThrow();
+  });
+
+  it("has no way to restore a withdrawn reply or to give an approval: those are done by hand in the database", async () => {
+    const { store: s } = await store([]);
+    const names = Object.getOwnPropertyNames(Object.getPrototypeOf(s)).join(" ");
+    expect(names).not.toMatch(/restore|approveSweep/i);
+  });
+
+  it("purges through purge_withdrawn_social_replies() and reads the halt's first time from the database", async () => {
+    const { store: s, sent } = await store([{ data: 3 }, { error: {} }, { data: "2026-11-16T15:00:00+00:00" }, { data: null }, { data: "2026-11-16T15:00:00+00:00" }, { error: {} }, { data: "not a time" }]);
+    expect(await s.purgeWithdrawn()).toBe(3);
+    expect(sent[0]).toEqual({ rpc: "purge_withdrawn_social_replies", values: undefined });
+    await expect(s.purgeWithdrawn()).rejects.toThrow();
+
+    expect((await s.noteHalt())?.toISOString()).toBe("2026-11-16T15:00:00.000Z");
+    expect(sent[2]).toEqual({ rpc: "note_social_sweep_halt", values: undefined });
+    expect(await s.settleHalt()).toBeNull(); // nothing held any more
+    expect(sent[3]).toEqual({ rpc: "settle_social_sweep_halt", values: undefined });
+    expect((await s.settleHalt())?.toISOString()).toBe("2026-11-16T15:00:00.000Z");
+    await expect(s.noteHalt()).rejects.toThrow();
+    expect(await s.noteHalt()).toBeNull();
+  });
+
+  it("reports an approved run's removals through record_social_sweep_removals(), a count and nothing else", async () => {
+    const { store: s, sent } = await store([{ data: true }, { error: {} }]);
+    await s.recordApprovedRemovals(21);
+    expect(sent[0]).toEqual({ rpc: "record_social_sweep_removals", values: { p_removed: 21 } });
+    await expect(s.recordApprovedRemovals(21)).rejects.toThrow();
   });
 
   it("keeps a keyed hash, not the id, for the auto-reply record", async () => {

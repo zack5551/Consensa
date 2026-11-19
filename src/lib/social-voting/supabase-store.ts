@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { CountOutcome, CountStore, OfficialPost } from "./count";
 import { idHmac, recheckCutoff } from "./link-rules";
 import type { SpendStore } from "./spend";
-import { removeOutcomes, type RemoveOutcome, type SweepStore } from "./sweep";
+import { releaseOutcomes, removeOutcomes, type ReleaseOutcome, type RemoveOutcome, type SweepStore } from "./sweep";
 import type { Platform, PollTotals } from "./types";
 
 const outcomes = ["counted", "duplicate", "website_wins", "older_reply", "closed", "before_link", "unlinked"] as const;
@@ -84,20 +84,38 @@ export class SupabaseSocialStore implements CountStore, SweepStore, SpendStore {
   }
 
   async ledgerReplyIds(platform: Platform, postId: string, limit: number): Promise<string[]> {
+    return this.replyIds(platform, postId, limit, false);
+  }
+
+  async heldReplyIds(platform: Platform, postId: string, limit: number): Promise<string[]> {
+    return this.replyIds(platform, postId, limit, true);
+  }
+
+  /** Replies the sweep still checks: never a withdrawn one. With `heldOnly`, just those a halted run is holding. */
+  private async replyIds(platform: Platform, postId: string, limit: number, heldOnly: boolean): Promise<string[]> {
     const ids: string[] = [];
     for (let from = 0; ids.length < limit; from += PAGE) {
       const to = Math.min(from + PAGE, limit) - 1;
-      const { data, error } = await this.admin.from("social_votes").select("reply_id").eq("platform", platform).eq("post_id", postId).order("reply_id").range(from, to);
+      const rows = this.admin.from("social_votes").select("reply_id").eq("platform", platform).eq("post_id", postId).is("withdrawn_at", null);
+      const { data, error } = await (heldOnly ? rows.not("held_at", "is", null) : rows).order("reply_id").range(from, to);
       if (error) throw new Error("ledger unavailable");
-      const rows = z.array(z.object({ reply_id: z.string() })).parse(data ?? []);
-      for (const r of rows) ids.push(r.reply_id);
-      if (rows.length < to - from + 1) break;
+      const page = z.array(z.object({ reply_id: z.string() })).parse(data ?? []);
+      for (const r of page) ids.push(r.reply_id);
+      if (page.length < to - from + 1) break;
     }
     return ids;
   }
 
   async removeReply(platform: Platform, replyId: string): Promise<RemoveOutcome> {
-    const { data, error } = await this.admin.rpc("remove_social_reply", { p_platform: platform, p_reply_id: replyId });
+    return this.markGone("remove_social_reply", platform, replyId);
+  }
+
+  async holdReply(platform: Platform, replyId: string): Promise<RemoveOutcome> {
+    return this.markGone("hold_social_reply", platform, replyId);
+  }
+
+  private async markGone(fn: "remove_social_reply" | "hold_social_reply", platform: Platform, replyId: string): Promise<RemoveOutcome> {
+    const { data, error } = await this.admin.rpc(fn, { p_platform: platform, p_reply_id: replyId });
     // The 2-second rule on calls refused the change: the database kept everything as it was, so it can be tried again.
     // The question closing mid-run is the same answer the function gives itself.
     if (error) {
@@ -110,11 +128,51 @@ export class SupabaseSocialStore implements CountStore, SweepStore, SpendStore {
     return outcome.data;
   }
 
+  async releaseReply(platform: Platform, replyId: string): Promise<ReleaseOutcome> {
+    const { data, error } = await this.admin.rpc("release_social_reply", { p_platform: platform, p_reply_id: replyId });
+    if (error) {
+      if (error.hint === "rate") return "retry";
+      if (error.hint === "closed") return "closed";
+      throw new Error("release unavailable");
+    }
+    const outcome = z.enum(releaseOutcomes).safeParse(data);
+    if (!outcome.success) throw new Error("release unavailable");
+    return outcome.data;
+  }
+
+  async purgeWithdrawn(): Promise<number> {
+    const { data, error } = await this.admin.rpc("purge_withdrawn_social_replies");
+    if (error) throw new Error("purge unavailable");
+    return z.coerce.number().int().nonnegative().parse(data ?? 0);
+  }
+
+  async noteHalt(): Promise<Date | null> {
+    return this.haltSince("note_social_sweep_halt");
+  }
+
+  async settleHalt(): Promise<Date | null> {
+    return this.haltSince("settle_social_sweep_halt");
+  }
+
+  /** When the open halt first happened, as the database kept it. Null: no open halt. */
+  private async haltSince(fn: "note_social_sweep_halt" | "settle_social_sweep_halt"): Promise<Date | null> {
+    const { data, error } = await this.admin.rpc(fn);
+    if (error) throw new Error("halt unavailable");
+    const at = z.string().nullable().parse(data ?? null);
+    const since = at ? new Date(at) : null;
+    return since && !Number.isNaN(since.getTime()) ? since : null;
+  }
+
   async consumeSweepApproval(): Promise<boolean> {
-    // The database clears the approval and says whether it was still in time, in one statement. Anything but a
-    // plain "true" (an error, no row, an approval past its time) is no approval.
+    // The database clears the approval, logs the use and says whether it was still in time, in one transaction.
+    // Anything but a plain "true" (an error, no row, an approval past its time) is no approval.
     const { data, error } = await this.admin.rpc("consume_social_sweep_approval");
     return !error && data === true;
+  }
+
+  async recordApprovedRemovals(removed: number): Promise<void> {
+    const { error } = await this.admin.rpc("record_social_sweep_removals", { p_removed: removed });
+    if (error) throw new Error("approval log unavailable");
   }
 
   async pauseStaleLinks(now: Date): Promise<number> {
