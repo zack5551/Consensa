@@ -11,6 +11,7 @@ import { ScreenView } from "@/components/screen-view";
 import { Wordmark } from "@/components/wordmark";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { isQuestionPath } from "@/lib/return-path";
 import { returnPath } from "@/lib/supabase/config";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -28,6 +29,7 @@ export default async function WelcomePage({ params, searchParams }: { params: Pr
   if (!isLocale(raw)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
+  const back = typeof next === "string" ? returnPath(next) : null;
 
   return (
     <div className="mx-auto grid w-full max-w-[600px] gap-8 py-2 sm:py-8">
@@ -35,8 +37,9 @@ export default async function WelcomePage({ params, searchParams }: { params: Pr
       <header className="grid gap-3">
         <Wordmark className="text-title" />
         <h1 className="m-0 text-body font-semibold text-ink-2">{t.onboarding.title}</h1>
+        {isQuestionPath(back) && <p className="m-0 text-caption text-ink-2">{t.signIn.backToQuestion}</p>}
       </header>
-      <OnboardingFlow locale={locale} t={t.onboarding} regionNames={t.province.names} categoryNames={t.board.categories} next={typeof next === "string" ? returnPath(next) : null} />
+      <OnboardingFlow locale={locale} t={t.onboarding} regionNames={t.province.names} categoryNames={t.board.categories} next={back} />
     </div>
   );
 }

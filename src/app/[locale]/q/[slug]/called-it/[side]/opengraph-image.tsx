@@ -53,11 +53,11 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
 
   return new ImageResponse(
     (
-      <CardFrame footer={cardSafe(legal.footer)} sportsFooter={legal.sports.map(cardSafe)}>
+      <CardFrame footer={cardSafe(legal.footer)} sportsFooter={legal.sports.map(cardSafe)} rule={c.ink}>
         <CardWordmark />
 
         <div style={{ display: "flex", flexDirection: "column", flex: 1, justifyContent: "center", gap: 14 }}>
-          <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: 96, lineHeight: 1, letterSpacing: -3, color: c.sideAText }}>{cardSafe(t.call.calledIt)}</div>
+          <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: 96, lineHeight: 1, letterSpacing: -3, color: c.ink }}>{cardSafe(t.call.calledIt)}</div>
           {askedBy && <div style={{ display: "flex", fontSize: 22, fontWeight: 600, color: c.inkMuted }}>{askedBy}</div>}
           <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 700, fontSize: questionSize, lineHeight: 1.2, letterSpacing: -0.8, maxHeight: 180, overflow: "hidden" }}>{text}</div>
         </div>
