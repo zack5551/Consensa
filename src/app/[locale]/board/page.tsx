@@ -4,6 +4,7 @@
  * One action: filter to what you care about and open a question.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { boardStrings } from "@/components/board-strings";
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const t = getDictionary(locale);
-  return { title: t.board.title, description: t.board.subtitle, alternates: { languages: { "en-CA": "/en/board", "fr-CA": "/fr/board" } } };
+  return { title: t.board.title, description: t.board.subtitle, alternates: pageAlternates(locale, "/board") };
 }
 
 /** Real crowd numbers refresh every minute (ISR). */

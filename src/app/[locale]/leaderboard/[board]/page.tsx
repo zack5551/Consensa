@@ -4,6 +4,7 @@
  * One action: find your row, or go back to the Canada board when the region is still too small.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import { notFound } from "next/navigation";
 import { LeaderboardScreen, type BoardScope } from "@/components/leaderboard-screen";
 import { isLocale, locales } from "@/i18n/config";
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const name = scope.kind === "region" ? t.province.names[scope.region] : t.leaderboard.tabs.friends;
   return {
     title: `${t.leaderboard.title} · ${name}`,
-    alternates: { languages: { "en-CA": `/en/leaderboard/${board}`, "fr-CA": `/fr/leaderboard/${board}` } },
+    alternates: pageAlternates(locale, `/leaderboard/${board}`),
   };
 }
 
