@@ -124,31 +124,38 @@ export class XProvider implements SocialProvider {
   /**
    * The daily sweep's check: X's post lookup, 100 ids a request (its limit). Each request reserves its worst case
    * first and hands back what X didn't return. It stops at the first refused reservation or failed request (a 429
-   * included) and says so, keeping what it had already learned.
+   * included) and says so, keeping what it had already learned. With `maxSpendMicros` (the sweep's share of the
+   * cap) a request is cut to what the share still covers, and the check stops when the share is used up.
    */
-  async findDeleted(replyIds: readonly string[], now: Date): Promise<DeletedCheck> {
+  async findDeleted(replyIds: readonly string[], now: Date, maxSpendMicros?: number): Promise<DeletedCheck> {
     const gone: string[] = [];
     const ids = [...new Set(replyIds.filter((r) => id.safeParse(r).success))];
     let checked = 0;
-    for (let i = 0; i < ids.length; i += PAGE_SIZE) {
-      const batch = ids.slice(i, i + PAGE_SIZE);
+    let spentMicros = 0;
+    for (let i = 0; i < ids.length; ) {
+      const room = maxSpendMicros === undefined ? PAGE_SIZE : Math.floor((maxSpendMicros - spentMicros) / X_READ_COST_MICROS);
+      const batch = ids.slice(i, i + Math.min(PAGE_SIZE, room));
+      if (batch.length === 0) return { gone, checked, spentMicros, complete: false };
       const reserved = batch.length * X_READ_COST_MICROS;
-      if (!(await this.config.spend.reserve(reserved, now))) return { gone, checked, complete: false };
+      if (!(await this.config.spend.reserve(reserved, now))) return { gone, checked, spentMicros, complete: false };
       const parsed = lookupSchema.safeParse(await this.get(`/tweets?ids=${batch.join(",")}`));
       if (!parsed.success) {
         await this.config.spend.release(reserved, now);
-        return { gone, checked, complete: false };
+        return { gone, checked, spentMicros, complete: false };
       }
       const found = new Set((parsed.data.data ?? []).map((d) => d.id));
-      await this.config.spend.release((batch.length - Math.min(found.size, batch.length)) * X_READ_COST_MICROS, now);
+      const kept = Math.min(found.size, batch.length) * X_READ_COST_MICROS;
+      await this.config.spend.release(reserved - kept, now);
+      spentMicros += kept;
       checked += batch.length;
+      i += batch.length;
       // Gone means X says "not found". A reply hidden for another reason (a protected account) is left alone, and
       // so is one X returned in the same answer.
       for (const e of parsed.data.errors ?? []) {
         if (e.resource_id && batch.includes(e.resource_id) && !found.has(e.resource_id) && e.type?.endsWith("resource-not-found") && !gone.includes(e.resource_id)) gone.push(e.resource_id);
       }
     }
-    return { gone, checked, complete: true };
+    return { gone, checked, spentMicros, complete: true };
   }
 
   async postReply(replyId: string, text: string): Promise<boolean> {
