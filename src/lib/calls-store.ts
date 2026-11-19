@@ -12,6 +12,7 @@ const EVENT = "consensa:calls";
 const OUTSIDE_EVENT = "consensa:calls-outside";
 let outsideCanada = false;
 let botCheckFailed = false;
+let vpnRefused = false;
 const memory = new Map<string, number>();
 
 function valid(n: number): boolean {
@@ -79,6 +80,11 @@ export function isBotCheckFailed(): boolean {
   return botCheckFailed;
 }
 
+/** True while the server's latest answer was that the call came through a VPN or proxy: it stays on this device. */
+export function isVpnRefused(): boolean {
+  return vpnRefused;
+}
+
 export function subscribeOutsideCanada(onChange: () => void): () => void {
   window.addEventListener(OUTSIDE_EVENT, onChange);
   return () => window.removeEventListener(OUTSIDE_EVENT, onChange);
@@ -136,9 +142,12 @@ async function sendCall(slug: string, probability: number, altcha: string | null
     const res = await fetch("/api/calls", { method: "POST", headers: { "Content-Type": "application/json", ...(altcha ? { "x-altcha": altcha } : {}) }, body: JSON.stringify({ slug, probability }) });
     const refused = res.status === 403 ? ((await res.json().catch(() => null)) as { error?: unknown } | null)?.error : null;
     // A later call that counted clears both notes: back in Canada, or a one-off bad read, so they would now be wrong.
-    const next = res.ok ? { outside: false, bot: false } : { outside: refused === "outside canada" || (outsideCanada && refused !== "bot check"), bot: refused === "bot check" || (botCheckFailed && refused !== "outside canada") };
-    if (next.outside !== outsideCanada || next.bot !== botCheckFailed) {
+    // A refusal for one reason replaces the note for another; other failures (offline, closed) keep the current note.
+    const reason = res.ok ? null : refused === "outside canada" ? "outside" : refused === "vpn" ? "vpn" : refused === "bot check" ? "bot" : undefined;
+    const next = reason === undefined ? { outside: outsideCanada, vpn: vpnRefused, bot: botCheckFailed } : { outside: reason === "outside", vpn: reason === "vpn", bot: reason === "bot" };
+    if (next.outside !== outsideCanada || next.vpn !== vpnRefused || next.bot !== botCheckFailed) {
       outsideCanada = next.outside;
+      vpnRefused = next.vpn;
       botCheckFailed = next.bot;
       window.dispatchEvent(new Event(OUTSIDE_EVENT));
     }
