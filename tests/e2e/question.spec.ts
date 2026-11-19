@@ -235,6 +235,21 @@ test("the bot check is off locally: the challenge route steps aside and a call s
   await expect(page.getByText(/quick check/i)).toHaveCount(0);
 });
 
+test("the signed-in check says only yes or no: signed out with accounts off, never cached", async ({ page, request }) => {
+  const session = await request.get("/api/session");
+  expect(session.status()).toBe(200);
+  expect(session.headers()["cache-control"]).toContain("no-store");
+  expect(await session.json()).toEqual({ signedIn: false });
+  // Saving a call never pulls the account details (email, consents) onto the question page.
+  const asked: string[] = [];
+  page.on("request", (req) => asked.push(new URL(req.url()).pathname));
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
+  await page.getByRole("button", { name: "Save my call" }).click();
+  await expect(page.getByText("Call saved")).toBeVisible();
+  expect(asked).not.toContain("/api/account");
+});
+
 test("share buttons link to the plain question page, with no tracking", async ({ page }) => {
   for (const locale of ["en", "fr"] as const) {
     await page.goto(`/${locale}/q/boc-cut-dec-2026`);
