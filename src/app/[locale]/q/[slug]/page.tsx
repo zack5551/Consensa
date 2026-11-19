@@ -29,7 +29,8 @@ import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatSh
 import { callsCloseAt, crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
-import { socialPollLine, questionShareUrl, shareLinks } from "@/lib/social";
+import { askedByLabel } from "@/lib/asked-by";
+import { socialPollLine, questionShareText, questionShareUrl, shareLinks } from "@/lib/social";
 import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
 import { schemaOrg } from "@/lib/json-ld";
@@ -164,7 +165,9 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
   // Social v1: plain question link, no tracking. Native poll totals sit apart from the crowd.
   const shareUrl = questionShareUrl(siteUrl(), locale, q.slug);
-  const shareText = fill(t.share.text, { question: q.question[locale] });
+  // LEX: a guest or brand question carries its "Asked by" / "Sponsored by" label on the page, the card and the post.
+  const askedBy = q.askedBy ? askedByLabel(q.askedBy, t.question.askedBy) : undefined;
+  const shareText = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", askedBy });
   const polls = q.socialPolls ?? [];
   const social = (
     <SocialPolls
@@ -204,6 +207,11 @@ export default async function QuestionPage({ params }: { params: Params }) {
               </>
             )}
           </div>
+          {askedBy && (
+            <p className="m-0 text-body-sm font-semibold text-ink-2" data-asked-by>
+              {askedBy}
+            </p>
+          )}
           <h1 className="m-0 font-display text-headline font-bold leading-tight tracking-tight text-balance">{q.question[locale]}</h1>
           <StateNote state={state} title={t.states[state]}>
             {note}

@@ -11,7 +11,11 @@ import { isAllowedPostUrl, questionShareUrl, shareLinks, socialPollLine, socialP
 
 /** The gambling, trading and tip rules from the engine's lexicon (CLAUDE.md rule 1), the one home of those words. */
 const lexiconRules = new Set(["gambling", "trading", "tip"]);
-/** LEX: no giveaway or reward wording on anything people share. "No prizes" / « Aucun prix » is the one allowed mention. */
+/**
+ * LEX: no giveaway or reward wording on anything people share. "No prizes" / « Aucun prix à gagner » is the one allowed
+ * mention: that exact French phrase is taken out before the check, so any other « gagn… » still fails.
+ */
+const allowedPhrase = "Aucun prix à gagner";
 const giveaway = [/\bgiveaway/i, /\bwin(s|ner|ners|ning)?\b/i, /\breward/i, /\bcontest/i, /\bgagn/i, /\bconcours\b/i, /\btirage/i, /\br[ée]compense/i];
 
 const good = { platform: "x", yes: 719, no: 521, closedAt: "2026-11-05T18:00:00Z", url: "https://x.com/Cansensa/status/1" } as const;
@@ -23,14 +27,28 @@ describe("share text", () => {
       const lines = [t.share.text.replace("{question}", question), ...Object.values(t.share), t.social.label, t.social.line, t.social.title];
       for (const line of lines) {
         expect(scan(line, lexiconRules), line).toEqual([]);
-        expect(giveaway.filter((re) => re.test(line)), line).toEqual([]);
+        expect(giveaway.filter((re) => re.test(line.replaceAll(allowedPhrase, ""))), line).toEqual([]);
       }
     });
   }
 
+  it("allows only the exact phrase « Aucun prix à gagner », nothing else with « gagn… »", () => {
+    const hits = (line: string) => giveaway.filter((re) => re.test(line.replaceAll(allowedPhrase, "")));
+    expect(hits("Gratuit. Aucun prix à gagner.")).toEqual([]);
+    expect(hits("Gratuit. Rien à gagner.").length).toBeGreaterThan(0);
+    expect(hits("Aucun prix à gagner, mais gagnez en précision.").length).toBeGreaterThan(0);
+    expect(hits("aucun prix à gagner").length).toBeGreaterThan(0);
+  });
+
+  it("says « Aucun prix à gagner », never a bare « Aucun prix », on every French share string", () => {
+    for (const line of Object.values(fr.share)) {
+      if (/aucun prix/i.test(line)) expect(line, line).toContain(allowedPhrase);
+    }
+  });
+
   it("says the post line in both languages, with the free label", () => {
     expect(en.share.text).toBe("{question} Make your call on Cansensa. Free. No prizes.");
-    expect(fr.share.text).toBe("{question} Faites votre prévision sur Cansensa. Gratuit. Aucun prix.");
+    expect(fr.share.text).toBe("{question} Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner.");
   });
 
   it("builds plain intent links that carry only the question URL", () => {
@@ -103,7 +121,7 @@ describe("share card", () => {
 
   it("uses the free label LEX wrote for cards", () => {
     expect(en.share.cardSports).toBe("Free. No prizes. Fan forecasts only.");
-    expect(fr.share.cardSports).toBe("Gratuit. Aucun prix. Prévisions de partisans seulement.");
+    expect(fr.share.cardSports).toBe("Gratuit. Aucun prix à gagner. Prévisions de partisans seulement.");
     expect(en.legal.noValue.startsWith(en.share.cardNoValue)).toBe(true);
     expect(fr.legal.noValue.startsWith(fr.share.cardNoValue)).toBe(true);
   });

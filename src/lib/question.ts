@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { askedBySchema } from "@/lib/asked-by";
 import { socialPollSchema } from "@/lib/social";
 import { socialPostSchema } from "@/lib/social-voting/types";
 
@@ -31,6 +32,11 @@ export const questionSchema = z.object({
    * while SOCIAL_VOTING is on.
    */
   socialPosts: z.array(socialPostSchema).optional(),
+  /**
+   * A guest or brand question's "Asked by" / "Sponsored by" label (LEX). Shown on the page, the embed, the share card
+   * and the share post. No shipped question has one yet.
+   */
+  askedBy: askedBySchema.optional(),
   /** A political question is never included in sponsor numbers. */
   political: z.boolean().optional(),
   events: z.array(z.object({ dayIndex: z.number().int().nonnegative(), label: bilingual })).default([]),
