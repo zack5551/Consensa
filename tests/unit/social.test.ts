@@ -85,9 +85,14 @@ describe("socialPolls schema", () => {
 });
 
 describe("share card", () => {
-  it("shows the crowd number only with 5 or more calls", () => {
-    expect(crowdForCard({ forecasters: 4 }, 62)).toBeNull();
-    expect(crowdForCard({ forecasters: 5 }, 62)).toBe(62);
+  it("shows the crowd number only when it is real and has 5 or more calls", () => {
+    expect(crowdForCard({ forecasters: 4, hiddenProvinces: [] }, 62)).toBeNull();
+    expect(crowdForCard({ forecasters: 5, hiddenProvinces: [] }, 62)).toBe(62);
+  });
+
+  it("never puts a sample number on a card", () => {
+    expect(crowdForCard({ forecasters: 1240 }, 62)).toBeNull();
+    for (const q of sampleQuestions) expect(crowdForCard(q, 50)).toBeNull();
   });
 
   it("keeps every sample question and card label whole, and drops what the brand fonts cannot draw", () => {
