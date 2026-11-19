@@ -337,6 +337,9 @@ const fr = {
     text: "{question} Faites votre prévision sur Cansensa. Gratuit. Aucun prix.",
     cardNoValue: "Gratuit. Aucune valeur monétaire.",
     cardSports: "Gratuit. Aucun prix. Prévisions de partisans seulement.",
+    cardCalls: "Moyenne de {n} prévisions",
+    cardCloses: "Fermeture le {date}",
+    cardClosed: "Fermée",
   },
   social: {
     title: "Sur les réseaux sociaux",
