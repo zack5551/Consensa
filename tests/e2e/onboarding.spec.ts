@@ -43,9 +43,9 @@ test("someone under 18 is stopped and stays stopped for the visit", async ({ pag
   await page.getByRole("button", { name: "English" }).click();
   await page.getByLabel("Date of birth").fill("2012-01-01");
   await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page.getByRole("heading", { name: "Cansensa is for people 18 and over" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CANsensus is for people 18 and over" })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Cansensa is for people 18 and over" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "CANsensus is for people 18 and over" })).toBeVisible();
 });
 
 test("choosing the other language moves onboarding to that language", async ({ page }) => {

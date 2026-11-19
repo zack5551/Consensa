@@ -6,7 +6,7 @@
  * - Always labelled "Advertisement" / "Publicité".
  * - Never on a question page or its result, never inside the call flow, and an ad never gates a forecast.
  * - Blocked categories at the network: gambling (including sportsbooks), casinos, lotteries, prediction markets, crypto trading.
- * - Until a paid ad fills a slot, it shows a labelled house ad from Cansensa.
+ * - Until a paid ad fills a slot, it shows a labelled house ad from CANsensus.
  */
 export const blockedAdCategories = [
   "gambling",

@@ -208,9 +208,9 @@ describe("flag off: nothing runs", () => {
 
   it("the auto-reply link is the plain page address, with nothing to track", async () => {
     const { autoReplyText } = await import("@/lib/social-voting/run");
-    const text = autoReplyText("https://cansensa.test");
-    expect(text.en).toBe("To have your call count in “Canada says”, link your account: https://cansensa.test/en/account/social");
-    expect(text.fr).toContain("https://cansensa.test/fr/account/social");
+    const text = autoReplyText("https://cansensus.test");
+    expect(text.en).toBe("To have your call count in “Canada says”, link your account: https://cansensus.test/en/account/social");
+    expect(text.fr).toContain("https://cansensus.test/fr/account/social");
     for (const t of Object.values(text)) expect(t).not.toMatch(/[?&#]|utm_|ref=/);
   });
 });

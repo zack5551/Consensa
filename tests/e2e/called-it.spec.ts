@@ -100,7 +100,7 @@ test("a right call offers Share your call, linking to the called-it page with no
     const x = await href("x");
     expect([...x.searchParams.keys()].sort()).toEqual(["text", "url"]);
     expect(x.searchParams.get("url")).toMatch(plain);
-    expect(x.searchParams.get("text")).toContain(locale === "en" ? "I called it on Cansensa: " : "J’ai vu juste sur Cansensa : ");
+    expect(x.searchParams.get("text")).toContain(locale === "en" ? "I called it on CANsensus: " : "J’ai vu juste sur CANsensus : ");
     // The post says nothing about the person: it ends with the free label, and the call value is not in it.
     expect(x.searchParams.get("text")).toMatch(locale === "en" ? /\? Free\. No prizes\.$/ : /\? Gratuit\. Aucun prix à gagner\.$/);
     expect(x.searchParams.get("text")).not.toMatch(new RegExp(`\\b${call}\\s?%`));

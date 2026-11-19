@@ -1,6 +1,6 @@
 {
   "brand": {
-    "name": "Cansensa",
+    "name": "CANsensus",
     "tagline": "What Canada thinks happens next.",
     "cta": "Make your call. See where Canada lands."
   },
@@ -17,7 +17,7 @@
     "signUp": "Create your account",
     "email": "Email",
     "continue": "Continue",
-    "ageGate": "Cansensa is for people 18 and over.",
+    "ageGate": "CANsensus is for people 18 and over.",
     "consentData": "I agree that my answers can be used in anonymous, combined results.",
     "signOut": "Sign out"
   },

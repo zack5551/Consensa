@@ -256,7 +256,7 @@ test("share buttons link to the plain question page, with no tracking", async ({
     await page.goto(`/${locale}/q/boc-cut-dec-2026`);
     const href = async (key: string) => new URL((await page.locator(`a[data-share="${key}"]`).getAttribute("href")) ?? "");
     const plain = new RegExp(`^https?://[^/?#]+/${locale}/q/boc-cut-dec-2026$`);
-    const line = locale === "en" ? "Make your call on Cansensa. Free. No prizes." : "Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner.";
+    const line = locale === "en" ? "Make your call on CANsensus. Free. No prizes." : "Faites votre prévision sur CANsensus. Gratuit. Aucun prix à gagner.";
 
     const x = await href("x");
     expect(`${x.origin}${x.pathname}`).toBe("https://twitter.com/intent/tweet");
@@ -344,7 +344,7 @@ test("a resolved question speaks in the past and its share post invites no call"
     await page.goto(`/${locale}/q/cpi-sept-2026`);
     await expect(page.getByRole("heading", { level: 2, name: locale === "en" ? "How it was resolved" : "Comment elle a été résolue" })).toBeVisible();
     const x = new URL((await page.locator('a[data-share="x"]').getAttribute("href")) ?? "");
-    expect(x.searchParams.get("text")).toContain(locale === "en" ? "See where Canada landed on Cansensa." : "Voyez ce que prévoyait le Canada sur Cansensa.");
+    expect(x.searchParams.get("text")).toContain(locale === "en" ? "See where Canada landed on CANsensus." : "Voyez ce que prévoyait le Canada sur CANsensus.");
     expect(x.searchParams.get("text")).not.toContain(locale === "en" ? "Make your call" : "Faites votre prévision");
   }
 });

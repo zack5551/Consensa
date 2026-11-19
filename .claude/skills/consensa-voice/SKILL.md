@@ -1,9 +1,9 @@
 ---
 name: consensa-voice
-description: Write or review any user-facing Cansensa text (UI strings, errors, emails, notifications, marketing, question wording) in English and Quebec French. Use whenever adding or changing copy in en.json/fr.json, components, or emails.
+description: Write or review any user-facing CANsensus text (UI strings, errors, emails, notifications, marketing, question wording) in English and Quebec French. Use whenever adding or changing copy in en.json/fr.json, components, or emails.
 ---
 
-# Cansensa voice (EN + FR)
+# CANsensus voice (EN + FR)
 
 The full guide lives in `brand/README.md`, and the base strings are in `brand/copy/en.json` and `brand/copy/fr.json`. These rules are non-negotiable.
 

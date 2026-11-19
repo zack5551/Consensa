@@ -65,7 +65,7 @@ describe("safeNext against hostile values", () => {
     expect(returnPath(bad)).toBeNull();
   });
   it("never resolves to another origin, even read the way a browser would", () => {
-    for (const bad of hostile) expect(new URL(safeNext(bad), "https://cansensa.ca").origin).toBe("https://cansensa.ca");
+    for (const bad of hostile) expect(new URL(safeNext(bad), "https://cansensus.ca").origin).toBe("https://cansensus.ca");
   });
   it("still keeps a long but reasonable path", () => {
     const path = `/en/q/${"a".repeat(MAX_NEXT_LENGTH - 10)}`;

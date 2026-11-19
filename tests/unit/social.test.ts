@@ -21,7 +21,7 @@ const hits = (line: string) => giveaway.filter((re) => re.test(withoutAllowed(li
 const withoutAllowed = (line: string) => allowedPhrases.reduce((rest, phrase) => rest.replaceAll(phrase, ""), line);
 const giveaway = [/\bgiveaway/i, /\bwin(s|ner|ners|ning)?\b/i, /\breward/i, /\bcontest/i, /\bgagn/i, /\bconcours\b/i, /\btirage/i, /\br[ée]compense/i];
 
-const good = { platform: "x", yes: 719, no: 521, closedAt: "2026-11-05T18:00:00Z", url: "https://x.com/Cansensa/status/1" } as const;
+const good = { platform: "x", yes: 719, no: 521, closedAt: "2026-11-05T18:00:00Z", url: "https://x.com/CANsensus/status/1" } as const;
 
 describe("share text", () => {
   const question = "Will the Bank of Canada cut its policy rate at its December decision?";
@@ -54,14 +54,14 @@ describe("share text", () => {
   });
 
   it("says the post line in both languages, with the free label", () => {
-    expect(en.share.text).toBe("{question} Make your call on Cansensa. Free. No prizes.");
-    expect(fr.share.text).toBe("{question} Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner.");
+    expect(en.share.text).toBe("{question} Make your call on CANsensus. Free. No prizes.");
+    expect(fr.share.text).toBe("{question} Faites votre prévision sur CANsensus. Gratuit. Aucun prix à gagner.");
   });
 
   it("builds plain intent links that carry only the question URL", () => {
-    const url = questionShareUrl("https://cansensa.ca/", "en", "boc-cut-dec-2026");
-    expect(url).toBe("https://cansensa.ca/en/q/boc-cut-dec-2026");
-    const links = shareLinks(`${question} Make your call on Cansensa. Free. No prizes.`, url);
+    const url = questionShareUrl("https://cansensus.ca/", "en", "boc-cut-dec-2026");
+    expect(url).toBe("https://cansensus.ca/en/q/boc-cut-dec-2026");
+    const links = shareLinks(`${question} Make your call on CANsensus. Free. No prizes.`, url);
     expect(new URL(links.x).host).toBe("twitter.com");
     expect(new URL(links.x).searchParams.get("url")).toBe(url);
     expect(new URL(links.facebook).host).toBe("www.facebook.com");
@@ -76,14 +76,14 @@ describe("share text", () => {
 describe("socialPolls schema", () => {
   it("accepts a good poll, with or without www.", () => {
     expect(socialPollSchema.safeParse(good).success).toBe(true);
-    expect(socialPollSchema.safeParse({ ...good, platform: "facebook", url: "https://www.facebook.com/cansensa/posts/1" }).success).toBe(true);
+    expect(socialPollSchema.safeParse({ ...good, platform: "facebook", url: "https://www.facebook.com/cansensus/posts/1" }).success).toBe(true);
   });
 
   it.each([
     ["a bad host", { url: "https://evil.example/status/1" }],
     ["a lookalike host", { url: "https://x.com.evil.example/status/1" }],
     ["a platform that does not match the host", { platform: "threads" }],
-    ["plain http", { url: "http://x.com/Cansensa/status/1" }],
+    ["plain http", { url: "http://x.com/CANsensus/status/1" }],
     ["a negative count", { no: -1 }],
     ["a fractional count", { yes: 10.5 }],
     ["zero votes", { yes: 0, no: 0 }],
@@ -93,7 +93,7 @@ describe("socialPolls schema", () => {
   });
 
   it("allows only the four platforms' hosts", () => {
-    expect(["https://threads.net/a", "https://www.threads.com/@cansensa/post/1", "https://www.instagram.com/p/1", "https://x.com/a"].every(isAllowedPostUrl)).toBe(true);
+    expect(["https://threads.net/a", "https://www.threads.com/@cansensus/post/1", "https://www.instagram.com/p/1", "https://x.com/a"].every(isAllowedPostUrl)).toBe(true);
     expect(["https://twitter.com/a", "https://youtube.com/a", "not a url"].some(isAllowedPostUrl)).toBe(false);
   });
 

@@ -15,7 +15,7 @@ const cap = (usd = 50) => new SpendCap(new MemorySpend(), "x", usd * 1_000_000);
 
 describe("reading a reply as YES or NO", () => {
   it.each([
-    ["yes", "yes"], ["YES", "yes"], ["Yes!", "yes"], ["oui", "yes"], ["OUI.", "yes"], ["  Oui  ", "yes"], ["@Cansensa yes", "yes"], ["#Yes ✅", "yes"],
+    ["yes", "yes"], ["YES", "yes"], ["Yes!", "yes"], ["oui", "yes"], ["OUI.", "yes"], ["  Oui  ", "yes"], ["@CANsensus yes", "yes"], ["#Yes ✅", "yes"],
     ["no", "no"], ["NO", "no"], ["Non", "no"], ["non!!", "no"], ["No.", "no"], ["« non »", "no"],
   ] as const)("%s → %s", (text, vote) => {
     expect(parseVote(text)).toBe(vote);
@@ -43,7 +43,7 @@ describe("X adapter", () => {
       { replyId: "1990000000000000007", authorId: "111", vote: "no", at: "2026-11-18T16:00:00.000Z" },
     ]);
     // The unclear sentence, the reply to someone else's reply and the malformed row are gone; no text or username came through.
-    expect(JSON.stringify(read)).not.toMatch(/maple_reader|probably|Cansensa|text|username/);
+    expect(JSON.stringify(read)).not.toMatch(/maple_reader|probably|CANsensus|text|username/);
     expect(calls).toHaveLength(2);
     expect(calls[0]!.url).toMatch(/^https:\/\/api\.x\.com\/2\/tweets\/search\/recent\?/);
     expect(decodeURIComponent(calls[0]!.url)).toContain(`conversation_id:${OUR_POST}`);

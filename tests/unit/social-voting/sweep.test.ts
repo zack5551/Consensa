@@ -66,7 +66,10 @@ describe("the daily sweep of deleted replies", () => {
     const report = await sweep();
     expect(report).toEqual({ posts: 1, checked: 2, gone: 1, outcomes: { call_removed: 1 }, incomplete: 0, halted: false });
     expect(store.calls.has(`user-a:${SLUG}`)).toBe(false);
-    expect(store.ledger.map((l) => l.replyId)).toEqual([HIDDEN]);
+    // Soft removal (LEX): the reply is marked withdrawn, not deleted, and no longer backs anything.
+    expect(store.live().map((l) => l.replyId)).toEqual([HIDDEN]);
+    expect(store.row(DELETED)?.withdrawnAt).toEqual(NOW);
+    expect(store.ledger).toHaveLength(2);
     expect(store.calls.get(`user-b:${SLUG}`)).toEqual({ probability: 25, source: "x" });
   });
 
@@ -76,7 +79,8 @@ describe("the daily sweep of deleted replies", () => {
     const report = await sweepDeletedReplies({ posts: [post], providers: { x: reporting([DELETED]).provider }, store, now: NOW });
     expect(report).toMatchObject({ gone: 1, outcomes: { removed: 1 } });
     expect(store.calls.get(`user-a:${SLUG}`)).toEqual({ probability: 62, source: "web" });
-    expect(store.ledger).toEqual([]); // the reply itself no longer backs anything
+    expect(store.live()).toEqual([]); // the reply itself no longer backs anything
+    expect(store.row(DELETED)?.withdrawnAt).toEqual(NOW); // kept, marked, for 7 days
   });
 
   it("falls back to the person's earlier reply when that one is still up, and leaves the call alone when an older reply goes", async () => {
@@ -218,16 +222,19 @@ describe("the daily sweep of deleted replies", () => {
       expect([0, 12, 50, 51, 100, 5_000].map(removalCeiling)).toEqual([10, 10, 10, 10.2, 20, 1_000]);
     });
 
-    it("at the limit the run goes ahead; one over, it removes nothing and says halted", async () => {
+    it("at the limit the run goes ahead; one over, it withdraws nothing, hides what it found and says halted", async () => {
       const at = await run(100, 20);
       expect(at.report).toMatchObject({ checked: 100, gone: 20, outcomes: { call_removed: 20 }, halted: false });
       expect(at.store.calls.size).toBe(80);
 
       const over = await run(100, 21);
-      expect(over.report).toEqual({ posts: 1, checked: 100, gone: 21, outcomes: {}, incomplete: 0, halted: true });
-      expect(over.store.calls.size).toBe(100);
+      expect(over.report).toEqual({ posts: 1, checked: 100, gone: 21, outcomes: {}, incomplete: 0, halted: true, held: 21 });
+      // LEX: a halt may not keep a withdrawal counting. The 21 are hidden from the count, and nothing is removed.
+      expect(over.store.calls.size).toBe(79);
       expect(over.store.ledger).toHaveLength(100);
-      expect(over.store.written).toEqual([]); // the database wasn't even asked
+      expect(over.store.ledger.filter((l) => l.withdrawnAt)).toEqual([]);
+      expect(over.store.ledger.filter((l) => l.heldAt)).toHaveLength(21);
+      expect(over.store.written).toHaveLength(21); // one hold each, and nothing else was asked of the database
     });
 
     it("small runs use the floor of 10: ten of twelve goes ahead, eleven of twelve halts", async () => {
@@ -236,8 +243,9 @@ describe("the daily sweep of deleted replies", () => {
       expect(at.store.calls.size).toBe(2);
 
       const over = await run(12, 11);
-      expect(over.report).toMatchObject({ gone: 11, outcomes: {}, halted: true });
-      expect(over.store.calls.size).toBe(12);
+      expect(over.report).toMatchObject({ gone: 11, outcomes: {}, halted: true, held: 11 });
+      expect(over.store.calls.size).toBe(1); // the eleven are hidden while a person decides
+      expect(over.store.ledger).toHaveLength(12);
     });
 
     it("counts the whole run, not each post: two posts under the limit alone still halt together", async () => {
@@ -249,8 +257,9 @@ describe("the daily sweep of deleted replies", () => {
         ...b.map((replyId, i) => ({ replyId, userId: `user-${i}`, probability: 75, at: "2026-11-18T14:00:00.000Z", postId: other.postId, slug: other.slug })),
       ]);
       const report = await sweepDeletedReplies({ posts: [post, other], providers: { x: reporting([...a, ...b]).provider }, store, now: NOW });
-      expect(report).toMatchObject({ checked: 12, gone: 12, outcomes: {}, halted: true });
+      expect(report).toMatchObject({ checked: 12, gone: 12, outcomes: {}, halted: true, held: 12 });
       expect(store.ledger).toHaveLength(12);
+      expect(store.ledger.every((l) => l.heldAt && !l.withdrawnAt)).toBe(true);
     });
   });
 
