@@ -89,7 +89,7 @@ const fr = {
         bilingual: { title: "Une foule, deux langues", body: "Les prévisions en français et en anglais comptent dans la même foule, et vous voyez où elles diffèrent." },
         explains: { title: "L’IA explique, sans jamais conseiller", body: "Quand un chiffre bouge, une courte note dit ce qui a changé et cite ses sources. Elle ne vous dit jamais quoi prévoir." },
         sources: { title: "Des sources officielles tranchent", body: "Chaque question nomme l’organisme qui décide, comme Statistique Canada ou la Banque du Canada." },
-        noMoney: { title: "Pas d’argent, pas de prix", body: "Rien n’est à vendre et rien n’a de valeur monétaire. Votre bilan, c’est d’avoir vu juste." },
+        noMoney: { title: "Pas d’argent, aucun prix à gagner", body: "Rien n’est à vendre et rien n’a de valeur monétaire. Votre bilan, c’est d’avoir vu juste." },
       },
     },
     topics: {
@@ -107,7 +107,7 @@ const fr = {
       items: {
         free: { q: "C’est vraiment gratuit?", a: "Oui. Il n’y a rien à acheter, ni maintenant ni plus tard. Cansensa est financé par des publicités clairement identifiées, jamais placées sur une question ou son résultat." },
         scored: { q: "Comment la précision est-elle évaluée?", a: "Nous utilisons le score de Brier : l’écart entre votre probabilité et ce qui s’est produit, au carré. Plus c’est bas, mieux c’est. 0 est parfait, et répondre toujours 50 % donne 0,25." },
-        prizes: { q: "Y a-t-il des prix?", a: "Non. Les points, les séries et les bilans n’ont aucune valeur monétaire et ne s’échangent contre rien. Vous êtes ici pour voir à quel point vous voyez juste." },
+        prizes: { q: "Y a-t-il des prix à gagner?", a: "Non. Les points, les séries et les bilans n’ont aucune valeur monétaire et ne s’échangent contre rien. Vous êtes ici pour voir à quel point vous voyez juste." },
         adults: { q: "Pourquoi 18 ans et plus?", a: "Certaines questions touchent l’économie et la vie publique, et nous préférons une foule adulte. Nous le demandons une seule fois à l’inscription." },
         data: { q: "Où sont gardées mes données?", a: "Au Canada, à Montréal. Si quoi que ce soit est partagé, ce sont des totaux anonymes avec une taille de groupe minimale, jamais vos prévisions individuelles." },
         sports: { q: "Les questions de sport sont-elles évaluées?", a: "Oui, comme les autres. Pour un match, les prévisions ferment avant le début du match. Ce sont des prévisions de partisans, sans valeur monétaire." },

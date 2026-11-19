@@ -16,7 +16,7 @@ const lexiconRules = new Set(["gambling", "trading", "tip"]);
  * is always « prix à gagner », in exactly these phrases. They are taken out before the check, so any other « gagn… »
  * still fails.
  */
-const allowedPhrases = ["Aucun point, aucun prix à gagner", "aucun achat ni aucun prix à gagner", "Aucun prix à gagner", "Sans prix à gagner", "sans prix à gagner"];
+const allowedPhrases = ["Aucun point, aucun prix à gagner", "Pas d’argent, aucun prix à gagner", "aucun achat ni aucun prix à gagner", "Aucun prix à gagner", "Sans prix à gagner", "sans prix à gagner"];
 const hits = (line: string) => giveaway.filter((re) => re.test(withoutAllowed(line)));
 const withoutAllowed = (line: string) => allowedPhrases.reduce((rest, phrase) => rest.replaceAll(phrase, ""), line);
 const giveaway = [/\bgiveaway/i, /\bwin(s|ner|ners|ning)?\b/i, /\breward/i, /\bcontest/i, /\bgagn/i, /\bconcours\b/i, /\btirage/i, /\br[ée]compense/i];
