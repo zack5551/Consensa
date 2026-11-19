@@ -24,6 +24,7 @@ const en = {
     recordTitle: "My record",
     socialTitle: "Linked social accounts",
     designTitle: "Design system",
+    notFoundTitle: "Page not found",
   },
   nav: {
     today: "Today",

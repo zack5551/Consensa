@@ -28,3 +28,12 @@ for (const path of pages) {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 }
+
+test("dark: the 404 illustration's question mark is drawn in the page's text colour", async ({ page }) => {
+  await page.goto("/en/no-such-page");
+  const colours = await page.evaluate(() => ({
+    mark: getComputedStyle(document.querySelector("main svg text")!).fill,
+    text: getComputedStyle(document.body).color,
+  }));
+  expect(colours.mark).toBe(colours.text);
+});

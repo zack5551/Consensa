@@ -19,7 +19,8 @@ type Params = Promise<{ locale: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
-  if (!isLocale(locale)) return {};
+  // While the page 404s, it claims no title of its own: the not-found screen's title stands.
+  if (!isLocale(locale) || !socialVotingOn()) return { robots: { index: false } };
   return { title: getDictionary(locale).meta.socialTitle, robots: { index: false } };
 }
 

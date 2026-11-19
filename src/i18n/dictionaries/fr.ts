@@ -26,6 +26,7 @@ const fr = {
     recordTitle: "Mon bilan",
     socialTitle: "Comptes de réseaux sociaux liés",
     designTitle: "Système de design",
+    notFoundTitle: "Page introuvable",
   },
   nav: {
     today: "Aujourd’hui",
