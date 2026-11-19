@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { termsCurrent, type ConsentRow } from "@/lib/account";
-import { safeNext, TERMS_VERSION } from "@/lib/supabase/config";
+import { returnPath, safeNext, TERMS_VERSION } from "@/lib/supabase/config";
 import { serverSupabase } from "@/lib/supabase/server";
 
 /**
@@ -25,5 +25,7 @@ export async function GET(request: NextRequest) {
     }
   }
   const locale = next.split("/")[1] ?? "en";
-  return NextResponse.redirect(new URL(`/${locale}/sign-in?link=expired`, origin));
+  // An expired link keeps the page to come back to, so asking for a new one still lands there.
+  const back = returnPath(next);
+  return NextResponse.redirect(new URL(`/${locale}/sign-in?link=expired${back ? `&next=${back}` : ""}`, origin));
 }

@@ -11,16 +11,18 @@ type Props = {
   /** The plain question page address. */
   url: string;
   links: ShareLinks;
+  /** A heading other than "Share this question", for the "Share your call" bar under a "Called it!". */
+  title?: string;
 };
 
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-control border border-line bg-surface px-4 py-2 text-body-sm font-semibold text-ink hover:bg-sunken";
 
 /**
- * Share a question: plain links to X, Threads and Facebook (nothing loads from them until someone follows a link),
+ * Share a question (or, with `title`, a right call): plain links to X, Threads and Facebook (nothing loads from them until someone follows a link),
  * Copy link, and the phone's own share sheet where the browser has one.
  */
-export function ShareBar({ t, text, url, links }: Props) {
+export function ShareBar({ t, text, url, links, title = t.title }: Props) {
   const [canShare, setCanShare] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -47,8 +49,8 @@ export function ShareBar({ t, text, url, links }: Props) {
   }
 
   return (
-    <section aria-label={t.title} className="grid gap-3 border-t border-line pt-5">
-      <h2 className="m-0 text-caption font-bold uppercase tracking-wide text-ink-2">{t.title}</h2>
+    <section aria-label={title} className="grid gap-3 border-t border-line pt-5">
+      <h2 className="m-0 text-caption font-bold uppercase tracking-wide text-ink-2">{title}</h2>
       <div className="flex flex-wrap gap-2">
         {([
           ["x", t.onX, links.x],
