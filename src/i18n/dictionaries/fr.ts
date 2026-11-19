@@ -339,6 +339,8 @@ const fr = {
     opensNew: "s’ouvre dans un nouvel onglet",
     text: "{question} Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner.",
     textSports: "{question} Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner. Prévisions de partisans seulement.",
+    textClosed: "{question} Voyez ce que prévoyait le Canada sur Cansensa. Gratuit. Aucun prix à gagner.",
+    textClosedSports: "{question} Voyez ce que prévoyait le Canada sur Cansensa. Gratuit. Aucun prix à gagner. Prévisions de partisans seulement.",
     cardNoValue: "Gratuit. Aucune valeur monétaire.",
     cardSports: "Gratuit. Aucun prix à gagner. Prévisions de partisans seulement.",
     cardCalls: "Moyenne de {n} prévisions",
@@ -558,6 +560,8 @@ const fr = {
   },
   resolution: {
     title: "Comment elle sera résolue",
+    titleResolved: "Comment elle a été résolue",
+    titleCancelled: "Comment elle aurait été résolue",
     source: "Source officielle",
     resolvesOn: "Résultat attendu",
     resolvedOn: "Résultat publié",

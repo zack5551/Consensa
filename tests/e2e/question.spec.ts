@@ -338,3 +338,13 @@ for (const width of [390, 1280]) {
     await expect(page.locator(":focus")).toHaveText(/^No/);
   });
 }
+
+test("a resolved question speaks in the past and its share post invites no call", async ({ page }) => {
+  for (const locale of ["en", "fr"] as const) {
+    await page.goto(`/${locale}/q/cpi-sept-2026`);
+    await expect(page.getByRole("heading", { level: 2, name: locale === "en" ? "How it was resolved" : "Comment elle a été résolue" })).toBeVisible();
+    const x = new URL((await page.locator('a[data-share="x"]').getAttribute("href")) ?? "");
+    expect(x.searchParams.get("text")).toContain(locale === "en" ? "See where Canada landed on Cansensa." : "Voyez ce que prévoyait le Canada sur Cansensa.");
+    expect(x.searchParams.get("text")).not.toContain(locale === "en" ? "Make your call" : "Faites votre prévision");
+  }
+});

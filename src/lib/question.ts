@@ -130,6 +130,14 @@ export function isOpen(state: QuestionState): boolean {
   return state === "open" || state === "closingSoon";
 }
 
+/**
+ * The heading over a question's resolution rule, in the tense its state calls for: "How this resolves" until a result is
+ * published (a result under review still may change), "How it was resolved" after, "How it would have resolved" when cancelled.
+ */
+export function resolutionTitle(state: QuestionState, labels: { title: string; titleResolved: string; titleCancelled: string }): string {
+  return state === "resolved" ? labels.titleResolved : state === "cancelled" ? labels.titleCancelled : labels.title;
+}
+
 /** Highest and lowest regions, for the province split's text summary. */
 /** Highest and lowest region among those shown. Null when fewer than two regions can be shown. */
 export function provinceExtremes(values: Record<Province, number>, hidden: readonly Province[] = []): { high: Province; low: Province } | null {

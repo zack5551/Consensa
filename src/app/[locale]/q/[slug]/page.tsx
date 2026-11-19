@@ -26,7 +26,7 @@ import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { callsCloseAt, crowdNow, crowdVerdict, eventStart, nextUp, questionState, scoreBadge, topicRecord, weekMove } from "@/lib/question";
+import { callsCloseAt, crowdNow, crowdVerdict, eventStart, isOpen, nextUp, questionState, resolutionTitle, scoreBadge, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { askedByLabel } from "@/lib/asked-by";
@@ -185,7 +185,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
   // Social v1: plain question link, no tracking. Native poll totals sit apart from the crowd.
   const shareUrl = questionShareUrl(siteUrl(), locale, q.slug);
-  const shareText = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", askedBy });
+  const shareText = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", askedBy, closed: !isOpen(state) });
   const polls = q.socialPolls ?? [];
   const social = (
     <SocialPolls
@@ -359,7 +359,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
         <section aria-labelledby="res-title" className="grid gap-3 border-t-2 border-ink pt-5">
           <h2 id="res-title" className="m-0 font-display text-title font-bold tracking-tight text-balance">
-            {t.resolution.title}
+            {resolutionTitle(state, t.resolution)}
           </h2>
           <p className="m-0 max-w-[65ch] text-body">{q.resolution.rule[locale]}</p>
           <dl className="m-0 grid gap-3 text-body-sm sm:grid-cols-3">

@@ -337,6 +337,8 @@ const en = {
     opensNew: "opens in a new tab",
     text: "{question} Make your call on Cansensa. Free. No prizes.",
     textSports: "{question} Make your call on Cansensa. Free. No prizes. Fan forecasts only.",
+    textClosed: "{question} See where Canada landed on Cansensa. Free. No prizes.",
+    textClosedSports: "{question} See where Canada landed on Cansensa. Free. No prizes. Fan forecasts only.",
     cardNoValue: "Free to play. No cash value.",
     cardSports: "Free. No prizes. Fan forecasts only.",
     cardCalls: "Average of {n} calls",
@@ -556,6 +558,8 @@ const en = {
   },
   resolution: {
     title: "How this resolves",
+    titleResolved: "How it was resolved",
+    titleCancelled: "How it would have resolved",
     source: "Official source",
     resolvesOn: "Result expected",
     resolvedOn: "Result published",

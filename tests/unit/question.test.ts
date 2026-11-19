@@ -3,7 +3,7 @@ import { SAMPLE_NOW, getQuestion, sampleQuestions, todaysFive } from "@/content/
 import { fixtureQuestions } from "@/content/test-fixtures";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
-import { CLOSING_SOON_MS, callsCloseAt, crowdChange, crowdVerdict, eventStart, hasStarted, leagues, nextUp, provinceExtremes, questionSchema, questionState, scoreBadge, topicRecord, weekMove, type Question } from "@/lib/question";
+import { CLOSING_SOON_MS, callsCloseAt, crowdChange, crowdVerdict, eventStart, hasStarted, leagues, nextUp, provinceExtremes, questionSchema, questionState, questionStates, resolutionTitle, scoreBadge, topicRecord, weekMove, type Question } from "@/lib/question";
 
 const base = getQuestion("boc-cut-dec-2026")!;
 const at = (iso: string) => new Date(iso);
@@ -226,5 +226,29 @@ describe("cancelled questions", () => {
     const right: Question = { ...asNo, history: [50, 30] };
     expect(topicRecord(right, [right, right, right])).toEqual({ right: 3, total: 3 });
     expect(topicRecord(right, [right, right, right, cancelled])).toEqual({ right: 3, total: 3 });
+  });
+});
+
+describe("resolutionTitle", () => {
+  it("speaks in the future until a result is final, then in the past", () => {
+    const want = {
+      en: { open: "How this resolves", closingSoon: "How this resolves", closed: "How this resolves", disputed: "How this resolves", resolved: "How it was resolved", cancelled: "How it would have resolved" },
+      fr: {
+        open: "Comment elle sera résolue",
+        closingSoon: "Comment elle sera résolue",
+        closed: "Comment elle sera résolue",
+        disputed: "Comment elle sera résolue",
+        resolved: "Comment elle a été résolue",
+        cancelled: "Comment elle aurait été résolue",
+      },
+    } as const;
+    for (const [locale, t] of [["en", en], ["fr", fr]] as const) {
+      for (const state of questionStates) expect(resolutionTitle(state, t.resolution), `${locale} ${state}`).toBe(want[locale][state]);
+    }
+  });
+
+  it("is the past tense on a resolved sample question", () => {
+    const resolved = sampleQuestions.find((q) => questionState(q, SAMPLE_NOW) === "resolved")!;
+    expect(resolutionTitle(questionState(resolved, SAMPLE_NOW), en.resolution)).toBe("How it was resolved");
   });
 });

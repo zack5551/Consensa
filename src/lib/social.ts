@@ -100,14 +100,20 @@ export type ShareTextLabels = {
   text: string;
   /** The same, plus LEX's fan-forecast line for sports questions. */
   textSports: string;
+  /** Once calls close: "{question} See where Canada landed on Cansensa. Free. No prizes." */
+  textClosed: string;
+  /** The closed post, plus the fan-forecast line. */
+  textClosedSports: string;
 };
 
 /**
  * The share post text. Sports posts add "Fan forecasts only." (LEX, sports rules). A guest or brand question leads with
  * its "Asked by" / "Sponsored by" label, because LEX wants the label everywhere the question goes, social posts included.
  */
-export function questionShareText(labels: ShareTextLabels, question: string, options: { sports: boolean; askedBy?: string }): string {
-  return withAskedBy(fill(options.sports ? labels.textSports : labels.text, { question }), options.askedBy);
+export function questionShareText(labels: ShareTextLabels, question: string, options: { sports: boolean; askedBy?: string; closed?: boolean }): string {
+  // Once calls close, a post can't invite a call: it points to where Canada landed instead.
+  const template = options.closed ? (options.sports ? labels.textClosedSports : labels.textClosed) : options.sports ? labels.textSports : labels.text;
+  return withAskedBy(fill(template, { question }), options.askedBy);
 }
 
 /** Any share post about a guest or brand question (the question post, the "Called it!" post) leads with its label. */
