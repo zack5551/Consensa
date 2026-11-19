@@ -9,7 +9,7 @@
  * into the question page.
  */
 import { z } from "zod";
-import { categories } from "@/lib/question";
+import { categories, type QuestionOutcome } from "@/lib/question";
 
 export const bilingual = z.object({ en: z.string().min(1), fr: z.string().min(1) });
 export type Bilingual = z.infer<typeof bilingual>;
@@ -182,7 +182,8 @@ export type ResolverRead =
   | { status: "pending"; reason: string }
   | {
       status: "answer";
-      outcome: "yes" | "no";
+      /** `cancelled`: the source says the game or event did not take place. Never settles on its own; an editor confirms it. */
+      outcome: QuestionOutcome;
       /** The number or fact read from the source, as text for the public log. */
       observed: string;
       evidenceUrl: string;
@@ -195,7 +196,9 @@ export interface ResolutionRecord {
   slug: string;
   reads: Array<{ at: string; read: ResolverRead }>;
   state: "waiting" | "confirming" | "resolved" | "needsEditor";
-  outcome?: "yes" | "no";
+  outcome?: QuestionOutcome;
+  /** A short line from the editor who settled it, e.g. why a game was cancelled. For the audit, never shown to forecasters. */
+  editorNote?: string;
   resolvedAt?: string;
   /** Set by an editor when a published result is under review; it isn't scored until the review ends. */
   disputed?: boolean;

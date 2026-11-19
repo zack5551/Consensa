@@ -116,7 +116,9 @@ export default async function DesignSystemPage({ params }: { params: Promise<{ l
                       ? fill(t.stateNote.closed, { date: formatLongDate(q.resolution.resolvesAt, locale) })
                       : s === "resolved"
                         ? fill(t.stateNote.resolved, { answer: t.question.yes.toLowerCase(), crowd: pct(yes) })
-                        : t.stateNote.disputed}
+                        : s === "cancelled"
+                          ? fill(t.stateNote.cancelled, { crowd: pct(yes) })
+                          : t.stateNote.disputed}
                 </StateNote>
               )}
             </li>

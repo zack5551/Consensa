@@ -185,9 +185,10 @@ test("a closing-soon question still takes a call", async ({ page }) => {
   await expect(page.getByTestId("result-bars").locator("visible=true")).toBeVisible();
 });
 
-test("a closing-soon question says when it closes", async ({ page }) => {
+test("a closing-soon question says when it closes, on the Eastern calendar day", async ({ page }) => {
+  // Calls close at 04:59 UTC on Nov 8, which is 11:59 p.m. Eastern on Nov 7 (LEX).
   await page.goto("/en/q/giller-debut-2026");
-  await expect(page.getByText(/This question closes November 8, 2026/)).toBeVisible();
+  await expect(page.getByText(/This question closes November 7, 2026/)).toBeVisible();
 });
 
 test("a closed question stops taking calls", async ({ page }) => {

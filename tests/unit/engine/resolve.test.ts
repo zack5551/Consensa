@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { explainRecord } from "@/engine/explain";
 import { applyRead, CONFIRM_GAP_MS, editorResult, MAX_ERRORS, newRecord, toResult } from "@/engine/resolve/policy";
 import { compare, readResolver, VALET_SERIES } from "@/engine/resolve/resolvers";
 import type { ResolverRead } from "@/engine/types";
@@ -100,6 +101,22 @@ describe("resolution policy", () => {
     for (let i = 0; i < MAX_ERRORS; i++) rec = applyRead(rec, { status: "error", reason: "503" }, t0);
     expect(rec.state).toBe("needsEditor");
     expect(applyRead(newRecord("q"), { status: "pending", reason: "editor" }, t0, true).state).toBe("needsEditor");
+  });
+
+  it("sends a cancelled reading to an editor, who settles it with a note", () => {
+    const off: ResolverRead = { status: "answer", outcome: "cancelled", observed: "Game not played", evidenceUrl: "https://www.nhl.com/scores", margin: null };
+    const rec = applyRead(applyRead(newRecord("q"), off, t0), off, t1);
+    expect(rec.state).toBe("needsEditor");
+    expect(toResult(rec)).toBeNull();
+    expect(explainRecord(rec, { kind: "manual", check: "Final result on nhl.com" })).toMatch(/^Needs an editor/);
+
+    expect(() => editorResult(rec, "cancelled", "ed-1", t1)).toThrow(/editor note/);
+    expect(() => editorResult(rec, "cancelled", "ed-1", t1, false, "  ")).toThrow(/editor note/);
+    const settled = editorResult(rec, "cancelled", "ed-1", t1, false, "Arena closed by a storm; the league has not set a new date.");
+    expect(settled).toMatchObject({ state: "resolved", outcome: "cancelled", resolvedBy: "ed-1", editorNote: "Arena closed by a storm; the league has not set a new date." });
+    expect(toResult(settled)).toEqual({ outcome: "cancelled", publishedAt: t1.toISOString(), disputed: false });
+    expect(explainRecord(settled, { kind: "manual", check: "Final result on nhl.com" })).toMatch(/^Cancelled by editor ed-1: .* nobody is scored\. Editor note: Arena closed by a storm/);
+    expect(editorResult(newRecord("q"), "yes", "ed-1", t0).editorNote).toBeUndefined();
   });
 
   it("never changes a settled record, and records who settled it", () => {

@@ -8,6 +8,7 @@ import { applyRead, newRecord } from "@/engine/resolve/policy";
 import { readResolver, type Http } from "@/engine/resolve/resolvers";
 import type { EngineStore } from "@/engine/store";
 import type { Resolver } from "@/engine/types";
+import type { QuestionOutcome } from "@/lib/question";
 
 export interface DueQuestion {
   slug: string;
@@ -18,7 +19,7 @@ export interface DueQuestion {
 export interface ResolveStep {
   slug: string;
   state: string;
-  outcome?: "yes" | "no";
+  outcome?: QuestionOutcome;
   /** Plain-English reason for the state, also saved on the record. */
   why: string;
 }

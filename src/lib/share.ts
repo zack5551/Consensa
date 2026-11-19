@@ -10,8 +10,8 @@ const sides = ["yes", "no"] as const satisfies readonly Side[];
  * right side to call), only once the official result is in and not under review, and only for the side that happened.
  * The card and its page are built from the question and the side alone, so there is never anything about a person to
  * check, store or show.
- * LEX: a cancelled or voided question gets no card. The schema has no such outcome yet (a result is yes or no), so the
- * outcome is checked against yes and no explicitly: any other outcome added later gets no card and no page by default.
+ * LEX: a cancelled or voided question gets no card. A cancelled game is its own state and outcome, and the outcome is
+ * also checked against yes and no explicitly, so any other outcome added later gets no card and no page by default.
  */
 export function hasCalledItCard(question: Question, side: string, now: Date): side is Side {
   const outcome: string | undefined = question.resolution.result?.outcome;

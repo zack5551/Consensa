@@ -1,9 +1,10 @@
-import { isOpen, questionSchema, questionState, type Question } from "@/lib/question";
+import { isOpen, outcomes, questionSchema, questionState, type Question } from "@/lib/question";
 import { z } from "zod";
 import liveQuestions from "./live-questions.json";
 import liveResults from "./live-results.json";
 import { moreSampleQuestions } from "./more-questions";
 import { series } from "./series";
+import { fixtureQuestions } from "./test-fixtures";
 
 /**
  * The preview's fixed "now", so sample states (closing soon, closed, resolved) render the same on every build.
@@ -287,6 +288,9 @@ const raw = [
     },
   },
   ...moreSampleQuestions,
+  // Test-only game questions (made up), for the e2e build alone. next.config.ts inlines this flag at build time, so a
+  // production build, which never sets it, compiles the branch away along with the fixtures (AEGIS, 2026-11-19).
+  ...(process.env.CONSENSA_TEST_FIXTURES === "1" ? fixtureQuestions() : []),
 ] satisfies ReadonlyArray<unknown>;
 
 /**
@@ -294,7 +298,7 @@ const raw = [
  * scripts/pull-live-questions.mjs at build time, empty unless CONSENSA_LIVE_QUESTIONS=1) come first; a live
  * question that's invalid or reuses a sample's slug is skipped rather than failing the build.
  */
-const resultSchema = z.object({ slug: z.string(), outcome: z.enum(["yes", "no"]), publishedAt: z.iso.datetime(), disputed: z.boolean() });
+const resultSchema = z.object({ slug: z.string(), outcome: z.enum(outcomes), publishedAt: z.iso.datetime(), disputed: z.boolean() });
 /**
  * Automatic results from the engine (see src/engine/site-results.ts), confirmed from official data. They replace a
  * hand-written result, because the official reading is the record. An invalid entry is skipped.

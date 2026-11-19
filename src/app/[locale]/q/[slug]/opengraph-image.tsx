@@ -9,6 +9,7 @@ import { withLiveQuestion } from "@/lib/live";
 /**
  * The share card for one question, 1200×630.
  * One message: the question, laid out like a poll, with where Canada stands on it (empty answer rows until 5 people have called).
+ * A cancelled question says it was cancelled instead of the answer rows, with no number and no invitation to call.
  * One action: none on the card itself; it is the picture behind a shared link to the question page.
  * LEX: text and percentages only, no team or league logos, no photos, and the free/no-value label on every card.
  * It reads the same content and crowd number as the page (withLiveQuestion), refreshed on the same one-minute clock.

@@ -65,7 +65,9 @@ export function explainRecord(record: ResolutionRecord, resolver: Resolver): str
       const read = b?.read ?? a?.read;
       const when = a && b ? ` Two reads agreed, at ${a.at} and ${b.at}.` : "";
       const by = record.resolvedBy === "engine" ? "the engine" : `editor ${record.resolvedBy ?? "unknown"}`;
-      return `Settled ${record.outcome?.toUpperCase()} by ${by}${read ? `: ${read.observed} (${read.evidenceUrl})` : ""}.${when} Rule: ${rule}.`;
+      const note = record.editorNote ? ` Editor note: ${record.editorNote}` : "";
+      if (record.outcome === "cancelled") return `Cancelled by ${by}: the game or event did not take place, so nobody is scored.${note} Rule: ${rule}.`;
+      return `Settled ${record.outcome?.toUpperCase()} by ${by}${read ? `: ${read.observed} (${read.evidenceUrl})` : ""}.${when}${note} Rule: ${rule}.`;
     }
     case "confirming": {
       const a = answers.at(-1)!.read;
@@ -74,6 +76,7 @@ export function explainRecord(record: ResolutionRecord, resolver: Resolver): str
     case "needsEditor": {
       if (resolver.kind === "manual") return `Needs an editor: this rule is settled by hand. ${rule}.`;
       if (last?.status === "error") return `Needs an editor: the source failed ${MAX_ERRORS} times in a row (last: ${last.reason}). Rule: ${rule}.`;
+      if (last?.status === "answer" && last.outcome === "cancelled") return `Needs an editor: the source says the game or event did not take place (${last.observed}). An editor confirms a cancellation and leaves a note. Rule: ${rule}.`;
       if (last?.status === "answer" && last.margin === 0) return `Needs an editor: the reading sits exactly on the line (${last.observed}). Rule: ${rule}.`;
       const [a, b] = answers.slice(-2);
       if (a && b && a.read.outcome !== b.read.outcome)

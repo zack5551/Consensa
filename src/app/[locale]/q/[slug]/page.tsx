@@ -26,7 +26,7 @@ import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { callsCloseAt, crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
+import { callsCloseAt, crowdNow, crowdVerdict, eventStart, nextUp, questionState, scoreBadge, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { askedByLabel } from "@/lib/asked-by";
@@ -88,8 +88,10 @@ export default async function QuestionPage({ params }: { params: Params }) {
     chartSummary += ` ${fill(template, { change: Math.abs(swing.change), days })}`;
   }
   const result = q.resolution.result;
-  const answer = result ? (result.outcome === "yes" ? t.question.yes : t.question.no) : "";
-  const settled = state === "resolved" || state === "disputed" || state === "closed";
+  // A cancelled question has no answer: the result row says so, and nothing reads as yes or no.
+  const answer = result ? (result.outcome === "cancelled" ? t.resolution.noAnswer : result.outcome === "yes" ? t.question.yes : t.question.no) : "";
+  const settled = state === "resolved" || state === "disputed" || state === "closed" || state === "cancelled";
+  const start = eventStart(q);
   // How the crowd moved this week, beside the count. Open questions only: a settled number no longer moves.
   const move = settled ? null : weekMove(q);
   const moveText =
@@ -130,7 +132,9 @@ export default async function QuestionPage({ params }: { params: Params }) {
           ? fill(t.stateNote.resolved, { answer: answer.toLowerCase(), crowd: pct(yes) })
           : state === "disputed"
             ? t.stateNote.disputed
-            : "";
+            : state === "cancelled"
+              ? fill(t.stateNote.cancelled, { crowd: pct(yes) })
+              : "";
 
   const base = siteUrl();
   const breadcrumb = schemaOrg("BreadcrumbList", {
@@ -170,6 +174,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
       calls={q.forecasters}
       closes={closes}
       state={state}
+      startsAt={q.category === "sports" ? start : undefined}
       scored={q.scored}
       outcome={result?.outcome}
       closedOn={formatLongDate(callsCloseAt(q), locale)}
@@ -202,26 +207,32 @@ export default async function QuestionPage({ params }: { params: Params }) {
         </Link>
 
         <header className="grid gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-caption text-ink-2">
+          {/* On a phone the close time takes its own line, so no separator is left hanging at a line end. A game's start is in the game line below, not here. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-2">
             <StateBadge state={state} label={t.states[state]} />
-            <span className="uppercase tracking-wide">{q.scored ? t.question.scored : t.question.poll}</span>
+            <span className="uppercase tracking-wide">{t.question[scoreBadge(q)]}</span>
             {!settled && (
               <>
-                <span aria-hidden="true">·</span>
-                <span className="uppercase tracking-wide">
-                  {closes}
+                <span aria-hidden="true" className="hidden sm:inline">
+                  ·
                 </span>
-                {q.category === "sports" && q.startsAt && (
-                  <>
-                    <span aria-hidden="true">·</span>
-                    <span className="uppercase tracking-wide">{fill(t.question.startsTime, { when: formatEasternTime(q.startsAt, locale) })}</span>
-                  </>
-                )}
+                <span className="basis-full uppercase tracking-wide sm:basis-auto">{closes}</span>
               </>
             )}
           </div>
           <AskedByLabel label={askedBy} className="text-body-sm" />
           <h1 className="m-0 font-display text-headline font-bold leading-tight tracking-tight text-balance">{q.question[locale]}</h1>
+          {/* A game question names its matchup and scheduled start in words only (LEX: no team or league logos, no photos). */}
+          {q.game && (
+            <p className="m-0 text-body-sm text-ink-2" data-testid="game-line">
+              {fill(t.question.game, {
+                league: t.question.leagues[q.game.league],
+                away: q.game.away,
+                home: q.game.home,
+                when: formatEasternTime(q.game.startsAt, locale),
+              })}
+            </p>
+          )}
           <StateNote state={state} title={t.states[state]}>
             {note}
           </StateNote>
@@ -240,21 +251,25 @@ export default async function QuestionPage({ params }: { params: Params }) {
             <span className="flex flex-wrap items-baseline gap-x-3">
               <span className="font-display text-display-lg font-bold leading-none tabular text-side-a-text">{pct(yes)}</span>
               <span className="text-body-lg text-ink-2">{t.question.chance}</span>
-              {result && (
-                <span className="ml-auto self-center rounded-full bg-ink px-3 py-1 text-body-sm font-bold text-paper">
-                  {fill(t.resolution.answerIs, { answer })}
-                </span>
+              {/* A cancelled game already says so in the badge, the score line and the note: no pill under its number. */}
+              {result && result.outcome !== "cancelled" && (
+                <span className="ml-auto self-center rounded-full bg-ink px-3 py-1 text-body-sm font-bold text-paper">{fill(t.resolution.answerIs, { answer })}</span>
               )}
             </span>
           </p>
           <CrowdBar yes={yes} yesLabel={`${t.question.yes} ${pct(yes)}`} noLabel={`${t.question.no} ${pct(100 - yes)}`} />
-          <p className="m-0 inline-flex items-center gap-2 text-body-sm text-ink-2">
+          {/* On a phone the week's move takes its own line, so the separator never hangs at a line end. */}
+          <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-ink-2">
             <span className={`size-2 rounded-full ${settled ? "bg-ink-3" : "bg-canada"}`} aria-hidden="true" />
-            {formatCount(q.forecasters, locale)} {t.question.forecasters}
+            <span>
+              {formatCount(q.forecasters, locale)} {t.question.forecasters}
+            </span>
             {move && moveText && (
               <>
-                <span aria-hidden="true">·</span>
-                <span className="inline-flex items-center gap-1 tabular">
+                <span aria-hidden="true" className="hidden sm:inline">
+                  ·
+                </span>
+                <span className="inline-flex basis-full items-center gap-1 tabular sm:basis-auto">
                   {move.direction !== "flat" && (
                     <span aria-hidden="true" className={move.direction === "up" ? "text-side-a-text" : "text-side-b-text"}>
                       {move.direction === "up" ? "▲" : "▼"}

@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NOW, getQuestion, sampleQuestions, todaysFive } from "@/content/sample-questions";
-import { CLOSING_SOON_MS, callsCloseAt, crowdChange, crowdVerdict, nextUp, provinceExtremes, questionSchema, questionState, topicRecord, weekMove, type Question } from "@/lib/question";
+import { fixtureQuestions } from "@/content/test-fixtures";
+import en from "@/i18n/dictionaries/en";
+import fr from "@/i18n/dictionaries/fr";
+import { CLOSING_SOON_MS, callsCloseAt, crowdChange, crowdVerdict, eventStart, hasStarted, leagues, nextUp, provinceExtremes, questionSchema, questionState, scoreBadge, topicRecord, weekMove, type Question } from "@/lib/question";
 
 const base = getQuestion("boc-cut-dec-2026")!;
 const at = (iso: string) => new Date(iso);
+/** The made-up game questions, which only the e2e build ships (src/content/test-fixtures.ts). */
+const fixture = (slug: string): Question => questionSchema.parse(fixtureQuestions().find((q) => q.slug === slug));
 
 describe("questionState", () => {
   it("is open well before it closes", () => {
@@ -123,5 +128,103 @@ describe("sports start time", () => {
     delete noStart.startsAt;
     expect(questionSchema.safeParse(noStart).success).toBe(false);
     expect(questionSchema.safeParse({ ...noStart, category: "economy" }).success).toBe(true);
+  });
+});
+
+describe("shipped content", () => {
+  it("has no game question and no cancelled result: the made-up game fixtures never ship (AEGIS)", () => {
+    expect(process.env.CONSENSA_TEST_FIXTURES).not.toBe("1");
+    expect(sampleQuestions.filter((q) => q.game !== undefined).map((q) => q.slug)).toEqual([]);
+    expect(sampleQuestions.filter((q) => q.resolution.result?.outcome === "cancelled").map((q) => q.slug)).toEqual([]);
+    for (const f of fixtureQuestions()) expect(getQuestion(f.slug)).toBeUndefined();
+  });
+});
+
+describe("game questions", () => {
+  const game = fixture("canadiens-leafs-nov-21-2026");
+  const raw: Record<string, unknown> = { ...game };
+
+  it("accepts a game as text: league, home, away and a start time, nothing else", () => {
+    expect(game.game).toEqual({ league: "NHL", home: "Canadiens", away: "Maple Leafs", startsAt: "2026-11-22T00:00:00Z" });
+    expect(questionSchema.safeParse(raw).success).toBe(true);
+    expect(questionSchema.safeParse({ ...raw, game: { ...game.game, logo: "https://example.com/logo.png" } }).success).toBe(false);
+    expect(questionSchema.safeParse({ ...raw, game: { ...game.game, startsAt: "November 21" } }).success).toBe(false);
+    expect(questionSchema.safeParse({ ...raw, game: { ...game.game, home: "" } }).success).toBe(false);
+  });
+
+  it("names only a league the dictionary can name in EN and FR", () => {
+    expect(Object.keys(en.question.leagues).sort()).toEqual([...leagues].sort());
+    expect(Object.keys(fr.question.leagues).sort()).toEqual([...leagues].sort());
+    expect(questionSchema.safeParse({ ...raw, game: { ...game.game, league: "XFL" } }).success).toBe(false);
+    expect(questionSchema.safeParse({ ...raw, game: { ...game.game, league: "PWHL" } }).success).toBe(true);
+  });
+
+  it("allows a game on sports questions only, and its start must match startsAt when both are set", () => {
+    expect(questionSchema.safeParse({ ...raw, category: "culture" }).success).toBe(false);
+    expect(questionSchema.safeParse({ ...raw, startsAt: game.game!.startsAt }).success).toBe(true);
+    expect(questionSchema.safeParse({ ...raw, startsAt: "2026-11-22T01:00:00Z" }).success).toBe(false);
+  });
+
+  it("closes calls at the start of the game at the latest", () => {
+    expect(callsCloseAt(game)).toBe("2026-11-22T00:00:00Z");
+    // A close time written after the start never wins: calls still stop at the start.
+    const late = { ...game, closesAt: "2026-11-23T00:00:00Z" };
+    expect(callsCloseAt(late)).toBe("2026-11-22T00:00:00Z");
+    expect(questionState(late, at("2026-11-21T23:59:59Z"))).toBe("closingSoon");
+    expect(questionState(late, at("2026-11-22T00:00:00Z"))).toBe("closed");
+    // An earlier close time still applies.
+    expect(callsCloseAt({ ...game, closesAt: "2026-11-21T12:00:00Z" })).toBe("2026-11-21T12:00:00Z");
+  });
+
+  it("has started from the scheduled start on, so the panel stops offering a call even on an older page", () => {
+    const start = eventStart(game);
+    expect(start).toBe("2026-11-22T00:00:00Z");
+    expect(hasStarted(start, at("2026-11-21T23:59:59Z"))).toBe(false);
+    expect(hasStarted(start, at("2026-11-22T00:00:00Z"))).toBe(true);
+    expect(hasStarted(undefined, at("2030-01-01T00:00:00Z"))).toBe(false);
+  });
+});
+
+describe("cancelled questions", () => {
+  const cancelled = fixture("oilers-canucks-nov-3-2026");
+  const all = [...sampleQuestions, cancelled];
+
+  it("accepts cancelled as a result, and rejects anything else", () => {
+    const withOutcome = (outcome: string) => ({ ...cancelled, resolution: { ...cancelled.resolution, result: { outcome, publishedAt: "2026-11-04T03:00:00Z" } } });
+    for (const o of ["yes", "no", "cancelled"]) expect(questionSchema.safeParse(withOutcome(o)).success, o).toBe(true);
+    expect(questionSchema.safeParse(withOutcome("postponed")).success).toBe(false);
+  });
+
+  it("has its own state, whatever the clock says, and takes no calls", () => {
+    expect(questionState(cancelled, SAMPLE_NOW)).toBe("cancelled");
+    expect(questionState(cancelled, at("2026-01-01T00:00:00Z"))).toBe("cancelled");
+    expect(nextUp(base, all, SAMPLE_NOW, 100).map((q) => q.slug)).not.toContain(cancelled.slug);
+  });
+
+  it("carries the Not scored badge, not the scored one (LEX)", () => {
+    expect(scoreBadge(cancelled)).toBe("notScored");
+    expect(scoreBadge({ ...cancelled, scored: false })).toBe("notScored");
+    expect(scoreBadge({ ...base, scored: true })).toBe("scored");
+    expect(scoreBadge({ ...base, scored: false })).toBe("poll");
+    expect(en.question.notScored).toBe("Not scored");
+    expect(fr.question.notScored).toBe("Non évaluée");
+    expect(en.question.scored).toBe("Counts toward your record");
+    expect(fr.question.scored).toBe("Comptée dans votre bilan");
+  });
+
+  it("is never scored: no crowd score, no verdict, and nothing added to the crowd or topic record", async () => {
+    const { crowdBrier, crowdRecord } = await import("@/lib/question");
+    expect(cancelled.scored).toBe(true);
+    expect(crowdBrier(cancelled)).toBeNull();
+    expect(crowdVerdict(cancelled)).toBeNull();
+    const others = sampleQuestions;
+    expect(crowdRecord(all)).toEqual(crowdRecord(others));
+    // The same question settled NO would have counted as a miss for a crowd at 57%; cancelled counts as nothing.
+    const asNo: Question = { ...cancelled, resolution: { ...cancelled.resolution, result: { outcome: "no", publishedAt: "2026-11-04T03:00:00Z", disputed: false } } };
+    expect(crowdVerdict(asNo)).toBe("wrong");
+    expect(crowdRecord([...others, asNo]).resolved).toBe(crowdRecord(others).resolved + 1);
+    const right: Question = { ...asNo, history: [50, 30] };
+    expect(topicRecord(right, [right, right, right])).toEqual({ right: 3, total: 3 });
+    expect(topicRecord(right, [right, right, right, cancelled])).toEqual({ right: 3, total: 3 });
   });
 });

@@ -15,6 +15,8 @@ export default defineConfig({
   ],
   webServer: {
     command: `pnpm build && pnpm start -p ${PORT}`,
+    // Builds in the made-up game questions the e2e tests use (src/content/test-fixtures.ts). Production never sets it.
+    env: { CONSENSA_TEST_FIXTURES: "1" },
     url: `http://localhost:${PORT}/en`,
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,

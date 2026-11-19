@@ -154,7 +154,10 @@ export class SupabaseStore implements EngineStore {
   }
 
   async putResolution(record: ResolutionRecord): Promise<void> {
-    await this.upsert("engine_resolutions", [{ slug: record.slug, state: record.state, outcome: record.outcome ?? null, record, updated_at: this.now().toISOString() }]);
+    // The `outcome` column only takes yes or no (a check in the engine migration). A cancelled result keeps it empty;
+    // the full record, which the build reads, carries the cancelled outcome and the editor note.
+    const outcome = record.outcome === "yes" || record.outcome === "no" ? record.outcome : null;
+    await this.upsert("engine_resolutions", [{ slug: record.slug, state: record.state, outcome, record, updated_at: this.now().toISOString() }]);
   }
 
   async getResolution(slug: string): Promise<ResolutionRecord | undefined> {

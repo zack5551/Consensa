@@ -47,6 +47,9 @@ const baseCsp = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Test fixtures (made-up game questions) are built in only when the build itself sets CONSENSA_TEST_FIXTURES=1,
+  // as playwright.config.ts does for e2e. The value is fixed at build time, so production builds never include them.
+  env: { CONSENSA_TEST_FIXTURES: process.env.CONSENSA_TEST_FIXTURES === "1" ? "1" : "" },
   poweredByHeader: false,
   // The VPN check reads this file at run time, so the call route's serverless function must ship it.
   outputFileTracingIncludes: {

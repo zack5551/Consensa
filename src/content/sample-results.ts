@@ -169,7 +169,8 @@ function withTotals(r: z.infer<typeof resultSchema>): Result {
  */
 function fromQuestion(q: Question): z.infer<typeof resultSchema> | null {
   const result = q.resolution.result;
-  if (!result || questionState(q, SAMPLE_NOW) !== "resolved" || !q.scored) return null;
+  // Only a yes or no is a result. A cancelled question never reaches the record, the leaderboard or the province scores.
+  if (!result || result.outcome === "cancelled" || questionState(q, SAMPLE_NOW) !== "resolved" || !q.scored) return null;
   const counts = mix(q.forecasters);
   const percents = regions.map((r) => Math.min(99, Math.max(1, Math.round(q.provinces[r])))) as Cells;
   return {

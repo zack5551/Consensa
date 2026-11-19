@@ -5,7 +5,9 @@ import { series } from "./series";
 /**
  * More sample questions for the Board, category boards and search (ORBIT). Same rules as the rest:
  * a named official source, an exact threshold, a close before the answer is known, EN and FR written natively.
- * Sports stay as unscored polls. Numbers are illustrative.
+ * Sports are scored pre-game fan forecasts: calls close at the start (LEX's sports rules). Numbers are illustrative.
+ * No single-game question ships here: a made-up matchup under a real league's name would read as fact (AEGIS).
+ * The game examples used by the tests live in ./test-fixtures.ts, built in only for the e2e run.
  */
 export const moreSampleQuestions = [
   {

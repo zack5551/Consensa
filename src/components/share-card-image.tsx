@@ -13,15 +13,18 @@ import { fill } from "@/lib/text";
  * Draws the share card for one question, already read with its live numbers (withLiveQuestion). The route
  * (src/app/[locale]/q/[slug]/opengraph-image.tsx) calls this; tests/unit/share-card-image.test.ts renders it with a
  * fixture question that carries a test sponsor label, which no shipped question has.
+ * A cancelled question says it was cancelled instead of the answer rows, with no number and no invitation to call.
  */
 export async function shareCardImage(q: Question, locale: Locale, now: Date): Promise<ImageResponse> {
   const t = getDictionary(locale);
-  const crowd = crowdForCard(q, crowdNow(q));
+  const state = questionState(q, now);
+  const cancelled = state === "cancelled";
+  // A cancelled game shows no number at all (LEX), and no invitation to call.
+  const crowd = cancelled ? null : crowdForCard(q, crowdNow(q));
   // LEX: the same legal lines as the "Called it!" card: free, no prizes, no cash value, and on sports the fan-forecast
   // and non-affiliation lines.
   const legal = calledItFooter(t, q.category);
-  const state = questionState(q, now);
-  const settled = state === "resolved" || state === "disputed" || state === "closed";
+  const settled = cancelled || state === "resolved" || state === "disputed" || state === "closed";
   const text = cardSafe(q.question[locale]);
   const questionSize = text.length > 110 ? 40 : text.length > 70 ? 46 : 54;
   const closes = settled ? t.share.cardClosed : fill(t.share.cardCloses, { date: formatShortDate(callsCloseAt(q), locale) });
@@ -60,10 +63,14 @@ export async function shareCardImage(q: Question, locale: Locale, now: Date): Pr
 
         <div style={{ display: "flex", flex: 1, alignItems: "center", fontFamily: "Manrope", fontWeight: 800, fontSize: questionSize, lineHeight: 1.12, letterSpacing: -1, maxHeight: 200, overflow: "hidden" }}>{text}</div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {row(t.question.yes, crowd, c.sideA, c.sideASoft, c.sideAText)}
-          {row(t.question.no, crowd === null ? null : 100 - crowd, c.sideB, c.sideBSoft, c.sideBText)}
-        </div>
+        {cancelled ? (
+          <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 700, fontSize: 44, color: c.inkMuted, marginBottom: 12 }}>{cardSafe(t.share.cardCancelled)}</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {row(t.question.yes, crowd, c.sideA, c.sideASoft, c.sideAText)}
+            {row(t.question.no, crowd === null ? null : 100 - crowd, c.sideB, c.sideBSoft, c.sideBText)}
+          </div>
+        )}
 
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 14, fontSize: 22, fontWeight: 600, color: c.inkMuted }}>
           {crowd !== null && (

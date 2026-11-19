@@ -5,6 +5,7 @@ const tone: Record<Exclude<QuestionState, "open">, string> = {
   closed: "border-line-strong bg-sunken",
   resolved: "border-side-a bg-side-a-soft",
   disputed: "border-side-b bg-side-b-soft",
+  cancelled: "border-line-strong bg-sunken",
 };
 
 /** One line under a question's title that explains its state. Open questions don't need one. */
