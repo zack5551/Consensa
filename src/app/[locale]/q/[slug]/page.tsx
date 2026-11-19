@@ -198,14 +198,21 @@ export default async function QuestionPage({ params }: { params: Params }) {
   );
 
   return (
-    <article className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+    // Keyboard order is Back, then Yes/No, at every width. On desktop the call panel comes right after Back in the
+    // DOM and the grid places it in the right column; on a phone it is hidden there and shown below the crowd's number.
+    <article className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:items-start">
       <JsonLd data={breadcrumb} />
       <ScreenView locale={locale} screen="question" slug={q.slug} state={state} />
-      <div className="grid min-w-0 gap-6">
-        <Link href={`/${locale}`} className="justify-self-start text-body-sm font-semibold text-ink-2 hover:text-ink">
-          ← {t.question.back}
-        </Link>
+      <Link href={`/${locale}`} className="justify-self-start text-body-sm font-semibold text-ink-2 hover:text-ink lg:col-start-1 lg:row-start-1">
+        ← {t.question.back}
+      </Link>
 
+      <aside className="sticky top-20 hidden gap-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:grid">
+        {panel}
+        {social}
+      </aside>
+
+      <div className="grid min-w-0 gap-6 lg:col-start-1 lg:row-start-2">
         <header className="grid gap-3">
           {/* On a phone the close time takes its own line, so no separator is left hanging at a line end. A game's start is in the game line below, not here. */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-2">
@@ -403,11 +410,6 @@ export default async function QuestionPage({ params }: { params: Params }) {
         <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
         {q.category === "sports" && <SportsNotice label={t.legal.sportsLabel} footer={t.legal.sportsFooter} />}
       </div>
-
-      <aside className="sticky top-20 hidden gap-6 lg:grid">
-        {panel}
-        {social}
-      </aside>
     </article>
   );
 }

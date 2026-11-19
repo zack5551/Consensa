@@ -326,3 +326,15 @@ test("the share card is a 200 PNG in both languages, and the page asks for the l
     await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", new RegExp(`/${locale}/q/boc-cut-dec-2026/opengraph-image`));
   }
 });
+
+for (const width of [390, 1280]) {
+  test(`at ${width}px, Tab goes from Back straight to the Yes and No answers`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/en/q/boc-cut-dec-2026");
+    await page.getByRole("link", { name: /Back to today/ }).focus();
+    await page.keyboard.press("Tab");
+    await expect(page.locator(":focus")).toHaveText(/^Yes/);
+    await page.keyboard.press("Tab");
+    await expect(page.locator(":focus")).toHaveText(/^No/);
+  });
+}
