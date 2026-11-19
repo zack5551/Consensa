@@ -31,6 +31,8 @@ for (const path of pages) {
 
 test("dark: the 404 illustration's question mark is drawn in the page's text colour", async ({ page }) => {
   await page.goto("/en/no-such-page");
+  // The 404 body streams in after the load event, so wait for the mark before reading its colour.
+  await page.locator("main svg text").waitFor();
   const colours = await page.evaluate(() => ({
     mark: getComputedStyle(document.querySelector("main svg text")!).fill,
     text: getComputedStyle(document.body).color,
