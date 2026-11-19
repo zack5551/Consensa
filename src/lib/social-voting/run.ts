@@ -36,7 +36,8 @@ export type SocialReport = CountReport & { sweep: SweepReport | null };
  * spend cap, so the count always keeps the other half.
  *
  * A sweep stopped by its removal ceiling logs the code "social-sweep: halted". The way past it is
- * approve_social_sweep(), run by hand in the database (see sweep.ts).
+ * approve_social_sweep(), run by hand in the database (see sweep.ts). While a halt is still open 72 hours after it
+ * first happened, every run also logs "social-sweep: halt-unapproved-72h" (LEX), so zack hears about it again.
  */
 export async function runSocialStep(now: Date, env: Record<string, string | undefined> = process.env): Promise<SocialReport | null> {
   if (!socialVotingOn(env)) return null;
@@ -60,6 +61,8 @@ export async function runSocialStep(now: Date, env: Record<string, string | unde
   const sweep = await sweepDeletedReplies({ posts, providers, store, now, allowanceMicros }).catch(() => null);
   // AEGIS: a halted sweep is logged by code, so a person sees it. Nothing but the code is logged.
   if (sweep?.halted) logErrorCode("social-sweep", "halted");
+  // LEX: a halt may not sit. Still open 72 hours after it first happened: say so again, on every run until it is settled.
+  if (sweep?.haltUnresolved72h) logErrorCode("social-sweep", "halt-unapproved-72h");
   const count = await countSocialReplies({
     posts,
     providers,
