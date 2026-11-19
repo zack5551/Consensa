@@ -1,3 +1,4 @@
+import { fill } from "@/lib/text";
 import { callsCloseAt, categories, crowdChange, crowdNow, isOpen, questionState, type Category, type Question, type QuestionState } from "@/lib/question";
 
 /**
@@ -104,4 +105,29 @@ export function applyBoardQuery(rows: readonly BoardRow[], q: BoardQuery, called
     rows.filter((r) => (q.topic === "all" || r.category === q.topic) && matchesFilter(r, q.filter, called)),
     q.sort,
   );
+}
+
+/** The Board's 7-day change strings: "1 pt" / "2 pts" in both languages, and "1 point" in the spoken label. */
+export type ChangeLabels = {
+  change: string;
+  changeOne: string;
+  noChange: string;
+  changeLabel: string;
+  changeLabelOne: string;
+  changeDownLabel: string;
+  changeDownLabelOne: string;
+};
+
+/** "+2 pts", "−1 pt" or "No change". The minus is a real minus sign. */
+export function changeText(n: number, t: ChangeLabels): string {
+  if (n === 0) return t.noChange;
+  const size = Math.abs(n);
+  return `${n > 0 ? "+" : "−"}${size === 1 ? t.changeOne : fill(t.change, { n: size })}`;
+}
+
+/** The screen-reader label for the same change: "Up 1 point over 7 days", "Down 3 points over 7 days". */
+export function changeLabel(n: number, t: ChangeLabels): string {
+  if (n === 0) return t.noChange;
+  if (n > 0) return n === 1 ? t.changeLabelOne : fill(t.changeLabel, { up: n });
+  return n === -1 ? t.changeDownLabelOne : fill(t.changeDownLabel, { down: -n });
 }
