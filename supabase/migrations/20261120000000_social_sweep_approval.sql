@@ -44,7 +44,7 @@ language plpgsql security definer set search_path = '' as $$
 declare
   until_at timestamptz;
 begin
-  delete from public.social_sweep_approval returning approved_until into until_at;
+  delete from public.social_sweep_approval a where a.id returning a.approved_until into until_at;
   return until_at is not null and until_at > now();
 end;
 $$;

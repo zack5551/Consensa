@@ -154,6 +154,6 @@ describe("the sweep approval in the database", () => {
   });
 
   it("using an approval clears it whether or not it was still in time", () => {
-    expect(sql).toMatch(/delete from public\.social_sweep_approval returning approved_until into until_at;\s+return until_at is not null and until_at > now\(\);/);
+    expect(sql).toMatch(/delete from public\.social_sweep_approval a where a\.id returning a\.approved_until into until_at;\s+return until_at is not null and until_at > now\(\);/);
   });
 });
