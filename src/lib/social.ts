@@ -94,3 +94,23 @@ export function shareLinks(text: string, url: string): ShareLinks {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
   };
 }
+
+export type ShareTextLabels = {
+  /** "{question} Make your call on Cansensa. Free. No prizes." */
+  text: string;
+  /** The same, plus LEX's fan-forecast line for sports questions. */
+  textSports: string;
+};
+
+/**
+ * The share post text. Sports posts add "Fan forecasts only." (LEX, sports rules). A guest or brand question leads with
+ * its "Asked by" / "Sponsored by" label, because LEX wants the label everywhere the question goes, social posts included.
+ */
+export function questionShareText(labels: ShareTextLabels, question: string, options: { sports: boolean; askedBy?: string }): string {
+  return withAskedBy(fill(options.sports ? labels.textSports : labels.text, { question }), options.askedBy);
+}
+
+/** Any share post about a guest or brand question (the question post, the "Called it!" post) leads with its label. */
+export function withAskedBy(text: string, askedBy: string | undefined): string {
+  return askedBy ? `${askedBy} · ${text}` : text;
+}

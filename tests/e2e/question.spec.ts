@@ -255,7 +255,7 @@ test("share buttons link to the plain question page, with no tracking", async ({
     await page.goto(`/${locale}/q/boc-cut-dec-2026`);
     const href = async (key: string) => new URL((await page.locator(`a[data-share="${key}"]`).getAttribute("href")) ?? "");
     const plain = new RegExp(`^https?://[^/?#]+/${locale}/q/boc-cut-dec-2026$`);
-    const line = locale === "en" ? "Make your call on Cansensa. Free. No prizes." : "Faites votre prévision sur Cansensa. Gratuit. Aucun prix.";
+    const line = locale === "en" ? "Make your call on Cansensa. Free. No prizes." : "Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner.";
 
     const x = await href("x");
     expect(`${x.origin}${x.pathname}`).toBe("https://twitter.com/intent/tweet");

@@ -48,3 +48,14 @@ test("a sports question takes scored calls: the panel shows what the call would 
   await page.getByRole("button", { name: "Yes", exact: true }).click();
   await expect(page.getByText(/you’d score/).locator("visible=true").first()).toBeVisible();
 });
+
+test("a sports question's share post says it is fan forecasts only, and other posts do not", async ({ page }) => {
+  const post = async () => new URL((await page.locator('a[data-share="x"]').getAttribute("href")) ?? "").searchParams.get("text") ?? "";
+  const lines = { en: "Free. No prizes. Fan forecasts only.", fr: "Gratuit. Aucun prix à gagner. Prévisions de partisans seulement." } as const;
+  for (const locale of ["en", "fr"] as const) {
+    await page.goto(`/${locale}/q/leafs-playoffs-2027`);
+    expect(await post()).toContain(lines[locale]);
+    await page.goto(`/${locale}/q/boc-cut-dec-2026`);
+    expect(await post()).not.toContain(lines[locale]);
+  }
+});
