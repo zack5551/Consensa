@@ -372,7 +372,6 @@ const fr = {
     forecasters: "prévisionnistes",
     closes: "Fermeture le",
     closesTime: "Fermeture le {when} (HE)",
-    startsTime: "Début le {when} (HE)",
     game: "{league} · {away} c. {home} · {when} (HE)",
     leagues: { NHL: "LNH", CFL: "LCF", MLS: "MLS", CPL: "PLC", NBA: "NBA", MLB: "MLB", PWHL: "LPHF" },
     closed: "Fermée",

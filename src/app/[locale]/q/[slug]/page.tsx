@@ -86,7 +86,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
     chartSummary += ` ${fill(template, { change: Math.abs(swing.change), days })}`;
   }
   const result = q.resolution.result;
-  // A cancelled question has no answer: the pill and the result row say so, and nothing reads as yes or no.
+  // A cancelled question has no answer: the result row says so, and nothing reads as yes or no.
   const answer = result ? (result.outcome === "cancelled" ? t.resolution.noAnswer : result.outcome === "yes" ? t.question.yes : t.question.no) : "";
   const settled = state === "resolved" || state === "disputed" || state === "closed" || state === "cancelled";
   const start = eventStart(q);
@@ -202,21 +202,16 @@ export default async function QuestionPage({ params }: { params: Params }) {
         </Link>
 
         <header className="grid gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-caption text-ink-2">
+          {/* On a phone the close time takes its own line, so no separator is left hanging at a line end. A game's start is in the game line below, not here. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-ink-2">
             <StateBadge state={state} label={t.states[state]} />
             <span className="uppercase tracking-wide">{t.question[scoreBadge(q)]}</span>
             {!settled && (
               <>
-                <span aria-hidden="true">·</span>
-                <span className="uppercase tracking-wide">
-                  {closes}
+                <span aria-hidden="true" className="hidden sm:inline">
+                  ·
                 </span>
-                {q.category === "sports" && start && !q.game && (
-                  <>
-                    <span aria-hidden="true">·</span>
-                    <span className="uppercase tracking-wide">{fill(t.question.startsTime, { when: formatEasternTime(start, locale) })}</span>
-                  </>
-                )}
+                <span className="basis-full uppercase tracking-wide sm:basis-auto">{closes}</span>
               </>
             )}
           </div>
@@ -250,21 +245,25 @@ export default async function QuestionPage({ params }: { params: Params }) {
             <span className="flex flex-wrap items-baseline gap-x-3">
               <span className="font-display text-display-lg font-bold leading-none tabular text-side-a-text">{pct(yes)}</span>
               <span className="text-body-lg text-ink-2">{t.question.chance}</span>
-              {result && (
-                <span className="ml-auto self-center rounded-full bg-ink px-3 py-1 text-body-sm font-bold text-paper">
-                  {result.outcome === "cancelled" ? answer : fill(t.resolution.answerIs, { answer })}
-                </span>
+              {/* A cancelled game already says so in the badge, the score line and the note: no pill under its number. */}
+              {result && result.outcome !== "cancelled" && (
+                <span className="ml-auto self-center rounded-full bg-ink px-3 py-1 text-body-sm font-bold text-paper">{fill(t.resolution.answerIs, { answer })}</span>
               )}
             </span>
           </p>
           <CrowdBar yes={yes} yesLabel={`${t.question.yes} ${pct(yes)}`} noLabel={`${t.question.no} ${pct(100 - yes)}`} />
-          <p className="m-0 inline-flex items-center gap-2 text-body-sm text-ink-2">
+          {/* On a phone the week's move takes its own line, so the separator never hangs at a line end. */}
+          <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-ink-2">
             <span className={`size-2 rounded-full ${settled ? "bg-ink-3" : "bg-canada"}`} aria-hidden="true" />
-            {formatCount(q.forecasters, locale)} {t.question.forecasters}
+            <span>
+              {formatCount(q.forecasters, locale)} {t.question.forecasters}
+            </span>
             {move && moveText && (
               <>
-                <span aria-hidden="true">·</span>
-                <span className="inline-flex items-center gap-1 tabular">
+                <span aria-hidden="true" className="hidden sm:inline">
+                  ·
+                </span>
+                <span className="inline-flex basis-full items-center gap-1 tabular sm:basis-auto">
                   {move.direction !== "flat" && (
                     <span aria-hidden="true" className={move.direction === "up" ? "text-side-a-text" : "text-side-b-text"}>
                       {move.direction === "up" ? "▲" : "▼"}

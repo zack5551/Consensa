@@ -370,7 +370,6 @@ const en = {
     forecasters: "forecasters",
     closes: "Closes",
     closesTime: "Closes {when} ET",
-    startsTime: "Starts {when} ET",
     game: "{league} · {away} at {home} · {when} ET",
     leagues: { NHL: "NHL", CFL: "CFL", MLS: "MLS", CPL: "CPL", NBA: "NBA", MLB: "MLB", PWHL: "PWHL" },
     closed: "Closed",

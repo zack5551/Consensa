@@ -34,11 +34,12 @@ for (const locale of ["en", "fr"] as const) {
   });
 }
 
-test("a sports question shows its close and start times in Eastern time", async ({ page }) => {
+test("a sports question shows its close time in Eastern time, and a season question no start time", async ({ page }) => {
   await page.goto("/en/q/leafs-playoffs-2027");
   // The header names the close time; the call panel repeats it under the answers.
   await expect(page.locator("article header").getByText("Closes Apr 15, 7:00 p.m. ET")).toBeVisible();
-  await expect(page.getByText("Starts Apr 16, 7:00 p.m. ET")).toBeVisible();
+  // A start time belongs to a game question only, in its game line: not here, right after the close.
+  await expect(page.getByText(/^Starts /)).toHaveCount(0);
   await page.goto("/fr/q/leafs-playoffs-2027");
   await expect(page.locator("article header").getByText(/Fermeture le 15 avr\.,\s19\sh \(HE\)/)).toBeVisible();
 });
@@ -90,6 +91,8 @@ for (const locale of ["en", "fr"] as const) {
     await expect(page.locator("article header").getByText(c.scored, { exact: true })).toHaveCount(0);
     await expect(page.getByText(c.note)).toBeVisible();
     await expect(page.getByText(c.noAnswer).first()).toBeVisible();
+    // No answer pill under the crowd's number: the badge, the score line and the note already say it was cancelled.
+    await expect(page.locator("section", { has: page.locator(".text-display-lg") }).getByText(c.noAnswer)).toHaveCount(0);
     await expect(page.getByTestId("game-line")).toHaveText(c.line);
     // The 9 p.m. ET start is 02:00 UTC the next day; the close date is the Eastern one (LEX).
     await expect(page.getByText(c.closedOn).locator("visible=true").first()).toBeVisible();
