@@ -272,7 +272,7 @@ const fr = {
       title: "La confidentialité, en clair",
       intro: "Cansensa est conçu pour garder le moins de renseignements possible sur vous, et pour les garder au Canada.",
       points: {
-        canada: { title: "Vos données restent au Canada", body: "Les comptes, les prévisions et les statistiques d’usage sont hébergés à Montréal. Tout fournisseur qui traite des données hors du Canada est nommé dans la politique complète." },
+        canada: { title: "Vos données restent au Canada", body: "Votre compte et vos prévisions sont conservés à Montréal. Quelques fournisseurs traitent des données limitées à l’extérieur du Canada, comme les journaux de requêtes de courte durée de notre hébergeur web. Chacun est nommé dans la politique complète." },
         aggregates: { title: "Seuls des chiffres combinés sortent de Cansensa", body: "Si nous partageons des données avec des partenaires, ce sont des totaux anonymes, avec une taille de groupe minimale. Jamais vos prévisions individuelles." },
         consents: { title: "Vous choisissez, une case à la fois", body: "Les conditions, l’usage anonyme des données, les statistiques d’usage et les courriels sont quatre choix distincts. Aucune case n’est cochée d’avance, et les statistiques d’usage restent désactivées tant que vous ne les activez pas." },
         rights: { title: "Vos données, votre choix", body: "Vous pouvez consulter, corriger ou supprimer vos données, et changer chacun de vos choix, depuis votre compte ou en nous le demandant." },

@@ -270,7 +270,7 @@ const en = {
       title: "Privacy, in plain language",
       intro: "Cansensa is built to keep as little about you as it can, and to keep it in Canada.",
       points: {
-        canada: { title: "Your data stays in Canada", body: "Accounts, calls and analytics are stored in Montreal. Any service provider that handles data outside Canada is named in the full policy." },
+        canada: { title: "Your data stays in Canada", body: "Your account and calls are stored in Montréal. A few service providers handle limited data outside Canada, such as the short-lived request logs kept by our web host. Each one is named in the full policy." },
         aggregates: { title: "Only combined numbers leave Cansensa", body: "If we share data with partners, it’s anonymous totals with a minimum group size. Never your individual calls." },
         consents: { title: "You choose, one box at a time", body: "Terms, anonymous data use, usage stats and email are four separate choices. None is ticked for you, and usage stats stay off unless you turn them on." },
         rights: { title: "Your data, your call", body: "You can see, correct or delete your data, and change any choice, from your account or by asking us." },
