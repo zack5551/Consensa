@@ -12,10 +12,13 @@ import { isAllowedPostUrl, questionShareUrl, shareLinks, socialPollLine, socialP
 /** The gambling, trading and tip rules from the engine's lexicon (CLAUDE.md rule 1), the one home of those words. */
 const lexiconRules = new Set(["gambling", "trading", "tip"]);
 /**
- * LEX: no giveaway or reward wording on anything people share. "No prizes" / « Aucun prix à gagner » is the one allowed
- * mention: that exact French phrase is taken out before the check, so any other « gagn… » still fails.
+ * LEX: no giveaway or reward wording on anything people share. "No prizes" is the one allowed mention, and in French it
+ * is always « prix à gagner », in exactly these phrases. They are taken out before the check, so any other « gagn… »
+ * still fails.
  */
-const allowedPhrase = "Aucun prix à gagner";
+const allowedPhrases = ["Aucun point, aucun prix à gagner", "aucun achat ni aucun prix à gagner", "Aucun prix à gagner", "Sans prix à gagner", "sans prix à gagner"];
+const hits = (line: string) => giveaway.filter((re) => re.test(withoutAllowed(line)));
+const withoutAllowed = (line: string) => allowedPhrases.reduce((rest, phrase) => rest.replaceAll(phrase, ""), line);
 const giveaway = [/\bgiveaway/i, /\bwin(s|ner|ners|ning)?\b/i, /\breward/i, /\bcontest/i, /\bgagn/i, /\bconcours\b/i, /\btirage/i, /\br[ée]compense/i];
 
 const good = { platform: "x", yes: 719, no: 521, closedAt: "2026-11-05T18:00:00Z", url: "https://x.com/Cansensa/status/1" } as const;
@@ -27,23 +30,27 @@ describe("share text", () => {
       const lines = [t.share.text.replace("{question}", question), ...Object.values(t.share), t.social.label, t.social.line, t.social.title];
       for (const line of lines) {
         expect(scan(line, lexiconRules), line).toEqual([]);
-        expect(giveaway.filter((re) => re.test(line.replaceAll(allowedPhrase, ""))), line).toEqual([]);
+        expect(giveaway.filter((re) => re.test(withoutAllowed(line))), line).toEqual([]);
       }
     });
   }
 
-  it("allows only the exact phrase « Aucun prix à gagner », nothing else with « gagn… »", () => {
-    const hits = (line: string) => giveaway.filter((re) => re.test(line.replaceAll(allowedPhrase, "")));
+  it("allows only the exact « prix à gagner » phrases, nothing else with « gagn… »", () => {
     expect(hits("Gratuit. Aucun prix à gagner.")).toEqual([]);
+    expect(hits("Seule la précision compte. Aucun point, aucun prix à gagner.")).toEqual([]);
+    expect(hits("Gratuit · Sans argent · Sans prix à gagner · 18 ans et plus")).toEqual([]);
+    expect(hits("Aucun point à gagner.").length).toBeGreaterThan(0);
     expect(hits("Gratuit. Rien à gagner.").length).toBeGreaterThan(0);
     expect(hits("Aucun prix à gagner, mais gagnez en précision.").length).toBeGreaterThan(0);
-    expect(hits("aucun prix à gagner").length).toBeGreaterThan(0);
+    expect(hits("AUCUN PRIX À GAGNER").length).toBeGreaterThan(0);
   });
 
-  it("says « Aucun prix à gagner », never a bare « Aucun prix », on every French share string", () => {
-    for (const line of Object.values(fr.share)) {
-      if (/aucun prix/i.test(line)) expect(line, line).toContain(allowedPhrase);
-    }
+  it("never says a bare « aucun prix » or « sans prix » anywhere in French", () => {
+    const all = (o: unknown): string[] => (typeof o === "string" ? [o] : typeof o === "object" && o !== null ? Object.values(o).flatMap(all) : []);
+    const lines = all(fr).filter((line) => /\b(aucun|sans) prix\b/i.test(line));
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) expect(line.replace(/\b(aucun|sans) prix à gagner\b/gi, ""), line).not.toMatch(/\b(aucun|sans) prix\b/i);
+    for (const line of lines) expect(hits(line), line).toEqual([]);
   });
 
   it("says the post line in both languages, with the free label", () => {
@@ -114,16 +121,17 @@ describe("share card", () => {
   });
 
   it("keeps every sample question and card label whole, and drops what the brand fonts cannot draw", () => {
-    const labels = [en, fr].flatMap((t) => [t.share.cardNoValue, t.share.cardSports, t.legal.sportsFooter, t.question.makeYourCall, t.question.canadaSays, t.question.canadaSaid, t.question.yes, t.question.no, t.share.cardCalls, t.share.cardCloses, t.share.cardClosed]);
+    const labels = [en, fr].flatMap((t) => [t.share.cardFooter, t.share.cardFooterSports, t.legal.sportsFooter, t.question.makeYourCall, t.question.canadaSays, t.question.canadaSaid, t.question.yes, t.question.no, t.share.cardCalls, t.share.cardCloses, t.share.cardClosed]);
     for (const text of [...sampleQuestions.flatMap((q) => [q.question.en, q.question.fr]), ...labels]) expect(cardSafe(text)).toBe(text);
     expect(cardSafe("38\u202F% \u{1F3D2} 日本")).toBe("38\u00A0%  ");
   });
 
-  it("uses the free label LEX wrote for cards", () => {
-    expect(en.share.cardSports).toBe("Free. No prizes. Fan forecasts only.");
-    expect(fr.share.cardSports).toBe("Gratuit. Aucun prix à gagner. Prévisions de partisans seulement.");
-    expect(en.legal.noValue.startsWith(en.share.cardNoValue)).toBe(true);
-    expect(fr.legal.noValue.startsWith(fr.share.cardNoValue)).toBe(true);
+  it("uses the same footer as the Called it! card, plus the fan-forecast line on sports cards", () => {
+    expect(en.share.cardFooter).toBe("Free. No prizes. No cash value.");
+    expect(fr.share.cardFooter).toBe("Gratuit. Aucun prix à gagner. Aucune valeur monétaire.");
+    expect(en.share.cardFooterSports).toBe("Free. No prizes. No cash value. Fan forecasts only.");
+    expect(fr.share.cardFooterSports).toBe("Gratuit. Aucun prix à gagner. Aucune valeur monétaire. Prévisions de partisans seulement.");
+    expect(readFileSync(join(__dirname, "..", "..", "src", "components", "share-card-image.tsx"), "utf8")).toMatch(/sports \? t\.share\.cardFooterSports : t\.share\.cardFooter\b/);
   });
 
   it("uses colours that still match PRISM's light tokens", () => {

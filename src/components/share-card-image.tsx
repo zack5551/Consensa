@@ -34,7 +34,8 @@ export async function shareCardImage(q: Question, locale: Locale, now: Date): Pr
   const t = getDictionary(locale);
   const crowd = crowdForCard(q, crowdNow(q));
   const sports = q.category === "sports";
-  const footer = cardSafe(sports ? t.share.cardSports : t.share.cardNoValue);
+  // LEX: the same footer as the "Called it!" card, with the fan-forecast line on sports cards.
+  const footer = cardSafe(sports ? t.share.cardFooterSports : t.share.cardFooter);
   const state = questionState(q, now);
   const settled = state === "resolved" || state === "disputed" || state === "closed";
   const text = cardSafe(q.question[locale]);
