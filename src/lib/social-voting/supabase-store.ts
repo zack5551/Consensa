@@ -110,6 +110,13 @@ export class SupabaseSocialStore implements CountStore, SweepStore, SpendStore {
     return outcome.data;
   }
 
+  async consumeSweepApproval(): Promise<boolean> {
+    // The database clears the approval and says whether it was still in time, in one statement. Anything but a
+    // plain "true" (an error, no row, an approval past its time) is no approval.
+    const { data, error } = await this.admin.rpc("consume_social_sweep_approval");
+    return !error && data === true;
+  }
+
   async pauseStaleLinks(now: Date): Promise<number> {
     const { data, error } = await this.admin.from("social_links").update({ paused: true }).eq("paused", false).lt("last_checked_at", recheckCutoff(now).toISOString()).select("platform");
     return error ? 0 : (data ?? []).length;

@@ -58,6 +58,17 @@ describe("the social store in Supabase", () => {
     await expect(s.removeReply("x", "9003")).rejects.toThrow(); // an answer it doesn't know is never treated as done
   });
 
+  it("uses up the sweep approval through consume_social_sweep_approval(), and only a plain true is an approval", async () => {
+    const { store: s, sent } = await store([{ data: true }, { data: false }, { data: null }, { data: "true" }, { data: true, error: {} }]);
+    expect(await s.consumeSweepApproval()).toBe(true);
+    expect(sent[0]).toEqual({ rpc: "consume_social_sweep_approval", values: undefined });
+    expect(await s.consumeSweepApproval()).toBe(false); // none, or past its time
+    expect(await s.consumeSweepApproval()).toBe(false);
+    expect(await s.consumeSweepApproval()).toBe(false);
+    expect(await s.consumeSweepApproval()).toBe(false); // the database couldn't answer
+    expect(sent).toHaveLength(5);
+  });
+
   it("lists a post's counted reply ids up to the limit it is given", async () => {
     const { store: s, sent } = await store([{ data: [{ reply_id: "9001" }, { reply_id: "9002" }] }, { data: [{ reply_id: "9001" }] }, { error: {} }]);
     expect(await s.ledgerReplyIds("x", "500", 5)).toEqual(["9001", "9002"]);
