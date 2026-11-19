@@ -43,6 +43,9 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
   const m = t.methodology;
   const record = crowdRecord(sampleQuestions);
   const vpnShare = await vpnShareLast30Days();
+  // The Brier scale's tick values, written the local way.
+  const quarter = locale === "fr" ? "0,25" : "0.25";
+  const one = locale === "fr" ? "1,0" : "1.0";
   const sections = [
     ["crowd", m.crowd.title],
     ["scoring", m.scoring.title],
@@ -107,18 +110,38 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
               </tbody>
             </table>
           </div>
-          <div className="grid gap-2" role="img" aria-label={`${m.scoring.scaleTitle}: 0 ${m.scoring.scalePerfect}, ${locale === "fr" ? "0,25" : "0.25"} ${m.scoring.scaleFlip}, ${locale === "fr" ? "1,0" : "1.0"} ${m.scoring.scaleWrong}`}>
+          <div className="grid gap-2" role="img" aria-label={`${m.scoring.scaleTitle}: 0 ${m.scoring.scalePerfect}, ${quarter} ${m.scoring.scaleFlip}, ${one} ${m.scoring.scaleWrong}`}>
             <p className="m-0 text-body-sm font-bold">{m.scoring.scaleTitle}</p>
             <div className="relative mx-1.5 h-1.5 rounded-full bg-line">
               <span className="absolute top-1/2 left-0 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" />
               <span className="absolute top-1/2 left-1/4 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" />
               <span className="absolute top-1/2 right-0 size-3.5 translate-x-1/2 -translate-y-1/2 rounded-full bg-ink" />
             </div>
-            <div className="relative mx-1.5 h-5 text-caption text-ink-2">
-              <span className="absolute left-0">0 · {m.scoring.scalePerfect}</span>
-              <span className="absolute left-1/4 -translate-x-1/2">{locale === "fr" ? "0,25" : "0.25"} · {m.scoring.scaleFlip}</span>
-              <span className="absolute right-0">{locale === "fr" ? "1,0" : "1.0"} · {m.scoring.scaleWrong}</span>
+            {/* Phones: only the numbers sit under the ticks, and the three meanings stack below, so nothing overlaps at French length. */}
+            <div className="relative mx-1.5 h-5 whitespace-nowrap text-caption text-ink-2 tabular">
+              <span className="absolute left-0">
+                0<span className="hidden sm:inline"> · {m.scoring.scalePerfect}</span>
+              </span>
+              <span className="absolute left-1/4 -translate-x-1/2">
+                {quarter}
+                <span className="hidden sm:inline"> · {m.scoring.scaleFlip}</span>
+              </span>
+              <span className="absolute right-0">
+                {one}
+                <span className="hidden sm:inline"> · {m.scoring.scaleWrong}</span>
+              </span>
             </div>
+            <ul className="m-0 grid list-none gap-0.5 p-0 text-caption text-ink-2 sm:hidden">
+              <li>
+                <span className="tabular">0</span> · {m.scoring.scalePerfect}
+              </li>
+              <li>
+                <span className="tabular">{quarter}</span> · {m.scoring.scaleFlip}
+              </li>
+              <li>
+                <span className="tabular">{one}</span> · {m.scoring.scaleWrong}
+              </li>
+            </ul>
           </div>
           <p className="m-0 text-body-sm text-ink-2">{m.scoring.polls}</p>
         </section>
