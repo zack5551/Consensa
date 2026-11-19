@@ -8,6 +8,8 @@ import type { Platform } from "./types";
 export interface SpendStore {
   /** Adds `micros` to the month's total unless that would pass `capMicros`. A negative amount hands some back. */
   reserve(platform: Platform, month: string, micros: number, capMicros: number): Promise<boolean>;
+  /** The month's running total so far. */
+  spent(platform: Platform, month: string): Promise<number>;
 }
 
 export const MICROS_PER_USD = 1_000_000;
@@ -35,6 +37,17 @@ export class SpendCap {
       return await this.store.reserve(this.platform, monthOf(now), micros, this.capMicros);
     } catch {
       return false; // if the counter can't be reached, don't spend
+    }
+  }
+
+  /** What is left under the month's cap right now. 0 with no cap set, or when the counter can't be reached. */
+  async remaining(now: Date): Promise<number> {
+    if (this.capMicros <= 0) return 0;
+    try {
+      const spent = await this.store.spent(this.platform, monthOf(now));
+      return Number.isFinite(spent) ? Math.max(0, this.capMicros - Math.max(0, Math.floor(spent))) : 0;
+    } catch {
+      return 0; // if the counter can't be reached, don't spend
     }
   }
 

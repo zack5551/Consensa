@@ -31,6 +31,8 @@ export interface DeletedCheck {
   gone: string[];
   /** How many of the ids the platform answered for. */
   checked: number;
+  /** What the check took from the spend cap, net of what it handed back, in millionths of a US dollar. */
+  spentMicros: number;
   /** False when the spend cap or a failed request stopped the check early; the rest is checked on a later day. */
   complete: boolean;
 }
@@ -46,8 +48,11 @@ export interface SocialProvider {
   readonly platform: Platform;
   readReplies(ourPostId: string, since: Date | null, now: Date): Promise<ReadReplies>;
   readPollTotals(ourPostId: string, now: Date): Promise<PollTotals | null>;
-  /** Which of these counted replies have since been deleted on the platform (the daily sweep). */
-  findDeleted?(replyIds: readonly string[], now: Date): Promise<DeletedCheck>;
+  /**
+   * Which of these counted replies have since been deleted on the platform (the daily sweep). With `maxSpendMicros`
+   * the check never reserves more than that in all, and stops, incomplete, when it runs out.
+   */
+  findDeleted?(replyIds: readonly string[], now: Date, maxSpendMicros?: number): Promise<DeletedCheck>;
   /** A public reply under a reply on our own post (the auto-reply). True when it was posted. */
   postReply?(replyId: string, text: string): Promise<boolean>;
 }

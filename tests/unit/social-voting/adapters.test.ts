@@ -72,7 +72,7 @@ describe("X adapter", () => {
   it("tells a deleted reply from one that is merely hidden", async () => {
     const { fetch } = fakeFetch(xRoutes());
     const check = await new XProvider({ bearer: "b", spend: cap(), fetch }).findDeleted(["1990000000000000001", "1990000000000000002", "1990000000000000007"], NOW);
-    expect(check).toEqual({ gone: ["1990000000000000007"], checked: 3, complete: true });
+    expect(check).toEqual({ gone: ["1990000000000000007"], checked: 3, spentMicros: X_READ_COST_MICROS, complete: true });
   });
 
   it("the deleted-reply check asks 100 ids a request, pays only for replies X returned, and stops, incomplete, when X refuses", async () => {
@@ -82,14 +82,40 @@ describe("X adapter", () => {
     const check = await new XProvider({ bearer: "b", spend: new SpendCap(spend, "x", 50_000_000), fetch: ok.fetch }).findDeleted(ids, NOW);
     expect(ok.calls.map((c) => c.url.split("ids=")[1]!.split(",").length)).toEqual([100, 50]);
     // An id we never asked about is not reported, even if X names it.
-    expect(check).toEqual({ gone: [ids[1]], checked: 150, complete: true });
+    expect(check).toEqual({ gone: [ids[1]], checked: 150, spentMicros: 2 * X_READ_COST_MICROS, complete: true });
     expect(spend.totals.get("x:2026-11-01")).toBe(2 * X_READ_COST_MICROS); // one post returned per request
 
     const refused = new MemorySpend();
     const down = fakeFetch([[/tweets\?ids=/, { title: "Too Many Requests" }, 429]]);
-    expect(await new XProvider({ bearer: "b", spend: new SpendCap(refused, "x", 50_000_000), fetch: down.fetch }).findDeleted(ids, NOW)).toEqual({ gone: [], checked: 0, complete: false });
+    expect(await new XProvider({ bearer: "b", spend: new SpendCap(refused, "x", 50_000_000), fetch: down.fetch }).findDeleted(ids, NOW)).toEqual({ gone: [], checked: 0, spentMicros: 0, complete: false });
     expect(down.calls).toHaveLength(1);
     expect(refused.totals.get("x:2026-11-01")).toBe(0);
+  });
+
+  it("the deleted-reply check never reserves past the share it is given, and stops, incomplete, when the share is used up", async () => {
+    const ids = Array.from({ length: 150 }, (_, i) => `19900000000000${10_000 + i}`);
+    const spend = new MemorySpend();
+    let peak = 0;
+    const reserve = spend.reserve.bind(spend);
+    spend.reserve = async (...args) => {
+      const ok = await reserve(...args);
+      peak = Math.max(peak, spend.totals.get("x:2026-11-01") ?? 0);
+      return ok;
+    };
+    // Every reply asked about is still up, so every read is kept.
+    const net = fakeFetch([[/tweets\?ids=/, {}]]);
+    net.fetch = async (url) => new Response(JSON.stringify({ data: url.split("ids=")[1]!.split(",").map((id) => ({ id })) }));
+    const asked: number[] = [];
+    const fetch: typeof net.fetch = async (url, init) => (asked.push(url.split("ids=")[1]!.split(",").length), net.fetch(url, init));
+    const share = 120 * X_READ_COST_MICROS;
+    const check = await new XProvider({ bearer: "b", spend: new SpendCap(spend, "x", 50_000_000), fetch }).findDeleted(ids, NOW, share);
+    expect(asked).toEqual([100, 20]);
+    expect(check).toEqual({ gone: [], checked: 120, spentMicros: share, complete: false });
+    expect(peak).toBe(share);
+
+    const none = fakeFetch([[/tweets\?ids=/, {}]]);
+    expect(await new XProvider({ bearer: "b", spend: new SpendCap(new MemorySpend(), "x", 50_000_000), fetch: none.fetch }).findDeleted(ids, NOW, X_READ_COST_MICROS - 1)).toEqual({ gone: [], checked: 0, spentMicros: 0, complete: false });
+    expect(none.calls).toHaveLength(0);
   });
 
   it("the poll read hands its reservation back when the read fails, once, and keeps it when the read worked (AEGIS)", async () => {
