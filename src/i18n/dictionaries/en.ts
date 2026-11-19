@@ -451,6 +451,7 @@ const en = {
     outsideCanada: "Calls must come from a connection in Canada, without a VPN or proxy. This one stays on this device and doesn’t count in the crowd.",
     vpnRefused: "Calls must come from a connection in Canada, without a VPN or proxy. Turn off your VPN or proxy to make this call count. Until then, it stays on this device.",
     botCheckFailed: "The quick check on your device didn’t pass, so this call stays on this device for now. Reload the page and try again.",
+    termsOutdated: { before: "Our Terms changed. To make this call count,", link: "read and accept the new Terms", after: "first. Until then, it stays on this device." },
     botWidget,
     disputed: "Scores wait until the review ends.",
   },

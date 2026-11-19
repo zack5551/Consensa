@@ -453,6 +453,7 @@ const fr = {
     outsideCanada: "Les prévisions doivent provenir d’une connexion au Canada, sans RPV (VPN) ni mandataire (proxy). Celle-ci reste sur cet appareil et ne compte pas dans la foule.",
     vpnRefused: "Les prévisions doivent provenir d’une connexion au Canada, sans RPV (VPN) ni mandataire (proxy). Désactivez votre RPV ou votre mandataire pour que celle-ci compte. D’ici là, elle reste sur cet appareil.",
     botCheckFailed: "La vérification rapide sur votre appareil n’a pas réussi. Cette prévision reste donc sur cet appareil pour l’instant. Rechargez la page et réessayez.",
+    termsOutdated: { before: "Nos conditions d’utilisation ont changé. Pour que cette prévision compte,", link: "lisez et acceptez les nouvelles conditions", after: "d’abord. D’ici là, elle reste sur cet appareil." },
     botWidget,
     disputed: "L’évaluation attend la fin de la révision.",
   },
