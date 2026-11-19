@@ -4,6 +4,7 @@
  * One action: make your call. Once it closes, the action becomes "see how your call did".
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CallPanel } from "@/components/call-panel";
@@ -13,6 +14,8 @@ import { LanguageSplit } from "@/components/language-split";
 import { ProvinceSplit } from "@/components/province-split";
 import { ShareBar } from "@/components/share-bar";
 import { SocialPolls } from "@/components/social-polls";
+import { JsonLd } from "@/components/json-ld";
+import { BRAND_NAME } from "@/lib/brand";
 import { ScreenView } from "@/components/screen-view";
 import { SourceCredit } from "@/components/source-credit";
 import { SportsNotice } from "@/components/sports-notice";
@@ -29,6 +32,7 @@ import { provinceSummary } from "@/lib/province-summary";
 import { socialPollLine, questionShareUrl, shareLinks } from "@/lib/social";
 import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
+import { schemaOrg } from "@/lib/json-ld";
 
 type Params = Promise<{ locale: string; slug: string }>;
 
@@ -47,10 +51,18 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!isLocale(locale) || !q) return {};
   return {
     title: q.question[locale],
-    // The share card comes from opengraph-image.tsx beside this file; X falls back to it for the large card.
-    openGraph: { title: q.question[locale], type: "website", siteName: "Cansensa", locale: `${locale}_CA`, url: `/${locale}/q/${slug}` },
-    twitter: { card: "summary_large_image", title: q.question[locale] },
-    alternates: { canonical: `/${locale}/q/${slug}`, languages: { "en-CA": `/en/q/${slug}`, "fr-CA": `/fr/q/${slug}` } },
+    description: q.resolution.rule[locale],
+    alternates: pageAlternates(locale, `/q/${slug}`),
+    // The share card comes from opengraph-image.tsx beside this file, so no image is named here; X falls back to it for the large card.
+    openGraph: {
+      type: "website",
+      siteName: BRAND_NAME,
+      locale: `${locale}_CA`,
+      title: q.question[locale],
+      description: q.resolution.rule[locale],
+      url: `/${locale}/q/${slug}`,
+    },
+    twitter: { card: "summary_large_image", title: q.question[locale], description: q.resolution.rule[locale] },
   };
 }
 
@@ -117,6 +129,15 @@ export default async function QuestionPage({ params }: { params: Params }) {
             ? t.stateNote.disputed
             : "";
 
+  const base = siteUrl();
+  const breadcrumb = schemaOrg("BreadcrumbList", {
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: BRAND_NAME, item: `${base}/${locale}` },
+      { "@type": "ListItem", position: 2, name: t.board.categories[q.category], item: `${base}/${locale}/browse/${q.category}` },
+      { "@type": "ListItem", position: 3, name: q.question[locale], item: `${base}/${locale}/q/${q.slug}` },
+    ],
+  });
+
   const panel = (
     <CallPanel
       slug={q.slug}
@@ -148,6 +169,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
   return (
     <article className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+      <JsonLd data={breadcrumb} />
       <ScreenView locale={locale} screen="question" slug={q.slug} state={state} />
       <div className="grid min-w-0 gap-6">
         <Link href={`/${locale}`} className="justify-self-start text-body-sm font-semibold text-ink-2 hover:text-ink">

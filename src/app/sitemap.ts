@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { sampleQuestions } from "@/content/sample-questions";
 import { locales } from "@/i18n/config";
+import { pageAlternates } from "@/lib/alternates";
 import { categories } from "@/lib/question";
 import { regionSlugs } from "@/lib/regions";
 import { siteUrl } from "@/lib/site-url";
@@ -9,6 +10,10 @@ import { siteUrl } from "@/lib/site-url";
  * Sitemap (M6 launch readiness). Every public page a search engine should
  * find: the locale roots and static screens, every question, every browse
  * category, every leaderboard board and every province page.
+ *
+ * Questions come from `sampleQuestions`, the same list the question pages read: it already includes the live
+ * questions that scripts/pull-live-questions.mjs writes at build time, and is just the samples when there are none.
+ * Every entry carries hreflang alternates (en-CA, fr-CA, x-default).
  *
  * Deliberately left out: forecaster profiles (sample personas, not real people),
  * and the pages marked noindex (AEGIS): a person's own record and account, sign-in,
@@ -29,30 +34,33 @@ const staticRoutes: ReadonlyArray<{ path: string; priority: number; changeFreque
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = siteUrl();
-  const url = (path: string) => `${base}${path}`;
+  const url = (locale: string, path: string) => `${base}/${locale}${path}`;
+  const languages = (path: string) => ({ languages: pageAlternates("en", path, base).languages });
   const entries: MetadataRoute.Sitemap = [];
 
   for (const locale of locales) {
     for (const route of staticRoutes) {
       entries.push({
-        url: url(`/${locale}${route.path ? `/${route.path}` : ""}`),
+        url: url(locale, route.path ? `/${route.path}` : ""),
+        alternates: languages(route.path ? `/${route.path}` : ""),
         changeFrequency: route.changeFrequency,
         priority: route.priority,
       });
     }
     for (const category of categories) {
-      entries.push({ url: url(`/${locale}/browse/${category}`), changeFrequency: "daily", priority: 0.7 });
+      entries.push({ url: url(locale, `/browse/${category}`), alternates: languages(`/browse/${category}`), changeFrequency: "daily", priority: 0.7 });
     }
     for (const board of [...regionSlugs, "friends"]) {
-      entries.push({ url: url(`/${locale}/leaderboard/${board}`), changeFrequency: "weekly", priority: 0.6 });
+      entries.push({ url: url(locale, `/leaderboard/${board}`), alternates: languages(`/leaderboard/${board}`), changeFrequency: "weekly", priority: 0.6 });
     }
     for (const region of regionSlugs) {
-      entries.push({ url: url(`/${locale}/provinces/${region}`), changeFrequency: "weekly", priority: 0.6 });
+      entries.push({ url: url(locale, `/provinces/${region}`), alternates: languages(`/provinces/${region}`), changeFrequency: "weekly", priority: 0.6 });
     }
     for (const q of sampleQuestions) {
       entries.push({
-        url: url(`/${locale}/q/${q.slug}`),
-        lastModified: new Date(q.closesAt),
+        url: url(locale, `/q/${q.slug}`),
+        alternates: languages(`/q/${q.slug}`),
+        ...(Date.parse(q.closesAt) <= Date.now() ? { lastModified: new Date(q.closesAt) } : {}),
         changeFrequency: "daily",
         priority: 0.8,
       });

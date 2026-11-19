@@ -151,8 +151,8 @@ const allowedDomains = [
   // Share and poll links, and nothing else: plain links a person follows from the question page (intent URLs and our
   // own post URLs). We load no script, SDK or image from them and send no data, so nothing leaves until a click.
   "twitter.com", "x.com", "threads.net", "instagram.com", "facebook.com",
-  // Not network calls: the SVG namespace and the local dev fallback
-  "www.w3.org", "localhost",
+  // Not network calls: the SVG namespace, the structured-data vocabulary name and the local dev fallback
+  "www.w3.org", "schema.org", "localhost",
 ];
 
 /** Packages that send visitor data to a third party. Rule 7: none without a privacy review and LEX's check. */

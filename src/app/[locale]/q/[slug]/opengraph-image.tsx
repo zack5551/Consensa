@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { BRAND_NAME } from "@/lib/brand";
 import { notFound } from "next/navigation";
 import { getQuestion, sampleQuestions, SAMPLE_NOW } from "@/content/sample-questions";
 import { isLocale, locales } from "@/i18n/config";
@@ -18,7 +19,7 @@ import { shareCardColors as c } from "@/lib/share-card-colors";
  * LEX: text and percentages only, no team or league logos, no photos, and the free/no-value label on every card.
  * It reads the same content and crowd number as the page (withLiveQuestion), refreshed on the same one-minute clock.
  */
-export const alt = "Cansensa";
+export const alt = BRAND_NAME;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const revalidate = 60;

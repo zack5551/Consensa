@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!isLocale(locale) || !f) return {};
   return {
     title: fill(getDictionary(locale).forecaster.title, { name: f.displayName }),
-    alternates: { languages: { "en-CA": `/en/forecasters/${handle}`, "fr-CA": `/fr/forecasters/${handle}` } },
+    robots: { index: false },
   };
 }
 

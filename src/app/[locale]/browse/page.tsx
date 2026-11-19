@@ -4,6 +4,7 @@
  * One action: open a topic.
  */
 import type { Metadata } from "next";
+import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CrowdBar } from "@/components/crowd-bar";
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const t = getDictionary(locale);
-  return { title: t.browse.title, description: t.browse.subtitle, alternates: { languages: { "en-CA": "/en/browse", "fr-CA": "/fr/browse" } } };
+  return { title: t.browse.title, description: t.browse.subtitle, alternates: pageAlternates(locale, "/browse") };
 }
 
 export default async function BrowsePage({ params }: { params: Promise<{ locale: string }> }) {
