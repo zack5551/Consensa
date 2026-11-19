@@ -47,10 +47,14 @@ export class MemorySpend implements SpendStore {
 type Ledger = { platform: Platform; replyId: string; postId: string; userId: string; slug: string; probability: number; at: string; withdrawnAt?: Date; heldAt?: Date };
 
 /** One row of the approval log, as the database appends them. */
+type Approval = { approvedAt: Date; approvedBy: string; approvedName: string; approvedReason: string; approvedUntil: Date };
 export type ApprovalLogRow =
-  | { event: "given"; approvedAt: Date; approvedBy: string; approvedUntil: Date }
-  | { event: "used"; approvedAt: Date; approvedBy: string; approvedUntil: Date; usedAt: Date; inTime: boolean }
-  | { event: "removed"; approvedAt: Date; approvedBy: string; approvedUntil: Date; usedAt: Date; removed: number };
+  | ({ event: "given" } & Approval)
+  | ({ event: "used"; usedAt: Date; inTime: boolean } & Approval)
+  | ({ event: "removed"; usedAt: Date; removed: number } & Approval);
+
+/** One row of the restore log: every restore, by hand or by the sweep, whatever it answered. */
+export type RestoreLogRow = { restoredAt: Date; restoredBy: string; origin: "hand" | "sweep"; platform: Platform; replyId: string; result: Exclude<ReleaseOutcome, "retry">; afterClose: boolean };
 
 const isLive = (l: Ledger): boolean => !l.withdrawnAt && !l.heldAt;
 const HOUR_MS = 60 * 60 * 1000;
@@ -62,12 +66,13 @@ const KEEP_MS = 7 * 24 * HOUR_MS;
  * value any method was given, so a test can prove what could ever have been stored. The sweep's side follows
  * 20261120001000_social_sweep_withdrawals.sql, branch for branch: `removeReply` and `holdReply` are
  * mark_social_reply_gone(), `restoreReply` and `releaseReply` are restore_social_reply() and
- * release_social_reply(), and the rest carry the names of their functions in a comment.
+ * release_social_reply() (both put_back_social_reply()), and the rest carry the names of their functions in a comment.
  */
 export class MemoryStore implements CountStore, SweepStore {
   links = new Map<string, string>(); // "platform:platformUserId" -> user id
   ledger: Ledger[] = [];
-  calls = new Map<string, { probability: number; source: string }>(); // "user:slug"
+  /** "user:slug". `madeAt` is set only on a call restored after the close: it carries the reply's own time. */
+  calls = new Map<string, { probability: number; source: string; madeAt?: string }>();
   reads = new Map<string, { readThrough?: Date; poll?: PollTotals }>();
   windows = new Map<string, string>();
   autoReplied = new Set<string>();
@@ -84,7 +89,9 @@ export class MemoryStore implements CountStore, SweepStore {
   approvalAsked = 0;
   approvalFails = false;
   /** When and by which database role the approval in `sweepApprovedUntil` was given (null for one set directly). */
-  sweepApproval: { approvedAt: Date; approvedBy: string } | null = null;
+  sweepApproval: { approvedAt: Date; approvedBy: string; approvedName: string; approvedReason: string } | null = null;
+  /** The append-only restore log. */
+  restoreLog: RestoreLogRow[] = [];
   /** The append-only approval log: rows are only ever added. */
   approvalLog: ApprovalLogRow[] = [];
   recordFails = false;
@@ -186,26 +193,47 @@ export class MemoryStore implements CountStore, SweepStore {
   async holdReply(platform: Platform, replyId: string): Promise<RemoveOutcome> {
     return this.markGone(platform, replyId, true);
   }
-  /** restore_social_reply(): zack's way back, by hand. A held reply, or one withdrawn in the last 7 days, is live again. */
-  restoreReply(platform: Platform, replyId: string): Exclude<ReleaseOutcome, "retry"> {
-    const back = this.ledger.find((l) => l.platform === platform && l.replyId === replyId);
-    if (!back) return "unknown";
-    if (isLive(back)) return "live";
-    if (back.withdrawnAt && back.withdrawnAt.getTime() <= this.clock.getTime() - KEEP_MS) return "expired";
-    if (!this.open(back.slug)) return "closed";
-    delete back.withdrawnAt;
-    delete back.heldAt;
-    const key = `${back.userId}:${back.slug}`;
-    if (this.calls.get(key)?.source === "web") return "website_wins";
-    if (this.latestReply(back.userId, back.slug) !== back) return "older_reply";
-    this.calls.set(key, { probability: back.probability, source: back.platform });
-    return "counted";
+  /**
+   * put_back_social_reply(): a held reply, or one withdrawn in the last 7 days, is live again and the call is
+   * re-derived. After the close: by hand only, only for a reply written before the close, and the one call write goes
+   * through on a pass (the calls trigger refuses every other write after the close). Every run is logged.
+   */
+  private putBack(platform: Platform, replyId: string, origin: "hand" | "sweep", by: string): Exclude<ReleaseOutcome, "retry"> {
+    let closed = false;
+    const work = (): Exclude<ReleaseOutcome, "retry"> => {
+      const back = this.ledger.find((l) => l.platform === platform && l.replyId === replyId);
+      if (!back) return "unknown";
+      if (isLive(back)) return "live";
+      if (back.withdrawnAt && back.withdrawnAt.getTime() <= this.clock.getTime() - KEEP_MS) return "expired";
+      const closes = this.windows.get(back.slug);
+      closed = !this.open(back.slug);
+      if (closed) {
+        if (!closes || origin !== "hand") return "closed";
+        if (Date.parse(back.at) >= Date.parse(closes)) return "after_close";
+        if (back.heldAt && Date.parse(closes) <= this.clock.getTime() - KEEP_MS) return "expired";
+      }
+      delete back.withdrawnAt;
+      delete back.heldAt;
+      const key = `${back.userId}:${back.slug}`;
+      if (this.calls.get(key)?.source === "web") return "website_wins";
+      if (this.latestReply(back.userId, back.slug) !== back) return "older_reply";
+      // enforce_call_rules(): after the close the write carries the time the call was made, not the time of the restore.
+      this.calls.set(key, { probability: back.probability, source: back.platform, ...(closed ? { madeAt: back.at } : {}) });
+      return "counted";
+    };
+    const result = work();
+    this.restoreLog.push({ restoredAt: this.clock, restoredBy: by, origin, platform, replyId, result, afterClose: closed });
+    return result;
   }
-  /** release_social_reply(): the sweep's narrower way back, for a held reply only. */
+  /** restore_social_reply(): zack's way back, by hand, before or after the close. */
+  restoreReply(platform: Platform, replyId: string, by = "postgres"): Exclude<ReleaseOutcome, "retry"> {
+    return this.putBack(platform, replyId, "hand", by);
+  }
+  /** release_social_reply(): the sweep's narrower way back, for a held reply on an open question only. */
   async releaseReply(platform: Platform, replyId: string): Promise<ReleaseOutcome> {
     this.written.push({ platform, replyId });
     if (!this.ledger.some((l) => l.platform === platform && l.replyId === replyId && l.heldAt)) return "unknown";
-    return this.restoreReply(platform, replyId);
+    return this.putBack(platform, replyId, "sweep", "authenticator");
   }
   /** purge_withdrawn_social_replies(): the real deletion, 7 days after a withdrawal. */
   async purgeWithdrawn(): Promise<number> {
@@ -225,12 +253,19 @@ export class MemoryStore implements CountStore, SweepStore {
     this.firstHaltedAt = null;
     return null;
   }
-  /** approve_social_sweep(): what zack runs by hand. 36 hours, and the log notes when and which database role. */
-  approveSweep(by = "postgres"): Date {
+  /**
+   * approve_social_sweep(name, reason): what zack runs by hand. Both are required; a blank one is refused and
+   * nothing is approved. 36 hours, and the log notes when, the name, the reason and the database role.
+   */
+  approveSweep(name: string | null = "zack", reason: string | null = "Checked by hand: really deleted.", by = "postgres"): Date {
+    const who = (name ?? "").trim();
+    const why = (reason ?? "").trim();
+    if (who === "" || why === "") throw new Error("approve_social_sweep needs a name and a reason");
+    if (who.length > 80 || why.length > 500) throw new Error("name (80) or reason (500) too long");
     const until = new Date(this.clock.getTime() + 36 * HOUR_MS);
     this.sweepApprovedUntil = until;
-    this.sweepApproval = { approvedAt: this.clock, approvedBy: by };
-    this.approvalLog.push({ event: "given", approvedAt: this.clock, approvedBy: by, approvedUntil: until });
+    this.sweepApproval = { approvedAt: this.clock, approvedBy: by, approvedName: who, approvedReason: why };
+    this.approvalLog.push({ event: "given", ...this.sweepApproval, approvedUntil: until });
     return until;
   }
   /** Follows consume_social_sweep_approval(): the approval always goes, counts only while still in time, and its use is logged. */
@@ -244,7 +279,16 @@ export class MemoryStore implements CountStore, SweepStore {
     if (until === null) return false;
     const inTime = until.getTime() > this.clock.getTime();
     // An approval from before the log existed has no time or role of its own: the time is worked out from its end.
-    this.approvalLog.push({ event: "used", approvedAt: given?.approvedAt ?? new Date(until.getTime() - 36 * HOUR_MS), approvedBy: given?.approvedBy ?? "unknown", approvedUntil: until, usedAt: new Date(this.clock), inTime });
+    this.approvalLog.push({
+      event: "used",
+      approvedAt: given?.approvedAt ?? new Date(until.getTime() - 36 * HOUR_MS),
+      approvedBy: given?.approvedBy ?? "unknown",
+      approvedName: given?.approvedName ?? "unknown",
+      approvedReason: given?.approvedReason ?? "unknown",
+      approvedUntil: until,
+      usedAt: new Date(this.clock),
+      inTime,
+    });
     return inTime;
   }
   /** record_social_sweep_removals(): once per use, and only for a use that was in time. */
@@ -253,7 +297,8 @@ export class MemoryStore implements CountStore, SweepStore {
     const last = this.approvalLog.filter((r) => r.event === "used").at(-1);
     if (!last || last.event !== "used" || !last.inTime || removed < 0) return;
     if (this.approvalLog.some((r) => r.event === "removed" && r.usedAt === last.usedAt)) return;
-    this.approvalLog.push({ event: "removed", approvedAt: last.approvedAt, approvedBy: last.approvedBy, approvedUntil: last.approvedUntil, usedAt: last.usedAt, removed });
+    const { approvedAt, approvedBy, approvedName, approvedReason, approvedUntil, usedAt } = last;
+    this.approvalLog.push({ event: "removed", approvedAt, approvedBy, approvedName, approvedReason, approvedUntil, usedAt, removed });
   }
   async pauseStaleLinks(): Promise<number> {
     return this.paused;

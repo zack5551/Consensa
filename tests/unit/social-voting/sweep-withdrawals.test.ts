@@ -7,6 +7,9 @@
  *    used, and how many replies that run took out.
  * 3. Removal is soft: a gone reply is marked withdrawn and stops counting at once; it can be put back by hand for
  *    7 days, and the first run after that deletes it for real.
+ *
+ * And LEX's two changes on review: a restore by hand also works after the close, for a reply written before it,
+ * and every restore is logged; an approval needs a name and a reason.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -151,7 +154,7 @@ describe("soft removal (LEX condition 3)", () => {
     expect(store.restoreReply("x", "1")).toBe("unknown");
   });
 
-  it("a restore never overrides a website call or a newer live reply, and is refused after 7 days or once the question has closed", async () => {
+  it("a restore never overrides a website call or a newer live reply, and is refused after 7 days", async () => {
     const web = setup(3);
     await web.run(["9000"]);
     web.store.calls.set(`user-0:${SLUG}`, { probability: 62, source: "web" });
@@ -171,12 +174,131 @@ describe("soft removal (LEX condition 3)", () => {
     expect(late.store.restoreReply("x", "9000")).toBe("expired");
     expect(late.store.calls.has(`user-0:${SLUG}`)).toBe(false);
 
-    const closed = setup(3);
-    await closed.run(["9000"]);
-    closed.store.windows.set(SLUG, at(DAY_MS).toISOString());
-    closed.store.clock = at(2 * DAY_MS);
-    expect(closed.store.restoreReply("x", "9000")).toBe("closed");
-    expect(closed.store.row("9000")?.withdrawnAt).toEqual(NOW);
+  });
+});
+
+describe("restoring after the close, and the restore log (LEX on review)", () => {
+  const CLOSE = at(DAY_MS);
+  /** Replies written the day before NOW; the question closes one day after NOW. */
+  function closing(total: number) {
+    const s = setup(total);
+    s.store.windows.set(SLUG, CLOSE.toISOString());
+    return s;
+  }
+
+  it("a reply written before the close can be restored after it, inside the 7 days: the call is back, as made in time", async () => {
+    const { store, run } = closing(5);
+    await run(["9000"]); // withdrawn while the question was open
+    store.clock = at(3 * DAY_MS); // closed two days ago
+    expect(store.restoreReply("x", "9000")).toBe("counted");
+    // The call carries the reply's own time, not the time of the restore, so it reads as a call made in time.
+    expect(store.calls.get(`user-0:${SLUG}`)).toEqual({ probability: 75, source: "x", madeAt: "2026-11-18T14:00:00.000Z" });
+    expect(Date.parse(store.calls.get(`user-0:${SLUG}`)!.madeAt!)).toBeLessThan(CLOSE.getTime());
+    expect(store.row("9000")).not.toHaveProperty("withdrawnAt");
+    expect(counted(store)).toBe(5); // scored like any other call: every reader of calls sees it
+  });
+
+  it("a restore while the question is open stamps the call as any other write does", async () => {
+    const { store, run } = closing(5);
+    await run(["9000"]);
+    expect(store.restoreReply("x", "9000")).toBe("counted");
+    expect(store.calls.get(`user-0:${SLUG}`)).toEqual({ probability: 75, source: "x" });
+  });
+
+  it("a reply written at or after the close is never restored after it", async () => {
+    const { store } = closing(2);
+    for (const [replyId, written] of [["9600", CLOSE], ["9601", at(DAY_MS + 1)]] as const) {
+      store.ledger.push({ platform: "x", replyId, postId: OUR_POST, userId: `late-${replyId}`, slug: SLUG, probability: 25, at: written.toISOString(), withdrawnAt: at(DAY_MS + 2) });
+    }
+    store.clock = at(2 * DAY_MS);
+    expect(store.restoreReply("x", "9600")).toBe("after_close");
+    expect(store.restoreReply("x", "9601")).toBe("after_close");
+    expect(store.row("9600")?.withdrawnAt).toEqual(at(DAY_MS + 2));
+    expect(counted(store)).toBe(2);
+  });
+
+  it("the 7 days still hold after the close", async () => {
+    const { store, run } = closing(5);
+    await run(["9000"]);
+    store.clock = at(7 * DAY_MS - 1);
+    expect(store.restoreReply("x", "9001")).toBe("live");
+    store.clock = at(7 * DAY_MS);
+    expect(store.restoreReply("x", "9000")).toBe("expired");
+    expect(store.calls.has(`user-0:${SLUG}`)).toBe(false);
+  });
+
+  it("after the close a website call still wins, and a newer live reply still sets the call", async () => {
+    const web = closing(3);
+    await web.run(["9000"]);
+    web.store.calls.set(`user-0:${SLUG}`, { probability: 62, source: "web" });
+    web.store.clock = at(2 * DAY_MS);
+    expect(web.store.restoreReply("x", "9000")).toBe("website_wins");
+    expect(web.store.calls.get(`user-0:${SLUG}`)).toEqual({ probability: 62, source: "web" });
+
+    const newer = closing(3);
+    await newer.run(["9000"]);
+    newer.store.ledger.push({ platform: "x", replyId: "9500", postId: OUR_POST, userId: "user-0", slug: SLUG, probability: 25, at: "2026-11-19T10:00:00.000Z" });
+    newer.store.calls.set(`user-0:${SLUG}`, { probability: 25, source: "x" });
+    newer.store.clock = at(2 * DAY_MS);
+    expect(newer.store.restoreReply("x", "9000")).toBe("older_reply");
+    expect(newer.store.calls.get(`user-0:${SLUG}`)).toEqual({ probability: 25, source: "x" });
+  });
+
+  it("a held reply is never released automatically at or after the close", async () => {
+    const { store, run, ids } = closing(12);
+    await run(ids.slice(0, 11)); // halted: eleven held
+    store.clock = at(2 * DAY_MS);
+    expect(await store.releaseReply("x", "9000")).toBe("closed");
+    expect(store.row("9000")?.heldAt).toEqual(NOW);
+    expect(counted(store)).toBe(1);
+    // A whole run after the close changes nothing either.
+    await run([]);
+    expect(store.ledger.filter((l) => l.heldAt)).toHaveLength(11);
+    expect(counted(store)).toBe(1);
+  });
+
+  it("a held reply on a closed question can be restored by hand, for 7 days after the close", async () => {
+    const { store, run, ids } = closing(12);
+    await run(ids.slice(0, 11));
+    store.clock = at(DAY_MS + 7 * DAY_MS - 1);
+    expect(store.restoreReply("x", "9000")).toBe("counted");
+    expect(store.calls.get(`user-0:${SLUG}`)).toEqual({ probability: 75, source: "x", madeAt: "2026-11-18T14:00:00.000Z" });
+    store.clock = at(DAY_MS + 7 * DAY_MS);
+    expect(store.restoreReply("x", "9001")).toBe("expired");
+    expect(store.row("9001")?.heldAt).toEqual(NOW);
+  });
+
+  it("a question with no close time on record takes no restore", async () => {
+    const { store, run } = closing(3);
+    await run(["9000"]);
+    store.windows.delete(SLUG);
+    expect(store.restoreReply("x", "9000")).toBe("closed");
+    expect(store.row("9000")?.withdrawnAt).toEqual(NOW);
+  });
+
+  it("every restore is logged, before or after the close, whatever it answers: when, who, which reply, the result", async () => {
+    const { store, run, ids } = closing(12);
+    await run(["9000"]);
+    store.clock = at(HOUR_MS);
+    store.restoreReply("x", "9000", "postgres"); // before the close
+    store.restoreReply("x", "9000", "postgres"); // nothing to do
+    store.restoreReply("x", "1", "postgres"); // no such reply
+    await run(ids.slice(0, 11)); // halted
+    store.clock = at(2 * HOUR_MS);
+    await run([]); // the platform reports them back: the sweep releases all eleven
+    await run(["9003"]);
+    store.clock = at(2 * DAY_MS);
+    store.restoreReply("x", "9003", "postgres"); // after the close
+    const hand = store.restoreLog.filter((r) => r.origin === "hand");
+    expect(hand).toEqual([
+      { restoredAt: at(HOUR_MS), restoredBy: "postgres", origin: "hand", platform: "x", replyId: "9000", result: "counted", afterClose: false },
+      { restoredAt: at(HOUR_MS), restoredBy: "postgres", origin: "hand", platform: "x", replyId: "9000", result: "live", afterClose: false },
+      { restoredAt: at(HOUR_MS), restoredBy: "postgres", origin: "hand", platform: "x", replyId: "1", result: "unknown", afterClose: false },
+      { restoredAt: at(2 * DAY_MS), restoredBy: "postgres", origin: "hand", platform: "x", replyId: "9003", result: "counted", afterClose: true },
+    ]);
+    const swept = store.restoreLog.filter((r) => r.origin === "sweep");
+    expect(swept).toHaveLength(11);
+    expect(swept.every((r) => r.result === "counted" && !r.afterClose && r.restoredBy === "authenticator")).toBe(true);
   });
 });
 
@@ -337,11 +459,11 @@ describe("the approval log (LEX condition 2)", () => {
     const gone = ids.slice(0, 21);
     await run(gone); // halted
     store.clock = at(2 * HOUR_MS);
-    const until = store.approveSweep("postgres");
+    const until = store.approveSweep("zack", "  Checked 21 replies on X by hand: all really deleted. ", "postgres");
     store.clock = at(DAY_MS);
     const report = await run(gone);
     expect(report.approvedOverride).toBe(true);
-    const given = { approvedAt: at(2 * HOUR_MS), approvedBy: "postgres", approvedUntil: until };
+    const given = { approvedAt: at(2 * HOUR_MS), approvedBy: "postgres", approvedName: "zack", approvedReason: "Checked 21 replies on X by hand: all really deleted.", approvedUntil: until };
     expect(store.approvalLog).toEqual([
       { event: "given", ...given },
       { event: "used", ...given, usedAt: at(DAY_MS), inTime: true },
@@ -375,11 +497,23 @@ describe("the approval log (LEX condition 2)", () => {
     expect(store.approvalLog).toEqual([]);
   });
 
+  it("an approval needs a name and a reason: a missing or blank one is refused, and nothing is approved or logged", async () => {
+    const { store, run, ids } = setup(100);
+    for (const [name, reason] of [[null, "why"], ["zack", null], ["", "why"], ["zack", ""], ["   ", "why"], ["zack", " \n\t "]] as const) {
+      expect(() => store.approveSweep(name, reason)).toThrow(/needs a name and a reason/);
+    }
+    expect(() => store.approveSweep("z".repeat(81), "why")).toThrow(/too long/);
+    expect(() => store.approveSweep("zack", "y".repeat(501))).toThrow(/too long/);
+    expect(store.sweepApprovedUntil).toBeNull();
+    expect(store.approvalLog).toEqual([]);
+    expect(await run(ids.slice(0, 21))).toMatchObject({ halted: true }); // so the run still halts
+  });
+
   it("an approval from before the log existed is still logged: given 36 hours before its end, by 'unknown'", async () => {
     const { store, run, ids } = setup(100);
     store.sweepApprovedUntil = at(10 * HOUR_MS);
     await run(ids.slice(0, 21));
-    expect(store.approvalLog[0]).toEqual({ event: "used", approvedAt: at(-26 * HOUR_MS), approvedBy: "unknown", approvedUntil: at(10 * HOUR_MS), usedAt: NOW, inTime: true });
+    expect(store.approvalLog[0]).toEqual({ event: "used", approvedAt: at(-26 * HOUR_MS), approvedBy: "unknown", approvedName: "unknown", approvedReason: "unknown", approvedUntil: at(10 * HOUR_MS), usedAt: NOW, inTime: true });
     expect(store.approvalLog[1]).toMatchObject({ event: "removed", removed: 21 });
   });
 
@@ -441,9 +575,11 @@ describe("the withdrawals migration", () => {
   const fn = (name: string) => sql.match(new RegExp(`create or replace function public\\.${name}\\([\\s\\S]*?\\$\\$[\\s\\S]*?\\$\\$;`))?.[0] ?? "";
   const live = /withdrawn_at is null and v\.held_at is null/;
 
-  it("says how zack restores a reply, and that it hasn't been run on any Postgres yet", () => {
+  it("says how zack restores a reply and approves a sweep, and that it hasn't been run on any Postgres yet", () => {
     expect(raw).toMatch(/Not run on any Postgres yet/);
     expect(raw).toMatch(/select public\.restore_social_reply\('x', '\d+'\);/);
+    expect(raw).toMatch(/select public\.approve_social_sweep\('zack', '[^']+'\);/);
+    expect(raw).not.toMatch(/select public\.approve_social_sweep\(\)/);
   });
 
   it("is safe to run again, and deletes or rewrites nothing that exists", () => {
@@ -451,7 +587,10 @@ describe("the withdrawals migration", () => {
     expect(sql).not.toMatch(/create function/);
     expect(sql).not.toMatch(/create (unique )?index (?!if not exists)/);
     expect(sql.match(/add column (?!if not exists)/)).toBeNull();
-    expect(sql).not.toMatch(/drop (table|function|column|index)/);
+    expect(sql).not.toMatch(/drop (table|column|index)/);
+    // The one drop: the approval without a name and a reason, right before the version that needs both.
+    expect(sql.match(/drop function[^;]*;/g)).toEqual(["drop function if exists public.approve_social_sweep();"]);
+    expect(sql).toMatch(/drop function if exists public\.approve_social_sweep\(\);\s+create or replace function public\.approve_social_sweep\(p_name text, p_reason text\)/);
   });
 
   it("adds the two markers to the ledger, never both on one row", () => {
@@ -475,11 +614,11 @@ describe("the withdrawals migration", () => {
   it("every place a reply can set a call looks at live replies only", () => {
     // Each query that finds "the person's latest reply", in every function, carries the live filter.
     const latest = sql.match(/from public\.social_votes v\s+where v\.user_id = [^;]*?(?:limit 1|\) then)/g) ?? [];
-    expect(latest).toHaveLength(4); // count (1), mark (2), restore (1)
+    expect(latest).toHaveLength(4); // count (1), mark (2), put back (1)
     for (const q of latest) expect(q).toMatch(live);
     expect(fn("count_social_reply")).toMatch(live);
     expect(fn("mark_social_reply_gone").match(new RegExp(live.source, "g"))).toHaveLength(2);
-    expect(fn("restore_social_reply")).toMatch(live);
+    expect(fn("put_back_social_reply")).toMatch(live);
   });
 
   it("the older migration's count and removal are the only functions that read the ledger, and both are replaced here", () => {
@@ -495,13 +634,14 @@ describe("the withdrawals migration", () => {
   it("every function is privileged with a fixed, empty search_path and closed to the public keys", () => {
     const names = [...sql.matchAll(/create or replace function public\.(\w+)\(([^)]*)\)\s+returns (\w+)\s+language (?:plpgsql|sql)( stable)?( security definer)? set search_path = ''/g)];
     expect(names.map((m) => m[1]).sort()).toEqual([
-      "approve_social_sweep", "consume_social_sweep_approval", "count_social_reply", "hold_social_reply", "mark_social_reply_gone",
-      "note_social_sweep_halt", "purge_withdrawn_social_replies", "record_social_sweep_removals", "release_social_reply",
-      "remove_social_reply", "restore_social_reply", "settle_social_sweep_halt", "social_sweep_approval_log_append_only",
+      "approve_social_sweep", "consume_social_sweep_approval", "count_social_reply", "enforce_call_rules", "hold_social_reply",
+      "mark_social_reply_gone", "note_social_sweep_halt", "purge_withdrawn_social_replies", "put_back_social_reply",
+      "record_social_sweep_removals", "release_social_reply", "remove_social_reply", "restore_social_reply",
+      "settle_social_sweep_halt", "social_log_append_only",
     ]);
     expect(sql.match(/create or replace function/g)).toHaveLength(names.length);
     for (const m of names) {
-      if (m[3] === "trigger") continue; // the append-only guard runs as whoever tries the change
+      if (m[3] === "trigger") continue; // triggers can't be called; the migrations guard checks their search_path
       expect(m[5], `${m[1]} is security definer`).toBe(" security definer");
       expect(sql, `${m[1]} is revoked`).toMatch(new RegExp(`revoke execute on function public\\.${m[1]}\\([^)]*\\) from public, anon, authenticated`));
     }
@@ -509,10 +649,10 @@ describe("the withdrawals migration", () => {
   });
 
   it("restoring, approving and the internal marker are hand-only or internal: no API role may call them, the server key included", () => {
-    for (const signature of ["restore_social_reply\\(text, text\\)", "approve_social_sweep\\(\\)", "mark_social_reply_gone\\(text, text, boolean\\)"]) {
+    for (const signature of ["restore_social_reply\\(text, text\\)", "approve_social_sweep\\(text, text\\)", "mark_social_reply_gone\\(text, text, boolean\\)", "put_back_social_reply\\(text, text, text\\)"]) {
       expect(sql).toMatch(new RegExp(`revoke execute on function public\\.${signature} from public, anon, authenticated, service_role;`));
     }
-    expect(sql).not.toMatch(/grant [^;]*(restore_social_reply|approve_social_sweep|mark_social_reply_gone)/);
+    expect(sql).not.toMatch(/grant [^;]*(restore_social_reply|approve_social_sweep|mark_social_reply_gone|put_back_social_reply)/);
   });
 
   it("grants the server key exactly the functions the sweep and the count call, and nothing on any table", () => {
@@ -533,7 +673,9 @@ describe("the withdrawals migration", () => {
   it("the sweep's release can only ever reach a held reply", () => {
     const release = fn("release_social_reply");
     expect(release).toMatch(/if not exists \(select 1 from public\.social_votes v\s+where v\.platform = p_platform and v\.reply_id = p_reply_id and v\.held_at is not null\) then\s+return 'unknown';/);
-    expect(fn("restore_social_reply")).toMatch(/if back\.withdrawn_at <= now\(\) - interval '7 days' then return 'expired'; end if;/);
+    expect(release).toMatch(/return public\.put_back_social_reply\(p_platform, p_reply_id, 'sweep'\);/);
+    expect(fn("restore_social_reply")).toMatch(/select public\.put_back_social_reply\(p_platform, p_reply_id, 'hand'\)/);
+    expect(fn("put_back_social_reply")).toMatch(/if back\.withdrawn_at <= now\(\) - interval '7 days' then result := 'expired'; exit work; end if;/);
   });
 
   it("the approval log is append-only, with RLS on, no policy and no rights for any API role", () => {
@@ -541,7 +683,7 @@ describe("the withdrawals migration", () => {
     expect(sql).toMatch(/alter table public\.social_sweep_approval_log enable row level security;/);
     expect(sql).toMatch(/revoke all on public\.social_sweep_approval_log from public, anon, authenticated, service_role;/);
     expect(sql).not.toMatch(/create policy/);
-    expect(sql).toMatch(/before update or delete on public\.social_sweep_approval_log\s+for each row execute function public\.social_sweep_approval_log_append_only\(\)/);
+    expect(sql).toMatch(/before update or delete on public\.social_sweep_approval_log\s+for each row execute function public\.social_log_append_only\(\)/);
     expect(sql).toMatch(/before truncate on public\.social_sweep_approval_log/);
     expect(sql).not.toMatch(/(update|delete from) public\.social_sweep_approval_log/);
     expect(sql.match(/insert into public\.social_sweep_approval_log/g)).toHaveLength(3); // given, used, removed
@@ -549,8 +691,8 @@ describe("the withdrawals migration", () => {
 
   it("the log records who gave the approval and when, when it was used, and the run's count once", () => {
     const approve = fn("approve_social_sweep");
-    expect(approve).toMatch(/values \(true, now\(\) \+ interval '36 hours', now\(\), session_user\)/);
-    expect(approve).toMatch(/values \('given', now\(\), session_user, until_at\)/);
+    expect(approve).toMatch(/values \(true, now\(\) \+ interval '36 hours', now\(\), session_user, who, why\)/);
+    expect(approve).toMatch(/values \('given', now\(\), session_user, who, why, until_at\)/);
     const consume = fn("consume_social_sweep_approval");
     expect(consume).toMatch(/delete from public\.social_sweep_approval a where a\.id returning \* into used;/);
     expect(consume).toMatch(/'used', coalesce\(used\.approved_at, used\.approved_until - interval '36 hours'\)/);
@@ -559,6 +701,70 @@ describe("the withdrawals migration", () => {
     expect(record).toMatch(/if not found or not last_use\.in_time then return false; end if;/);
     expect(record).toMatch(/exception when unique_violation then\s+return false;/);
     expect(sql).toMatch(/create unique index if not exists social_sweep_approval_log_one_count\s+on public\.social_sweep_approval_log \(used_at\) where event = 'removed';/);
+  });
+
+  it("an approval needs a name and a reason: null or blank is refused before anything is written, and both are kept", () => {
+    const approve = fn("approve_social_sweep");
+    expect(approve).toMatch(/^create or replace function public\.approve_social_sweep\(p_name text, p_reason text\)/);
+    expect(approve).toMatch(/who text := btrim\(coalesce\(p_name, ''\)\);\s+why text := btrim\(coalesce\(p_reason, ''\)\);/);
+    const refuse = approve.indexOf("if who = '' or why = '' then\n    raise exception");
+    expect(refuse).toBeGreaterThan(0);
+    expect(refuse).toBeLessThan(approve.indexOf("insert into"));
+    expect(approve).not.toMatch(/default/); // neither argument can be left out
+    expect(sql).toMatch(/alter table public\.social_sweep_approval add column if not exists approved_name text;/);
+    expect(sql).toMatch(/alter table public\.social_sweep_approval add column if not exists approved_reason text;/);
+    expect(sql).toMatch(/approved_name text not null,\s+approved_reason text not null,/);
+    // The name and the reason follow the approval into its 'used' and 'removed' rows.
+    expect(fn("consume_social_sweep_approval")).toMatch(/coalesce\(used\.approved_name, 'unknown'\), coalesce\(used\.approved_reason, 'unknown'\)/);
+    expect(fn("record_social_sweep_removals")).toMatch(/last_use\.approved_name, last_use\.approved_reason/);
+  });
+
+  it("the restore log is append-only, closed to every API role, and written on every run of the restore", () => {
+    expect(sql).toMatch(/create table if not exists public\.social_reply_restore_log \(\s+id bigint generated always as identity primary key,\s+restored_at timestamptz not null default now\(\),\s+restored_by text not null,\s+origin text not null check \(origin in \('hand', 'sweep'\)\),\s+platform text not null,\s+reply_id text not null,\s+result text not null,\s+after_close boolean not null/);
+    expect(sql).toMatch(/alter table public\.social_reply_restore_log enable row level security;/);
+    expect(sql).toMatch(/revoke all on public\.social_reply_restore_log from public, anon, authenticated, service_role;/);
+    expect(sql).toMatch(/before update or delete on public\.social_reply_restore_log\s+for each row execute function public\.social_log_append_only\(\)/);
+    expect(sql).toMatch(/before truncate on public\.social_reply_restore_log/);
+    expect(sql).not.toMatch(/(update|delete from) public\.social_reply_restore_log/);
+    const back = fn("put_back_social_reply");
+    // One way out of the function: every answer is set inside the block, then logged, then returned.
+    expect(back.match(/\breturn\b/g)).toHaveLength(1);
+    expect(back).toMatch(/values \(session_user, p_origin, p_platform, p_reply_id, result, closed\);\s+return result;\s+end;/);
+    expect(sql.match(/insert into public\.social_reply_restore_log/g)).toHaveLength(1);
+  });
+
+  it("after the close only a restore by hand goes on, and only for a reply written before the close", () => {
+    const back = fn("put_back_social_reply");
+    expect(back).toMatch(/if closes is null or p_origin <> 'hand' then result := 'closed'; exit work; end if;\s+if back\.replied_at >= closes then result := 'after_close'; exit work; end if;\s+if back\.held_at is not null and closes <= now\(\) - interval '7 days' then result := 'expired'; exit work; end if;/);
+    // Those checks come before anything is changed.
+    expect(back.indexOf("result := 'after_close'")).toBeLessThan(back.indexOf("update public.social_votes"));
+  });
+
+  it("the close rule can't be talked past: the pass is a row no API role can write, not a session setting", () => {
+    expect(sql).not.toMatch(/set_config|current_setting/);
+    expect(sql).toMatch(/alter table public\.call_restore_pass enable row level security;/);
+    expect(sql).toMatch(/revoke all on public\.call_restore_pass from public, anon, authenticated, service_role;/);
+    expect(sql).not.toMatch(/grant [^;]*call_restore_pass/);
+    // Only the internal restore function writes a pass, only after the close, and it deletes it in the same transaction.
+    expect(sql.match(/insert into public\.call_restore_pass/g)).toHaveLength(1);
+    const back = fn("put_back_social_reply");
+    expect(back).toMatch(/if closed then\s+insert into public\.call_restore_pass \(user_id, slug, probability, source, made_at\)\s+values \(back\.user_id, back\.slug, back\.probability, back\.platform, back\.replied_at\);\s+end if;/);
+    expect(back.indexOf("insert into public.call_restore_pass")).toBeLessThan(back.indexOf("insert into public.calls"));
+    expect(back.indexOf("insert into public.calls")).toBeLessThan(back.indexOf("delete from public.call_restore_pass p where p.user_id = back.user_id and p.slug = back.slug;"));
+    expect(back.indexOf("delete from public.call_restore_pass")).toBeGreaterThan(0);
+  });
+
+  it("the calls trigger keeps both of its rules, and lets through only the exact write a pass of this transaction names", () => {
+    const rules = fn("enforce_call_rules");
+    expect(rules).toMatch(/returns trigger\s+language plpgsql security definer set search_path = ''/);
+    expect(rules).toMatch(/where p\.user_id = new\.user_id and p\.slug = new\.slug\s+and p\.probability = new\.probability and p\.source = new\.source\s+and p\.txid = pg_current_xact_id\(\) and p\.made_at < closes;/);
+    // The restored call carries the time it was made, so anything that reads calls by time sees a call made in time.
+    expect(rules).toMatch(/if found then\s+new\.updated_at := made;\s+if tg_op = 'insert' then\s+new\.created_at := made;\s+end if;\s+return new;\s+end if;/);
+    // The original rules, word for word, as in 20261111000200_call_rules.sql.
+    const older = readFileSync(join(dir, "20261111000200_call_rules.sql"), "utf8").replace(/--[^\n]*/g, "").toLowerCase();
+    const tail = (text: string) => text.slice(text.indexOf("if closes is null or now() >= closes then")).replace(/\s+/g, " ");
+    expect(tail(rules)).toBe(tail(older.match(/create or replace function public\.enforce_call_rules\(\)[\s\S]*?\$\$[\s\S]*?\$\$;/)![0]));
+    expect(rules).not.toMatch(/session_user|current_user/);
   });
 
   it("the halt's first time is kept in one row no API role can touch, and it ends only when nothing is held on an open question", () => {

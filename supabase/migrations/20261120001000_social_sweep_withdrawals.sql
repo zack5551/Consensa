@@ -20,15 +20,25 @@
 -- latest LIVE reply (or their website call, which wins). Every function below that touches a marker re-derives the
 -- call in the same transaction, so a held or withdrawn reply never counts, in any total built from calls.
 --
--- How zack restores a wrongly withdrawn (or held) reply, within 7 days, in the Supabase SQL editor:
+-- How zack restores a wrongly withdrawn (or held) reply, in the Supabase SQL editor:
 --   select platform, reply_id, slug, withdrawn_at, held_at from public.social_votes
 --    where withdrawn_at is not null or held_at is not null order by coalesce(withdrawn_at, held_at) desc;
 --   select public.restore_social_reply('x', '1990000000000000007');
 -- It answers 'counted' (the call is back), 'website_wins' or 'older_reply' (the reply is live again, and a website
--- call or a newer reply still sets the call), 'live' (nothing to do), 'closed' (the question has closed: nothing
--- changes), 'expired' (withdrawn more than 7 days ago) or 'unknown'.
--- To read the approval log:  select * from public.social_sweep_approval_log order by id;
--- To see an open halt:       select * from public.social_sweep_halt;
+-- call or a newer reply still sets the call), 'live' (nothing to do), 'expired', 'after_close' or 'unknown'.
+-- While the question is open: a held reply at any time, a withdrawn one for 7 days after the withdrawal.
+-- After the question has closed (LEX): still possible, by hand only, for a reply that was written BEFORE the close.
+-- A withdrawn reply keeps its 7 days from the withdrawal; a held one has 7 days from the close. The call that comes
+-- back is a call made in time: it carries the reply's own time, and if the question is already resolved it is
+-- scored like any other call. A reply written at or after the close answers 'after_close' and nothing changes.
+-- Every restore, whatever it answers, is written to public.social_reply_restore_log (section 4).
+--
+-- How zack approves a halted sweep, with his name and the reason (both required, LEX):
+--   select public.approve_social_sweep('zack', 'Checked 20 of the replies on X by hand: all really deleted.');
+--
+-- To read the logs:     select * from public.social_sweep_approval_log order by id;
+--                       select * from public.social_reply_restore_log order by id;
+-- To see an open halt:  select * from public.social_sweep_halt;
 
 -- 1. The two markers.
 alter table public.social_votes add column if not exists withdrawn_at timestamptz;
@@ -162,48 +172,158 @@ $$;
 revoke execute on function public.hold_social_reply(text, text) from public, anon, authenticated;
 grant execute on function public.hold_social_reply(text, text) to service_role;
 
--- 4. Putting a reply back (zack, by hand; see the top of this file). A held reply, or one withdrawn in the last 7 days,
--- becomes live again and the person's call is re-derived: it counts again unless a website call or a newer live reply
--- sets the call. Only while the question is open, the same rule as every other change to a call.
--- Hand-only: no API role may call it, the server key included.
-create or replace function public.restore_social_reply(p_platform text, p_reply_id text)
+-- 4. Putting a reply back (LEX). By hand it is restore_social_reply(), zack's, in the SQL editor (see the top of this
+-- file). The sweep has a narrower way, release_social_reply(): a HELD reply the platform reports as still up, on an
+-- open question only. Both go through one internal function, and every time it runs it adds a row to the restore log.
+
+-- 4a. The restore log: append-only (the guard is in section 7). When, which database role, by hand or by the sweep,
+-- which reply, what the function answered, and whether the question had closed by then.
+create table if not exists public.social_reply_restore_log (
+  id bigint generated always as identity primary key,
+  restored_at timestamptz not null default now(),
+  restored_by text not null,
+  origin text not null check (origin in ('hand', 'sweep')),
+  platform text not null,
+  reply_id text not null,
+  result text not null,
+  after_close boolean not null
+);
+alter table public.social_reply_restore_log enable row level security;
+revoke all on public.social_reply_restore_log from public, anon, authenticated, service_role;
+
+-- 4b. The one way a call may be written after its question has closed. The calls trigger (enforce_call_rules, from
+-- 20261111000200_call_rules.sql) refuses every such write. A restore of a reply written before the close has to get
+-- one write through, and nothing else may.
+--
+-- It is NOT a session setting. Any role that can run SQL can set_config() a custom setting, so a setting can be
+-- forged. It is a row in this table, and holding a pass means having been able to write here: RLS is on with no
+-- policy, and no API role has any right on the table, the server key included. Only the internal restore function
+-- below (which runs as the owner and which no API role may call) writes a pass. A pass names one person, one
+-- question, the exact probability and source, and the transaction that wrote it; the same function deletes it
+-- before that transaction ends. So a pass is never committed, no other transaction can ever see one, and it lets
+-- through exactly the one row the restore writes.
+create table if not exists public.call_restore_pass (
+  user_id uuid not null,
+  slug text not null,
+  probability smallint not null,
+  source text not null,
+  made_at timestamptz not null,       -- when the reply was written: the restored call carries this time
+  txid xid8 not null default pg_current_xact_id(),
+  primary key (user_id, slug)
+);
+alter table public.call_restore_pass enable row level security;
+revoke all on public.call_restore_pass from public, anon, authenticated, service_role;
+
+-- The calls trigger, replaced. Its two rules are unchanged (no write once the question has closed; one change per
+-- call every 2 seconds). The only addition is the first block: after the close, a write that matches a pass of this
+-- same transaction, for a call made before the close, goes through and carries the time the call was made.
+create or replace function public.enforce_call_rules()
+returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare
+  closes timestamptz;
+  made timestamptz;
+begin
+  select w.closes_at into closes from public.question_windows w where w.slug = new.slug;
+  if closes is not null and now() >= closes then
+    select p.made_at into made from public.call_restore_pass p
+    where p.user_id = new.user_id and p.slug = new.slug
+      and p.probability = new.probability and p.source = new.source
+      and p.txid = pg_current_xact_id() and p.made_at < closes;
+    if found then
+      new.updated_at := made;
+      if tg_op = 'INSERT' then
+        new.created_at := made;
+      end if;
+      return new;
+    end if;
+  end if;
+  if closes is null or now() >= closes then
+    raise exception 'question closed' using errcode = 'P0001', hint = 'closed';
+  end if;
+  if tg_op = 'UPDATE' and old.updated_at > now() - interval '2 seconds' then
+    raise exception 'too many changes' using errcode = 'P0001', hint = 'rate';
+  end if;
+  new.updated_at := now();
+  if tg_op = 'INSERT' then
+    new.created_at := now();
+  end if;
+  return new;
+end;
+$$;
+
+-- 4c. The internal function. p_origin is 'hand' (restore_social_reply) or 'sweep' (release_social_reply).
+-- A held reply, or one withdrawn in the last 7 days, becomes live again and the person's call is re-derived: it
+-- counts again unless a website call or a newer live reply sets the call.
+-- After the close: by hand only, only for a reply written before the close, and for a held reply only in the 7 days
+-- after the close. Held replies are never put back automatically at the close.
+-- Internal: no API role may call it.
+create or replace function public.put_back_social_reply(p_platform text, p_reply_id text, p_origin text)
 returns text
 language plpgsql security definer set search_path = '' as $$
 declare
   back public.social_votes%rowtype;
   latest public.social_votes%rowtype;
   closes timestamptz;
+  closed boolean := false;
   call_source text;
+  result text;
 begin
-  select * into back from public.social_votes v where v.platform = p_platform and v.reply_id = p_reply_id for update;
-  if not found then return 'unknown'; end if;
-  if back.withdrawn_at is null and back.held_at is null then return 'live'; end if;
-  if back.withdrawn_at <= now() - interval '7 days' then return 'expired'; end if;
-  select w.closes_at into closes from public.question_windows w where w.slug = back.slug;
-  if closes is null or now() >= closes then return 'closed'; end if;
+  <<work>>
+  begin
+    select * into back from public.social_votes v where v.platform = p_platform and v.reply_id = p_reply_id for update;
+    if not found then result := 'unknown'; exit work; end if;
+    if back.withdrawn_at is null and back.held_at is null then result := 'live'; exit work; end if;
+    if back.withdrawn_at <= now() - interval '7 days' then result := 'expired'; exit work; end if;
+    select w.closes_at into closes from public.question_windows w where w.slug = back.slug;
+    closed := closes is null or now() >= closes;
+    if closed then
+      -- The sweep never reaches past the close, and a question with no window takes no calls at all.
+      if closes is null or p_origin <> 'hand' then result := 'closed'; exit work; end if;
+      if back.replied_at >= closes then result := 'after_close'; exit work; end if;
+      if back.held_at is not null and closes <= now() - interval '7 days' then result := 'expired'; exit work; end if;
+    end if;
 
-  update public.social_votes v set withdrawn_at = null, held_at = null where v.platform = p_platform and v.reply_id = p_reply_id;
+    update public.social_votes v set withdrawn_at = null, held_at = null where v.platform = p_platform and v.reply_id = p_reply_id;
 
-  select c.source into call_source from public.calls c where c.user_id = back.user_id and c.slug = back.slug;
-  if call_source = 'web' then return 'website_wins'; end if;
-  select * into latest from public.social_votes v
-  where v.user_id = back.user_id and v.slug = back.slug and v.withdrawn_at is null and v.held_at is null
-  order by v.replied_at desc, v.seen_at desc limit 1;
-  if latest.platform is distinct from back.platform or latest.reply_id is distinct from back.reply_id then
-    return 'older_reply';
-  end if;
+    select c.source into call_source from public.calls c where c.user_id = back.user_id and c.slug = back.slug;
+    if call_source = 'web' then result := 'website_wins'; exit work; end if;
+    select * into latest from public.social_votes v
+    where v.user_id = back.user_id and v.slug = back.slug and v.withdrawn_at is null and v.held_at is null
+    order by v.replied_at desc, v.seen_at desc limit 1;
+    if latest.platform is distinct from back.platform or latest.reply_id is distinct from back.reply_id then
+      result := 'older_reply'; exit work;
+    end if;
 
-  insert into public.calls (user_id, slug, probability, source)
-  values (back.user_id, back.slug, back.probability, back.platform)
-  on conflict (user_id, slug) do update set probability = excluded.probability, source = excluded.source
-  where public.calls.source <> 'web';
-  return 'counted';
+    if closed then
+      insert into public.call_restore_pass (user_id, slug, probability, source, made_at)
+      values (back.user_id, back.slug, back.probability, back.platform, back.replied_at);
+    end if;
+    insert into public.calls (user_id, slug, probability, source)
+    values (back.user_id, back.slug, back.probability, back.platform)
+    on conflict (user_id, slug) do update set probability = excluded.probability, source = excluded.source
+    where public.calls.source <> 'web';
+    delete from public.call_restore_pass p where p.user_id = back.user_id and p.slug = back.slug;
+    result := 'counted';
+  end;
+
+  insert into public.social_reply_restore_log (restored_by, origin, platform, reply_id, result, after_close)
+  values (session_user, p_origin, p_platform, p_reply_id, result, closed);
+  return result;
 end;
+$$;
+revoke execute on function public.put_back_social_reply(text, text, text) from public, anon, authenticated, service_role;
+
+-- By hand (zack). Hand-only: no API role may call it, the server key included.
+create or replace function public.restore_social_reply(p_platform text, p_reply_id text)
+returns text
+language sql security definer set search_path = '' as $$
+  select public.put_back_social_reply(p_platform, p_reply_id, 'hand')
 $$;
 revoke execute on function public.restore_social_reply(text, text) from public, anon, authenticated, service_role;
 
 -- The sweep's own, narrower way back: a HELD reply the platform now reports as still up counts again. It can never
--- touch a withdrawn reply; that takes a person.
+-- touch a withdrawn reply, and it can never write a call after the close: both take a person.
 create or replace function public.release_social_reply(p_platform text, p_reply_id text)
 returns text
 language plpgsql security definer set search_path = '' as $$
@@ -212,7 +332,7 @@ begin
                  where v.platform = p_platform and v.reply_id = p_reply_id and v.held_at is not null) then
     return 'unknown';
   end if;
-  return public.restore_social_reply(p_platform, p_reply_id);
+  return public.put_back_social_reply(p_platform, p_reply_id, 'sweep');
 end;
 $$;
 revoke execute on function public.release_social_reply(text, text) from public, anon, authenticated;
@@ -271,12 +391,15 @@ revoke execute on function public.settle_social_sweep_halt() from public, anon, 
 grant execute on function public.settle_social_sweep_halt() to service_role;
 
 -- 7. The approval log (LEX): append-only. One row per event, each carrying the approval it belongs to:
---   'given'    approve_social_sweep() was run. approved_by is the database role of that session.
+--   'given'    approve_social_sweep() was run. approved_name and approved_reason are what the person typed;
+--              approved_by is the database role of that session.
 --   'used'     a run over the ceiling asked for it. used_at is when; in_time says whether it still counted.
 --   'removed'  that run finished. removed is how many replies it took out. used_at ties it to its 'used' row.
 -- A 'used' row with in_time true and no 'removed' row after it means the run stopped before it could report.
 alter table public.social_sweep_approval add column if not exists approved_at timestamptz;
 alter table public.social_sweep_approval add column if not exists approved_by text;
+alter table public.social_sweep_approval add column if not exists approved_name text;
+alter table public.social_sweep_approval add column if not exists approved_reason text;
 
 create table if not exists public.social_sweep_approval_log (
   id bigint generated always as identity primary key,
@@ -284,6 +407,8 @@ create table if not exists public.social_sweep_approval_log (
   event text not null check (event in ('given', 'used', 'removed')),
   approved_at timestamptz not null,
   approved_by text not null,
+  approved_name text not null,
+  approved_reason text not null,
   approved_until timestamptz not null,
   used_at timestamptz,
   in_time boolean,
@@ -300,43 +425,63 @@ create unique index if not exists social_sweep_approval_log_one_count
 alter table public.social_sweep_approval_log enable row level security;
 revoke all on public.social_sweep_approval_log from public, anon, authenticated, service_role;
 
--- Rows are never changed or removed, by anyone, the functions below included.
-create or replace function public.social_sweep_approval_log_append_only()
+-- Rows of the two logs (this one, and the restore log of section 4) are never changed or removed, by anyone, the
+-- functions in this file included.
+create or replace function public.social_log_append_only()
 returns trigger
 language plpgsql set search_path = '' as $$
 begin
-  raise exception 'The social sweep approval log is append-only';
+  raise exception '% is append-only', tg_table_name;
 end;
 $$;
 drop trigger if exists social_sweep_approval_log_append_only on public.social_sweep_approval_log;
 create trigger social_sweep_approval_log_append_only before update or delete on public.social_sweep_approval_log
-  for each row execute function public.social_sweep_approval_log_append_only();
+  for each row execute function public.social_log_append_only();
 drop trigger if exists social_sweep_approval_log_no_truncate on public.social_sweep_approval_log;
 create trigger social_sweep_approval_log_no_truncate before truncate on public.social_sweep_approval_log
-  for each statement execute function public.social_sweep_approval_log_append_only();
+  for each statement execute function public.social_log_append_only();
+drop trigger if exists social_reply_restore_log_append_only on public.social_reply_restore_log;
+create trigger social_reply_restore_log_append_only before update or delete on public.social_reply_restore_log
+  for each row execute function public.social_log_append_only();
+drop trigger if exists social_reply_restore_log_no_truncate on public.social_reply_restore_log;
+create trigger social_reply_restore_log_no_truncate before truncate on public.social_reply_restore_log
+  for each statement execute function public.social_log_append_only();
 
--- Giving the approval, as before (36 hours, hand-only), now recording when and by which database role.
+-- Giving the approval, as before (36 hours, hand-only), now with a required name and a required reason (LEX), and
+-- recording when and by which database role. A missing or blank name or reason is refused and nothing is approved.
 -- session_user is the role that opened the session; inside a privileged function current_user is only the owner.
-create or replace function public.approve_social_sweep()
+-- The version without arguments (20261120000000_social_sweep_approval.sql) goes, so an approval can't be given
+-- without saying who and why. This is the only drop in this file.
+drop function if exists public.approve_social_sweep();
+create or replace function public.approve_social_sweep(p_name text, p_reason text)
 returns timestamptz
 language plpgsql security definer set search_path = '' as $$
 declare
+  who text := btrim(coalesce(p_name, ''));
+  why text := btrim(coalesce(p_reason, ''));
   until_at timestamptz;
 begin
-  insert into public.social_sweep_approval (id, approved_until, approved_at, approved_by)
-  values (true, now() + interval '36 hours', now(), session_user)
+  if who = '' or why = '' then
+    raise exception 'approve_social_sweep needs a name and a reason' using errcode = '22023';
+  end if;
+  if length(who) > 80 or length(why) > 500 then
+    raise exception 'name (80) or reason (500) too long' using errcode = '22023';
+  end if;
+  insert into public.social_sweep_approval (id, approved_until, approved_at, approved_by, approved_name, approved_reason)
+  values (true, now() + interval '36 hours', now(), session_user, who, why)
   on conflict (id) do update
-    set approved_until = excluded.approved_until, approved_at = excluded.approved_at, approved_by = excluded.approved_by
+    set approved_until = excluded.approved_until, approved_at = excluded.approved_at, approved_by = excluded.approved_by,
+        approved_name = excluded.approved_name, approved_reason = excluded.approved_reason
   returning approved_until into until_at;
-  insert into public.social_sweep_approval_log (event, approved_at, approved_by, approved_until)
-  values ('given', now(), session_user, until_at);
+  insert into public.social_sweep_approval_log (event, approved_at, approved_by, approved_name, approved_reason, approved_until)
+  values ('given', now(), session_user, who, why, until_at);
   return until_at;
 end;
 $$;
-revoke execute on function public.approve_social_sweep() from public, anon, authenticated, service_role;
+revoke execute on function public.approve_social_sweep(text, text) from public, anon, authenticated, service_role;
 
 -- Using the approval, as before (single-use; true only when still in time), now logging the use. An approval given
--- before this migration has no approved_at: it is worked out from its end time.
+-- before this migration has no approved_at, name or reason: the time is worked out from its end, the rest is 'unknown'.
 create or replace function public.consume_social_sweep_approval()
 returns boolean
 language plpgsql security definer set search_path = '' as $$
@@ -347,9 +492,9 @@ begin
   delete from public.social_sweep_approval a where a.id returning * into used;
   if not found then return false; end if;
   ok := used.approved_until > now();
-  insert into public.social_sweep_approval_log (event, approved_at, approved_by, approved_until, used_at, in_time)
+  insert into public.social_sweep_approval_log (event, approved_at, approved_by, approved_name, approved_reason, approved_until, used_at, in_time)
   values ('used', coalesce(used.approved_at, used.approved_until - interval '36 hours'), coalesce(used.approved_by, 'unknown'),
-          used.approved_until, now(), ok);
+          coalesce(used.approved_name, 'unknown'), coalesce(used.approved_reason, 'unknown'), used.approved_until, now(), ok);
   return ok;
 end;
 $$;
@@ -367,8 +512,9 @@ begin
   if p_removed is null or p_removed < 0 then return false; end if;
   select * into last_use from public.social_sweep_approval_log l where l.event = 'used' order by l.id desc limit 1;
   if not found or not last_use.in_time then return false; end if;
-  insert into public.social_sweep_approval_log (event, approved_at, approved_by, approved_until, used_at, removed)
-  values ('removed', last_use.approved_at, last_use.approved_by, last_use.approved_until, last_use.used_at, p_removed);
+  insert into public.social_sweep_approval_log (event, approved_at, approved_by, approved_name, approved_reason, approved_until, used_at, removed)
+  values ('removed', last_use.approved_at, last_use.approved_by, last_use.approved_name, last_use.approved_reason,
+          last_use.approved_until, last_use.used_at, p_removed);
   return true;
 exception when unique_violation then
   return false;

@@ -20,14 +20,19 @@
  * - held: a HALTED run found it gone (hold_social_reply). It is hidden from "Canada says" at once, so a withdrawal
  *   never waits on a person, and it is not removed. The sweep keeps checking held replies: a later run that goes
  *   ahead withdraws the ones still gone, and any run counts again the ones the platform reports back
- *   (release_social_reply), but only after a complete answer for that post.
+ *   (release_social_reply), but only after a complete answer for that post. A held reply is never put back
+ *   automatically once its question has closed.
+ *
+ * A restore by hand also works after the close, for a reply written before it (LEX): the call that comes back was
+ * made in time, and is scored like any other. The database logs every restore, by hand or by the sweep.
  *
  * Two guards from AEGIS. A run may take at most half of what is left under the monthly cap, so the count of new
  * replies always has room. And if one run reports more than max(10, 20% of the replies checked) as deleted, it
  * withdraws nothing, holds what it found, sets `halted` in the report and leaves it for a person: that pattern looks
  * like the platform answering wrongly.
  *
- * The way past a halt (AEGIS): once a person has looked, zack runs approve_social_sweep() by hand in the database.
+ * The way past a halt (AEGIS): once a person has looked, zack runs approve_social_sweep(name, reason) by hand in the
+ * database; both are required and kept in the approval log (LEX).
  * That approval lasts 36 hours and is used up by the next run whose ceiling trips, which then withdraws what it found
  * and says `approvedOverride` in its report. A run under the ceiling never asks for the approval, so it can't use
  * one up. There is no env var and no route for this. The database logs each use, and the run adds how many replies
@@ -55,7 +60,7 @@ export const removeOutcomes = ["unknown", "closed", "held", "removed", "restored
 export type RemoveOutcome = (typeof removeOutcomes)[number] | "retry";
 
 /** What release_social_reply() answers (the same words restore_social_reply() uses), plus "retry". */
-export const releaseOutcomes = ["unknown", "live", "expired", "closed", "website_wins", "older_reply", "counted"] as const;
+export const releaseOutcomes = ["unknown", "live", "expired", "closed", "after_close", "website_wins", "older_reply", "counted"] as const;
 export type ReleaseOutcome = (typeof releaseOutcomes)[number] | "retry";
 
 export interface SweepStore {
