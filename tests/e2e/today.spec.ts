@@ -22,8 +22,8 @@ test("making a call counts toward today's progress and shows on the card", async
   await page.goto("/en/today");
   await expect(page.getByText("0 of 5 called today")).toBeVisible();
   await page.getByRole("link", { name: /Bank of Canada/ }).click();
-  await page.getByRole("button", { name: /Likely/ }).first().click();
-  await page.getByRole("button", { name: "Make my call" }).first().click();
+  await page.getByRole("button", { name: "Yes", exact: true }).first().click();
+  await page.getByRole("button", { name: "Save my call" }).first().click();
   await page.goto("/en/today");
   await expect(page.getByText("1 of 5 called today")).toBeVisible();
   await expect(page.getByText("Your call: 75%")).toBeVisible();

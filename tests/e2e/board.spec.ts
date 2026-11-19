@@ -34,8 +34,9 @@ test("your calls is empty until you make one, then lists it", async ({ page }) =
   await page.goto("/en/board?show=mine");
   await expect(page.getByText("You haven’t made a call yet")).toBeVisible();
   await page.goto("/en/q/boc-cut-dec-2026");
-  await page.getByRole("button", { name: /Toss-up/ }).click();
-  await page.getByRole("button", { name: "Make my call" }).click();
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
+  await page.getByRole("slider").fill("50");
+  await page.getByRole("button", { name: "Save my call" }).click();
   await page.goto("/en/board?show=mine");
   await expect(page.getByText("1 question shown")).toBeVisible();
 });
