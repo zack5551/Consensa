@@ -244,6 +244,7 @@ const en = {
     expired: "That sign-in link has expired or was already used. Enter your email for a new one.",
     newHere: "New to Cansensa?",
     getStarted: "Get started",
+    backToQuestion: "You’ll come back to this question after.",
   },
   legalPages: {
     termsReview: {

@@ -99,3 +99,35 @@ test("a next that leaves the site, or carries a query, is dropped", async ({ pag
   await page.goto(`/en/welcome?next=${encodeURIComponent("//evil.com")}`);
   await expect(page.getByRole("main").getByRole("link", { name: "Français" })).toHaveAttribute("href", "/fr/welcome?step=age");
 });
+
+test("the header language switch and sign-in button keep the question on onboarding and sign-in", async ({ page }) => {
+  const question = "/en/q/boc-cut-dec-2026";
+  const header = page.getByRole("banner");
+  await page.goto(`/en/welcome?next=${question}`);
+  await expect(header.getByRole("link", { name: "Français" })).toHaveAttribute("href", "/fr/welcome?next=/fr/q/boc-cut-dec-2026");
+  await expect(page.getByRole("main").getByText("You’ll come back to this question after.")).toBeVisible();
+  await header.getByRole("link", { name: "Français" }).click();
+  await expect(page).toHaveURL(/\/fr\/welcome\?next=\/fr\/q\/boc-cut-dec-2026$/);
+  await expect(page.getByRole("main").getByText("Vous reviendrez ensuite à cette question.")).toBeVisible();
+
+  await page.goto(`/fr/sign-in?next=/fr/q/boc-cut-dec-2026`);
+  await expect(header.getByRole("link", { name: "English" })).toHaveAttribute("href", `/en/sign-in?next=${question}`);
+  await expect(page.getByRole("main").getByText("Vous reviendrez ensuite à cette question.")).toBeVisible();
+
+  // No next, or an unsafe one: the plain other-language page, and no "come back" line.
+  await page.goto(`/en/welcome?next=${encodeURIComponent("//evil.com")}`);
+  await expect(header.getByRole("link", { name: "Français" })).toHaveAttribute("href", "/fr/welcome");
+  await expect(page.getByRole("main").getByText("You’ll come back to this question after.")).toHaveCount(0);
+});
+
+test("the header sign-in button comes back to the question page, and onboarding's next", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the header sign-in button shows from desktop width");
+  const header = page.getByRole("banner");
+  const signIn = header.getByRole("link", { name: "Sign in" });
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await expect(signIn).toHaveAttribute("href", "/en/sign-in?next=/en/q/boc-cut-dec-2026");
+  await page.goto("/en/welcome?next=/en/q/boc-cut-dec-2026");
+  await expect(signIn).toHaveAttribute("href", "/en/sign-in?next=/en/q/boc-cut-dec-2026");
+  await page.goto("/en/today");
+  await expect(signIn).toHaveAttribute("href", "/en/sign-in");
+});

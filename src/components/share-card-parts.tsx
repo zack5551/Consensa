@@ -42,17 +42,18 @@ export function CardWordmark() {
 }
 
 /**
- * The frame: a Canada-red rule, the card on a sunken ground, and the legal lines under it.
+ * The frame: a top rule (Canada red by default, where the card carries the "Canada says" label; `rule` sets another
+ * colour), the card on a sunken ground, and the legal lines under it.
  * LEX: `footer` is the free/no-value label, on every card. A sports card passes `sportsFooter` too (the non-affiliation
  * line, and on the "Called it!" card the fan-forecast line before it), at the same size so it stays readable in a feed;
  * the frame tightens to make room for it. Pass every line already through `cardSafe`.
  */
-export function CardFrame({ footer, sportsFooter, children }: { footer: string; sportsFooter?: string | readonly string[]; children: ReactNode }) {
+export function CardFrame({ footer, sportsFooter, rule = c.canada, children }: { footer: string; sportsFooter?: string | readonly string[]; rule?: string; children: ReactNode }) {
   const sportsLines = sportsFooter === undefined ? [] : typeof sportsFooter === "string" ? [sportsFooter] : sportsFooter;
   const sports = sportsLines.length > 0;
   const tight = sportsLines.length > 1;
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: c.sunken, color: c.ink, fontFamily: "Inter", borderTop: `14px solid ${c.canada}`, padding: tight ? "16px 40px 12px" : sports ? "20px 40px 14px" : "26px 40px 20px" }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: c.sunken, color: c.ink, fontFamily: "Inter", borderTop: `14px solid ${rule}`, padding: tight ? "16px 40px 12px" : sports ? "20px 40px 14px" : "26px 40px 20px" }}>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, background: c.surface, border: `2px solid ${c.line}`, borderRadius: 28, padding: tight ? "18px 40px 16px" : sports ? "22px 40px 20px" : "28px 40px 24px" }}>
         {children}
       </div>

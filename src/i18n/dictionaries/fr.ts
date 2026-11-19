@@ -246,6 +246,7 @@ const fr = {
     another: "Utiliser un autre courriel",
     newHere: "Nouveau sur Cansensa?",
     getStarted: "Commencer",
+    backToQuestion: "Vous reviendrez ensuite à cette question.",
   },
   legalPages: {
     termsReview: {

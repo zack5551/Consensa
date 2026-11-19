@@ -19,6 +19,7 @@
   --color-control: var(--cn-border-control);
   --color-side-a-text: var(--cn-side-a-text);
   --color-side-b-text: var(--cn-side-b-text);
+  --color-on-fill: var(--cn-text-inverse);
   --color-canada-soft: var(--cn-accent-soft);
   --color-link: var(--cn-link);
 

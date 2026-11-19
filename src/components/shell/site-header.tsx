@@ -3,6 +3,7 @@ import { LocaleSwitch } from "@/components/locale-switch";
 import { Wordmark } from "@/components/wordmark";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
+import { HeaderSignIn } from "./header-sign-in";
 import { Icon } from "./icons";
 import { localeHref } from "./nav-items";
 import { PrimaryNav } from "./primary-nav";
@@ -37,12 +38,7 @@ export function SiteHeader({ locale, t }: Props) {
           </Link>
           <ThemeToggle labels={{ system: t.shell.theme.system, light: t.shell.theme.light, dark: t.shell.theme.dark }} changeLabel={t.shell.theme.change} />
           <LocaleSwitch locale={locale} label={t.nav.language} switchTo={t.nav.switchTo} />
-          <Link
-            href={localeHref(locale, "/sign-in")}
-            className="ml-1 hidden whitespace-nowrap rounded-control bg-ink px-3 py-2 text-body-sm font-bold text-paper transition-opacity duration-[var(--cn-duration-fast)] hover:opacity-90 lg:inline-flex"
-          >
-            {t.nav.signIn}
-          </Link>
+          <HeaderSignIn locale={locale} label={t.nav.signIn} />
         </div>
       </div>
     </header>

@@ -20,7 +20,23 @@ for (const locale of ["en", "fr"] as const) {
       await expect(page.getByRole("main").getByRole("link")).toHaveCount(1);
       await expect(page.getByRole("main").getByRole("link", { name: locale === "en" ? "Make your call" : "Faire ma prévision" })).toHaveAttribute("href", `/${locale}/board`);
       await expect(page.getByRole("main").getByText(locale === "en" ? "Free to play. No cash value. No purchase necessary." : "Gratuit. Aucune valeur monétaire. Aucun achat requis.")).toBeVisible();
-      await expect(page.getByRole("main").getByText(locale === "en" ? "Free. No prizes. No cash value." : "Gratuit. Aucun prix à gagner. Aucune valeur monétaire.")).toBeVisible();
+      // One legal line under the card: the card picture carries its own footer, so the page doesn't repeat it.
+      await expect(page.getByRole("main").getByText(locale === "en" ? "Free. No prizes. No cash value." : "Gratuit. Aucun prix à gagner. Aucune valeur monétaire.")).toHaveCount(0);
+      // The answer sits on its side's colour (teal = yes, violet = no); the headline and the rule are ink, whatever the side.
+      const colour = (token: string) => page.evaluate((t) => {
+        const probe = document.createElement("span");
+        probe.style.color = `var(${t})`;
+        document.body.append(probe);
+        const value = getComputedStyle(probe).color;
+        probe.remove();
+        return value;
+      }, token);
+      const pill = page.getByRole("main").getByText(answer);
+      await expect(pill).toHaveCSS("background-color", await colour(side === "yes" ? "--cn-side-a" : "--cn-side-b"));
+      await expect(pill).toHaveCSS("color", await colour("--cn-text-inverse"));
+      const ink = await colour("--cn-text");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("color", ink);
+      await expect(page.locator("section[aria-labelledby=called-it-title]")).toHaveCSS("border-top-color", ink);
       // Sample numbers never travel: no crowd number on a shared page until it is real (5 calls or more).
       await expect(page.getByRole("main").getByText(locale === "en" ? "Canada gave yes" : "Le Canada donnait")).toHaveCount(0);
       const results = await new AxeBuilder({ page }).withTags(tags).analyze();
