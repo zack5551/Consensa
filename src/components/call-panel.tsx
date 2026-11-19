@@ -83,7 +83,7 @@ const sideOrder = ["yes", "no"] as const;
 /** Asked once per page load, and only after a call is saved: is this visitor signed in? null when the answer isn't known. */
 let accountCheck: Promise<boolean | null> | null = null;
 function signedInOnce(): Promise<boolean | null> {
-  accountCheck ??= fetch("/api/account", { cache: "no-store" })
+  accountCheck ??= fetch("/api/session", { cache: "no-store" })
     .then((res) => (res.ok ? (res.json() as Promise<{ signedIn?: unknown } | null>) : null))
     .then((body) => (typeof body?.signedIn === "boolean" ? body.signedIn : null))
     .catch(() => null);
