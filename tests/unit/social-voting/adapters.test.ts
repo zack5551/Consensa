@@ -71,8 +71,52 @@ describe("X adapter", () => {
 
   it("tells a deleted reply from one that is merely hidden", async () => {
     const { fetch } = fakeFetch(xRoutes());
-    const gone = await new XProvider({ bearer: "b", spend: cap(), fetch }).findDeleted(["1990000000000000001", "1990000000000000002", "1990000000000000007"], NOW);
-    expect(gone).toEqual(["1990000000000000007"]);
+    const check = await new XProvider({ bearer: "b", spend: cap(), fetch }).findDeleted(["1990000000000000001", "1990000000000000002", "1990000000000000007"], NOW);
+    expect(check).toEqual({ gone: ["1990000000000000007"], checked: 3, complete: true });
+  });
+
+  it("the deleted-reply check asks 100 ids a request, pays only for replies X returned, and stops, incomplete, when X refuses", async () => {
+    const ids = Array.from({ length: 150 }, (_, i) => `19900000000000${10_000 + i}`);
+    const spend = new MemorySpend();
+    const ok = fakeFetch([[/tweets\?ids=/, { data: [{ id: ids[0] }], errors: [{ resource_id: ids[1], type: "https://api.twitter.com/2/problems/resource-not-found" }, { resource_id: "1234", type: "https://api.twitter.com/2/problems/resource-not-found" }] }]]);
+    const check = await new XProvider({ bearer: "b", spend: new SpendCap(spend, "x", 50_000_000), fetch: ok.fetch }).findDeleted(ids, NOW);
+    expect(ok.calls.map((c) => c.url.split("ids=")[1]!.split(",").length)).toEqual([100, 50]);
+    // An id we never asked about is not reported, even if X names it.
+    expect(check).toEqual({ gone: [ids[1]], checked: 150, complete: true });
+    expect(spend.totals.get("x:2026-11-01")).toBe(2 * X_READ_COST_MICROS); // one post returned per request
+
+    const refused = new MemorySpend();
+    const down = fakeFetch([[/tweets\?ids=/, { title: "Too Many Requests" }, 429]]);
+    expect(await new XProvider({ bearer: "b", spend: new SpendCap(refused, "x", 50_000_000), fetch: down.fetch }).findDeleted(ids, NOW)).toEqual({ gone: [], checked: 0, complete: false });
+    expect(down.calls).toHaveLength(1);
+    expect(refused.totals.get("x:2026-11-01")).toBe(0);
+  });
+
+  it("the poll read hands its reservation back when the read fails, once, and keeps it when the read worked (AEGIS)", async () => {
+    const failed = new MemorySpend();
+    const down = fakeFetch([[/tweets\//, { title: "Service Unavailable" }, 503]]);
+    expect(await new XProvider({ bearer: "b", spend: new SpendCap(failed, "x", 50_000_000), fetch: down.fetch }).readPollTotals(OUR_POST, NOW)).toBeNull();
+    expect(failed.totals.get("x:2026-11-01")).toBe(0);
+    expect(failed.asked).toBe(2); // one reservation, one hand-back
+
+    const offline = new MemorySpend();
+    const thrown = new XProvider({ bearer: "b", spend: new SpendCap(offline, "x", 50_000_000), fetch: async () => Promise.reject(new Error("offline")) });
+    expect(await thrown.readPollTotals(OUR_POST, NOW)).toBeNull();
+    expect(offline.totals.get("x:2026-11-01")).toBe(0);
+
+    // A read that worked was paid for: the reservation stays, and nothing is handed back a second time.
+    const worked = new MemorySpend();
+    const { fetch } = fakeFetch(xRoutes());
+    expect(await new XProvider({ bearer: "b", spend: new SpendCap(worked, "x", 50_000_000), fetch }).readPollTotals(OUR_POST, NOW)).toEqual({ yes: 412, no: 655 });
+    expect(worked.totals.get("x:2026-11-01")).toBe(X_READ_COST_MICROS);
+    expect(worked.asked).toBe(1);
+
+    // The post was read but has no YES/NO poll: still a paid read.
+    const noPoll = new MemorySpend();
+    const plain = fakeFetch([[/tweets\//, { data: { id: OUR_POST } }]]);
+    expect(await new XProvider({ bearer: "b", spend: new SpendCap(noPoll, "x", 50_000_000), fetch: plain.fetch }).readPollTotals(OUR_POST, NOW)).toBeNull();
+    expect(noPoll.totals.get("x:2026-11-01")).toBe(X_READ_COST_MICROS);
+    expect(noPoll.asked).toBe(1);
   });
 
   it("stops, incomplete, on a failed or malformed answer, and refuses a post id that isn't digits", async () => {

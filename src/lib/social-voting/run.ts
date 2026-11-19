@@ -11,6 +11,7 @@ import { MetaProvider } from "./providers/meta";
 import { XProvider } from "./providers/x";
 import { SpendCap, usdToMicros } from "./spend";
 import { SupabaseSocialStore } from "./supabase-store";
+import { sweepDeletedReplies, type SweepReport } from "./sweep";
 import type { Platform, SocialProvider } from "./types";
 
 /** The link in the public auto-reply: the plain address of the linking page, with no tracking of any kind (LEX). */
@@ -21,11 +22,18 @@ export function autoReplyText(base: string): Record<"en" | "fr", string> {
   };
 }
 
+/** Counts only. `sweep` is null when the deleted-reply sweep itself failed this run (it runs again tomorrow). */
+export type SocialReport = CountReport & { sweep: SweepReport | null };
+
 /**
- * The social step of the daily cycle. Returns null, having called nothing, while SOCIAL_VOTING is off or the
- * database or the signing secret is missing. A provider is created only when its own key is set.
+ * The social step of the daily cycle (Vercel Cron, once a day). Returns null, having called nothing, while
+ * SOCIAL_VOTING is off or the database or the signing secret is missing. A provider is created only when its own
+ * key is set.
+ *
+ * Two parts, every day: the sweep of deleted replies, then the count of new replies. The sweep goes first so that
+ * when the monthly spend cap is nearly used up, taking a deleted reply out comes before taking a new one in.
  */
-export async function runSocialStep(now: Date, env: Record<string, string | undefined> = process.env): Promise<CountReport | null> {
+export async function runSocialStep(now: Date, env: Record<string, string | undefined> = process.env): Promise<SocialReport | null> {
   if (!socialVotingOn(env)) return null;
   const config = socialEnv(env);
   const admin = adminSupabase();
@@ -40,13 +48,15 @@ export async function runSocialStep(now: Date, env: Record<string, string | unde
   if (config.META_INSTAGRAM_TOKEN) providers.instagram = new MetaProvider({ platform: "instagram", accessToken: config.META_INSTAGRAM_TOKEN });
   if (config.META_THREADS_TOKEN) providers.threads = new MetaProvider({ platform: "threads", accessToken: config.META_THREADS_TOKEN });
 
-  return countSocialReplies({
-    posts: officialPosts(sampleQuestions, now),
+  const posts = officialPosts(sampleQuestions, now);
+  // LEX: daily, not weekly. A failed sweep never stops the count.
+  const sweep = await sweepDeletedReplies({ posts, providers, store, now }).catch(() => null);
+  const count = await countSocialReplies({
+    posts,
     providers,
     store,
     now,
-    // Checking for deleted replies costs a read per counted reply on X, so it runs once a week (Mondays, UTC).
-    sweepDeleted: now.getUTCDay() === 1,
     ...(autoReplyOn(env) ? { autoReply: { text: autoReplyText(siteUrl()), maxPerCycle: AUTO_REPLY_MAX_PER_CYCLE } } : {}),
   });
+  return { ...count, sweep };
 }
