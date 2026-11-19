@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Fragment, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { ShareBar } from "@/components/share-bar";
 import type { Locale } from "@/i18n/config";
@@ -15,6 +16,7 @@ import { provinces, type Province, type QuestionState } from "@/lib/question";
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
 import type { ShareLinks } from "@/lib/social";
 import { accountsEnabled } from "@/lib/supabase/env";
+import { welcomeHref } from "@/lib/return-path";
 import { fill } from "@/lib/text";
 
 type Props = {
@@ -105,6 +107,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   const vpn = useSyncExternalStore(subscribeOutsideCanada, isVpnRefused, () => false);
   const termsOld = useSyncExternalStore(subscribeOutsideCanada, isTermsOutdated, () => false);
   const id = useId();
+  // The nudge brings people back here after signing up (checked with returnPath: a plain path only).
+  const pathname = usePathname();
   const sliderRef = useRef<HTMLInputElement>(null);
   const changeRef = useRef<HTMLButtonElement>(null);
   // Where keyboard focus goes after a step changes, so it never falls back to the top of the page.
@@ -205,7 +209,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
           {signedIn === false && (
             <p className="m-0 text-body-sm text-ink-2">
               {t.nudge.before}{" "}
-              <Link href={`/${locale}/welcome`} className="font-semibold text-link underline underline-offset-2">
+              <Link href={welcomeHref(locale, pathname)} className="font-semibold text-link underline underline-offset-2">
                 {t.nudge.link}
               </Link>{" "}
               {t.nudge.after}
