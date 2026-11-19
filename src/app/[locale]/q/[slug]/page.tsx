@@ -11,6 +11,8 @@ import { CrowdBar } from "@/components/crowd-bar";
 import { ForecastChart } from "@/components/forecast-chart";
 import { LanguageSplit } from "@/components/language-split";
 import { ProvinceSplit } from "@/components/province-split";
+import { ShareBar } from "@/components/share-bar";
+import { SocialPolls } from "@/components/social-polls";
 import { ScreenView } from "@/components/screen-view";
 import { SourceCredit } from "@/components/source-credit";
 import { SportsNotice } from "@/components/sports-notice";
@@ -24,6 +26,8 @@ import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatSh
 import { callsCloseAt, crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
+import { socialPollLine, questionShareUrl, shareLinks } from "@/lib/social";
+import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
 
 type Params = Promise<{ locale: string; slug: string }>;
@@ -43,6 +47,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!isLocale(locale) || !q) return {};
   return {
     title: q.question[locale],
+    // The share card comes from opengraph-image.tsx beside this file; X falls back to it for the large card.
+    openGraph: { title: q.question[locale], type: "website", siteName: "Cansensa", locale: `${locale}_CA`, url: `/${locale}/q/${slug}` },
+    twitter: { card: "summary_large_image", title: q.question[locale] },
     alternates: { canonical: `/${locale}/q/${slug}`, languages: { "en-CA": `/en/q/${slug}`, "fr-CA": `/fr/q/${slug}` } },
   };
 }
@@ -125,6 +132,20 @@ export default async function QuestionPage({ params }: { params: Params }) {
     />
   );
 
+  // Social v1: plain question link, no tracking. Native poll totals sit apart from the crowd.
+  const shareUrl = questionShareUrl(siteUrl(), locale, q.slug);
+  const shareText = fill(t.share.text, { question: q.question[locale] });
+  const polls = q.socialPolls ?? [];
+  const social = (
+    <SocialPolls
+      title={t.social.title}
+      label={t.social.label}
+      viewPost={t.social.viewPost}
+      sampleLabel={polls.some((p) => p.sample) ? t.social.sample : undefined}
+      rows={polls.map((p) => ({ platform: t.social.platforms[p.platform], line: socialPollLine(p, t.social, locale), href: p.sample ? undefined : p.url }))}
+    />
+  );
+
   return (
     <article className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
       <ScreenView locale={locale} screen="question" slug={q.slug} state={state} />
@@ -168,7 +189,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
           <p className="m-0 grid gap-1">
             <span className="text-caption">
               <span className="font-bold uppercase tracking-wide text-canada">{settled ? t.question.canadaSaid : t.question.canadaSays}</span>
-              <span className="text-ink-3"> · {t.question.canadaSource}</span>
+              <span className="text-ink-2"> · {t.question.canadaSource}</span>
             </span>
             <span className="flex flex-wrap items-baseline gap-x-3">
               <span className="font-display text-display-lg font-bold leading-none tabular text-side-a-text">{pct(yes)}</span>
@@ -201,7 +222,12 @@ export default async function QuestionPage({ params }: { params: Params }) {
           {verdictText && <p className="m-0 max-w-[62ch] border-t border-line pt-3 text-body font-semibold">{verdictText}</p>}
         </section>
 
-        <div className="lg:hidden">{panel}</div>
+        <div className="grid gap-6 lg:hidden">
+          {panel}
+          {social}
+        </div>
+
+        <ShareBar t={t.share} text={shareText} url={shareUrl} links={shareLinks(shareText, shareUrl)} />
 
         <section className="border-t border-line pt-5">
           <ForecastChart
@@ -317,7 +343,10 @@ export default async function QuestionPage({ params }: { params: Params }) {
         {q.category === "sports" && <SportsNotice label={t.legal.sportsLabel} footer={t.legal.sportsFooter} />}
       </div>
 
-      <aside className="sticky top-20 hidden lg:block">{panel}</aside>
+      <aside className="sticky top-20 hidden gap-6 lg:grid">
+        {panel}
+        {social}
+      </aside>
     </article>
   );
 }

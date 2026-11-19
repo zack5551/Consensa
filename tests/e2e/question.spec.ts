@@ -129,3 +129,79 @@ test("the bot check is off locally: the challenge route steps aside and a call s
   await expect(page.locator("altcha-widget")).toHaveCount(0);
   await expect(page.getByText(/quick check/i)).toHaveCount(0);
 });
+
+test("share buttons link to the plain question page, with no tracking", async ({ page }) => {
+  for (const locale of ["en", "fr"] as const) {
+    await page.goto(`/${locale}/q/boc-cut-dec-2026`);
+    const href = async (key: string) => new URL((await page.locator(`a[data-share="${key}"]`).getAttribute("href")) ?? "");
+    const plain = new RegExp(`^https?://[^/?#]+/${locale}/q/boc-cut-dec-2026$`);
+    const line = locale === "en" ? "Make your call on Cansensa. Free. No prizes." : "Faites votre prévision sur Cansensa. Gratuit. Aucun prix.";
+
+    const x = await href("x");
+    expect(`${x.origin}${x.pathname}`).toBe("https://twitter.com/intent/tweet");
+    expect([...x.searchParams.keys()].sort()).toEqual(["text", "url"]);
+    expect(x.searchParams.get("url")).toMatch(plain);
+    expect(x.searchParams.get("text")).toContain(line);
+
+    const threads = await href("threads");
+    expect(`${threads.origin}${threads.pathname}`).toBe("https://www.threads.net/intent/post");
+    expect([...threads.searchParams.keys()]).toEqual(["text"]);
+    expect(threads.searchParams.get("text")).toContain(line);
+    expect(threads.searchParams.get("text")?.split(" ").at(-1)).toMatch(plain);
+
+    const facebook = await href("facebook");
+    expect(`${facebook.origin}${facebook.pathname}`).toBe("https://www.facebook.com/sharer/sharer.php");
+    expect([...facebook.searchParams.keys()]).toEqual(["u"]);
+    expect(facebook.searchParams.get("u")).toMatch(plain);
+
+    await expect(page.getByRole("button", { name: locale === "en" ? "Copy link" : "Copier le lien" })).toBeVisible();
+  }
+  // Links only: the page loads nothing from the social platforms.
+  expect(await page.locator("script[src], iframe, img").evaluateAll((els) => els.map((el) => el.getAttribute("src") ?? "").filter((src) => /twitter|x\.com|threads|facebook|instagram/.test(src)))).toEqual([]);
+});
+
+test("the social block shows its label and the poll line, apart from Canada says", async ({ page }) => {
+  await page.goto("/en/q/boc-cut-dec-2026");
+  const block = page.getByTestId("social-polls").locator("visible=true");
+  await expect(block).toHaveCount(1);
+  await expect(block.getByRole("heading", { name: /On social media/ })).toBeVisible();
+  await expect(block.getByText("Not verified. May include people outside Canada and under 18.")).toBeVisible();
+  await expect(block.getByText("X poll, Nov 5: 58% yes · 1,240 votes")).toBeVisible();
+  await expect(block.getByText("Sample data")).toBeVisible();
+  // A sample row has no real post behind it, so it carries no link.
+  await expect(block.getByRole("link")).toHaveCount(0);
+  // Outside the Canada says section, never inside it.
+  await expect(page.getByRole("region", { name: "Canada says" }).getByTestId("social-polls")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Canada says" }).getByText(/1,240/)).toHaveCount(0);
+
+  await page.goto("/fr/q/boc-cut-dec-2026");
+  const bloc = page.getByTestId("social-polls").locator("visible=true");
+  await expect(bloc.getByText("Non vérifié. Peut inclure des personnes hors du Canada et de moins de 18\u00A0ans.")).toBeVisible();
+  await expect(bloc.getByText("Sondage X, 5 nov.\u00A0: 58\u00A0% de oui · 1\u00A0240\u00A0votes")).toBeVisible();
+  await expect(bloc.getByText("Données d’exemple")).toBeVisible();
+
+  // Hidden when a question has no polls.
+  await page.goto("/en/q/giller-debut-2026");
+  await expect(page.getByTestId("social-polls")).toHaveCount(0);
+});
+
+test("the share card is a 200 PNG in both languages, and the page asks for the large card", async ({ page, request }) => {
+  for (const slug of ["boc-cut-dec-2026", "leafs-playoffs-2027"]) {
+    for (const locale of ["en", "fr"]) {
+      const res = await request.get(`/${locale}/q/${slug}/opengraph-image`);
+      expect(res.status()).toBe(200);
+      expect(res.headers()["content-type"]).toBe("image/png");
+      const body = await res.body();
+      // PNG signature, then the IHDR width and height: 1200×630.
+      expect(body.subarray(1, 4).toString("latin1")).toBe("PNG");
+      expect([body.readUInt32BE(16), body.readUInt32BE(20)]).toEqual([1200, 630]);
+    }
+  }
+  expect((await request.get("/en/q/no-such-question/opengraph-image")).status()).toBe(404);
+  for (const locale of ["en", "fr"]) {
+    await page.goto(`/${locale}/q/boc-cut-dec-2026`);
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", new RegExp(`/${locale}/q/boc-cut-dec-2026/opengraph-image`));
+    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", new RegExp(`/${locale}/q/boc-cut-dec-2026/opengraph-image`));
+  }
+});

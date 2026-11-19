@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { socialPollSchema } from "@/lib/social";
 
 export const provinces = ["BC", "AB", "PR", "ON", "QC", "AT"] as const;
 export const categories = ["economy", "weather", "housing", "culture", "science", "sports"] as const;
@@ -28,6 +29,8 @@ export const questionSchema = z.object({
   why: z
     .object({ body: bilingual, sources: z.array(bilingual).min(1) })
     .optional(),
+  /** Hand-entered native poll totals from official Cansensa posts. Shown apart from the crowd, never mixed into it. */
+  socialPolls: z.array(socialPollSchema).optional(),
   resolution: z.object({
     source: z.object({ name: bilingual, url: z.url() }),
     rule: bilingual,

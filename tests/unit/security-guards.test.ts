@@ -148,6 +148,9 @@ const allowedDomains = [
   // reads a local file on our server; the database is fetched at build time by scripts/fetch-ip2proxy.mjs, not at run time.
   "lite.ip2location.com",
   "creativecommons.org",
+  // Share and poll links, and nothing else: plain links a person follows from the question page (intent URLs and our
+  // own post URLs). We load no script, SDK or image from them and send no data, so nothing leaves until a click.
+  "twitter.com", "x.com", "threads.net", "instagram.com", "facebook.com",
   // Not network calls: the SVG namespace and the local dev fallback
   "www.w3.org", "localhost",
 ];
