@@ -9,8 +9,10 @@ import { setBotWidgetStrings } from "@/lib/bot-check-client";
 import { crowdLeansOtherWay, crowdOnSide, fromProbability, SURE_DEFAULT, SURE_MAX, SURE_MIN, sureGap, toProbability, type Side } from "@/lib/call-side";
 import { isBotCheckFailed, isOutsideCanada, isTermsOutdated, isVpnRefused, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
 import { formatBrier, formatCount, formatPercent } from "@/lib/format";
+import { MIN_CROWD } from "@/lib/live-crowd";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
 import { provinces, type Province, type QuestionState } from "@/lib/question";
+import { regionCallsLine } from "@/lib/region-calls";
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
 import { accountsEnabled } from "@/lib/supabase/env";
 import { fill } from "@/lib/text";
@@ -35,7 +37,7 @@ type Props = {
   /** Already formatted for the locale, e.g. "October 21, 2026". */
   closedOn?: string;
   /** This question's region numbers. With the region from onboarding, your own region shows beside Canada. */
-  regions?: { values: Record<Province, number>; hidden?: readonly Province[]; names: Record<Province, string> };
+  regions?: { values: Record<Province, number>; hidden?: readonly Province[]; names: Record<Province, string>; counts?: Partial<Record<Province, number>> };
 };
 
 /** The region chosen at onboarding, if this browser has one. */
@@ -174,6 +176,9 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   ));
   // Your region's number shows once you've saved a call, so it informs the result, not the call itself.
   const regionValue = saved && region !== null && regions && !regions.hidden?.includes(region) ? regions.values[region] : null;
+  // The count shows only at or above the privacy floor; below it (or with no count yet) the row keeps its countless wording.
+  const regionCount = region !== null ? regions?.counts?.[region] : undefined;
+  const regionLine = region !== null && regions ? regionCallsLine(t, regions.names[region], regionCount !== undefined && regionCount >= MIN_CROWD ? regionCount : undefined, locale) : null;
 
   return (
     <section aria-labelledby={`${id}-title`} className="rounded-card border border-line border-t-4 border-t-ink bg-surface p-5">
@@ -206,8 +211,12 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
           )}
           {regionValue !== null && region !== null && regions ? (
             <p className="m-0 flex items-baseline justify-between gap-3 border-t border-line pt-3 text-body-sm text-ink-2">
-              <span>{fill(t.yourRegion, { region: regions.names[region] })}</span>
-              <span className="font-display text-title-sm font-bold text-ink tabular">
+              <span>
+                {regionLine?.before}
+                {regionLine?.n != null && <span className="tabular">{regionLine.n}</span>}
+                {regionLine?.after}
+              </span>
+              <span className="shrink-0 whitespace-nowrap font-display text-title-sm font-bold text-ink tabular">
                 {sides.yes} {pct(regionValue)}
               </span>
             </p>

@@ -425,6 +425,8 @@ const fr = {
     resultsYou: "Votre réponse : {side}.",
     ifResult: "Si la réponse est oui, votre score serait de {yes}. Si c’est non, de {no}. Plus il est bas, mieux c’est.",
     yourRegion: "Votre région · {region} · moyenne des prévisions",
+    yourRegionCount: "Votre région · {region} · moyenne de {n} prévisions",
+    yourRegionCountOne: "Votre région · {region} · moyenne de {n} prévision",
     you: "Vous",
     save: "Enregistrer ma prévision",
     saved: "Prévision enregistrée : {side}, {value} de chances.",

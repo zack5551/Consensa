@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sampleQuestions } from "@/content/sample-questions";
-import { applyLive, MIN_CROWD, summarize } from "@/lib/live-crowd";
+import { applyLive, MIN_CROWD, parseCrowdRows, summarize } from "@/lib/live-crowd";
+import { questionSchema } from "@/lib/question";
 import { crowdNow } from "@/lib/question";
 
 describe("summarize", () => {
@@ -52,8 +53,46 @@ describe("live splits", () => {
     expect(out.languages).toEqual({ en: 52, fr: 60 });
   });
 
+  it("counts the calls behind each shown region, and never counts a thin one", () => {
+    const live = summarize(rows).get(q.slug)!;
+    expect(live.provinceCounts).toEqual({ QC: 5, ON: 6 });
+    expect(live.provinceCounts?.BC).toBeUndefined();
+  });
+
+  it("carries region counts onto the question, which still passes the question schema", () => {
+    const out = applyLive(q, summarize(rows).get(q.slug));
+    expect(out.provinceCounts).toEqual({ QC: 5, ON: 6 });
+    expect(questionSchema.safeParse(out).success).toBe(true);
+  });
+
+  it("leaves sample questions without region counts", () => {
+    expect(q.provinceCounts).toBeUndefined();
+  });
+
   it("drops the language split when one language is below the floor", () => {
     const out = applyLive(q, summarize(rows.filter((r) => r.region !== "QC")).get(q.slug));
     expect(out.languages).toBeUndefined();
+  });
+});
+
+describe("parseCrowdRows", () => {
+  it("reads bigint counts sent as strings", () => {
+    expect(parseCrowdRows([{ slug: "a-q", region: "QC", locale: "fr", n: "7", total: "420" }])).toEqual([
+      { slug: "a-q", region: "QC", locale: "fr", n: 7, total: 420 },
+    ]);
+  });
+  it("drops malformed rows instead of trusting them", () => {
+    const rows = parseCrowdRows([
+      { slug: "a-q", region: null, locale: "en", n: 5, total: 250 },
+      { slug: "a-q", region: "ON", locale: "en", n: -1, total: 10 },
+      { slug: "a-q", region: "ON", locale: "en", n: "many", total: 10 },
+      { region: "ON", locale: "en", n: 5, total: 10 },
+      null,
+    ]);
+    expect(rows).toEqual([{ slug: "a-q", region: null, locale: "en", n: 5, total: 250 }]);
+  });
+  it("returns nothing for anything but an array", () => {
+    expect(parseCrowdRows(null)).toEqual([]);
+    expect(parseCrowdRows({ slug: "a-q" })).toEqual([]);
   });
 });
