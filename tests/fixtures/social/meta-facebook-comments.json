@@ -1,0 +1,9 @@
+{
+  "data": [
+    { "id": "5001_7001", "from": { "id": "8101", "name": "Camille Tremblay" }, "message": "Oui", "created_time": "2026-11-18T14:00:00+0000" },
+    { "id": "5001_7002", "from": { "id": "8102", "name": "Jordan Lee" }, "message": "NO!!", "created_time": "2026-11-18T14:30:00+0000" },
+    { "id": "5001_7003", "message": "Yes", "created_time": "2026-11-18T14:40:00+0000" },
+    { "id": "5001_7004", "from": { "id": "8104", "name": "Sam Roy" }, "message": "I am not sure yet", "created_time": "2026-11-18T14:50:00+0000" }
+  ],
+  "paging": { "cursors": { "before": "AAA", "after": "BBB" } }
+}

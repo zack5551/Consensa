@@ -34,8 +34,9 @@ test("language toggle keeps you on the same page in the other language", async (
 
 test("making a call saves it and compares with Canada", async ({ page }) => {
   await page.goto("/en/q/boc-cut-dec-2026");
-  await page.getByRole("button", { name: /Toss-up/ }).click();
-  await page.getByRole("button", { name: "Make my call" }).click();
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
+  await page.getByRole("slider").fill("50");
+  await page.getByRole("button", { name: "Save my call" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Call saved");
-  await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("12 points more confident than Canada");
+  await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Canada leans the other way: 38% chance of yes.");
 });

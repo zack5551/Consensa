@@ -1,7 +1,7 @@
 /*
  * Screen: a question.
  * One message: "Canada says 38%" (and how it got there).
- * One action: make your call. Once it closes, the action becomes "see how your call did".
+ * One action: make your call (tap Yes or No, say how sure, save). Once it closes, the action becomes "see how your call did".
  */
 import type { Metadata } from "next";
 import { pageAlternates } from "@/lib/alternates";
@@ -148,6 +148,12 @@ export default async function QuestionPage({ params }: { params: Params }) {
     calledItShare = { t: t.share, text, url, links: shareLinks(text, url) };
   }
 
+  // When calls close, worded once for the header and the call panel. Sports give the time, in Eastern time.
+  const closes =
+    q.category === "sports"
+      ? fill(t.question.closesTime, { when: formatEasternTime(callsCloseAt(q), locale) })
+      : `${t.question.closes} ${formatShortDate(callsCloseAt(q), locale)}`;
+
   const panel = (
     <CallPanel
       slug={q.slug}
@@ -155,6 +161,9 @@ export default async function QuestionPage({ params }: { params: Params }) {
       locale={locale}
       t={t.call}
       canadaSays={settled ? t.question.canadaSaid : t.question.canadaSays}
+      sides={{ yes: t.question.yes, no: t.question.no }}
+      calls={q.forecasters}
+      closes={closes}
       state={state}
       scored={q.scored}
       outcome={result?.outcome}
@@ -195,9 +204,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
               <>
                 <span aria-hidden="true">·</span>
                 <span className="uppercase tracking-wide">
-                  {q.category === "sports"
-                    ? fill(t.question.closesTime, { when: formatEasternTime(callsCloseAt(q), locale) })
-                    : `${t.question.closes} ${formatShortDate(callsCloseAt(q), locale)}`}
+                  {closes}
                 </span>
                 {q.category === "sports" && q.startsAt && (
                   <>

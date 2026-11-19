@@ -1,25 +1,21 @@
+import type { Side } from "@/lib/call-side";
 import { questionState, type Question } from "@/lib/question";
 import { isPublishable } from "@/lib/regions";
 
-export const callSides = ["yes", "no"] as const;
-export type CallSide = (typeof callSides)[number];
-
-export function isCallSide(value: string): value is CallSide {
-  return (callSides as readonly string[]).includes(value);
-}
+const sides = ["yes", "no"] as const satisfies readonly Side[];
 
 /**
  * Whether a "Called it!" card exists for this question and side: only once the official result is in and not under
  * review, and only for the side that happened. The card and its page are built from the question and the side alone,
  * so there is never anything about a person to check, store or show.
  */
-export function hasCalledItCard(question: Question, side: string, now: Date): side is CallSide {
+export function hasCalledItCard(question: Question, side: string, now: Date): side is Side {
   return questionState(question, now) === "resolved" && question.resolution.result?.outcome === side;
 }
 
 /** Every "Called it!" card that exists right now: one per resolved question, for the side that happened. */
-export function calledItCards(questions: readonly Question[], now: Date): { slug: string; side: CallSide }[] {
-  return questions.flatMap((q) => callSides.filter((side) => hasCalledItCard(q, side, now)).map((side) => ({ slug: q.slug, side })));
+export function calledItCards(questions: readonly Question[], now: Date): { slug: string; side: Side }[] {
+  return questions.flatMap((q) => sides.filter((side) => hasCalledItCard(q, side, now)).map((side) => ({ slug: q.slug, side })));
 }
 
 /**

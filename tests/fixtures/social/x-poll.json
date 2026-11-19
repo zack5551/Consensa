@@ -1,0 +1,4 @@
+{
+  "data": { "id": "1980000000000000000", "text": "Will the Bank of Canada cut its policy rate in December?", "attachments": { "poll_ids": ["77"] } },
+  "includes": { "polls": [{ "id": "77", "options": [{ "position": 1, "label": "Yes", "votes": 412 }, { "position": 2, "label": "No", "votes": 655 }] }] }
+}

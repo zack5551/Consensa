@@ -14,6 +14,7 @@ import { runFromEnv } from "@/engine/run";
 import { siteDueQuestions } from "@/engine/site-results";
 import { SupabaseStore } from "@/engine/supabase-store";
 import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { runSocialStep } from "@/lib/social-voting/run";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,5 +61,8 @@ async function runCycle(env: EngineEnv) {
     // Automatic results read free official data on the real clock, so they run whenever Supabase can keep the record.
     ...(supabase ? { results: { questions: siteDueQuestions(sampleQuestions), store: supabase, now: new Date() } } : {}),
   });
-  return NextResponse.json(result, { headers: { "cache-control": "no-store" } });
+  // Social voting (sprint 11): count replies from linked accounts on our official posts. Null, and nothing is called,
+  // while SOCIAL_VOTING is off. A failure here never fails the cycle; the report is counts only.
+  const social = await runSocialStep(new Date()).catch(() => ({ failed: true }));
+  return NextResponse.json({ ...result, social }, { headers: { "cache-control": "no-store" } });
 }

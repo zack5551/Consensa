@@ -28,6 +28,8 @@ function supabaseOrigins(): string {
     return "";
   }
 }
+// Social voting (sprint 11, AEGIS): the platform APIs (X, Meta, Threads) are called by our server only, so they are
+// never in this policy, flag on or off. The policy governs the browser, and no page script talks to them.
 const baseCsp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
@@ -52,6 +54,9 @@ const nextConfig: NextConfig = {
     // The share cards read their three brand fonts from disk at run time, and the build does not find them on its own.
     "/[locale]/q/[slug]/opengraph-image": ["./brand/fonts/ttf/*.ttf"],
     "/[locale]/q/[slug]/called-it/[side]/opengraph-image": ["./brand/fonts/ttf/*.ttf"],
+    // Linking a social account runs the same VPN check (sprint 11).
+    "/api/account/social/start": ["./data/ip2proxy/**"],
+    "/api/account/social/callback": ["./data/ip2proxy/**"],
   },
   async headers() {
     return [

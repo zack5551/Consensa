@@ -152,7 +152,7 @@ export default async function DesignSystemPage({ params }: { params: Promise<{ l
               />
             </div>
           </div>
-          <CallPanel slug={`design-${q.slug}`} crowd={yes} locale={locale} t={t.call} canadaSays={t.question.canadaSays} />
+          <CallPanel slug={`design-${q.slug}`} crowd={yes} locale={locale} t={t.call} canadaSays={t.question.canadaSays} sides={{ yes: t.question.yes, no: t.question.no }} calls={q.forecasters} />
         </div>
       </section>
     </div>

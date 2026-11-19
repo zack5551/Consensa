@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { exportFileName } from "@/lib/account";
 import { rateLimiter } from "@/lib/rate-limit";
+import { socialVotingOn } from "@/lib/social-voting/env";
 import { noStore, signedIn } from "@/lib/supabase/account-server";
 
 const allowExport = rateLimiter({ limit: 10, windowMs: 60_000 });
@@ -19,6 +20,9 @@ export async function GET() {
     me.supabase.from("consent_log").select("kind, version, given_at, withdrawn_at").order("given_at"),
   ]);
   if (profile.error || calls.error || consents.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
+  // Linked social accounts are part of what we hold (AEGIS). Read only when social voting is on: the table comes with it.
+  const links = socialVotingOn() ? await me.supabase.from("social_links").select("platform, platform_user_id, handle, show_handle, linked_at, last_checked_at, paused").order("linked_at") : null;
+  if (links?.error) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: noStore });
 
   const now = new Date();
   const body = {
@@ -27,6 +31,7 @@ export async function GET() {
     profile: profile.data,
     calls: calls.data ?? [],
     consents: consents.data ?? [],
+    ...(links ? { socialLinks: links.data ?? [] } : {}),
   };
   return new NextResponse(JSON.stringify(body, null, 2), {
     headers: { ...noStore, "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="${exportFileName(now)}"` },

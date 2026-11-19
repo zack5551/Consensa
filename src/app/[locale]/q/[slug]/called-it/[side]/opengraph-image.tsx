@@ -53,7 +53,7 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
 
         <div style={{ display: "flex", flexDirection: "column", flex: 1, justifyContent: "center", gap: 14 }}>
           <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 800, fontSize: 96, lineHeight: 1, letterSpacing: -3, color: c.sideAText }}>{cardSafe(t.call.calledIt)}</div>
-          <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 700, fontSize: questionSize, lineHeight: 1.14, letterSpacing: -0.8, maxHeight: 170, overflow: "hidden" }}>{text}</div>
+          <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 700, fontSize: questionSize, lineHeight: 1.2, letterSpacing: -0.8, maxHeight: 180, overflow: "hidden" }}>{text}</div>
         </div>
 
         {/* The answer sits on its side's colour (teal = yes, violet = no), with the date the official result came out. */}

@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useId, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { Fragment, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { ShareBar } from "@/components/share-bar";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
 import { setBotWidgetStrings } from "@/lib/bot-check-client";
-import { isBotCheckFailed, isOutsideCanada, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
-import { formatBrier, formatPercent } from "@/lib/format";
+import { crowdLeansOtherWay, crowdOnSide, fromProbability, SURE_DEFAULT, SURE_MAX, SURE_MIN, sureGap, toProbability, type Side } from "@/lib/call-side";
+import { isBotCheckFailed, isOutsideCanada, isVpnRefused, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
+import { formatBrier, formatCount, formatPercent } from "@/lib/format";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
 import { provinces, type Province, type QuestionState } from "@/lib/question";
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
@@ -21,6 +23,14 @@ type Props = {
   locale: Locale;
   t: Dictionary["call"];
   canadaSays: string;
+  /** The two answers, in the page's language: "Yes" and "No". */
+  sides: Record<Side, string>;
+  /** How many calls the crowd number is built from. */
+  calls: number;
+  /** When calls close, already worded and formatted for the locale, e.g. "Closes Dec. 9". */
+  closes?: string;
+  /** False where the page shows no crowd number: the answer bars then carry no percentages. */
+  crowdShown?: boolean;
   state?: QuestionState;
   scored?: boolean;
   outcome?: "yes" | "no";
@@ -46,20 +56,58 @@ function myRegion(): Province | null {
   }
 }
 
-const quickSets = [10, 50, 75] as const;
+/** Each side's colours, written out in full so Tailwind sees every class. Teal is yes, violet is no. */
+const tone = {
+  yes: {
+    text: "text-side-a-text",
+    soft: "bg-side-a-soft",
+    fill: "bg-side-a",
+    accent: "accent-[var(--cn-side-a)]",
+    choice: "text-side-a-text hover:bg-side-a-soft aria-pressed:border-side-a aria-pressed:bg-side-a-soft",
+  },
+  no: {
+    text: "text-side-b-text",
+    soft: "bg-side-b-soft",
+    fill: "bg-side-b",
+    accent: "accent-[var(--cn-side-b)]",
+    choice: "text-side-b-text hover:bg-side-b-soft aria-pressed:border-side-b aria-pressed:bg-side-b-soft",
+  },
+} as const satisfies Record<Side, Record<string, string>>;
+
+const sideOrder = ["yes", "no"] as const;
+
+/** Asked once per page load, and only after a call is saved: is this visitor signed in? null when the answer isn't known. */
+let accountCheck: Promise<boolean | null> | null = null;
+function signedInOnce(): Promise<boolean | null> {
+  accountCheck ??= fetch("/api/account", { cache: "no-store" })
+    .then((res) => (res.ok ? (res.json() as Promise<{ signedIn?: unknown } | null>) : null))
+    .then((body) => (typeof body?.signedIn === "boolean" ? body.signedIn : null))
+    .catch(() => null);
+  return accountCheck;
+}
 
 /**
- * The one action on a question page: set a probability and save it.
- * Once a question closes, the same panel shows your call and, after the result, "Called it!" or "Not this time."
+ * The one action on a question page, asked the way a poll asks it: tap Yes or No, say how sure you are, save.
+ * After saving, the same panel shows where Canada stands as two answer bars. The stored call is still a 1–99
+ * probability of yes (see src/lib/call-side.ts).
+ * Once a question closes, the panel shows your call and, after the result, "Called it!" or "Not this time."
  */
-export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", scored = true, outcome, closedOn = "", regions, calledItShare }: Props) {
-  const [value, setValue] = useState(50);
+export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, closes = "", crowdShown = true, state = "open", scored = true, outcome, closedOn = "", regions, calledItShare }: Props) {
+  const [side, setSide] = useState<Side | null>(null);
+  const [sure, setSure] = useState<number>(SURE_DEFAULT);
   const [saved, setSaved] = useState(false);
   const [stored, setStored] = useState<number | null>(null);
   const [region, setRegion] = useState<Province | null>(null);
+  // null until the answer is known. A call is only scored on a record once it is saved to an account (LEX).
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const outside = useSyncExternalStore(subscribeOutsideCanada, isOutsideCanada, () => false);
   const botFailed = useSyncExternalStore(subscribeOutsideCanada, isBotCheckFailed, () => false);
+  const vpn = useSyncExternalStore(subscribeOutsideCanada, isVpnRefused, () => false);
   const id = useId();
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const changeRef = useRef<HTMLButtonElement>(null);
+  // Where keyboard focus goes after a step changes, so it never falls back to the top of the page.
+  const focusNext = useRef<"slider" | "change" | null>(null);
   const pct = (v: number) => formatPercent(v, locale);
   const accepting = state === "open" || state === "closingSoon";
 
@@ -75,17 +123,29 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
     const existing = readCall(slug);
     setStored(existing);
     if (existing !== null) {
-      setValue(existing);
+      const from = fromProbability(existing);
+      setSide(from.side);
+      setSure(from.sure);
       setSaved(true);
     }
   }, [slug]);
 
-  function save() {
-    saveCall(slug, value);
-    track("call_made", { locale, slug, value, gapToCrowd: gapToCrowd(value, crowd), scored, changed: stored !== null });
-    setStored(value);
-    setSaved(true);
-  }
+  useEffect(() => {
+    if (!accountsEnabled || !saved) return;
+    let live = true;
+    void signedInOnce().then((answer) => {
+      if (live) setSignedIn(answer);
+    });
+    return () => {
+      live = false;
+    };
+  }, [saved]);
+
+  useEffect(() => {
+    if (focusNext.current === "slider") sliderRef.current?.focus();
+    if (focusNext.current === "change") changeRef.current?.focus();
+    focusNext.current = null;
+  }, [saved]);
 
   if (!accepting) {
     return (
@@ -99,98 +159,189 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, state = "open", 
     );
   }
 
+  function save(chosen: Side) {
+    const value = toProbability(chosen, sure);
+    saveCall(slug, value);
+    track("call_made", { locale, slug, value, gapToCrowd: gapToCrowd(value, crowd), scored, changed: stored !== null });
+    setStored(value);
+    focusNext.current = "change";
+    setSaved(true);
+  }
+
+  // Before a call: "22,980 calls · Closes Dec. 9". Under the results (LEX): "Average of 22,980 calls · Closes Dec. 9", because
+  // Canada's number is the average of the calls, not a count of votes. Without a crowd number to show, only when it closes.
+  const count = formatCount(calls, locale);
+  const meta = [crowdShown ? (saved ? fill(t.averageOf, { n: count }) : calls === 1 ? t.callsOne : fill(t.calls, { n: count })) : "", closes].filter(Boolean);
+  // Each part stays on one line with its dot, so a narrow panel breaks between parts and never inside "Closes Apr 15, 7:00 p.m. ET".
+  const metaLine = meta.map((part, i) => (
+    <Fragment key={part}>
+      <span className="whitespace-nowrap">{i < meta.length - 1 ? `${part}\u00A0·` : part}</span>{" "}
+    </Fragment>
+  ));
   // Your region's number shows once you've saved a call, so it informs the result, not the call itself.
   const regionValue = saved && region !== null && regions && !regions.hidden?.includes(region) ? regions.values[region] : null;
-  const gap = gapToCrowd(value, crowd);
-  const gapText = gap === 0 ? t.sameAsCrowd : fill(gap > 0 ? t.moreThan : t.lessThan, { n: Math.abs(gap) });
-  const sideText = value < 50 ? "text-side-b-text" : "text-side-a-text";
 
   return (
     <section aria-labelledby={`${id}-title`} className="rounded-card border border-line border-t-4 border-t-ink bg-surface p-5">
       <h2 id={`${id}-title`} className="m-0 font-display text-title font-bold tracking-tight">
         {t.title}
       </h2>
-      <p id={`${id}-hint`} className="mt-1 text-body-sm text-ink-2">
-        {t.hint}
-      </p>
 
-      <output htmlFor={`${id}-slider`} className={`mt-4 block text-center font-display text-display font-semibold tabular ${sideText}`} aria-live="polite">
-        {pct(value)}
-      </output>
-
-      <input
-        id={`${id}-slider`}
-        type="range"
-        min={1}
-        max={99}
-        step={1}
-        value={value}
-        disabled={saved}
-        aria-label={t.sliderLabel}
-        aria-describedby={`${id}-hint`}
-        aria-valuetext={pct(value)}
-        onChange={(e) => setValue(Number(e.target.value))}
-        className="mt-3 h-8 w-full cursor-pointer accent-[var(--cn-side-a)] disabled:cursor-not-allowed disabled:opacity-60"
-      />
-
-      {/* Presets sit on one row at French length: label over number, three equal columns. */}
-      <div className="mt-2 grid grid-cols-3 gap-2">
-        {quickSets.map((v) => (
-          <button
-            key={v}
-            type="button"
-            disabled={saved}
-            aria-pressed={value === v}
-            onClick={() => setValue(v)}
-            className="grid min-h-11 content-center rounded-control border border-line bg-surface px-2 py-1.5 text-center text-caption leading-tight text-ink-2 hover:bg-sunken aria-pressed:border-side-a aria-pressed:text-ink disabled:opacity-50"
-          >
-            <span>{v === 10 ? t.quick.unlikely : v === 50 ? t.quick.tossUp : t.quick.likely}</span>
-            <span className="font-semibold text-ink tabular">{pct(v)}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* What this call would score either way, so the scoring rule is clear before saving. Scored questions only. */}
-      {scored && (
-        <p className="mt-3 mb-0 text-caption text-ink-2 tabular">
-          {fill(t.ifResult, { yes: formatBrier(brierScore(value / 100, 1), locale), no: formatBrier(brierScore(value / 100, 0), locale) })}
-        </p>
-      )}
-
-      <dl className={`mt-4 grid gap-3 ${regionValue === null ? "grid-cols-2" : "grid-cols-3"}`}>
-        <div className="border-t-2 border-canada pt-2">
-          <dt className="text-caption font-bold text-canada">{canadaSays}</dt>
-          <dd className="m-0 font-display text-title font-bold tabular">{pct(crowd)}</dd>
-        </div>
-        {regionValue !== null && region !== null && regions ? (
-          <div className="border-t-2 border-line pt-2">
-            <dt className="text-caption font-bold text-ink-2">{fill(t.yourRegion, { region: regions.names[region] })}</dt>
-            <dd className="m-0 font-display text-title font-bold tabular">{pct(regionValue)}</dd>
-          </div>
-        ) : null}
-        <div className="border-t-2 border-ink pt-2">
-          <dt className="text-caption font-bold text-ink-2">{t.you}</dt>
-          <dd className="m-0 font-display text-title font-bold tabular">{pct(value)}</dd>
-        </div>
-      </dl>
-
-      {saved ? (
+      {saved && side !== null ? (
         <div className="mt-4 grid gap-3">
-          <p role="status" className="m-0 rounded-control bg-side-a-soft p-3 text-body-sm">
-            <strong>{t.saved}.</strong> {gapText} {scored ? t.scoredWhen : t.pollNote}
+          <ResultBars crowd={crowdShown ? crowd : null} chosen={side} sides={sides} summary={`${crowdShown ? `${fill(t.resultsCrowd, { label: canadaSays, yes: pct(crowd), n: count })} ` : ""}${fill(t.resultsYou, { side: sides[side] })}`} pct={pct} />
+          <p className="m-0 text-caption text-ink-2 tabular">
+            {crowdShown && <span className="whitespace-nowrap font-bold uppercase tracking-wide text-canada">{canadaSays}</span>}
+            {crowdShown && meta.length > 0 ? "\u00A0· " : null}
+            {metaLine}
           </p>
-          <button type="button" onClick={() => setSaved(false)} className="min-h-11 justify-self-start rounded-control border border-line px-4 py-2 text-body-sm font-semibold hover:bg-sunken">
+          <p role="status" className={`m-0 rounded-control p-3 text-body-sm ${tone[side].soft}`}>
+            <strong>{fill(t.saved, { side: sides[side], value: pct(sure) })}</strong>{" "}
+            {crowdShown && <>{crowdLeansOtherWay(side, crowd) ? fill(t.otherWay, { yes: pct(crowd) }) : sureGapText(t, sureGap(side, sure, crowd))} </>}
+            {/* A call kept only in this browser is not scored on a record, so the line waits for a signed-in answer. */}
+            {scored ? (!accountsEnabled || signedIn === true ? t.scoredWhen : null) : t.pollNote}
+          </p>
+          {signedIn === false && (
+            <p className="m-0 text-body-sm text-ink-2">
+              {t.nudge.before}{" "}
+              <Link href={`/${locale}/welcome`} className="font-semibold text-link underline underline-offset-2">
+                {t.nudge.link}
+              </Link>{" "}
+              {t.nudge.after}
+            </p>
+          )}
+          {regionValue !== null && region !== null && regions ? (
+            <p className="m-0 flex items-baseline justify-between gap-3 border-t border-line pt-3 text-body-sm text-ink-2">
+              <span>{fill(t.yourRegion, { region: regions.names[region] })}</span>
+              <span className="font-display text-title-sm font-bold text-ink tabular">
+                {sides.yes} {pct(regionValue)}
+              </span>
+            </p>
+          ) : null}
+          <button
+            ref={changeRef}
+            type="button"
+            onClick={() => {
+              focusNext.current = "slider";
+              setSaved(false);
+            }}
+            className="min-h-11 justify-self-start rounded-control border border-control px-4 py-2 text-body-sm font-semibold hover:bg-sunken"
+          >
             {t.change}
           </button>
         </div>
       ) : (
-        <button type="button" onClick={save} className="mt-4 min-h-12 w-full rounded-control bg-ink px-4 py-3 text-body font-bold text-paper hover:opacity-90">
-          {t.save}
-        </button>
+        <>
+          <p id={`${id}-hint`} className="mt-1 mb-0 text-body-sm text-ink-2">
+            {t.hint}
+          </p>
+          {/* Two answers of equal weight, like a poll. The other side stays one tap away after you choose. */}
+          <div role="group" aria-labelledby={`${id}-title`} aria-describedby={`${id}-hint`} className="mt-4 grid gap-3">
+            {sideOrder.map((s) => (
+              <button
+                key={s}
+                type="button"
+                aria-pressed={side === s}
+                onClick={() => setSide(s)}
+                className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-control bg-surface px-5 py-2 text-body-lg font-bold ${tone[s].choice}`}
+              >
+                {sides[s]}
+                {side === s && <span aria-hidden="true">✓</span>}
+              </button>
+            ))}
+          </div>
+
+          {side === null ? (
+            meta.length > 0 && <p className="mt-3 mb-0 text-caption text-ink-2 tabular">{metaLine}</p>
+          ) : (
+            <>
+              <label htmlFor={`${id}-slider`} className="mt-5 block text-body font-semibold">
+                {t.howSure}
+              </label>
+              <output htmlFor={`${id}-slider`} className={`mt-1 block text-center font-display text-display-sm font-bold tabular ${tone[side].text}`} aria-live="polite">
+                {fill(t.chance, { value: pct(sure) })}
+              </output>
+              <input
+                ref={sliderRef}
+                id={`${id}-slider`}
+                type="range"
+                min={SURE_MIN}
+                max={SURE_MAX}
+                step={1}
+                value={sure}
+                aria-valuetext={fill(t.sideChance, { side: sides[side], value: pct(sure) })}
+                onChange={(e) => setSure(Number(e.target.value))}
+                className={`mt-2 h-8 w-full cursor-pointer ${tone[side].accent}`}
+              />
+              <div className="flex justify-between gap-3 text-caption text-ink-2" aria-hidden="true">
+                <span>{t.sure.low}</span>
+                <span>{t.sure.high}</span>
+              </div>
+
+              {/* What this call would score either way, so the scoring rule is clear before saving. Scored questions only. */}
+              {scored && (
+                <p className="mt-3 mb-0 text-caption text-ink-2 tabular">
+                  {fill(t.ifResult, { yes: formatBrier(brierScore(toProbability(side, sure) / 100, 1), locale), no: formatBrier(brierScore(toProbability(side, sure) / 100, 0), locale) })}
+                </p>
+              )}
+
+              <button type="button" onClick={() => save(side)} className="mt-4 min-h-12 w-full rounded-control bg-ink px-4 py-3 text-body font-bold text-paper hover:opacity-90">
+                {t.save}
+              </button>
+            </>
+          )}
+        </>
       )}
-      <p role="status" className="mt-3 mb-0 text-caption text-ink-2 empty:hidden">{outside ? t.outsideCanada : botFailed ? t.botCheckFailed : null}</p>
+      <p role="status" className="mt-3 mb-0 text-caption text-ink-2 empty:hidden">{outside ? t.outsideCanada : vpn ? t.vpnRefused : botFailed ? t.botCheckFailed : null}</p>
       {!accountsEnabled && <p className="mt-3 mb-0 text-caption text-ink-2">{t.demoNote}</p>}
     </section>
+  );
+}
+
+function sureGapText(t: Dictionary["call"], gap: number): string {
+  if (gap === 0) return t.sameAsCrowd;
+  if (Math.abs(gap) === 1) return gap > 0 ? t.moreThanOne : t.lessThanOne;
+  return fill(gap > 0 ? t.moreThan : t.lessThan, { n: Math.abs(gap) });
+}
+
+/**
+ * Where Canada stands, drawn like a poll's results: a soft track, a fill as wide as the answer's share, the answer
+ * inside the fill and the percent beside it. A check marks the side you chose. With no crowd number to show
+ * (`crowd` is null), the rows stay as plain answers with no percent. The picture is hidden from screen readers,
+ * which get `summary` as one sentence instead.
+ */
+function ResultBars({ crowd, chosen, sides, summary, pct }: { crowd: number | null; chosen: Side; sides: Record<Side, string>; summary: string; pct: (v: number) => string }) {
+  // The fills start at their label's width and grow to their share; the duration token is 0 for reduced motion.
+  const [grown, setGrown] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setGrown(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  return (
+    <div data-testid="result-bars">
+      <p className="sr-only">{summary}</p>
+      <div className="grid gap-2" aria-hidden="true">
+        {sideOrder.map((s) => {
+          const share = crowd === null ? null : crowdOnSide(s, crowd);
+          return (
+            <div key={s} className="flex items-center gap-3">
+              <div className={`h-11 min-w-0 flex-1 overflow-hidden rounded-full ${tone[s].soft}`}>
+                {/* The fill never gets narrower than its label, so "Yes" at 3% is still readable. */}
+                <div
+                  className={`flex h-full min-w-24 items-center gap-2 rounded-full pl-4 text-body font-bold transition-[width] duration-[var(--cn-duration-reveal)] ease-[var(--cn-ease-out)] ${share === null ? `w-full ${tone[s].text}` : `${tone[s].fill} text-paper`}`}
+                  style={share === null ? undefined : { width: grown ? `${share}%` : undefined }}
+                >
+                  {sides[s]}
+                  {chosen === s && <span>✓</span>}
+                </div>
+              </div>
+              {share !== null && <span className={`w-16 shrink-0 text-right font-display text-title font-bold tabular ${tone[s].text}`}>{pct(share)}</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

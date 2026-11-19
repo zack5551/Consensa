@@ -1,0 +1,103 @@
+import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import type { CountOutcome, CountStore, OfficialPost } from "./count";
+import { idHmac, recheckCutoff } from "./link-rules";
+import type { SpendStore } from "./spend";
+import type { Platform, PollTotals } from "./types";
+
+const outcomes = ["counted", "duplicate", "website_wins", "older_reply", "closed", "before_link", "unlinked"] as const;
+const PAGE = 1000;
+
+/**
+ * The counting step's store in Supabase (ca-central-1), through the server's secret-key client. Every rule that
+ * matters (linked, confirmed, open, one call per person, website wins) is enforced by the database functions in
+ * the sprint-11 migration; this only carries the calls. It never logs.
+ */
+export class SupabaseSocialStore implements CountStore, SpendStore {
+  constructor(
+    private readonly admin: SupabaseClient,
+    private readonly hmacSecret: string,
+  ) {}
+
+  async reserve(platform: Platform, month: string, micros: number, capMicros: number): Promise<boolean> {
+    const { data, error } = await this.admin.rpc("reserve_social_spend", { p_platform: platform, p_month: month, p_micros: micros, p_cap_micros: capMicros });
+    return !error && data === true;
+  }
+
+  async linkedIds(platform: Platform): Promise<ReadonlySet<string>> {
+    const ids = new Set<string>();
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await this.admin.from("social_links").select("platform_user_id").eq("platform", platform).eq("paused", false).order("platform_user_id").range(from, from + PAGE - 1);
+      if (error) throw new Error("links unavailable");
+      const rows = z.array(z.object({ platform_user_id: z.string() })).parse(data ?? []);
+      for (const r of rows) ids.add(r.platform_user_id);
+      if (rows.length < PAGE) return ids;
+    }
+  }
+
+  async ensureWindow(slug: string, closesAt: string): Promise<void> {
+    const { error } = await this.admin.from("question_windows").upsert({ slug, closes_at: closesAt }, { onConflict: "slug" });
+    if (error) throw new Error("window unavailable");
+  }
+
+  async readThrough(platform: Platform, postId: string): Promise<Date | null> {
+    const { data, error } = await this.admin.from("social_post_reads").select("read_through").eq("platform", platform).eq("post_id", postId).maybeSingle();
+    if (error) throw new Error("reads unavailable");
+    const at = z.object({ read_through: z.string().nullable() }).nullable().parse(data)?.read_through;
+    return at ? new Date(at) : null;
+  }
+
+  async saveRead(post: OfficialPost, patch: { readThrough?: Date; poll?: PollTotals }, now: Date): Promise<void> {
+    const row = {
+      platform: post.platform,
+      post_id: post.postId,
+      slug: post.slug,
+      ...(patch.readThrough ? { read_through: patch.readThrough.toISOString() } : {}),
+      ...(patch.poll ? { poll_yes: patch.poll.yes, poll_no: patch.poll.no, poll_read_at: now.toISOString() } : {}),
+    };
+    const { error } = await this.admin.from("social_post_reads").upsert(row, { onConflict: "platform,post_id" });
+    if (error) throw new Error("reads unavailable");
+  }
+
+  async countReply(input: { platform: Platform; replyId: string; postId: string; authorId: string; slug: string; probability: number; at: string }): Promise<CountOutcome> {
+    const { data, error } = await this.admin.rpc("count_social_reply", {
+      p_platform: input.platform,
+      p_reply_id: input.replyId,
+      p_post_id: input.postId,
+      p_platform_user_id: input.authorId,
+      p_slug: input.slug,
+      p_probability: input.probability,
+      p_replied_at: input.at,
+    });
+    // The 2-second rule on calls, or the question closing mid-run: nothing was kept, so it can be tried again.
+    if (error) return error.hint === "closed" ? "closed" : "retry";
+    const outcome = z.enum(outcomes).safeParse(data);
+    return outcome.success ? outcome.data : "retry";
+  }
+
+  async ledgerReplyIds(platform: Platform, postId: string): Promise<string[]> {
+    const { data, error } = await this.admin.from("social_votes").select("reply_id").eq("platform", platform).eq("post_id", postId).limit(PAGE);
+    if (error) throw new Error("ledger unavailable");
+    return z
+      .array(z.object({ reply_id: z.string() }))
+      .parse(data ?? [])
+      .map((r) => r.reply_id);
+  }
+
+  async removeReply(platform: Platform, replyId: string): Promise<void> {
+    const { error } = await this.admin.rpc("remove_social_reply", { p_platform: platform, p_reply_id: replyId });
+    if (error) throw new Error("remove unavailable");
+  }
+
+  async pauseStaleLinks(now: Date): Promise<number> {
+    const { data, error } = await this.admin.from("social_links").update({ paused: true }).eq("paused", false).lt("last_checked_at", recheckCutoff(now).toISOString()).select("platform");
+    return error ? 0 : (data ?? []).length;
+  }
+
+  async claimAutoReply(platform: Platform, authorId: string, postId: string): Promise<boolean> {
+    // Only a keyed hash of the id is kept, and the database deletes it after 7 days (LEX).
+    const { error } = await this.admin.from("social_autoreply_seen").insert({ platform, id_hmac: idHmac(platform, authorId, this.hmacSecret), post_id: postId });
+    return !error;
+  }
+}

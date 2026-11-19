@@ -37,6 +37,9 @@ function openReader(): Promise<Reader | null> {
   return reader;
 }
 
+// Open the database when the module loads, so the first call on a fresh server doesn't wait for it.
+void openReader();
+
 /**
  * Is this call coming through a VPN or proxy? The lookup reads a database file on this server, so the address goes
  * nowhere. It lives in a local variable here: never logged, stored, returned or sent.
