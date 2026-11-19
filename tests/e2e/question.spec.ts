@@ -348,3 +348,10 @@ test("a resolved question speaks in the past and its share post invites no call"
     expect(x.searchParams.get("text")).not.toContain(locale === "en" ? "Make your call" : "Faites votre prévision");
   }
 });
+
+test("the official source links to its French page on /fr and its English page on /en", async ({ page }) => {
+  await page.goto("/fr/q/boc-cut-dec-2026");
+  await expect(page.getByRole("link", { name: "Banque du Canada" }).first()).toHaveAttribute("href", /^https:\/\/www\.banqueducanada\.ca\//);
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await expect(page.getByRole("link", { name: "Bank of Canada" }).first()).toHaveAttribute("href", /^https:\/\/www\.bankofcanada\.ca\//);
+});

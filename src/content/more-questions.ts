@@ -48,7 +48,7 @@ export const moreSampleQuestions = [
     languages: { en: 62, fr: 59 },
     events: [],
     resolution: {
-      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/" },
+      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/", urlFr: "https://www.banqueducanada.ca/grandes-fonctions/politique-monetaire/taux-directeur/" },
       rule: {
         en: "Resolves YES if the target for the overnight rate announced on the scheduled January 2027 decision date is unchanged from the previous target.",
         fr: "Résolue OUI si la cible du taux du financement à un jour annoncée à la date de décision prévue de janvier 2027 est inchangée par rapport à la cible précédente.",
@@ -71,7 +71,7 @@ export const moreSampleQuestions = [
     languages: { en: 47, fr: 44 },
     events: [],
     resolution: {
-      source: { name: { en: "Bank of Canada · daily exchange rates", fr: "Banque du Canada · taux de change quotidiens" }, url: "https://www.bankofcanada.ca/rates/exchange/daily-exchange-rates/" },
+      source: { name: { en: "Bank of Canada · daily exchange rates", fr: "Banque du Canada · taux de change quotidiens" }, url: "https://www.bankofcanada.ca/rates/exchange/daily-exchange-rates/", urlFr: "https://www.banqueducanada.ca/taux/taux-de-change/taux-de-change-quotidiens/" },
       rule: {
         en: "Resolves YES if the Bank of Canada's published USD/CAD daily rate for Dec. 31, 2026 is below 1.3700.",
         fr: "Résolue OUI si le taux quotidien USD/CAD publié par la Banque du Canada pour le 31 décembre 2026 est inférieur à 1,3700.",
@@ -94,7 +94,7 @@ export const moreSampleQuestions = [
     languages: { en: 34, fr: 31 },
     events: [],
     resolution: {
-      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/" },
+      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/", urlFr: "https://www.banqueducanada.ca/grandes-fonctions/politique-monetaire/taux-directeur/" },
       rule: {
         en: "Resolves YES if the Bank of Canada announced a lower target for the overnight rate on its scheduled October 2026 decision date.",
         fr: "Résolue OUI si la Banque du Canada a annoncé une cible plus basse pour le taux du financement à un jour à sa date de décision prévue d’octobre 2026.",
@@ -256,7 +256,7 @@ export const moreSampleQuestions = [
     languages: { en: 33, fr: 42 },
     events: [],
     resolution: {
-      source: { name: { en: "Statistics Canada · new motor vehicle registrations", fr: "Statistique Canada · immatriculations de véhicules automobiles neufs" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501" },
+      source: { name: { en: "Statistics Canada · new motor vehicle registrations", fr: "Statistique Canada · immatriculations de véhicules automobiles neufs" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=2010002501", urlFr: "https://www150.statcan.gc.ca/t1/tbl1/fr/tv.action?pid=2010002501" },
       rule: {
         en: "Resolves YES if zero-emission vehicles (battery electric plus plug-in hybrid) make up more than 15.0% of new registrations for Q3 2026 in Statistics Canada's first release.",
         fr: "Résolue OUI si les véhicules zéro émission (électriques à batterie et hybrides rechargeables) représentent plus de 15,0 % des immatriculations neuves du 3e trimestre de 2026 dans la première publication de Statistique Canada.",
@@ -535,7 +535,7 @@ export const moreSampleQuestions = [
       ],
     },
     resolution: {
-      source: { name: { en: "Statistics Canada", fr: "Statistique Canada" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701" },
+      source: { name: { en: "Statistics Canada", fr: "Statistique Canada" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701", urlFr: "https://www150.statcan.gc.ca/t1/tbl1/fr/tv.action?pid=1410028701" },
       rule: {
         en: "Resolves YES if any monthly Labour Force Survey release in 2027 shows Canada’s unemployment rate (seasonally adjusted) below 6.0%.",
         fr: "Résolue OUI si une publication mensuelle de l’Enquête sur la population active en 2027 montre un taux de chômage canadien (désaisonnalisé) inférieur à 6,0 %.",

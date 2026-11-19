@@ -60,7 +60,8 @@ export const questionSchema = z.object({
   /** Hand-entered native poll totals from official Cansensa posts. Shown apart from the crowd, never mixed into it. */
   socialPolls: z.array(socialPollSchema).optional(),
   resolution: z.object({
-    source: z.object({ name: bilingual, url: z.url() }),
+    /** `url` is the source's English page. `urlFr` is the same page in French, when the publisher has one; /fr links to it. */
+    source: z.object({ name: bilingual, url: z.url(), urlFr: z.url().optional() }),
     rule: bilingual,
     resolvesAt: z.iso.datetime(),
     /** Set once the official source has published. `disputed` means the result is under review. */
@@ -124,6 +125,11 @@ export function questionState(q: Question, now: Date): QuestionState {
 export function scoreBadge(q: Pick<Question, "scored" | "resolution">): "scored" | "poll" | "notScored" {
   if (q.resolution.result?.outcome === "cancelled") return "notScored";
   return q.scored ? "scored" : "poll";
+}
+
+/** The official source's link for a reader: the French page on /fr when there is one, the English page otherwise. */
+export function sourceUrl(source: { url: string; urlFr?: string }, locale: "en" | "fr"): string {
+  return locale === "fr" && source.urlFr ? source.urlFr : source.url;
 }
 
 export function isOpen(state: QuestionState): boolean {

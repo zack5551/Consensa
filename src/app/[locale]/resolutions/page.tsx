@@ -15,7 +15,7 @@ import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatBrier, formatLongDate, formatPercent } from "@/lib/format";
-import { crowdBrier, crowdNow, isOpen, questionState } from "@/lib/question";
+import { crowdBrier, crowdNow, isOpen, questionState, sourceUrl } from "@/lib/question";
 import { fill } from "@/lib/text";
 import { askedByLabel } from "@/lib/asked-by";
 
@@ -82,7 +82,7 @@ export default async function ResolutionsPage({ params }: { params: Promise<{ lo
                 <div>
                   <dt className="text-ink-2">{c.source}</dt>
                   <dd className="m-0">
-                    <a href={q.resolution.source.url} rel="noopener noreferrer" target="_blank" className="font-semibold text-link underline underline-offset-4">
+                    <a href={sourceUrl(q.resolution.source, locale)} rel="noopener noreferrer" target="_blank" className="font-semibold text-link underline underline-offset-4">
                       {q.resolution.source.name[locale]}
                     </a>
                   </dd>

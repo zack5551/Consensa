@@ -149,7 +149,7 @@ describe("headers", async () => {
  */
 const allowedDomains = [
   // Official Canadian sources
-  "statcan.gc.ca", "bankofcanada.ca", "canada.ca", "gc.ca", "cmhc-schl.gc.ca", "elections.ca",
+  "statcan.gc.ca", "bankofcanada.ca", "banqueducanada.ca", "canada.ca", "gc.ca", "cmhc-schl.gc.ca", "elections.ca",
   // News outlets and cultural bodies cited as resolution sources
   "cbc.ca", "radio-canada.ca", "globalnews.ca", "crea.ca", "academy.ca", "telefilm.ca", "numeris.ca",
   "junoawards.ca", "scotiabankgillerprize.ca", "polarismusicprize.ca", "nhl.com", "cfl.ca",

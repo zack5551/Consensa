@@ -14,6 +14,7 @@ export function officialPublisher(url: string): Publisher | null {
   }
   if (host === "statcan.gc.ca" || host.endsWith(".statcan.gc.ca")) return "statcan";
   if (host === "bankofcanada.ca" || host.endsWith(".bankofcanada.ca")) return "boc";
+  if (host === "banqueducanada.ca" || host.endsWith(".banqueducanada.ca")) return "boc";
   return null;
 }
 

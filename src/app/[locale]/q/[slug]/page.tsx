@@ -26,7 +26,7 @@ import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { callsCloseAt, crowdNow, crowdVerdict, eventStart, isOpen, nextUp, questionState, resolutionTitle, scoreBadge, topicRecord, weekMove } from "@/lib/question";
+import { callsCloseAt, crowdNow, crowdVerdict, eventStart, isOpen, nextUp, questionState, resolutionTitle, scoreBadge, sourceUrl, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { askedByLabel } from "@/lib/asked-by";
@@ -366,7 +366,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
             <div>
               <dt className="text-ink-2">{t.resolution.source}</dt>
               <dd className="m-0 font-semibold">
-                <a href={q.resolution.source.url} rel="noopener noreferrer" target="_blank" className="text-link underline underline-offset-4">
+                <a href={sourceUrl(q.resolution.source, locale)} rel="noopener noreferrer" target="_blank" className="text-link underline underline-offset-4">
                   {q.resolution.source.name[locale]}
                 </a>
               </dd>

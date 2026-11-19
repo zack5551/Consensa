@@ -3,7 +3,7 @@ import { SAMPLE_NOW, getQuestion, sampleQuestions, todaysFive } from "@/content/
 import { fixtureQuestions } from "@/content/test-fixtures";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
-import { CLOSING_SOON_MS, callsCloseAt, crowdChange, crowdVerdict, eventStart, hasStarted, leagues, nextUp, provinceExtremes, questionSchema, questionState, questionStates, resolutionTitle, scoreBadge, topicRecord, weekMove, type Question } from "@/lib/question";
+import { CLOSING_SOON_MS, callsCloseAt, crowdChange, crowdVerdict, eventStart, hasStarted, leagues, nextUp, provinceExtremes, questionSchema, questionState, questionStates, resolutionTitle, scoreBadge, sourceUrl, topicRecord, weekMove, type Question } from "@/lib/question";
 
 const base = getQuestion("boc-cut-dec-2026")!;
 const at = (iso: string) => new Date(iso);
@@ -250,5 +250,37 @@ describe("resolutionTitle", () => {
   it("is the past tense on a resolved sample question", () => {
     const resolved = sampleQuestions.find((q) => questionState(q, SAMPLE_NOW) === "resolved")!;
     expect(resolutionTitle(questionState(resolved, SAMPLE_NOW), en.resolution)).toBe("How it was resolved");
+  });
+});
+
+describe("French source links", () => {
+  it("accepts an optional French URL, and rejects one that isn't a URL", () => {
+    const raw = fixtureQuestions()[0]!;
+    const withFr = { ...raw, resolution: { ...raw.resolution, source: { ...raw.resolution.source, urlFr: "https://example.ca/fr/" } } };
+    expect(questionSchema.parse(withFr).resolution.source.urlFr).toBe("https://example.ca/fr/");
+    expect(questionSchema.parse(raw).resolution.source.urlFr).toBeUndefined();
+    const bad = { ...raw, resolution: { ...raw.resolution, source: { ...raw.resolution.source, urlFr: "pas une adresse" } } };
+    expect(questionSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it("links /fr to the French page when there is one, and to the English page otherwise", () => {
+    const both = { url: "https://www.bankofcanada.ca/x/", urlFr: "https://www.banqueducanada.ca/x/" };
+    expect(sourceUrl(both, "fr")).toBe("https://www.banqueducanada.ca/x/");
+    expect(sourceUrl(both, "en")).toBe("https://www.bankofcanada.ca/x/");
+    expect(sourceUrl({ url: "https://numeris.ca/" }, "fr")).toBe("https://numeris.ca/");
+  });
+
+  it("gives the Bank of Canada, Statistics Canada, Telefilm and CREA samples a French page on the same publisher", () => {
+    const host = (u: string) => new URL(u).hostname;
+    const french: Record<string, string> = { "www.bankofcanada.ca": "www.banqueducanada.ca", "www150.statcan.gc.ca": "www150.statcan.gc.ca", "telefilm.ca": "telefilm.ca", "stats.crea.ca": "stats.crea.ca" };
+    const withFr = sampleQuestions.filter((q) => q.resolution.source.urlFr);
+    expect(withFr.length).toBeGreaterThan(0);
+    for (const q of withFr) {
+      const { url, urlFr } = q.resolution.source;
+      expect(urlFr, q.slug).not.toBe(url);
+      expect(host(urlFr!), q.slug).toBe(french[host(url)]);
+      expect(urlFr!.startsWith("https://"), q.slug).toBe(true);
+    }
+    expect(getQuestion("boc-cut-dec-2026")!.resolution.source.urlFr).toMatch(/^https:\/\/www\.banqueducanada\.ca\//);
   });
 });

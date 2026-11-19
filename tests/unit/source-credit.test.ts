@@ -5,6 +5,7 @@ describe("source credit", () => {
   it("knows the official publishers by their own domains only", () => {
     expect(officialPublisher("https://www150.statcan.gc.ca/n1/en/subjects/labour/labour_force_survey")).toBe("statcan");
     expect(officialPublisher("https://www.bankofcanada.ca/rates/exchange/daily-exchange-rates/")).toBe("boc");
+    expect(officialPublisher("https://www.banqueducanada.ca/taux/taux-de-change/taux-de-change-quotidiens/")).toBe("boc");
     expect(officialPublisher("https://statcan.gc.ca.example.com/")).toBeNull();
     expect(officialPublisher("https://climate.weather.gc.ca/")).toBeNull();
     expect(officialPublisher("not a url")).toBeNull();
