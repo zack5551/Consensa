@@ -146,6 +146,12 @@ export class SupabaseSocialStore implements CountStore, SweepStore, SpendStore {
     return z.coerce.number().int().nonnegative().parse(data ?? 0);
   }
 
+  async purgeAuditLogs(): Promise<number> {
+    const { data, error } = await this.admin.rpc("purge_social_audit_logs");
+    if (error) throw new Error("purge unavailable");
+    return z.coerce.number().int().nonnegative().parse(data ?? 0);
+  }
+
   async noteHalt(): Promise<Date | null> {
     return this.haltSince("note_social_sweep_halt");
   }

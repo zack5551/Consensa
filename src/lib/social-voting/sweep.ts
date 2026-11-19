@@ -24,7 +24,8 @@
  *   automatically once its question has closed.
  *
  * A restore by hand also works after the close, for a reply written before it (LEX): the call that comes back was
- * made in time, and is scored like any other. The database logs every restore, by hand or by the sweep.
+ * made in time, and is scored like any other. The database logs every restore, by hand or by the sweep, with the
+ * name the person gave. Both logs are kept 12 months, then purged by this run (purge_social_audit_logs).
  *
  * Two guards from AEGIS. A run may take at most half of what is left under the monthly cap, so the count of new
  * replies always has room. And if one run reports more than max(10, 20% of the replies checked) as deleted, it
@@ -79,6 +80,8 @@ export interface SweepStore {
   releaseReply(platform: Platform, replyId: string): Promise<ReleaseOutcome>;
   /** Deletes for real the replies withdrawn more than 7 days ago (the database's clock). Returns how many. */
   purgeWithdrawn(): Promise<number>;
+  /** Deletes rows older than 12 months from the approval log and the restore log (LEX). Returns how many. */
+  purgeAuditLogs(): Promise<number>;
   /** A halted run says so. Answers when the open halt first happened, or null when the database can't say. */
   noteHalt(): Promise<Date | null>;
   /** A run that was not halted asks whether a halt is still open: when it first happened, or null once nothing is held. */
@@ -173,6 +176,8 @@ export async function sweepDeletedReplies(opts: SweepOptions): Promise<SweepRepo
   // 0. Replies withdrawn more than 7 days ago are deleted for real. A failure here waits for tomorrow's run.
   const purged = await store.purgeWithdrawn().catch(() => 0);
   if (purged > 0) report.purged = purged;
+  // The approval log and the restore log are kept 12 months (LEX). Nothing to report: they aren't replies.
+  await store.purgeAuditLogs().catch(() => 0);
 
   /** A halt that is still open 72 hours after it first happened is said again, on every run, until it is settled. */
   const checkHaltAge = async (halted: boolean): Promise<void> => {

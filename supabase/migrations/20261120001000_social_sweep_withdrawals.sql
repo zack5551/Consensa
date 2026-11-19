@@ -23,7 +23,8 @@
 -- How zack restores a wrongly withdrawn (or held) reply, in the Supabase SQL editor:
 --   select platform, reply_id, slug, withdrawn_at, held_at from public.social_votes
 --    where withdrawn_at is not null or held_at is not null order by coalesce(withdrawn_at, held_at) desc;
---   select public.restore_social_reply('x', '1990000000000000007');
+--   select public.restore_social_reply('x', '1990000000000000007', 'zack');
+-- The third value is the name of the person doing it. It is required (LEX) and kept in the restore log.
 -- It answers 'counted' (the call is back), 'website_wins' or 'older_reply' (the reply is live again, and a website
 -- call or a newer reply still sets the call), 'live' (nothing to do), 'expired', 'after_close' or 'unknown'.
 -- While the question is open: a held reply at any time, a withdrawn one for 7 days after the withdrawal.
@@ -32,6 +33,8 @@
 -- back is a call made in time: it carries the reply's own time, and if the question is already resolved it is
 -- scored like any other call. A reply written at or after the close answers 'after_close' and nothing changes.
 -- Every restore, whatever it answers, is written to public.social_reply_restore_log (section 4).
+-- Both logs are kept for 12 months, then purged by the sweep's run (section 8). When a person deletes their
+-- account, the reply id and the person's id are blanked in their restore-log rows at once; the rest of the row stays.
 --
 -- How zack approves a halted sweep, with his name and the reason (both required, LEX):
 --   select public.approve_social_sweep('zack', 'Checked 20 of the replies on X by hand: all really deleted.');
@@ -176,20 +179,26 @@ grant execute on function public.hold_social_reply(text, text) to service_role;
 -- file). The sweep has a narrower way, release_social_reply(): a HELD reply the platform reports as still up, on an
 -- open question only. Both go through one internal function, and every time it runs it adds a row to the restore log.
 
--- 4a. The restore log: append-only (the guard is in section 7). When, which database role, by hand or by the sweep,
--- which reply, what the function answered, and whether the question had closed by then.
+-- 4a. The restore log: append-only but for two narrow cases (the guard is in section 8). When, which database role,
+-- the name the person gave ('system' for the sweep), by hand or by the sweep, which reply, what the function
+-- answered, and whether the question had closed by then.
+-- reply_id is personal information (LEX). user_id is here only so that the row can be found when that person deletes
+-- their account: both are then set to null (section 8). user_id is empty when no such reply was found.
 create table if not exists public.social_reply_restore_log (
   id bigint generated always as identity primary key,
   restored_at timestamptz not null default now(),
   restored_by text not null,
+  restored_name text not null,
   origin text not null check (origin in ('hand', 'sweep')),
   platform text not null,
-  reply_id text not null,
+  reply_id text,
+  user_id uuid,
   result text not null,
   after_close boolean not null
 );
 alter table public.social_reply_restore_log enable row level security;
 revoke all on public.social_reply_restore_log from public, anon, authenticated, service_role;
+create index if not exists social_reply_restore_log_user on public.social_reply_restore_log (user_id) where user_id is not null;
 
 -- 4b. The one way a call may be written after its question has closed. The calls trigger (enforce_call_rules, from
 -- 20261111000200_call_rules.sql) refuses every such write. A restore of a reply written before the close has to get
@@ -252,13 +261,14 @@ begin
 end;
 $$;
 
--- 4c. The internal function. p_origin is 'hand' (restore_social_reply) or 'sweep' (release_social_reply).
+-- 4c. The internal function. p_origin is 'hand' (restore_social_reply) or 'sweep' (release_social_reply); p_name is
+-- the name the person gave, or 'system' for the sweep.
 -- A held reply, or one withdrawn in the last 7 days, becomes live again and the person's call is re-derived: it
 -- counts again unless a website call or a newer live reply sets the call.
 -- After the close: by hand only, only for a reply written before the close, and for a held reply only in the 7 days
 -- after the close. Held replies are never put back automatically at the close.
 -- Internal: no API role may call it.
-create or replace function public.put_back_social_reply(p_platform text, p_reply_id text, p_origin text)
+create or replace function public.put_back_social_reply(p_platform text, p_reply_id text, p_origin text, p_name text)
 returns text
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -307,20 +317,34 @@ begin
     result := 'counted';
   end;
 
-  insert into public.social_reply_restore_log (restored_by, origin, platform, reply_id, result, after_close)
-  values (session_user, p_origin, p_platform, p_reply_id, result, closed);
+  insert into public.social_reply_restore_log (restored_by, restored_name, origin, platform, reply_id, user_id, result, after_close)
+  values (session_user, p_name, p_origin, p_platform, p_reply_id, back.user_id, result, closed);
   return result;
 end;
 $$;
-revoke execute on function public.put_back_social_reply(text, text, text) from public, anon, authenticated, service_role;
+revoke execute on function public.put_back_social_reply(text, text, text, text) from public, anon, authenticated, service_role;
 
--- By hand (zack). Hand-only: no API role may call it, the server key included.
-create or replace function public.restore_social_reply(p_platform text, p_reply_id text)
+-- By hand, with the name of the person doing it (required, 80 characters at most; a blank name is refused and nothing
+-- is restored). Hand-only: no API role may call it, the server key included.
+-- The version without a name goes, so a restore can't be done without saying who. With the old approval function
+-- (section 7) it is one of the only two drops in this file.
+drop function if exists public.restore_social_reply(text, text);
+create or replace function public.restore_social_reply(p_platform text, p_reply_id text, p_name text)
 returns text
-language sql security definer set search_path = '' as $$
-  select public.put_back_social_reply(p_platform, p_reply_id, 'hand')
+language plpgsql security definer set search_path = '' as $$
+declare
+  who text := btrim(coalesce(p_name, ''));
+begin
+  if who = '' then
+    raise exception 'restore_social_reply needs a name' using errcode = '22023';
+  end if;
+  if length(who) > 80 then
+    raise exception 'name too long (80)' using errcode = '22023';
+  end if;
+  return public.put_back_social_reply(p_platform, p_reply_id, 'hand', who);
+end;
 $$;
-revoke execute on function public.restore_social_reply(text, text) from public, anon, authenticated, service_role;
+revoke execute on function public.restore_social_reply(text, text, text) from public, anon, authenticated, service_role;
 
 -- The sweep's own, narrower way back: a HELD reply the platform now reports as still up counts again. It can never
 -- touch a withdrawn reply, and it can never write a call after the close: both take a person.
@@ -332,7 +356,7 @@ begin
                  where v.platform = p_platform and v.reply_id = p_reply_id and v.held_at is not null) then
     return 'unknown';
   end if;
-  return public.put_back_social_reply(p_platform, p_reply_id, 'sweep');
+  return public.put_back_social_reply(p_platform, p_reply_id, 'sweep', 'system');
 end;
 $$;
 revoke execute on function public.release_social_reply(text, text) from public, anon, authenticated;
@@ -390,7 +414,7 @@ $$;
 revoke execute on function public.settle_social_sweep_halt() from public, anon, authenticated;
 grant execute on function public.settle_social_sweep_halt() to service_role;
 
--- 7. The approval log (LEX): append-only. One row per event, each carrying the approval it belongs to:
+-- 7. The approval log (LEX): append-only, kept 12 months (the guard is in section 8). One row per event, each carrying the approval it belongs to:
 --   'given'    approve_social_sweep() was run. approved_name and approved_reason are what the person typed;
 --              approved_by is the database role of that session.
 --   'used'     a run over the ceiling asked for it. used_at is when; in_time says whether it still counted.
@@ -425,33 +449,11 @@ create unique index if not exists social_sweep_approval_log_one_count
 alter table public.social_sweep_approval_log enable row level security;
 revoke all on public.social_sweep_approval_log from public, anon, authenticated, service_role;
 
--- Rows of the two logs (this one, and the restore log of section 4) are never changed or removed, by anyone, the
--- functions in this file included.
-create or replace function public.social_log_append_only()
-returns trigger
-language plpgsql set search_path = '' as $$
-begin
-  raise exception '% is append-only', tg_table_name;
-end;
-$$;
-drop trigger if exists social_sweep_approval_log_append_only on public.social_sweep_approval_log;
-create trigger social_sweep_approval_log_append_only before update or delete on public.social_sweep_approval_log
-  for each row execute function public.social_log_append_only();
-drop trigger if exists social_sweep_approval_log_no_truncate on public.social_sweep_approval_log;
-create trigger social_sweep_approval_log_no_truncate before truncate on public.social_sweep_approval_log
-  for each statement execute function public.social_log_append_only();
-drop trigger if exists social_reply_restore_log_append_only on public.social_reply_restore_log;
-create trigger social_reply_restore_log_append_only before update or delete on public.social_reply_restore_log
-  for each row execute function public.social_log_append_only();
-drop trigger if exists social_reply_restore_log_no_truncate on public.social_reply_restore_log;
-create trigger social_reply_restore_log_no_truncate before truncate on public.social_reply_restore_log
-  for each statement execute function public.social_log_append_only();
-
 -- Giving the approval, as before (36 hours, hand-only), now with a required name and a required reason (LEX), and
 -- recording when and by which database role. A missing or blank name or reason is refused and nothing is approved.
 -- session_user is the role that opened the session; inside a privileged function current_user is only the owner.
 -- The version without arguments (20261120000000_social_sweep_approval.sql) goes, so an approval can't be given
--- without saying who and why. This is the only drop in this file.
+-- without saying who and why.
 drop function if exists public.approve_social_sweep();
 create or replace function public.approve_social_sweep(p_name text, p_reason text)
 returns timestamptz
@@ -522,3 +524,111 @@ end;
 $$;
 revoke execute on function public.record_social_sweep_removals(integer) from public, anon, authenticated;
 grant execute on function public.record_social_sweep_removals(integer) to service_role;
+
+-- 8. The two logs' guards, their 12 months, and what happens when an account is deleted (LEX).
+--
+-- Both logs are append-only. A row is never changed or removed, by anyone, the functions in this file included,
+-- with exactly two exceptions:
+--   (i)  a row older than 12 months may be deleted (either log);
+--   (ii) in the restore log, reply_id and user_id may go from a value to null (or stay null), and nothing else in
+--        that row may change. Each column is compared by name with IS NOT DISTINCT FROM (AEGIS): no row
+--        comparison, because a null inside a row comparison answers null, not false.
+-- Everything else is refused: any other UPDATE, any DELETE of a younger row, and every TRUNCATE.
+-- No API role can use the exceptions: anon, authenticated and service_role have no right at all on either table
+-- (revoke all, in sections 4 and 7), so their UPDATE or DELETE is refused before a trigger ever runs. The guards are
+-- not privileged functions and give nobody a right they don't have. The only ways in for the server key are
+-- purge_social_audit_logs() below, which deletes by age and takes no argument, and the account-deletion trigger,
+-- which nulls the two columns for the account being deleted and takes none either.
+
+-- TRUNCATE on either log: always refused.
+create or replace function public.social_log_append_only()
+returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  raise exception '% is append-only', tg_table_name;
+end;
+$$;
+
+create or replace function public.social_sweep_approval_log_guard()
+returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if tg_op = 'DELETE' and old.logged_at < now() - interval '12 months' then
+    return old;
+  end if;
+  raise exception 'social_sweep_approval_log is append-only until a row is 12 months old';
+end;
+$$;
+
+create or replace function public.social_reply_restore_log_guard()
+returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if tg_op = 'DELETE' then
+    if old.restored_at < now() - interval '12 months' then
+      return old;
+    end if;
+    raise exception 'social_reply_restore_log is append-only until a row is 12 months old';
+  end if;
+  -- UPDATE: only forgetting whose reply it was. Each of the two personal columns ends up null (from a value, or
+  -- still null), and every other column is the same as before, compared one by one.
+  if new.reply_id is null and new.user_id is null
+     and new.id is not distinct from old.id
+     and new.restored_at is not distinct from old.restored_at
+     and new.restored_by is not distinct from old.restored_by
+     and new.restored_name is not distinct from old.restored_name
+     and new.origin is not distinct from old.origin
+     and new.platform is not distinct from old.platform
+     and new.result is not distinct from old.result
+     and new.after_close is not distinct from old.after_close then
+    return new;
+  end if;
+  raise exception 'social_reply_restore_log is append-only: only reply_id and user_id may be set to null';
+end;
+$$;
+
+drop trigger if exists social_sweep_approval_log_append_only on public.social_sweep_approval_log;
+create trigger social_sweep_approval_log_append_only before update or delete on public.social_sweep_approval_log
+  for each row execute function public.social_sweep_approval_log_guard();
+drop trigger if exists social_sweep_approval_log_no_truncate on public.social_sweep_approval_log;
+create trigger social_sweep_approval_log_no_truncate before truncate on public.social_sweep_approval_log
+  for each statement execute function public.social_log_append_only();
+drop trigger if exists social_reply_restore_log_append_only on public.social_reply_restore_log;
+create trigger social_reply_restore_log_append_only before update or delete on public.social_reply_restore_log
+  for each row execute function public.social_reply_restore_log_guard();
+drop trigger if exists social_reply_restore_log_no_truncate on public.social_reply_restore_log;
+create trigger social_reply_restore_log_no_truncate before truncate on public.social_reply_restore_log
+  for each statement execute function public.social_log_append_only();
+
+-- Account deletion. The app deletes the auth.users row (DELETE /api/account), and the person's profile, calls, links
+-- and ledger rows go with it by cascade. The restore log has no foreign key, on purpose: its rows must stay. So, in
+-- the same way as on_auth_user_deleted ends the consents (20261111000300_consent_retention.sql), a trigger on
+-- auth.users blanks what is personal in that person's restore-log rows: the reply id and their own id. It runs in
+-- the deleting transaction, so the account can't go while the ids stay, and it can't fail on a person with no rows.
+-- Platform, times, result, after_close and who acted are kept.
+create or replace function public.forget_social_restores_on_delete()
+returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  update public.social_reply_restore_log l set reply_id = null, user_id = null where l.user_id = old.id;
+  return old;
+end;
+$$;
+drop trigger if exists on_auth_user_deleted_forget_social_restores on auth.users;
+create trigger on_auth_user_deleted_forget_social_restores after delete on auth.users
+  for each row execute function public.forget_social_restores_on_delete();
+
+-- The 12 months. Called by each sweep run, next to purge_withdrawn_social_replies(). Returns how many rows went.
+create or replace function public.purge_social_audit_logs()
+returns integer
+language sql security definer set search_path = '' as $$
+  with approvals as (
+    delete from public.social_sweep_approval_log l where l.logged_at < now() - interval '12 months' returning 1
+  ),
+  restores as (
+    delete from public.social_reply_restore_log l where l.restored_at < now() - interval '12 months' returning 1
+  )
+  select ((select count(*) from approvals) + (select count(*) from restores))::integer
+$$;
+revoke execute on function public.purge_social_audit_logs() from public, anon, authenticated;
+grant execute on function public.purge_social_audit_logs() to service_role;

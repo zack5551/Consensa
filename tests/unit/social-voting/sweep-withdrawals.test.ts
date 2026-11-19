@@ -280,25 +280,135 @@ describe("restoring after the close, and the restore log (LEX on review)", () =>
     const { store, run, ids } = closing(12);
     await run(["9000"]);
     store.clock = at(HOUR_MS);
-    store.restoreReply("x", "9000", "postgres"); // before the close
-    store.restoreReply("x", "9000", "postgres"); // nothing to do
-    store.restoreReply("x", "1", "postgres"); // no such reply
+    store.restoreReply("x", "9000", " zack "); // before the close
+    store.restoreReply("x", "9000", "zack"); // nothing to do
+    store.restoreReply("x", "1", "zack"); // no such reply
     await run(ids.slice(0, 11)); // halted
     store.clock = at(2 * HOUR_MS);
     await run([]); // the platform reports them back: the sweep releases all eleven
     await run(["9003"]);
     store.clock = at(2 * DAY_MS);
-    store.restoreReply("x", "9003", "postgres"); // after the close
+    store.restoreReply("x", "9003", "zack"); // after the close
     const hand = store.restoreLog.filter((r) => r.origin === "hand");
     expect(hand).toEqual([
-      { restoredAt: at(HOUR_MS), restoredBy: "postgres", origin: "hand", platform: "x", replyId: "9000", result: "counted", afterClose: false },
-      { restoredAt: at(HOUR_MS), restoredBy: "postgres", origin: "hand", platform: "x", replyId: "9000", result: "live", afterClose: false },
-      { restoredAt: at(HOUR_MS), restoredBy: "postgres", origin: "hand", platform: "x", replyId: "1", result: "unknown", afterClose: false },
-      { restoredAt: at(2 * DAY_MS), restoredBy: "postgres", origin: "hand", platform: "x", replyId: "9003", result: "counted", afterClose: true },
+      { restoredAt: at(HOUR_MS), restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: "9000", userId: "user-0", result: "counted", afterClose: false },
+      { restoredAt: at(HOUR_MS), restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: "9000", userId: "user-0", result: "live", afterClose: false },
+      { restoredAt: at(HOUR_MS), restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: "1", userId: null, result: "unknown", afterClose: false },
+      { restoredAt: at(2 * DAY_MS), restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: "9003", userId: "user-3", result: "counted", afterClose: true },
     ]);
     const swept = store.restoreLog.filter((r) => r.origin === "sweep");
     expect(swept).toHaveLength(11);
-    expect(swept.every((r) => r.result === "counted" && !r.afterClose && r.restoredBy === "authenticator")).toBe(true);
+    expect(swept.every((r) => r.result === "counted" && !r.afterClose && r.restoredBy === "authenticator" && r.restoredName === "system")).toBe(true);
+  });
+
+  it("a restore needs a name: a missing, blank or over-long one is refused, and nothing is restored or logged", async () => {
+    const { store, run } = closing(5);
+    await run(["9000"]);
+    for (const name of [null, "", "   ", "\n\t"]) expect(() => store.restoreReply("x", "9000", name)).toThrow(/needs a name/);
+    expect(() => store.restoreReply("x", "9000", "z".repeat(81))).toThrow(/too long/);
+    expect(store.row("9000")?.withdrawnAt).toEqual(NOW);
+    expect(store.restoreLog).toEqual([]);
+    expect(store.restoreReply("x", "9000", "z".repeat(80))).toBe("counted");
+  });
+});
+
+describe("the two logs: personal information and the 12 months (LEX and AEGIS on review)", () => {
+  /** Two restores by hand, for two people, and one approval used. */
+  async function logged() {
+    const s = setup(100);
+    await s.run(["9000", "9001"]);
+    s.store.restoreReply("x", "9000", "zack");
+    s.store.restoreReply("x", "9001", "zack");
+    s.store.approveSweep();
+    await s.run(s.ids.slice(2, 30));
+    expect(s.store.restoreLog).toHaveLength(2);
+    expect(s.store.approvalLog.map((r) => r.event)).toEqual(["given", "used", "removed"]);
+    return s;
+  }
+
+  it("deleting an account blanks the reply id and the person's id in their restore-log rows, and keeps the rest", async () => {
+    const { store } = await logged();
+    store.deleteAccount("user-0");
+    expect(store.restoreLog[0]).toEqual({ restoredAt: NOW, restoredBy: "postgres", restoredName: "zack", origin: "hand", platform: "x", replyId: null, userId: null, result: "counted", afterClose: false });
+    // Another person's row is untouched.
+    expect(store.restoreLog[1]).toMatchObject({ replyId: "9001", userId: "user-1" });
+    expect(JSON.stringify(store.restoreLog[0])).not.toMatch(/9000|user-0/);
+    expect(store.row("9000")).toBeUndefined(); // the ledger row went by cascade
+    store.deleteAccount("user-0"); // nothing left to blank: no error
+    store.deleteAccount("nobody");
+    expect(store.restoreLog).toHaveLength(2);
+  });
+
+  it("forgery: changing the result while nulling reply_id is refused, and so is any other change", async () => {
+    const { store } = await logged();
+    const before = JSON.stringify(store.restoreLog);
+    expect(() => store.updateRestoreLog(0, { replyId: null, userId: null, result: "unknown" })).toThrow(/append-only/);
+    expect(() => store.updateRestoreLog(0, { replyId: null, userId: null, restoredName: "someone else" })).toThrow(/append-only/);
+    expect(() => store.updateRestoreLog(0, { replyId: null, userId: null, restoredAt: at(-400 * DAY_MS) })).toThrow(/append-only/); // can't be aged into the purge
+    expect(() => store.updateRestoreLog(0, { replyId: null, userId: null, afterClose: true })).toThrow(/append-only/);
+    expect(() => store.updateRestoreLog(0, { replyId: null, userId: null, platform: "threads" })).toThrow(/append-only/);
+    expect(() => store.updateRestoreLog(0, { replyId: "9999", userId: null })).toThrow(/append-only/); // a new value is not a null
+    expect(() => store.updateRestoreLog(0, { replyId: null })).toThrow(/append-only/); // both, or nothing
+    expect(() => store.updateRestoreLog(0, {})).toThrow(/append-only/);
+    expect(JSON.stringify(store.restoreLog)).toBe(before);
+    // The one allowed change, and it can be repeated (null stays null).
+    store.updateRestoreLog(0, { replyId: null, userId: null });
+    store.updateRestoreLog(0, { replyId: null, userId: null });
+    expect(() => store.updateRestoreLog(0, { replyId: "9000", userId: "user-0" })).toThrow(/append-only/); // and never back
+  });
+
+  it("forgery: deleting an 11-month-old row is refused in both logs; only a row past 12 months can go", async () => {
+    const { store } = await logged();
+    const eleven = new Date(NOW);
+    eleven.setUTCMonth(eleven.getUTCMonth() + 11);
+    store.clock = eleven;
+    expect(() => store.deleteLogRow("restore", 0)).toThrow(/12 months/);
+    expect(() => store.deleteLogRow("approval", 0)).toThrow(/12 months/);
+    store.clock = NOW; // a fresh row can't go either
+    expect(() => store.deleteLogRow("restore", 0)).toThrow(/12 months/);
+    const twelve = new Date(NOW);
+    twelve.setUTCMonth(twelve.getUTCMonth() + 12);
+    store.clock = twelve; // exactly 12 months: not yet
+    expect(() => store.deleteLogRow("restore", 0)).toThrow(/12 months/);
+    expect(() => store.deleteLogRow("approval", 0)).toThrow(/12 months/);
+    expect(store.restoreLog).toHaveLength(2);
+    expect(store.approvalLog).toHaveLength(3);
+    store.clock = new Date(twelve.getTime() + 1);
+    store.deleteLogRow("restore", 0);
+    store.deleteLogRow("approval", 0);
+    expect(store.restoreLog).toHaveLength(1);
+    expect(store.approvalLog).toHaveLength(2);
+  });
+
+  it("truncate is always refused, however old the rows", async () => {
+    const { store } = await logged();
+    store.clock = at(800 * DAY_MS);
+    expect(() => store.truncateLog("restore")).toThrow(/append-only/);
+    expect(() => store.truncateLog("approval")).toThrow(/append-only/);
+    expect(store.restoreLog).toHaveLength(2);
+  });
+
+  it("the sweep's run purges both logs after 12 months, and not a day before", async () => {
+    const { store, run } = await logged();
+    const eleven = new Date(NOW);
+    eleven.setUTCMonth(eleven.getUTCMonth() + 11);
+    store.clock = eleven;
+    await run([]);
+    expect(store.restoreLog).toHaveLength(2);
+    expect(store.approvalLog).toHaveLength(3);
+
+    const past = new Date(NOW);
+    past.setUTCMonth(past.getUTCMonth() + 12);
+    store.clock = new Date(past.getTime() + 1);
+    await sweepDeletedReplies({ posts: [], providers: {}, store, now: store.clock }); // even on a day with no post to check
+    expect(store.restoreLog).toEqual([]);
+    expect(store.approvalLog).toEqual([]);
+  });
+
+  it("a log purge that fails never stops the run", async () => {
+    const { store, run } = await logged();
+    store.purgeFails = true;
+    expect(await run([])).toMatchObject({ halted: false, checked: 72 });
   });
 });
 
@@ -577,7 +687,8 @@ describe("the withdrawals migration", () => {
 
   it("says how zack restores a reply and approves a sweep, and that it hasn't been run on any Postgres yet", () => {
     expect(raw).toMatch(/Not run on any Postgres yet/);
-    expect(raw).toMatch(/select public\.restore_social_reply\('x', '\d+'\);/);
+    expect(raw).toMatch(/select public\.restore_social_reply\('x', '\d+', 'zack'\);/);
+    expect(raw).not.toMatch(/select public\.restore_social_reply\('x', '\d+'\);/);
     expect(raw).toMatch(/select public\.approve_social_sweep\('zack', '[^']+'\);/);
     expect(raw).not.toMatch(/select public\.approve_social_sweep\(\)/);
   });
@@ -588,8 +699,10 @@ describe("the withdrawals migration", () => {
     expect(sql).not.toMatch(/create (unique )?index (?!if not exists)/);
     expect(sql.match(/add column (?!if not exists)/)).toBeNull();
     expect(sql).not.toMatch(/drop (table|column|index)/);
-    // The one drop: the approval without a name and a reason, right before the version that needs both.
-    expect(sql.match(/drop function[^;]*;/g)).toEqual(["drop function if exists public.approve_social_sweep();"]);
+    // The two drops: the restore without a name, and the approval without a name and a reason, each right before
+    // the version that needs them.
+    expect(sql.match(/drop function[^;]*;/g)).toEqual(["drop function if exists public.restore_social_reply(text, text);", "drop function if exists public.approve_social_sweep();"]);
+    expect(sql).toMatch(/drop function if exists public\.restore_social_reply\(text, text\);\s+create or replace function public\.restore_social_reply\(p_platform text, p_reply_id text, p_name text\)/);
     expect(sql).toMatch(/drop function if exists public\.approve_social_sweep\(\);\s+create or replace function public\.approve_social_sweep\(p_name text, p_reason text\)/);
   });
 
@@ -634,10 +747,10 @@ describe("the withdrawals migration", () => {
   it("every function is privileged with a fixed, empty search_path and closed to the public keys", () => {
     const names = [...sql.matchAll(/create or replace function public\.(\w+)\(([^)]*)\)\s+returns (\w+)\s+language (?:plpgsql|sql)( stable)?( security definer)? set search_path = ''/g)];
     expect(names.map((m) => m[1]).sort()).toEqual([
-      "approve_social_sweep", "consume_social_sweep_approval", "count_social_reply", "enforce_call_rules", "hold_social_reply",
-      "mark_social_reply_gone", "note_social_sweep_halt", "purge_withdrawn_social_replies", "put_back_social_reply",
-      "record_social_sweep_removals", "release_social_reply", "remove_social_reply", "restore_social_reply",
-      "settle_social_sweep_halt", "social_log_append_only",
+      "approve_social_sweep", "consume_social_sweep_approval", "count_social_reply", "enforce_call_rules", "forget_social_restores_on_delete",
+      "hold_social_reply", "mark_social_reply_gone", "note_social_sweep_halt", "purge_social_audit_logs", "purge_withdrawn_social_replies",
+      "put_back_social_reply", "record_social_sweep_removals", "release_social_reply", "remove_social_reply", "restore_social_reply",
+      "settle_social_sweep_halt", "social_log_append_only", "social_reply_restore_log_guard", "social_sweep_approval_log_guard",
     ]);
     expect(sql.match(/create or replace function/g)).toHaveLength(names.length);
     for (const m of names) {
@@ -649,7 +762,7 @@ describe("the withdrawals migration", () => {
   });
 
   it("restoring, approving and the internal marker are hand-only or internal: no API role may call them, the server key included", () => {
-    for (const signature of ["restore_social_reply\\(text, text\\)", "approve_social_sweep\\(text, text\\)", "mark_social_reply_gone\\(text, text, boolean\\)", "put_back_social_reply\\(text, text, text\\)"]) {
+    for (const signature of ["restore_social_reply\\(text, text, text\\)", "approve_social_sweep\\(text, text\\)", "mark_social_reply_gone\\(text, text, boolean\\)", "put_back_social_reply\\(text, text, text, text\\)"]) {
       expect(sql).toMatch(new RegExp(`revoke execute on function public\\.${signature} from public, anon, authenticated, service_role;`));
     }
     expect(sql).not.toMatch(/grant [^;]*(restore_social_reply|approve_social_sweep|mark_social_reply_gone|put_back_social_reply)/);
@@ -662,6 +775,7 @@ describe("the withdrawals migration", () => {
       "execute on function public.count_social_reply(text, text, text, text, text, smallint, timestamptz) to service_role",
       "execute on function public.hold_social_reply(text, text) to service_role",
       "execute on function public.note_social_sweep_halt() to service_role",
+      "execute on function public.purge_social_audit_logs() to service_role",
       "execute on function public.purge_withdrawn_social_replies() to service_role",
       "execute on function public.record_social_sweep_removals(integer) to service_role",
       "execute on function public.release_social_reply(text, text) to service_role",
@@ -673,8 +787,8 @@ describe("the withdrawals migration", () => {
   it("the sweep's release can only ever reach a held reply", () => {
     const release = fn("release_social_reply");
     expect(release).toMatch(/if not exists \(select 1 from public\.social_votes v\s+where v\.platform = p_platform and v\.reply_id = p_reply_id and v\.held_at is not null\) then\s+return 'unknown';/);
-    expect(release).toMatch(/return public\.put_back_social_reply\(p_platform, p_reply_id, 'sweep'\);/);
-    expect(fn("restore_social_reply")).toMatch(/select public\.put_back_social_reply\(p_platform, p_reply_id, 'hand'\)/);
+    expect(release).toMatch(/return public\.put_back_social_reply\(p_platform, p_reply_id, 'sweep', 'system'\);/);
+    expect(fn("restore_social_reply")).toMatch(/return public\.put_back_social_reply\(p_platform, p_reply_id, 'hand', who\);/);
     expect(fn("put_back_social_reply")).toMatch(/if back\.withdrawn_at <= now\(\) - interval '7 days' then result := 'expired'; exit work; end if;/);
   });
 
@@ -683,9 +797,10 @@ describe("the withdrawals migration", () => {
     expect(sql).toMatch(/alter table public\.social_sweep_approval_log enable row level security;/);
     expect(sql).toMatch(/revoke all on public\.social_sweep_approval_log from public, anon, authenticated, service_role;/);
     expect(sql).not.toMatch(/create policy/);
-    expect(sql).toMatch(/before update or delete on public\.social_sweep_approval_log\s+for each row execute function public\.social_log_append_only\(\)/);
+    expect(sql).toMatch(/before update or delete on public\.social_sweep_approval_log\s+for each row execute function public\.social_sweep_approval_log_guard\(\)/);
     expect(sql).toMatch(/before truncate on public\.social_sweep_approval_log/);
-    expect(sql).not.toMatch(/(update|delete from) public\.social_sweep_approval_log/);
+    expect(sql).not.toMatch(/update public\.social_sweep_approval_log/);
+    expect(sql.match(/delete from public\.social_sweep_approval_log/g)).toHaveLength(1); // the 12-month purge only
     expect(sql.match(/insert into public\.social_sweep_approval_log/g)).toHaveLength(3); // given, used, removed
   });
 
@@ -720,17 +835,96 @@ describe("the withdrawals migration", () => {
   });
 
   it("the restore log is append-only, closed to every API role, and written on every run of the restore", () => {
-    expect(sql).toMatch(/create table if not exists public\.social_reply_restore_log \(\s+id bigint generated always as identity primary key,\s+restored_at timestamptz not null default now\(\),\s+restored_by text not null,\s+origin text not null check \(origin in \('hand', 'sweep'\)\),\s+platform text not null,\s+reply_id text not null,\s+result text not null,\s+after_close boolean not null/);
+    expect(sql).toMatch(/create table if not exists public\.social_reply_restore_log \(\s+id bigint generated always as identity primary key,\s+restored_at timestamptz not null default now\(\),\s+restored_by text not null,\s+restored_name text not null,\s+origin text not null check \(origin in \('hand', 'sweep'\)\),\s+platform text not null,\s+reply_id text,\s+user_id uuid,\s+result text not null,\s+after_close boolean not null/);
     expect(sql).toMatch(/alter table public\.social_reply_restore_log enable row level security;/);
     expect(sql).toMatch(/revoke all on public\.social_reply_restore_log from public, anon, authenticated, service_role;/);
-    expect(sql).toMatch(/before update or delete on public\.social_reply_restore_log\s+for each row execute function public\.social_log_append_only\(\)/);
+    expect(sql).toMatch(/before update or delete on public\.social_reply_restore_log\s+for each row execute function public\.social_reply_restore_log_guard\(\)/);
     expect(sql).toMatch(/before truncate on public\.social_reply_restore_log/);
-    expect(sql).not.toMatch(/(update|delete from) public\.social_reply_restore_log/);
+    // One update (account deletion) and one delete (the 12-month purge) in the whole file.
+    expect(sql.match(/update public\.social_reply_restore_log/g)).toHaveLength(1);
+    expect(sql.match(/delete from public\.social_reply_restore_log/g)).toHaveLength(1);
     const back = fn("put_back_social_reply");
     // One way out of the function: every answer is set inside the block, then logged, then returned.
     expect(back.match(/\breturn\b/g)).toHaveLength(1);
-    expect(back).toMatch(/values \(session_user, p_origin, p_platform, p_reply_id, result, closed\);\s+return result;\s+end;/);
+    expect(back).toMatch(/values \(session_user, p_name, p_origin, p_platform, p_reply_id, back\.user_id, result, closed\);\s+return result;\s+end;/);
     expect(sql.match(/insert into public\.social_reply_restore_log/g)).toHaveLength(1);
+  });
+
+  it("a restore needs a name: blank is refused before anything is touched, 80 characters at most, and it can't be left out", () => {
+    const restore = fn("restore_social_reply");
+    expect(restore).toMatch(/^create or replace function public\.restore_social_reply\(p_platform text, p_reply_id text, p_name text\)/);
+    expect(restore).toMatch(/who text := btrim\(coalesce\(p_name, ''\)\);/);
+    expect(restore).toMatch(/if who = '' then\s+raise exception/);
+    expect(restore).toMatch(/if length\(who\) > 80 then\s+raise exception/);
+    expect(restore.indexOf("raise exception")).toBeLessThan(restore.indexOf("put_back_social_reply"));
+    expect(restore).not.toMatch(/default/);
+  });
+
+  it("truncate is always refused on both logs", () => {
+    const always = fn("social_log_append_only");
+    expect(always.replace(/\s+/g, " ")).toMatch(/begin raise exception '% is append-only', tg_table_name; end;/);
+    expect(always).not.toMatch(/\bif\b|\breturn\b/);
+    for (const table of ["social_sweep_approval_log", "social_reply_restore_log"]) {
+      expect(sql).toMatch(new RegExp(`before truncate on public\\.${table}\\s+for each statement execute function public\\.social_log_append_only\\(\\)`));
+    }
+  });
+
+  it("a delete is let through only for a row whose own time is more than 12 months back (an 11-month-old row is refused)", () => {
+    const approval = fn("social_sweep_approval_log_guard").replace(/\s+/g, " ");
+    expect(approval).toMatch(/begin if tg_op = 'delete' and old\.logged_at < now\(\) - interval '12 months' then return old; end if; raise exception/);
+    expect(approval.match(/\breturn\b/g)).toHaveLength(1); // the one way through
+    expect(approval).not.toMatch(/return new/); // no update ever passes on the approval log
+
+    const restore = fn("social_reply_restore_log_guard").replace(/\s+/g, " ");
+    expect(restore).toMatch(/if tg_op = 'delete' then if old\.restored_at < now\(\) - interval '12 months' then return old; end if; raise exception [^;]+; end if;/);
+    // No other interval, and no clock but the database's own, anywhere in the guards.
+    for (const g of [approval, restore]) {
+      expect(g.match(/interval '[^']+'/g)).toEqual(["interval '12 months'"]);
+      expect(g).not.toMatch(/current_setting|session_user|current_user|security definer/);
+    }
+  });
+
+  it("an update is let through only when it nulls reply_id and user_id and every other column is unchanged (changing result is refused)", () => {
+    const guard = fn("social_reply_restore_log_guard").replace(/\s+/g, " ");
+    const columns = sql.match(/create table if not exists public\.social_reply_restore_log \(([\s\S]*?)\n\);/)![1]!.split("\n").map((l) => l.trim().split(" ")[0]!).filter(Boolean);
+    expect(columns).toEqual(["id", "restored_at", "restored_by", "restored_name", "origin", "platform", "reply_id", "user_id", "result", "after_close"]);
+    const others = columns.filter((c) => c !== "reply_id" && c !== "user_id");
+    // The whole condition, in order: the two personal columns end up null, then every other column by name.
+    const expected = ["new.reply_id is null", "new.user_id is null", ...others.map((c) => `new.${c} is not distinct from old.${c}`)].join(" and ");
+    expect(guard).toContain(`if ${expected} then return new; end if; raise exception`);
+    expect(guard).toContain("new.result is not distinct from old.result");
+    // AEGIS: column by column, never a row comparison (a null inside one answers null).
+    expect(guard).not.toMatch(/to_jsonb|row\(|\bnew = old\b|\(new\.\*\)|old\.\* /);
+    expect(guard.match(/return new/g)).toHaveLength(1);
+    expect(guard.match(/return old/g)).toHaveLength(1);
+  });
+
+  it("no API role can use the two exceptions: no table rights, unprivileged guards, and the only ways in take no argument", () => {
+    expect(raw).toMatch(/No API role can use the exceptions: anon, authenticated and service_role have no right at all on either table/);
+    for (const table of ["social_sweep_approval_log", "social_reply_restore_log"]) {
+      expect(sql).toMatch(new RegExp(`revoke all on public\\.${table} from public, anon, authenticated, service_role;`));
+      expect(sql).not.toMatch(new RegExp(`grant [^;]*${table}`));
+    }
+    expect(sql).not.toMatch(/create policy/);
+    for (const name of ["social_log_append_only", "social_sweep_approval_log_guard", "social_reply_restore_log_guard"]) {
+      expect(fn(name)).toMatch(/returns trigger\s+language plpgsql set search_path = ''/);
+    }
+    const purge = fn("purge_social_audit_logs");
+    expect(purge).toMatch(/^create or replace function public\.purge_social_audit_logs\(\)\s+returns integer\s+language sql security definer set search_path = ''/);
+    expect(purge).toMatch(/delete from public\.social_sweep_approval_log l where l\.logged_at < now\(\) - interval '12 months' returning 1/);
+    expect(purge).toMatch(/delete from public\.social_reply_restore_log l where l\.restored_at < now\(\) - interval '12 months' returning 1/);
+    expect(sql).toMatch(/revoke execute on function public\.purge_social_audit_logs\(\) from public, anon, authenticated;/);
+  });
+
+  it("account deletion blanks the reply id and the person's id in the deleting transaction, for that account only", () => {
+    const forget = fn("forget_social_restores_on_delete");
+    expect(forget).toMatch(/returns trigger\s+language plpgsql security definer set search_path = ''/);
+    expect(forget).toMatch(/update public\.social_reply_restore_log l set reply_id = null, user_id = null where l\.user_id = old\.id;\s+return old;/);
+    expect(sql).toMatch(/drop trigger if exists on_auth_user_deleted_forget_social_restores on auth\.users;\s+create trigger on_auth_user_deleted_forget_social_restores after delete on auth\.users\s+for each row execute function public\.forget_social_restores_on_delete\(\);/);
+    // The trigger that ends the consents on deletion is left as it is.
+    expect(sql).not.toMatch(/trigger (if exists )?on_auth_user_deleted on/);
+    // No foreign key from the log: its rows must outlive the account.
+    expect(sql.match(/create table if not exists public\.social_reply_restore_log \(([\s\S]*?)\n\);/)![1]).not.toMatch(/references/);
   });
 
   it("after the close only a restore by hand goes on, and only for a reply written before the close", () => {

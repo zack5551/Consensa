@@ -126,6 +126,13 @@ describe("the social store in Supabase", () => {
     expect(await s.noteHalt()).toBeNull();
   });
 
+  it("purges the two logs through purge_social_audit_logs(), which takes no argument", async () => {
+    const { store: s, sent } = await store([{ data: 4 }, { error: {} }]);
+    expect(await s.purgeAuditLogs()).toBe(4);
+    expect(sent[0]).toEqual({ rpc: "purge_social_audit_logs", values: undefined });
+    await expect(s.purgeAuditLogs()).rejects.toThrow();
+  });
+
   it("reports an approved run's removals through record_social_sweep_removals(), a count and nothing else", async () => {
     const { store: s, sent } = await store([{ data: true }, { error: {} }]);
     await s.recordApprovedRemovals(21);

@@ -54,7 +54,27 @@ export type ApprovalLogRow =
   | ({ event: "removed"; usedAt: Date; removed: number } & Approval);
 
 /** One row of the restore log: every restore, by hand or by the sweep, whatever it answered. */
-export type RestoreLogRow = { restoredAt: Date; restoredBy: string; origin: "hand" | "sweep"; platform: Platform; replyId: string; result: Exclude<ReleaseOutcome, "retry">; afterClose: boolean };
+export type RestoreLogRow = {
+  restoredAt: Date;
+  restoredBy: string;
+  /** The name the person gave; "system" for the sweep. */
+  restoredName: string;
+  origin: "hand" | "sweep";
+  platform: Platform;
+  /** Personal information: set to null when the person deletes their account. */
+  replyId: string | null;
+  /** Only there to find the row on account deletion; null when no such reply was found. */
+  userId: string | null;
+  result: Exclude<ReleaseOutcome, "retry">;
+  afterClose: boolean;
+};
+
+const LOG_KEEP_MONTHS = 12;
+const monthsBefore = (d: Date, months: number): number => {
+  const cut = new Date(d);
+  cut.setUTCMonth(cut.getUTCMonth() - months);
+  return cut.getTime();
+};
 
 const isLive = (l: Ledger): boolean => !l.withdrawnAt && !l.heldAt;
 const HOUR_MS = 60 * 60 * 1000;
@@ -198,8 +218,9 @@ export class MemoryStore implements CountStore, SweepStore {
    * re-derived. After the close: by hand only, only for a reply written before the close, and the one call write goes
    * through on a pass (the calls trigger refuses every other write after the close). Every run is logged.
    */
-  private putBack(platform: Platform, replyId: string, origin: "hand" | "sweep", by: string): Exclude<ReleaseOutcome, "retry"> {
+  private putBack(platform: Platform, replyId: string, origin: "hand" | "sweep", name: string, by: string): Exclude<ReleaseOutcome, "retry"> {
     let closed = false;
+    const userId = this.ledger.find((l) => l.platform === platform && l.replyId === replyId)?.userId ?? null;
     const work = (): Exclude<ReleaseOutcome, "retry"> => {
       const back = this.ledger.find((l) => l.platform === platform && l.replyId === replyId);
       if (!back) return "unknown";
@@ -222,18 +243,74 @@ export class MemoryStore implements CountStore, SweepStore {
       return "counted";
     };
     const result = work();
-    this.restoreLog.push({ restoredAt: this.clock, restoredBy: by, origin, platform, replyId, result, afterClose: closed });
+    this.restoreLog.push({ restoredAt: this.clock, restoredBy: by, restoredName: name, origin, platform, replyId, userId, result, afterClose: closed });
     return result;
   }
-  /** restore_social_reply(): zack's way back, by hand, before or after the close. */
-  restoreReply(platform: Platform, replyId: string, by = "postgres"): Exclude<ReleaseOutcome, "retry"> {
-    return this.putBack(platform, replyId, "hand", by);
+  /** restore_social_reply(platform, reply, name): zack's way back, by hand, before or after the close. The name is required. */
+  restoreReply(platform: Platform, replyId: string, name: string | null = "zack", by = "postgres"): Exclude<ReleaseOutcome, "retry"> {
+    const who = (name ?? "").trim();
+    if (who === "") throw new Error("restore_social_reply needs a name");
+    if (who.length > 80) throw new Error("name too long (80)");
+    return this.putBack(platform, replyId, "hand", who, by);
+  }
+  /**
+   * Account deletion: the person's calls and ledger rows go by cascade, and forget_social_restores_on_delete()
+   * blanks the reply id and the person's id in their restore-log rows. Everything else in those rows stays.
+   */
+  deleteAccount(userId: string): void {
+    this.ledger = this.ledger.filter((l) => l.userId !== userId);
+    for (const key of [...this.calls.keys()]) if (key.startsWith(`${userId}:`)) this.calls.delete(key);
+    for (const [key, owner] of [...this.links]) if (owner === userId) this.links.delete(key);
+    this.restoreLog.forEach((r, i) => {
+      if (r.userId === userId) this.updateRestoreLog(i, { replyId: null, userId: null });
+    });
+  }
+  /**
+   * social_reply_restore_log_guard() on UPDATE: the two personal columns may end up null, and every other column
+   * must be the same as before. Anything else is refused.
+   */
+  updateRestoreLog(index: number, patch: Partial<RestoreLogRow>): void {
+    const old = this.restoreLog[index];
+    if (!old) return;
+    const next = { ...old, ...patch };
+    const same = (["restoredAt", "restoredBy", "restoredName", "origin", "platform", "result", "afterClose"] as const).every((k) =>
+      next[k] instanceof Date && old[k] instanceof Date ? (next[k] as Date).getTime() === (old[k] as Date).getTime() : next[k] === old[k],
+    );
+    if (next.replyId !== null || next.userId !== null || !same) throw new Error("social_reply_restore_log is append-only: only reply_id and user_id may be set to null");
+    this.restoreLog[index] = next;
+  }
+  /** Both guards on DELETE: only a row whose own time is more than 12 months back. */
+  deleteLogRow(log: "approval" | "restore", index: number): void {
+    const stamp = log === "approval" ? this.approvalStamp(this.approvalLog[index]) : this.restoreLog[index]?.restoredAt;
+    if (!stamp) return;
+    if (!(stamp.getTime() < monthsBefore(this.clock, LOG_KEEP_MONTHS))) throw new Error(`social_${log === "approval" ? "sweep_approval" : "reply_restore"}_log is append-only until a row is 12 months old`);
+    if (log === "approval") this.approvalLog.splice(index, 1);
+    else this.restoreLog.splice(index, 1);
+  }
+  /** social_log_append_only() on TRUNCATE: always refused. */
+  truncateLog(log: "approval" | "restore"): void {
+    throw new Error(`social_${log === "approval" ? "sweep_approval" : "reply_restore"}_log is append-only`);
+  }
+  /** logged_at of an approval-log row: when that row was written. */
+  private approvalStamp(r: ApprovalLogRow | undefined): Date | undefined {
+    if (!r) return undefined;
+    return r.event === "given" ? r.approvedAt : r.usedAt;
+  }
+  /** purge_social_audit_logs(): rows of either log older than 12 months go. */
+  async purgeAuditLogs(): Promise<number> {
+    if (this.purgeFails) throw new Error("purge unavailable");
+    const cut = monthsBefore(this.clock, LOG_KEEP_MONTHS);
+    const before = this.approvalLog.length + this.restoreLog.length;
+    // One guarded delete per row past the 12 months, as the database does it.
+    for (let i = this.approvalLog.length - 1; i >= 0; i--) if (this.approvalStamp(this.approvalLog[i])!.getTime() < cut) this.deleteLogRow("approval", i);
+    for (let i = this.restoreLog.length - 1; i >= 0; i--) if (this.restoreLog[i]!.restoredAt.getTime() < cut) this.deleteLogRow("restore", i);
+    return before - this.approvalLog.length - this.restoreLog.length;
   }
   /** release_social_reply(): the sweep's narrower way back, for a held reply on an open question only. */
   async releaseReply(platform: Platform, replyId: string): Promise<ReleaseOutcome> {
     this.written.push({ platform, replyId });
     if (!this.ledger.some((l) => l.platform === platform && l.replyId === replyId && l.heldAt)) return "unknown";
-    return this.putBack(platform, replyId, "sweep", "authenticator");
+    return this.putBack(platform, replyId, "sweep", "system", "authenticator");
   }
   /** purge_withdrawn_social_replies(): the real deletion, 7 days after a withdrawal. */
   async purgeWithdrawn(): Promise<number> {
