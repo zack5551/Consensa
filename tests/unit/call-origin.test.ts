@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { callsCountFrom, COUNTRY_HEADER } from "@/lib/call-origin";
+import { TERMS_VERSION } from "@/lib/supabase/config";
 
 describe("callsCountFrom", () => {
   it("allows Canada on Vercel", () => expect(callsCountFrom("CA", true)).toBe(true));
@@ -24,7 +25,15 @@ vi.mock("next/server", async (orig) => ({
 }));
 vi.mock("@/lib/supabase/admin", () => ({ adminSupabase: () => ({ from: () => ({ upsert }), rpc }) }));
 vi.mock("@/lib/server/proxy-check", () => ({ checkProxy: () => checkProxy() }));
-vi.mock("@/lib/supabase/server", () => ({ serverSupabase: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) } }) }));
+// The person's own Terms rows, read with their session (row-level security). Current Terms by default.
+const terms = vi.hoisted(() => ({ result: null as null | { data: unknown[] | null; error: { message: string } | null } }));
+const currentTerms = () => ({ data: [{ kind: "terms", version: TERMS_VERSION, given_at: "2026-11-11T12:00:00Z", withdrawn_at: null }], error: null });
+vi.mock("@/lib/supabase/server", () => ({
+  serverSupabase: async () => ({
+    auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
+    from: () => ({ select: () => ({ eq: async () => terms.result ?? currentTerms() }) }),
+  }),
+}));
 
 describe("POST /api/calls country gate", () => {
   beforeEach(() => {
@@ -34,6 +43,7 @@ describe("POST /api/calls country gate", () => {
     allow.mockReset().mockReturnValue(true);
     botCheck.mockReset().mockResolvedValue("skipped");
     vi.unstubAllEnvs();
+    terms.result = null;
   });
 
   async function post(country?: string, altcha?: string) {
@@ -156,5 +166,64 @@ describe("POST /api/calls country gate", () => {
     upsert.mockResolvedValueOnce({ error: { hint: "closed" } }); // the call itself
     expect((await send({ slug: "boc-cut-dec-2026", probability: 50 })).status).toBe(409);
     expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/calls needs the current Terms (Terms s. 18)", () => {
+  beforeEach(() => {
+    upsert.mockClear();
+    rpc.mockClear();
+    checkProxy.mockReset().mockResolvedValue({ vpn: false });
+    allow.mockReset().mockReturnValue(true);
+    botCheck.mockReset().mockResolvedValue("skipped");
+    vi.unstubAllEnvs();
+    terms.result = null;
+  });
+
+  async function post() {
+    const { POST } = await import("@/app/api/calls/route");
+    const { NextRequest } = await import("next/server");
+    return POST(new NextRequest("http://localhost/api/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: "boc-cut-dec-2026", probability: 60 }) }));
+  }
+
+  it("saves the call when the person accepted the current Terms", async () => {
+    expect((await post()).status).toBe(200);
+    expect(upsert).toHaveBeenCalled();
+  });
+
+  it("answers 403 terms and writes nothing when only older Terms were accepted, or they were withdrawn, or there are none", async () => {
+    for (const data of [
+      [{ kind: "terms", version: "2026-10-01", given_at: "2026-10-01T12:00:00Z", withdrawn_at: null }],
+      [{ kind: "terms", version: "2026-11-11", given_at: "2026-11-11T12:00:00Z", withdrawn_at: "2026-11-12T12:00:00Z" }],
+      [],
+      null,
+    ]) {
+      terms.result = { data, error: null };
+      const res = await post();
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ error: "terms" });
+    }
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("still counts calls under the old Terms before the new ones take effect (30-day notice period, LEX)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const dayBefore = new Date(`${TERMS_VERSION}T00:00:00Z`);
+      dayBefore.setUTCDate(dayBefore.getUTCDate() - 1);
+      vi.setSystemTime(dayBefore);
+      terms.result = { data: [], error: { message: "not even read" } };
+      expect((await post()).status).toBe(200);
+      expect(upsert).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("refuses with 503 when the Terms can't be read: fail closed, nothing written", async () => {
+    terms.result = { data: null, error: { message: "down" } };
+    const res = await post();
+    expect(res.status).toBe(503);
+    expect(upsert).not.toHaveBeenCalled();
   });
 });

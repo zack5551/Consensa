@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LINK_COOKIE, newPkce, sealLink } from "@/lib/social-voting/pkce";
+import { TERMS_VERSION } from "@/lib/supabase/config";
 import { fixture } from "./helpers";
 
 const SECRET = "s".repeat(40);
@@ -152,6 +153,8 @@ describe("flag off: nothing runs", () => {
   });
 
   it("the website call is saved without the new column while the flag is off, and as a website call once it is on", async () => {
+    // A person who accepted the current Terms: calls need them (AEGIS, Terms s. 18).
+    h.rows.consent_log = [{ kind: "terms", version: TERMS_VERSION, given_at: "2026-11-19T12:00:00Z", withdrawn_at: null }];
     const save = async () => {
       const { POST } = await import("@/app/api/calls/route");
       const res = await POST(await request("/api/calls", { method: "POST", body: { slug: "boc-cut-dec-2026", probability: 62 } }));
