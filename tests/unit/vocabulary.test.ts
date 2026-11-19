@@ -3,7 +3,11 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
+import { moreSampleQuestions } from "@/content/more-questions";
+import { sampleForecasters } from "@/content/sample-forecasters";
 import { sampleQuestions } from "@/content/sample-questions";
+import { sampleResults } from "@/content/sample-results";
+import { fixtureQuestions } from "@/content/test-fixtures";
 
 /** CLAUDE.md rule 1: no betting language anywhere a user can read it. */
 const banned = [
@@ -25,8 +29,36 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+/**
+ * Every string literal written in the sample content (src/content), EN and FR, whether or not a module exports it.
+ * Catches text that only reaches the page through another module, such as a resolved result's question or source.
+ */
+function contentLiterals(dir: string): string[] {
+  return readdirSync(dir).flatMap((name) => {
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) return contentLiterals(full);
+    if (name.endsWith(".json")) return strings(JSON.parse(readFileSync(full, "utf8")));
+    if (!/\.(ts|tsx)$/.test(name)) return [];
+    const text = readFileSync(full, "utf8");
+    return [...text.matchAll(/"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\]|\\.)*)`/g)].map((m) => m[1] ?? m[2] ?? "");
+  });
+}
+
 describe("vocabulary", () => {
-  const userFacing = [...strings(en), ...strings(fr), ...sampleQuestions.flatMap((q) => strings(q))];
+  const sampleContent = [
+    ...sampleQuestions.flatMap((q) => strings(q)),
+    ...moreSampleQuestions.flatMap((q) => strings(q)),
+    ...sampleResults.flatMap((r) => strings(r)),
+    ...sampleForecasters.flatMap((f) => strings(f)),
+    ...fixtureQuestions().flatMap((q) => strings(q)),
+    ...contentLiterals("src/content"),
+  ];
+  const userFacing = [...strings(en), ...strings(fr), ...sampleContent];
+
+  it("reads the sample content, results included", () => {
+    expect(sampleResults.length).toBeGreaterThan(0);
+    expect(contentLiterals("src/content").some((s) => s.includes("logements commencés"))).toBe(true);
+  });
 
   it.each(banned.map((re) => [re.source, re] as const))("no user-facing text matches %s", (_, re) => {
     const hits = userFacing.filter((s) => re.test(s));
