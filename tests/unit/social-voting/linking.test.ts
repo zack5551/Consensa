@@ -7,7 +7,7 @@ import { fakeFetch, fixture, NOW } from "./helpers";
 
 const SECRET = "s".repeat(40);
 const USER = "0b0e7a52-4f0c-4b56-9d58-2f1f6d1c9a11";
-const ORIGIN = "https://cansensa.test";
+const ORIGIN = "https://cansensus.test";
 
 function sealed(state: string, verifier: string, at = NOW) {
   return sealLink({ platform: "x", state, verifier, userId: USER, origin: ORIGIN, locale: "fr", consent: true }, SECRET, at);

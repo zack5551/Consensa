@@ -58,6 +58,6 @@ describe("account request bodies", () => {
   });
 
   it("dates the download", () => {
-    expect(exportFileName(new Date("2026-11-11T12:00:00Z"))).toBe("cansensa-my-data-2026-11-11.json");
+    expect(exportFileName(new Date("2026-11-11T12:00:00Z"))).toBe("cansensus-my-data-2026-11-11.json");
   });
 });

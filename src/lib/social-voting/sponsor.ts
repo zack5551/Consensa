@@ -5,7 +5,7 @@
  * folded into "other" by the database, and hidden with the total when "other" is still under 50.
  *
  * Political questions are never sponsor-reportable: they are filtered out here, before the database is asked.
- * A sponsor quotes a number as "X% of Cansensa participants", never as "X% of Canadians".
+ * A sponsor quotes a number as "X% of CANsensus participants", never as "X% of Canadians".
  * Pure: the database call is injected. The server-only wrapper is `sponsor-server.ts`. No UI and no export yet.
  */
 import { z } from "zod";

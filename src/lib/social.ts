@@ -33,7 +33,7 @@ export function isAllowedPostUrl(value: string): boolean {
 
 const count = z.number().int().nonnegative();
 
-/** One hand-entered native poll total, from a post on an official Cansensa account. Totals only: no usernames. */
+/** One hand-entered native poll total, from a post on an official CANsensus account. Totals only: no usernames. */
 export const socialPollSchema = z
   .object({
     platform: z.enum(socialPlatforms),
@@ -96,7 +96,7 @@ export function shareLinks(text: string, url: string): ShareLinks {
 }
 
 export type ShareTextLabels = {
-  /** "{question} Make your call on Cansensa. Free. No prizes." */
+  /** "{question} Make your call on CANsensus. Free. No prizes." */
   text: string;
   /** The same, plus LEX's fan-forecast line for sports questions. */
   textSports: string;

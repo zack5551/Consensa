@@ -104,20 +104,20 @@ describe("share post text", () => {
   const xLength = (text: string) => [...text].length + 1 + 23;
 
   it("adds LEX's fan-forecast line to sports posts only", () => {
-    expect(questionShareText(en.share, "Q?", { sports: true })).toBe("Q? Make your call on Cansensa. Free. No prizes. Fan forecasts only.");
-    expect(questionShareText(fr.share, "Q?", { sports: true })).toBe("Q? Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner. Prévisions de partisans seulement.");
-    expect(questionShareText(en.share, "Q?", { sports: false })).toBe("Q? Make your call on Cansensa. Free. No prizes.");
-    expect(questionShareText(fr.share, "Q?", { sports: false })).toBe("Q? Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner.");
+    expect(questionShareText(en.share, "Q?", { sports: true })).toBe("Q? Make your call on CANsensus. Free. No prizes. Fan forecasts only.");
+    expect(questionShareText(fr.share, "Q?", { sports: true })).toBe("Q? Faites votre prévision sur CANsensus. Gratuit. Aucun prix à gagner. Prévisions de partisans seulement.");
+    expect(questionShareText(en.share, "Q?", { sports: false })).toBe("Q? Make your call on CANsensus. Free. No prizes.");
+    expect(questionShareText(fr.share, "Q?", { sports: false })).toBe("Q? Faites votre prévision sur CANsensus. Gratuit. Aucun prix à gagner.");
   });
 
   it("leads the Called it! post with the label too", () => {
-    expect(withAskedBy("I called it on Cansensa: Q? Free. No prizes.", askedByLabel(guest, en.question.askedBy))).toBe("Asked by Alex Tremblay · I called it on Cansensa: Q? Free. No prizes.");
+    expect(withAskedBy("I called it on CANsensus: Q? Free. No prizes.", askedByLabel(guest, en.question.askedBy))).toBe("Asked by Alex Tremblay · I called it on CANsensus: Q? Free. No prizes.");
     expect(withAskedBy("J’ai vu juste", undefined)).toBe("J’ai vu juste");
   });
 
   it("leads with the asked-by label when there is one", () => {
     expect(questionShareText(fr.share, "Q?", { sports: false, askedBy: askedByLabel(sponsor, fr.question.askedBy) })).toBe(
-      "Commandité par Maison Test · Q? Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner.",
+      "Commandité par Maison Test · Q? Faites votre prévision sur CANsensus. Gratuit. Aucun prix à gagner.",
     );
   });
 

@@ -8,7 +8,7 @@ for (const locale of ["en", "fr"] as const) {
     await page.goto(`/embed/${locale}/boc-cut-dec-2026`);
     await expect(page.locator("html")).toHaveAttribute("lang", `${locale}-CA`);
     await expect(page.getByRole("banner")).toHaveCount(0);
-    await expect(page.getByRole("link", { name: locale === "en" ? /Make your call on Cansensa/ : /Faites votre prévision sur Cansensa/ })).toHaveAttribute("href", /utm_source=embed/);
+    await expect(page.getByRole("link", { name: locale === "en" ? /Make your call on CANsensus/ : /Faites votre prévision sur CANsensus/ })).toHaveAttribute("href", /utm_source=embed/);
     const results = await new AxeBuilder({ page }).withTags(tags).analyze();
     expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
   });

@@ -1,6 +1,6 @@
 /*
  * Screen: linked social accounts / « Comptes de réseaux sociaux liés » (account area, sprint 11).
- * One message: link a social account and your YES or NO replies to official @Cansensa posts count as your calls.
+ * One message: link a social account and your YES or NO replies to official @CANsensus posts count as your calls.
  * One action: tick the consent box and link my X account (or unlink it, in one click).
  * Hidden (404) while SOCIAL_VOTING is off. The flag is read on each request, so this page is never prerendered.
  */

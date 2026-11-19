@@ -1,12 +1,12 @@
-# Cansensa brand kit
+# CANsensus brand kit
 
-The source of truth for how Cansensa looks and sounds. The app builds from these files; it does not redefine them.
+The source of truth for how CANsensus looks and sounds. The app builds from these files; it does not redefine them.
 
 Open `preview.html` in a browser to see everything rendered, with EN/FR and light/dark toggles.
 
 ## The idea
 
-**Two sides meet in the middle.** Cansensa turns many individual calls into one clear read of what Canada thinks happens next. It is free, there is no money anywhere, and it is fully bilingual.
+**Two sides meet in the middle.** CANsensus turns many individual calls into one clear read of what Canada thinks happens next. It is free, there is no money anywhere, and it is fully bilingual.
 
 Everything follows from that: two colours for the two sides, one red point for where Canada lands, and words about forecasting, never betting.
 
@@ -27,7 +27,7 @@ Regenerate: `pip install fonttools`, then `PYTHONPATH=brand/scripts python3 bran
 ## Logo
 
 - **Symbol:** a circle split down the middle, teal on the left and violet on the right, with a red point in the seam. Teal is side A, violet is side B, and the red point is Canada's read.
-- **Wordmark:** `cansensa`, always lowercase, Manrope ExtraBold, tracked −2%.
+- **Wordmark:** `CANsensus`, always written with "CAN" in capitals and the rest lowercase, Manrope ExtraBold, tracked −2%. The capitals are the emphasis: never recolour "CAN".
 - **Lockup:** the symbol sits at 1.5× the x-height, centred on the lowercase letters, with a gap of about half the x-height.
 - **Clear space:** keep at least the symbol's radius clear on every side.
 - **Minimum sizes:** lockup 96 px wide; symbol 16 px (the favicon is tuned for it).
@@ -73,7 +73,7 @@ Always use the **semantic** tokens in product code, never raw scale steps:
 
 ## Voice
 
-Cansensa sounds like a sharp, friendly Canadian editor: clear, warm, a little wry, and never hype.
+CANsensus sounds like a sharp, friendly Canadian editor: clear, warm, a little wry, and never hype.
 
 - **Short and plain.** Sentences under 20 words. No exclamation marks except "Called it!" and "Vu juste!".
 - **Respect the reader.** Explain how scoring works in one line. Never guilt, nag or use fake urgency.

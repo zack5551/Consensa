@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 const tags = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
 const labels = {
   en: { label: "Fan forecasts only. Not advice.", footer: "Not affiliated with or endorsed by any league, team or player." },
-  fr: { label: "Prévisions de partisans seulement. Ce ne sont pas des conseils.", footer: "Cansensa n’est affilié à aucune ligue, équipe ou joueur, et n’est approuvé par aucun d’eux." },
+  fr: { label: "Prévisions de partisans seulement. Ce ne sont pas des conseils.", footer: "CANsensus n’est affilié à aucune ligue, équipe ou joueur, et n’est approuvé par aucun d’eux." },
 } as const;
 
 for (const locale of ["en", "fr"] as const) {

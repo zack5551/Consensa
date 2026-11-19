@@ -101,8 +101,8 @@ describe("called-it share text", () => {
   }
 
   it("says the post line in both languages, with the free label", () => {
-    expect(en.share.calledItText).toBe("I called it on Cansensa: {question} Free. No prizes.");
-    expect(fr.share.calledItText).toBe("J’ai vu juste sur Cansensa : {question} Gratuit. Aucun prix à gagner.");
+    expect(en.share.calledItText).toBe("I called it on CANsensus: {question} Free. No prizes.");
+    expect(fr.share.calledItText).toBe("J’ai vu juste sur CANsensus : {question} Gratuit. Aucun prix à gagner.");
   });
 
   it("the card can draw every label with the brand fonts alone", () => {
@@ -110,8 +110,8 @@ describe("called-it share text", () => {
   });
 
   it("links to the question and the side only: no user ID, no tracking", () => {
-    const url = calledItShareUrl("https://cansensa.ca/", "fr", resolvedYes, "yes");
-    expect(url).toBe("https://cansensa.ca/fr/q/cpi-sept-2026/called-it/yes");
+    const url = calledItShareUrl("https://cansensus.ca/", "fr", resolvedYes, "yes");
+    expect(url).toBe("https://cansensus.ca/fr/q/cpi-sept-2026/called-it/yes");
     expect(url).not.toMatch(/[?&=#]/);
     const links = shareLinks("text", url);
     expect(new URL(links.x).searchParams.get("url")).toBe(url);

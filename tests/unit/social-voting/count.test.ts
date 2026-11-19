@@ -42,7 +42,7 @@ describe("counting replies from linked accounts", () => {
     await run();
     const everything = JSON.stringify({ written: store.written, ledger: store.ledger, calls: [...store.calls], reads: [...store.reads] });
     expect(everything).not.toMatch(/app-bearer|official-account-token|Bearer/);
-    expect(everything).not.toMatch(/maple_reader|Maple Reader|username|"text"|probably|@Cansensa/);
+    expect(everything).not.toMatch(/maple_reader|Maple Reader|username|"text"|probably|@CANsensus/);
     expect(everything).not.toContain('"999"'); // the unlinked author
     expect(everything).not.toMatch(/"(333|444|555)"/); // unclear, indirect and malformed replies never got this far
     // What a counted reply carries, and nothing more.
@@ -120,7 +120,7 @@ describe("counting replies from linked accounts", () => {
 });
 
 describe("the auto-reply (off unless SOCIAL_AUTO_REPLY is on)", () => {
-  const text = { en: "To have your call count in “Canada says”, link your account: https://cansensa.test/en/account/social", fr: "FR" };
+  const text = { en: "To have your call count in “Canada says”, link your account: https://cansensus.test/en/account/social", fr: "FR" };
 
   it("is never sent without its own config", async () => {
     const { net, run } = setup();

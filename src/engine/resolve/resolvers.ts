@@ -20,7 +20,7 @@ export interface Http {
 }
 
 export function httpFrom(fetchImpl: typeof fetch): Http {
-  const headers = { "user-agent": "CansensaPulse/0.1", accept: "application/json" };
+  const headers = { "user-agent": "CANsensusPulse/0.1", accept: "application/json" };
   return {
     get: (url) => fetchImpl(url, { headers, signal: AbortSignal.timeout(15_000) }),
     post: (url, body) =>
