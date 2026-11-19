@@ -90,10 +90,10 @@ export async function POST(request: NextRequest) {
   // Best effort, after the answer is sent: a failed or slow counter never fails or delays a saved call.
   after(async () => {
     await admin.rpc("count_call_origin", { p_vpn: vpn === "unknown" ? "unknown" : "no" });
-    // The monthly re-check of a linked social account (AEGIS note 5): a call that got this far came from Canada and
-    // not through a VPN, which is the proof. It refreshes the person's own links and lifts a pause; without any link
-    // it changes nothing.
-    if (social) await admin.from("social_links").update({ last_checked_at: new Date().toISOString(), paused: false }).eq("user_id", userId);
+    // The monthly re-check of a linked social account (AEGIS note 5): a call from Canada with a clear "not a VPN"
+    // answer is the proof. An unknown answer proves nothing, so it neither refreshes the links nor lifts a pause.
+    // Without any link it changes nothing.
+    if (social && vpn === false) await admin.from("social_links").update({ last_checked_at: new Date().toISOString(), paused: false }).eq("user_id", userId);
   });
   return NextResponse.json({ ok: true }, { headers: noStore });
 }

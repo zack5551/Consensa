@@ -121,15 +121,16 @@ describe("headers", async () => {
     }
   });
 
-  it("social hosts are in the policy only while SOCIAL_VOTING is on (sprint 11)", async () => {
-    for (const host of ["api.x.com", "graph.facebook.com", "graph.threads.net"]) expect(appCsp).not.toContain(host);
+  it("social API hosts are never in the policy, flag on or off (sprint 11, AEGIS)", async () => {
+    const hosts = ["api.x.com", "graph.facebook.com", "graph.threads.net"];
+    for (const host of hosts) expect(appCsp).not.toContain(host);
     vi.stubEnv("SOCIAL_VOTING", "1");
     vi.resetModules();
     const on = (await (await import("../../next.config")).default.headers!()).flatMap((r) => r.headers).filter((h) => h.key === "Content-Security-Policy");
     vi.unstubAllEnvs();
     vi.resetModules();
-    expect(on.length).toBe(2);
-    for (const h of on) expect(h.value).toMatch(/connect-src 'self'[^;]* https:\/\/api\.x\.com https:\/\/graph\.facebook\.com https:\/\/graph\.threads\.net/);
+    expect(on.length).toBeGreaterThan(0);
+    for (const h of on) for (const host of hosts) expect(h.value).not.toContain(host);
   });
 
   it("only the embed can be framed", () => {

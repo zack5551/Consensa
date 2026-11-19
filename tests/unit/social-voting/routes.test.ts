@@ -50,6 +50,9 @@ const later: Array<() => Promise<void>> = [];
 vi.mock("server-only", () => ({}));
 // `after` runs once the answer is sent; here it is collected and run by the test.
 vi.mock("next/server", async (original) => ({ ...(await original<Record<string, unknown>>()), after: (fn: () => Promise<void>) => void later.push(fn) }));
+// The VPN lookup: "unknown" by default (no database in tests); a test sets it to a clear answer when it needs one.
+const proxy = vi.hoisted(() => ({ vpn: "unknown" as boolean | "unknown" }));
+vi.mock("@/lib/server/proxy-check", async (original) => ({ ...(await original<Record<string, unknown>>()), checkProxy: async () => ({ vpn: proxy.vpn }) }));
 vi.mock("@/lib/server/bot-check", () => ({ verifyBotCheck: async () => h.botCheck }));
 vi.mock("@/lib/supabase/server", () => ({ serverSupabase: async () => client() }));
 vi.mock("@/lib/supabase/admin", () => ({ adminSupabase: () => client() }));
@@ -162,9 +165,42 @@ describe("flag off: nothing runs", () => {
     vi.resetModules();
     on();
     expect(await save()).toEqual({ user_id: USER, slug: "boc-cut-dec-2026", probability: 62, source: "web" });
-    // With the flag on, a call from Canada is the monthly re-check: it refreshes the person's own links and lifts a pause.
+    // With the flag on, an unknown VPN answer proves nothing: the links are left alone and a pause stays (AEGIS).
     for (const fn of later.splice(0)) await fn();
+    expect(h.ops.filter((o) => o.table === "social_links")).toEqual([]);
+    // A call from Canada with a clear "not a VPN" answer is the monthly re-check: it refreshes the links and lifts a pause.
+    h.ops.length = 0;
+    proxy.vpn = false;
+    try {
+      await save();
+      for (const fn of later.splice(0)) await fn();
+    } finally {
+      proxy.vpn = "unknown";
+    }
     expect(h.ops.find((o) => o.table === "social_links")).toMatchObject({ action: "update", values: { paused: false, last_checked_at: expect.any(String) } });
+  });
+
+  it("linking fails closed on Vercel: only a clear not-a-VPN answer lets it through (AEGIS)", async () => {
+    const { connectionAllowed } = await import("@/lib/social-voting/link-checks");
+    const headers = new Headers({ "x-vercel-ip-country": "CA" });
+    const answer = async (vpn: boolean | "unknown") => {
+      proxy.vpn = vpn;
+      try {
+        return await connectionAllowed(headers);
+      } finally {
+        proxy.vpn = "unknown";
+      }
+    };
+    expect(await answer("unknown")).toBe(true); // off Vercel (local, e2e) an unknown answer is let through
+    expect(await answer(true)).toBe(false);
+    vi.stubEnv("VERCEL", "1");
+    try {
+      expect(await answer("unknown")).toBe(false);
+      expect(await answer(true)).toBe(false);
+      expect(await answer(false)).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("the auto-reply link is the plain page address, with nothing to track", async () => {

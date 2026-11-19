@@ -28,20 +28,15 @@ function supabaseOrigins(): string {
     return "";
   }
 }
-/**
- * Social voting (sprint 11, AEGIS note 8): the three platform APIs, added in this PR only and only while
- * SOCIAL_VOTING=1, so with the flag off the policy is unchanged. Today only our server calls them (linking and the
- * daily reader); no page script does, and the person's own sign-in on X is a normal page visit that the policy
- * doesn't govern. Data only comes in (LEX: rule 7 holds). Remove a host here if the browser never needs it.
- */
-const socialOrigins = process.env.SOCIAL_VOTING === "1" ? " https://api.x.com https://graph.facebook.com https://graph.threads.net" : "";
+// Social voting (sprint 11, AEGIS): the platform APIs (X, Meta, Threads) are called by our server only, so they are
+// never in this policy, flag on or off. The policy governs the browser, and no page script talks to them.
 const baseCsp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  `connect-src 'self'${supabaseOrigins()}${socialOrigins}${dev ? " ws:" : ""}`,
+  `connect-src 'self'${supabaseOrigins()}${dev ? " ws:" : ""}`,
   "frame-src 'none'",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
