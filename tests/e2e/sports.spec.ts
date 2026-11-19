@@ -36,13 +36,15 @@ for (const locale of ["en", "fr"] as const) {
 
 test("a sports question shows its close and start times in Eastern time", async ({ page }) => {
   await page.goto("/en/q/leafs-playoffs-2027");
-  await expect(page.getByText("Closes Apr 15, 7:00 p.m. ET")).toBeVisible();
+  // The header names the close time; the call panel repeats it under the answers.
+  await expect(page.locator("article header").getByText("Closes Apr 15, 7:00 p.m. ET")).toBeVisible();
   await expect(page.getByText("Starts Apr 16, 7:00 p.m. ET")).toBeVisible();
   await page.goto("/fr/q/leafs-playoffs-2027");
-  await expect(page.getByText(/Fermeture le 15 avr\.,\s19\sh \(HE\)/)).toBeVisible();
+  await expect(page.locator("article header").getByText(/Fermeture le 15 avr\.,\s19\sh \(HE\)/)).toBeVisible();
 });
 
 test("a sports question takes scored calls: the panel shows what the call would score", async ({ page }) => {
   await page.goto("/en/q/leafs-playoffs-2027");
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
   await expect(page.getByText(/you’d score/).locator("visible=true").first()).toBeVisible();
 });

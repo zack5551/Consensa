@@ -43,8 +43,9 @@ test("a call made on a question shows up as waiting for results", async ({ page 
   await page.goto("/en/record");
   await expect(page.getByText("No calls waiting.")).toBeVisible();
   await page.goto("/en/q/boc-cut-dec-2026");
-  await page.getByRole("button", { name: /Toss-up/ }).click();
-  await page.getByRole("button", { name: "Make my call" }).click();
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
+  await page.getByRole("slider").fill("50");
+  await page.getByRole("button", { name: "Save my call" }).click();
   await page.goto("/en/record");
   const pending = page.locator("section", { has: page.getByRole("heading", { name: "Waiting for results" }) });
   await expect(pending.getByRole("link", { name: /Bank of Canada cut/ })).toBeVisible();

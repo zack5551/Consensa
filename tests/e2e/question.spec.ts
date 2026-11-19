@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const tags = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
 
@@ -69,18 +69,120 @@ test("every question ends with open questions to call next", async ({ page }) =>
   await expect(next.locator('a[href$="/q/cpi-sept-2026"]')).toHaveCount(0);
   await next.getByRole("link").first().click();
   await expect(page).toHaveURL(/\/en\/q\//);
-  await expect(page.getByRole("button", { name: "Make my call" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Yes", exact: true }).first()).toBeVisible();
   await page.goto("/fr/q/boc-cut-dec-2026");
   await expect(page.getByRole("region", { name: "Une autre prévision" }).getByRole("link")).toHaveCount(3);
 });
 
 test("before a call, the panel shows what it would score either way", async ({ page }) => {
   await page.goto("/en/q/boc-cut-dec-2026");
-  await expect(page.getByText("If the answer is yes, you’d score 0.250. If it’s no, 0.250. Lower is better.").locator("visible=true").first()).toBeVisible();
-  await page.getByRole("button", { name: /^Likely/ }).locator("visible=true").first().click();
+  // Nothing to score until a side is chosen.
+  await expect(page.getByText(/you’d score/)).toHaveCount(0);
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
   await expect(page.getByText("If the answer is yes, you’d score 0.063. If it’s no, 0.563. Lower is better.").locator("visible=true").first()).toBeVisible();
+  await page.getByRole("button", { name: "No", exact: true }).click();
+  await expect(page.getByText("If the answer is yes, you’d score 0.563. If it’s no, 0.063. Lower is better.").locator("visible=true").first()).toBeVisible();
   await page.goto("/fr/q/boc-cut-dec-2026");
+  await page.getByRole("button", { name: "Oui", exact: true }).click();
+  await page.getByRole("slider").fill("50");
   await expect(page.getByText(/Si la réponse est oui, votre score serait de 0,250\./).locator("visible=true").first()).toBeVisible();
+});
+
+const callKey = (slug: string) => `consensa:call:${slug}`;
+const storedCall = (page: Page, slug: string) => page.evaluate((key) => window.localStorage.getItem(key), callKey(slug));
+
+test("the panel asks like a poll: two answers first, then how sure, then Canada's results", async ({ page }) => {
+  await page.goto("/en/q/boc-cut-dec-2026");
+  const yes = page.getByRole("button", { name: "Yes", exact: true });
+  const no = page.getByRole("button", { name: "No", exact: true });
+  await expect(yes).toHaveAttribute("aria-pressed", "false");
+  await expect(no).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("slider")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Save my call" })).toHaveCount(0);
+  await expect(page.getByText("18,420 calls · Closes Dec 9").locator("visible=true")).toBeVisible();
+
+  await yes.click();
+  await expect(yes).toHaveAttribute("aria-pressed", "true");
+  const slider = page.getByRole("slider", { name: "How sure are you?" });
+  await expect(slider).toHaveValue("75");
+  await expect(slider).toHaveAttribute("min", "50");
+  await expect(slider).toHaveAttribute("max", "99");
+  await expect(slider).toHaveAttribute("aria-valuetext", "Yes, 75% chance");
+  await expect(page.getByText("75% chance", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("result-bars")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Save my call" }).click();
+  expect(await storedCall(page, "boc-cut-dec-2026")).toBe("75");
+  const bars = page.getByTestId("result-bars").locator("visible=true");
+  await expect(bars).toContainText("Canada says 38% chance of yes, the average of 18,420 calls. Your answer: Yes.");
+  await expect(bars).toContainText("Yes✓");
+  await expect(bars).toContainText("38%");
+  await expect(bars).toContainText("62%");
+  await expect(page.getByText("Canada says · Average of 18,420 calls · Closes Dec 9").locator("visible=true")).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Call saved: Yes, 75% chance. You’re 37 points more sure than Canada.");
+  // Accounts are off locally, so there is no sign-up line.
+  await expect(page.getByRole("link", { name: "Create a free account" })).toHaveCount(0);
+  const results = await new AxeBuilder({ page }).withTags(tags).analyze();
+  expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+});
+
+test("No at 80% sure is stored as a 20% chance of yes", async ({ page }) => {
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await page.getByRole("button", { name: "No", exact: true }).click();
+  await page.getByRole("slider").fill("80");
+  await expect(page.getByRole("slider")).toHaveAttribute("aria-valuetext", "No, 80% chance");
+  await page.getByRole("button", { name: "Save my call" }).click();
+  expect(await storedCall(page, "boc-cut-dec-2026")).toBe("20");
+  await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Call saved: No, 80% chance. You’re 18 points more sure than Canada.");
+  await expect(page.getByTestId("result-bars").locator("visible=true")).toContainText("No✓");
+});
+
+test("a call stored earlier opens on the results, and Change my call goes back to how sure", async ({ page }) => {
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await page.evaluate((key) => window.localStorage.setItem(key, "30"), callKey("boc-cut-dec-2026"));
+  await page.reload();
+  await expect(page.getByTestId("result-bars").locator("visible=true")).toContainText("Your answer: No.");
+  await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Call saved: No, 70% chance.");
+  await page.getByRole("button", { name: "Change my call" }).click();
+  await expect(page.getByRole("button", { name: "No", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("slider")).toHaveValue("70");
+  await expect(page.getByRole("slider")).toBeFocused();
+  // The other answer is one tap away, and how sure carries over.
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
+  await page.getByRole("button", { name: "Save my call" }).click();
+  expect(await storedCall(page, "boc-cut-dec-2026")).toBe("70");
+  await expect(page.getByRole("button", { name: "Change my call" })).toBeFocused();
+});
+
+test("the poll flow in French: Non à 80 % enregistre 20", async ({ page }) => {
+  await page.goto("/fr/q/boc-cut-dec-2026");
+  await page.getByRole("button", { name: "Non", exact: true }).click();
+  const slider = page.getByRole("slider", { name: "Quel est votre degré de certitude?" });
+  await expect(slider).toHaveValue("75");
+  await slider.fill("80");
+  await expect(page.getByText("80\u00A0% de chances", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Enregistrer ma prévision" }).click();
+  expect(await storedCall(page, "boc-cut-dec-2026")).toBe("20");
+  const bars = page.getByTestId("result-bars").locator("visible=true");
+  await expect(bars).toContainText("Selon le Canada\u00A0: 38\u00A0% de chances que ce soit oui, la moyenne de 18\u00A0420\u00A0prévisions. Votre réponse\u00A0: Non.");
+  await expect(page.getByText("Selon le Canada · Moyenne de 18\u00A0420\u00A0prévisions · Fermeture le 9 déc.").locator("visible=true")).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Prévision enregistrée" })).toContainText("Prévision enregistrée\u00A0: Non, 80\u00A0% de chances. Votre certitude est 18\u00A0points au-dessus de celle du Canada.");
+  await expect(page.getByRole("button", { name: "Modifier ma prévision" })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test("a sports question says when calls close, in Eastern time, under the answers", async ({ page }) => {
+  await page.goto("/en/q/leafs-playoffs-2027");
+  await expect(page.getByText(/22,980 calls\s· Closes Apr 15, 7:00 p\.m\. ET/).locator("visible=true")).toBeVisible();
+});
+
+test("a closing-soon question still takes a call", async ({ page }) => {
+  await page.goto("/en/q/giller-debut-2026");
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
+  await page.getByRole("button", { name: "Save my call" }).click();
+  expect(await storedCall(page, "giller-debut-2026")).toBe("75");
+  await expect(page.getByTestId("result-bars").locator("visible=true")).toBeVisible();
 });
 
 test("a closing-soon question says when it closes", async ({ page }) => {
@@ -91,7 +193,8 @@ test("a closing-soon question says when it closes", async ({ page }) => {
 test("a closed question stops taking calls", async ({ page }) => {
   await page.goto("/en/q/jobs-rate-oct-2026");
   await expect(page.getByRole("heading", { name: "Calls have closed" }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Make my call" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Save my call" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Yes", exact: true })).toHaveCount(0);
 });
 
 test("a resolved question shows the answer, and Called it! for a right call", async ({ page }) => {
@@ -115,7 +218,8 @@ test("after a call, your own region's number shows beside Canada's", async ({ pa
   await page.evaluate(() => window.localStorage.setItem("consensa:profile", JSON.stringify({ region: "ON" })));
   await page.reload();
   await expect(page.getByText("Votre région · Ontario")).toHaveCount(0);
-  await page.getByRole("button", { name: "Confirmer ma prévision" }).click();
+  await page.getByRole("button", { name: "Oui", exact: true }).click();
+  await page.getByRole("button", { name: "Enregistrer ma prévision" }).click();
   await expect(page.getByText("Votre région · Ontario")).toBeVisible();
 });
 
@@ -124,7 +228,8 @@ test("the bot check is off locally: the challenge route steps aside and a call s
   expect(challenge.status()).toBe(204);
   expect(challenge.headers()["cache-control"]).toContain("no-store");
   await page.goto("/en/q/boc-cut-dec-2026");
-  await page.getByRole("button", { name: "Make my call" }).click();
+  await page.getByRole("button", { name: "Yes", exact: true }).click();
+  await page.getByRole("button", { name: "Save my call" }).click();
   await expect(page.getByText("Call saved")).toBeVisible();
   await expect(page.locator("altcha-widget")).toHaveCount(0);
   await expect(page.getByText(/quick check/i)).toHaveCount(0);
