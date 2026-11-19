@@ -31,4 +31,19 @@ describe("share card image", () => {
       }
     });
   }
+
+  for (const locale of ["en", "fr"] as const) {
+    it(`renders the Called it! card with the sponsor label (${locale})`, { timeout: 30_000 }, async () => {
+      const resolved = sampleQuestions.find((q) => q.slug === "cpi-sept-2026")!;
+      const live = await import("@/lib/live");
+      const spy = vi.spyOn(live, "withLiveQuestion").mockResolvedValue(questionSchema.parse({ ...resolved, askedBy: { kind: "sponsor", name: "Maison Test", sector: "retail" } }));
+      const { default: Image } = await import("@/app/[locale]/q/[slug]/called-it/[side]/opengraph-image");
+      const res = await Image({ params: Promise.resolve({ locale, slug: resolved.slug, side: resolved.resolution.result!.outcome }) });
+      spy.mockRestore();
+      const png = Buffer.from(await res.arrayBuffer());
+      expect(png.subarray(1, 4).toString("ascii")).toBe("PNG");
+      const dir = process.env.SHARE_CARD_SHOTS;
+      if (dir) writeFileSync(join(dir, `called-it-sponsor-${locale}.png`), png);
+    });
+  }
 });

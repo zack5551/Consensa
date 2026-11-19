@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import { pageAlternates } from "@/lib/alternates";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CallPanel } from "@/components/call-panel";
+import { CallPanel, type CalledItShare } from "@/components/call-panel";
 import { CrowdBar } from "@/components/crowd-bar";
 import { ForecastChart } from "@/components/forecast-chart";
 import { LanguageSplit } from "@/components/language-split";
@@ -30,7 +30,9 @@ import { callsCloseAt, crowdNow, crowdVerdict, nextUp, questionState, topicRecor
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { askedByLabel } from "@/lib/asked-by";
-import { socialPollLine, questionShareText, questionShareUrl, shareLinks } from "@/lib/social";
+import { hasCalledItCard } from "@/lib/share";
+import { calledItShareUrl, socialPollLine, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
+import { AskedByLabel } from "@/components/asked-by-label";
 import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
 import { schemaOrg } from "@/lib/json-ld";
@@ -139,6 +141,18 @@ export default async function QuestionPage({ params }: { params: Params }) {
     ],
   });
 
+  // "Share your call": offered by the panel only when this browser's call was right. The link names the question and
+  // the side that happened, so it is worked out here from the result alone, with no tracking and nothing personal.
+  // LEX: a guest or brand question carries its "Asked by" / "Sponsored by" label on the page, the cards and the posts.
+  const askedBy = q.askedBy ? askedByLabel(q.askedBy, t.question.askedBy) : undefined;
+
+  let calledItShare: CalledItShare | undefined;
+  if (result && hasCalledItCard(q, result.outcome, SAMPLE_NOW)) {
+    const url = calledItShareUrl(siteUrl(), locale, q.slug, result.outcome);
+    const text = withAskedBy(fill(t.share.calledItText, { question: q.question[locale] }), askedBy);
+    calledItShare = { t: t.share, text, url, links: shareLinks(text, url) };
+  }
+
   // When calls close, worded once for the header and the call panel. Sports give the time, in Eastern time.
   const closes =
     q.category === "sports"
@@ -160,13 +174,12 @@ export default async function QuestionPage({ params }: { params: Params }) {
       outcome={result?.outcome}
       closedOn={formatLongDate(callsCloseAt(q), locale)}
       regions={{ values: q.provinces, hidden: q.hiddenProvinces, names: t.province.names }}
+      calledItShare={calledItShare}
     />
   );
 
   // Social v1: plain question link, no tracking. Native poll totals sit apart from the crowd.
   const shareUrl = questionShareUrl(siteUrl(), locale, q.slug);
-  // LEX: a guest or brand question carries its "Asked by" / "Sponsored by" label on the page, the card and the post.
-  const askedBy = q.askedBy ? askedByLabel(q.askedBy, t.question.askedBy) : undefined;
   const shareText = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", askedBy });
   const polls = q.socialPolls ?? [];
   const social = (
@@ -207,11 +220,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
               </>
             )}
           </div>
-          {askedBy && (
-            <p className="m-0 text-body-sm font-semibold text-ink-2" data-asked-by>
-              {askedBy}
-            </p>
-          )}
+          <AskedByLabel label={askedBy} className="text-body-sm" />
           <h1 className="m-0 font-display text-headline font-bold leading-tight tracking-tight text-balance">{q.question[locale]}</h1>
           <StateNote state={state} title={t.states[state]}>
             {note}

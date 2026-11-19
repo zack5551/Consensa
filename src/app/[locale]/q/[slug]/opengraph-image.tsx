@@ -1,6 +1,7 @@
+import { shareCardImage } from "@/components/share-card-image";
+import { cardSize } from "@/components/share-card-parts";
 import { BRAND_NAME } from "@/lib/brand";
 import { notFound } from "next/navigation";
-import { shareCardImage, shareCardSize } from "@/components/share-card-image";
 import { getQuestion, sampleQuestions, SAMPLE_NOW } from "@/content/sample-questions";
 import { isLocale, locales } from "@/i18n/config";
 import { withLiveQuestion } from "@/lib/live";
@@ -13,7 +14,7 @@ import { withLiveQuestion } from "@/lib/live";
  * It reads the same content and crowd number as the page (withLiveQuestion), refreshed on the same one-minute clock.
  */
 export const alt = BRAND_NAME;
-export const size = shareCardSize;
+export const size = cardSize;
 export const contentType = "image/png";
 export const revalidate = 60;
 export const dynamicParams = false;

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Locale } from "@/i18n/config";
+import type { Side } from "@/lib/call-side";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
 import { fill } from "@/lib/text";
 
@@ -75,6 +76,11 @@ export function questionShareUrl(base: string, locale: Locale, slug: string): st
   return `${base.replace(/\/+$/, "")}/${locale}/q/${slug}`;
 }
 
+/** The "Called it!" page for a resolved question: the slug and the side that happened, nothing about who called it. */
+export function calledItShareUrl(base: string, locale: Locale, slug: string, side: Side): string {
+  return `${questionShareUrl(base, locale, slug)}/called-it/${side}`;
+}
+
 export type ShareLinks = { x: string; threads: string; facebook: string };
 
 /** Plain intent links: no SDKs, no scripts, no trackers. The share hosts are links only; nothing is sent from our side. */
@@ -101,6 +107,10 @@ export type ShareTextLabels = {
  * its "Asked by" / "Sponsored by" label, because LEX wants the label everywhere the question goes, social posts included.
  */
 export function questionShareText(labels: ShareTextLabels, question: string, options: { sports: boolean; askedBy?: string }): string {
-  const text = fill(options.sports ? labels.textSports : labels.text, { question });
-  return options.askedBy ? `${options.askedBy} · ${text}` : text;
+  return withAskedBy(fill(options.sports ? labels.textSports : labels.text, { question }), options.askedBy);
+}
+
+/** Any share post about a guest or brand question (the question post, the "Called it!" post) leads with its label. */
+export function withAskedBy(text: string, askedBy: string | undefined): string {
+  return askedBy ? `${askedBy} · ${text}` : text;
 }

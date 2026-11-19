@@ -5,7 +5,7 @@ import { sampleQuestions } from "@/content/sample-questions";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
 import { scan } from "@/engine/safety/safety";
-import { cardSafe, crowdForCard } from "@/lib/share";
+import { calledItFooter, cardSafe, crowdForCard } from "@/lib/share";
 import { shareCardColors, shareCardTokens } from "@/lib/share-card-colors";
 import { isAllowedPostUrl, questionShareUrl, shareLinks, socialPollLine, socialPollSchema } from "@/lib/social";
 
@@ -121,17 +121,23 @@ describe("share card", () => {
   });
 
   it("keeps every sample question and card label whole, and drops what the brand fonts cannot draw", () => {
-    const labels = [en, fr].flatMap((t) => [t.share.cardFooter, t.share.cardFooterSports, t.legal.sportsFooter, t.question.makeYourCall, t.question.canadaSays, t.question.canadaSaid, t.question.yes, t.question.no, t.share.cardCalls, t.share.cardCloses, t.share.cardClosed]);
+    const labels = [en, fr].flatMap((t) => [t.share.calledItFooter, t.share.calledItSports, t.legal.sportsFooter, t.question.makeYourCall, t.question.canadaSays, t.question.canadaSaid, t.question.yes, t.question.no, t.share.cardCalls, t.share.cardCloses, t.share.cardClosed]);
     for (const text of [...sampleQuestions.flatMap((q) => [q.question.en, q.question.fr]), ...labels]) expect(cardSafe(text)).toBe(text);
     expect(cardSafe("38\u202F% \u{1F3D2} 日本")).toBe("38\u00A0%  ");
   });
 
   it("uses the same footer as the Called it! card, plus the fan-forecast line on sports cards", () => {
-    expect(en.share.cardFooter).toBe("Free. No prizes. No cash value.");
-    expect(fr.share.cardFooter).toBe("Gratuit. Aucun prix à gagner. Aucune valeur monétaire.");
-    expect(en.share.cardFooterSports).toBe("Free. No prizes. No cash value. Fan forecasts only.");
-    expect(fr.share.cardFooterSports).toBe("Gratuit. Aucun prix à gagner. Aucune valeur monétaire. Prévisions de partisans seulement.");
-    expect(readFileSync(join(__dirname, "..", "..", "src", "components", "share-card-image.tsx"), "utf8")).toMatch(/sports \? t\.share\.cardFooterSports : t\.share\.cardFooter\b/);
+    for (const [locale, t] of [["en", en], ["fr", fr]] as const) {
+      expect(calledItFooter(t, "economy"), locale).toEqual({ footer: t.share.calledItFooter, sports: [] });
+      expect(calledItFooter(t, "sports"), locale).toEqual({ footer: t.share.calledItFooter, sports: [t.share.calledItSports, t.legal.sportsFooter] });
+    }
+    expect(en.share.calledItFooter).toBe("Free. No prizes. No cash value.");
+    expect(fr.share.calledItFooter).toBe("Gratuit. Aucun prix à gagner. Aucune valeur monétaire.");
+    expect(en.share.calledItSports).toBe("Fan forecasts only.");
+    expect(fr.share.calledItSports).toBe("Prévisions de partisans seulement.");
+    const card = readFileSync(join(__dirname, "..", "..", "src", "components", "share-card-image.tsx"), "utf8");
+    expect(card).toMatch(/const legal = calledItFooter\(t, q\.category\)/);
+    expect(card).toMatch(/<CardFrame footer=\{cardSafe\(legal\.footer\)\} sportsFooter=\{legal\.sports\.map\(cardSafe\)\}>/);
   });
 
   it("uses colours that still match PRISM's light tokens", () => {

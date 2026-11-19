@@ -6,7 +6,7 @@ import fr from "@/i18n/dictionaries/fr";
 import { askedByLabel, askedBySchema, excludedSponsorSectors } from "@/lib/asked-by";
 import { questionSchema } from "@/lib/question";
 import { cardSafe } from "@/lib/share";
-import { questionShareText } from "@/lib/social";
+import { questionShareText, withAskedBy } from "@/lib/social";
 
 /** Test fixtures only. No shipped question carries an "Asked by" or "Sponsored by" label yet. */
 const sponsor = { kind: "sponsor", name: "Maison Test", sector: "retail" } as const;
@@ -67,16 +67,35 @@ describe("asked-by schema", () => {
     expect(questionSchema.safeParse(base).success).toBe(true);
   });
 
+  it("refuses a sponsor on a political question (LEX: no political sponsors)", () => {
+    const base = sampleQuestions[0]!;
+    const political = questionSchema.safeParse({ ...base, political: true, askedBy: sponsor });
+    expect(political.success).toBe(false);
+    expect(political.error?.issues.map((i) => i.path.join("."))).toContain("askedBy");
+    expect(questionSchema.safeParse({ ...base, political: false, askedBy: sponsor }).success).toBe(true);
+    expect(questionSchema.safeParse({ ...base, political: true, askedBy: guest }).success).toBe(true);
+    expect(questionSchema.safeParse({ ...base, political: true }).success).toBe(true);
+  });
+
   it("is on no shipped question", () => {
     expect(sampleQuestions.filter((q) => q.askedBy !== undefined).map((q) => q.slug)).toEqual([]);
   });
 
-  it("is shown on the question page, the embed and the share card", () => {
+  it("goes wherever the question goes: page, embed, both cards, both posts, the resolution log and the record lists", () => {
     const src = (file: string) => readFileSync(file, "utf8");
-    expect(src("src/app/[locale]/q/[slug]/page.tsx")).toMatch(/askedByLabel\(q\.askedBy, t\.question\.askedBy\)/);
-    expect(src("src/app/[locale]/q/[slug]/page.tsx")).toMatch(/\{askedBy && \(/);
-    expect(src("src/app/embed/[locale]/[slug]/page.tsx")).toMatch(/q\.askedBy && <p/);
-    expect(src("src/components/share-card-image.tsx")).toMatch(/\{askedBy && \(/);
+    const page = src("src/app/[locale]/q/[slug]/page.tsx");
+    expect(page).toMatch(/askedByLabel\(q\.askedBy, t\.question\.askedBy\)/);
+    expect(page).toMatch(/<AskedByLabel label=\{askedBy\}/);
+    expect(page).toMatch(/questionShareText\(t\.share, q\.question\[locale\], \{ sports: q\.category === "sports", askedBy \}\)/);
+    expect(page).toMatch(/withAskedBy\(fill\(t\.share\.calledItText, \{ question: q\.question\[locale\] \}\), askedBy\)/);
+    for (const file of ["src/app/embed/[locale]/[slug]/page.tsx", "src/app/[locale]/q/[slug]/called-it/[side]/page.tsx", "src/app/[locale]/resolutions/page.tsx"]) {
+      expect(src(file), file).toMatch(/<AskedByLabel label=\{q\.askedBy && askedByLabel\(q\.askedBy, t\.question\.askedBy\)\}/);
+    }
+    expect(src("src/components/share-card-image.tsx")).toMatch(/\{askedBy && <div/);
+    expect(src("src/app/[locale]/q/[slug]/called-it/[side]/opengraph-image.tsx")).toMatch(/\{askedBy && <div/);
+    expect(src("src/app/[locale]/record/page.tsx")).toMatch(/askedBy: q\.askedBy && askedByLabel\(q\.askedBy, t\.question\.askedBy\)/);
+    expect(src("src/components/pending-calls.tsx")).toMatch(/<AskedByLabel label=\{i\.askedBy\} \/>/);
+    expect(src("src/components/record-view.tsx")).toMatch(/<AskedByLabel label=\{page\?\.askedBy && askedByLabel\(page\.askedBy, t\.question\.askedBy\)\} \/>/);
   });
 });
 
@@ -89,6 +108,11 @@ describe("share post text", () => {
     expect(questionShareText(fr.share, "Q?", { sports: true })).toBe("Q? Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner. Prévisions de partisans seulement.");
     expect(questionShareText(en.share, "Q?", { sports: false })).toBe("Q? Make your call on Cansensa. Free. No prizes.");
     expect(questionShareText(fr.share, "Q?", { sports: false })).toBe("Q? Faites votre prévision sur Cansensa. Gratuit. Aucun prix à gagner.");
+  });
+
+  it("leads the Called it! post with the label too", () => {
+    expect(withAskedBy("I called it on Cansensa: Q? Free. No prizes.", askedByLabel(guest, en.question.askedBy))).toBe("Asked by Alex Tremblay · I called it on Cansensa: Q? Free. No prizes.");
+    expect(withAskedBy("J’ai vu juste", undefined)).toBe("J’ai vu juste");
   });
 
   it("leads with the asked-by label when there is one", () => {

@@ -80,6 +80,28 @@ describe("POST /api/auth/sign-up", () => {
     }
   });
 
+  it("lands the link back on the page the person came from", async () => {
+    await post({ email: "a@example.com", data, next: "/fr/q/boc-cut-dec-2026" });
+    expect(signInWithOtp).toHaveBeenCalledWith({ email: "a@example.com", options: expect.objectContaining({ emailRedirectTo: "http://localhost/api/auth/callback?next=/fr/q/boc-cut-dec-2026" }) });
+  });
+
+  it("never trusts next from the browser: anything unsafe lands on today", async () => {
+    for (const next of ["//evil.com", "/\\evil.com", "https://evil.com", "/en/../..", "/en/%2F%2Fevil.com", "/en/q/x\r\nLocation: //evil.com", "/en/q/x?utm_source=a&next=//evil.com", "/de/q/x"]) {
+      expect((await post({ email: "a@example.com", data, next })).status).toBe(200);
+    }
+    expect(signInWithOtp).toHaveBeenCalledTimes(8);
+    for (const [arg] of signInWithOtp.mock.calls as unknown as [{ options: { emailRedirectTo: string } }][]) {
+      expect(arg.options.emailRedirectTo).toBe("http://localhost/api/auth/callback?next=/fr/today");
+    }
+  });
+
+  it("refuses a next that is too long or not a string, before creating anything", async () => {
+    expect((await post({ email: "a@example.com", data, next: `/fr/q/${"a".repeat(600)}` })).status).toBe(400);
+    expect((await post({ email: "a@example.com", data, next: 42 })).status).toBe(400);
+    expect(createUser).not.toHaveBeenCalled();
+    expect(signInWithOtp).not.toHaveBeenCalled();
+  });
+
   it("creates the account on the server, with the consent metadata, and never lets the link create one", async () => {
     await post({ email: "a@example.com", data });
     expect(createUser).toHaveBeenCalledWith({ email: "a@example.com", email_confirm: false, user_metadata: expect.objectContaining({ adult: true, terms: true, locale: "fr" }) });

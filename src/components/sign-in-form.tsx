@@ -8,15 +8,16 @@ import { emailSchema } from "@/lib/onboarding";
 import { browserSupabase } from "@/lib/supabase/browser";
 import { accountsEnabled } from "@/lib/supabase/env";
 import { authErrorCode } from "@/lib/supabase/error-code";
+import { landingPath, welcomeHref } from "@/lib/return-path";
 import { fill } from "@/lib/text";
 
 /**
  * Passwordless sign-in: one email field, one action. The "sent" message is the same whether or not
  * the address has an account, so the form can't be used to find out who's signed up. Sign-in never creates an
  * account: new people go through onboarding (18+ check and consents) first. In the preview nothing is sent,
- * and the screen says so.
+ * and the screen says so. `next` (already checked on the page) is where the link lands; without it, today.
  */
-export function SignInForm({ locale, t, expired = false }: { locale: Locale; t: Dictionary["signIn"]; expired?: boolean }) {
+export function SignInForm({ locale, t, expired = false, next = null }: { locale: Locale; t: Dictionary["signIn"]; expired?: boolean; next?: string | null }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export function SignInForm({ locale, t, expired = false }: { locale: Locale; t: 
       setFailed(null);
       const { error: err } = await supabase.auth.signInWithOtp({
         email: value,
-        options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/${locale}/today` },
+        options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${landingPath(locale, next)}` },
       });
       setBusy(false);
       // An unknown address is answered like a known one, so nobody can test who has an account. Only a real
@@ -110,7 +111,7 @@ export function SignInForm({ locale, t, expired = false }: { locale: Locale; t: 
       </button>
       <p className="m-0 text-body-sm text-ink-2">
         {t.newHere}{" "}
-        <Link href={`/${locale}/welcome`} className="font-semibold text-link underline underline-offset-2">
+        <Link href={welcomeHref(locale, next)} className="font-semibold text-link underline underline-offset-2">
           {t.getStarted}
         </Link>
       </p>

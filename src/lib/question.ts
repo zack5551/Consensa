@@ -54,7 +54,10 @@ export const questionSchema = z.object({
       .object({ outcome: z.enum(["yes", "no"]), publishedAt: z.iso.datetime(), disputed: z.boolean().default(false) })
       .optional(),
   }),
-}).refine((q) => q.category !== "sports" || q.startsAt !== undefined, { path: ["startsAt"], message: "Sports questions need startsAt." });
+})
+  .refine((q) => q.category !== "sports" || q.startsAt !== undefined, { path: ["startsAt"], message: "Sports questions need startsAt." })
+  // LEX: no political sponsors, so a political question can never carry a sponsor.
+  .refine((q) => q.askedBy?.kind !== "sponsor" || q.political !== true, { path: ["askedBy"], message: "A political question cannot be sponsored." });
 
 export type Question = z.infer<typeof questionSchema>;
 
