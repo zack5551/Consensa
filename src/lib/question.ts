@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { socialPollSchema } from "@/lib/social";
+import { socialPostSchema } from "@/lib/social-voting/types";
 
 export const provinces = ["BC", "AB", "PR", "ON", "QC", "AT"] as const;
 export const categories = ["economy", "weather", "housing", "culture", "science", "sports"] as const;
@@ -25,6 +26,13 @@ export const questionSchema = z.object({
   languages: z.object({ en: percent, fr: percent }).optional(),
   /** Regions with too few real calls to show (privacy floor). Their tiles read "—" and the summary skips them. */
   hiddenProvinces: z.array(z.enum(provinces)).optional(),
+  /**
+   * Our own official posts for this question (sprint 11). Only posts listed here are ever read for replies, and only
+   * while SOCIAL_VOTING is on.
+   */
+  socialPosts: z.array(socialPostSchema).optional(),
+  /** A political question is never included in sponsor numbers. */
+  political: z.boolean().optional(),
   events: z.array(z.object({ dayIndex: z.number().int().nonnegative(), label: bilingual })).default([]),
   why: z
     .object({ body: bilingual, sources: z.array(bilingual).min(1) })

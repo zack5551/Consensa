@@ -19,6 +19,7 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { formatLongDate } from "@/lib/format";
 import { rankForecasters } from "@/lib/leaderboard";
 import { callsCloseAt, questionState } from "@/lib/question";
+import { socialVotingOn } from "@/lib/social-voting/env";
 import { fill } from "@/lib/text";
 
 type Params = Promise<{ locale: string }>;
@@ -88,7 +89,12 @@ export default async function RecordPage({ params }: { params: Params }) {
         </section>
       </RecordView>
 
-      <AccountPanel locale={locale} t={t.account} consentLabels={{ dataLicensing: t.onboarding.account.dataLicensing, analytics: t.onboarding.account.analytics, marketing: t.onboarding.account.marketing }} />
+      <AccountPanel
+        locale={locale}
+        t={t.account}
+        consentLabels={{ dataLicensing: t.onboarding.account.dataLicensing, analytics: t.onboarding.account.analytics, marketing: t.onboarding.account.marketing }}
+        social={socialVotingOn() ? { title: t.socialLink.accountTitle, help: t.socialLink.accountHelp, action: t.socialLink.accountAction } : undefined}
+      />
     </div>
   );
 }

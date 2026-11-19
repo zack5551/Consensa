@@ -15,7 +15,18 @@ type State = { kind: "loading" } | { kind: "signedOut" } | { kind: "ready"; emai
  * The account area at the foot of My record (Law 25, CASL): your choices, a download of your data, and deleting your
  * account. No new screen. It shows only when accounts are on; in the preview there is no account to manage.
  */
-export function AccountPanel({ locale, t, consentLabels }: { locale: Locale; t: Dictionary["account"]; consentLabels: Record<OptionalConsent, string> }) {
+export function AccountPanel({
+  locale,
+  t,
+  consentLabels,
+  social,
+}: {
+  locale: Locale;
+  t: Dictionary["account"];
+  consentLabels: Record<OptionalConsent, string>;
+  /** The link to linked social accounts, passed only while SOCIAL_VOTING is on. */
+  social?: { title: string; help: string; action: string };
+}) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [note, setNote] = useState<string>("");
   const [confirm, setConfirm] = useState(false);
@@ -125,6 +136,16 @@ export function AccountPanel({ locale, t, consentLabels }: { locale: Locale; t: 
               {note}
             </p>
           </fieldset>
+
+          {social && (
+            <div className="grid gap-3 border-t border-line pt-5">
+              <h3 className="m-0 font-display text-title-sm font-bold">{social.title}</h3>
+              <p className="m-0 max-w-[60ch] text-body-sm text-ink-2">{social.help}</p>
+              <Link href={`/${locale}/account/social`} className="justify-self-start rounded-control border border-line px-4 py-2 text-body-sm font-semibold hover:bg-sunken">
+                {social.action}
+              </Link>
+            </div>
+          )}
 
           <div className="grid gap-3 border-t border-line pt-5">
             <h3 className="m-0 font-display text-title-sm font-bold">{t.dataTitle}</h3>
