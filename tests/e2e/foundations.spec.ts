@@ -38,5 +38,5 @@ test("making a call saves it and compares with Canada", async ({ page }) => {
   await page.getByRole("slider").fill("50");
   await page.getByRole("button", { name: "Save my call" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Call saved");
-  await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("12 points more sure than Canada");
+  await expect(page.getByRole("status").filter({ hasText: "Call saved" })).toContainText("Canada leans the other way: 38% chance of yes.");
 });

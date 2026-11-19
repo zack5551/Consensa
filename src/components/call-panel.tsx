@@ -6,7 +6,7 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
 import { setBotWidgetStrings } from "@/lib/bot-check-client";
-import { crowdOnSide, fromProbability, SURE_DEFAULT, SURE_MAX, SURE_MIN, sureGap, toProbability, type Side } from "@/lib/call-side";
+import { crowdLeansOtherWay, crowdOnSide, fromProbability, SURE_DEFAULT, SURE_MAX, SURE_MIN, sureGap, toProbability, type Side } from "@/lib/call-side";
 import { isBotCheckFailed, isOutsideCanada, isVpnRefused, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
 import { formatBrier, formatCount, formatPercent } from "@/lib/format";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
@@ -91,7 +91,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   const [saved, setSaved] = useState(false);
   const [stored, setStored] = useState<number | null>(null);
   const [region, setRegion] = useState<Province | null>(null);
-  const [signedOut, setSignedOut] = useState(false);
+  // null until the answer is known. A call is only scored on a record once it is saved to an account (LEX).
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const outside = useSyncExternalStore(subscribeOutsideCanada, isOutsideCanada, () => false);
   const botFailed = useSyncExternalStore(subscribeOutsideCanada, isBotCheckFailed, () => false);
   const vpn = useSyncExternalStore(subscribeOutsideCanada, isVpnRefused, () => false);
@@ -125,8 +126,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   useEffect(() => {
     if (!accountsEnabled || !saved) return;
     let live = true;
-    void signedInOnce().then((signedIn) => {
-      if (live) setSignedOut(signedIn === false);
+    void signedInOnce().then((answer) => {
+      if (live) setSignedIn(answer);
     });
     return () => {
       live = false;
@@ -189,10 +190,11 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
           </p>
           <p role="status" className={`m-0 rounded-control p-3 text-body-sm ${tone[side].soft}`}>
             <strong>{fill(t.saved, { side: sides[side], value: pct(sure) })}</strong>{" "}
-            {crowdShown && <>{sureGapText(t, sureGap(side, sure, crowd))} </>}
-            {scored ? t.scoredWhen : t.pollNote}
+            {crowdShown && <>{crowdLeansOtherWay(side, crowd) ? fill(t.otherWay, { yes: pct(crowd) }) : sureGapText(t, sureGap(side, sure, crowd))} </>}
+            {/* A call kept only in this browser is not scored on a record, so the line waits for a signed-in answer. */}
+            {scored ? (!accountsEnabled || signedIn === true ? t.scoredWhen : null) : t.pollNote}
           </p>
-          {signedOut && (
+          {signedIn === false && (
             <p className="m-0 text-body-sm text-ink-2">
               {t.nudge.before}{" "}
               <Link href={`/${locale}/welcome`} className="font-semibold text-link underline underline-offset-2">
@@ -290,7 +292,9 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
 }
 
 function sureGapText(t: Dictionary["call"], gap: number): string {
-  return gap === 0 ? t.sameAsCrowd : fill(gap > 0 ? t.moreThan : t.lessThan, { n: Math.abs(gap) });
+  if (gap === 0) return t.sameAsCrowd;
+  if (Math.abs(gap) === 1) return gap > 0 ? t.moreThanOne : t.lessThanOne;
+  return fill(gap > 0 ? t.moreThan : t.lessThan, { n: Math.abs(gap) });
 }
 
 /**

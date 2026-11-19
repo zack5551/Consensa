@@ -32,6 +32,12 @@ export function crowdOnSide(side: Side, crowdYes: number): number {
   return side === "yes" ? yes : 100 - yes;
 }
 
+/** True when the crowd leans to the other answer than yours. A crowd at exactly 50 leans neither way. */
+export function crowdLeansOtherWay(side: Side, crowdYes: number): boolean {
+  const yes = Math.round(crowdYes);
+  return yes !== 50 && (yes > 50 ? "yes" : "no") !== side;
+}
+
 /** Whole points between how sure you are of your side and the crowd's share on that side. Positive = more sure than the crowd. */
 export function sureGap(side: Side, sure: number, crowdYes: number): number {
   return clampSure(sure) - crowdOnSide(side, crowdYes);
