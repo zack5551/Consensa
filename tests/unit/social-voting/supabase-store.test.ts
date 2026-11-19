@@ -83,6 +83,14 @@ describe("the social store in Supabase", () => {
     expect(await s.reserve("x", "2026-11-01", 500_000, 25_000_000)).toBe(false);
   });
 
+  it("reads the month's running spend, 0 when there is none yet, and fails when it can't be read", async () => {
+    const { store: s, sent } = await store([{ data: { spent_micros: 5_000_000 } }, { data: null }, { error: {} }]);
+    expect(await s.spent("x", "2026-11-01")).toBe(5_000_000);
+    expect(sent[0]).toMatchObject({ table: "social_spend", action: "select" });
+    expect(await s.spent("x", "2026-11-01")).toBe(0);
+    await expect(s.spent("x", "2026-11-01")).rejects.toThrow();
+  });
+
   it("the monthly re-check pauses stale links and never deletes one", async () => {
     const { store: s, sent } = await store([{ data: [{ platform: "x" }, { platform: "x" }] }]);
     expect(await s.pauseStaleLinks(new Date("2026-11-19T15:00:00Z"))).toBe(2);

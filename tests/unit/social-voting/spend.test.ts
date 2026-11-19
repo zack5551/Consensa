@@ -25,9 +25,22 @@ describe("the monthly spend cap", () => {
     expect(store.asked).toBe(0);
   });
 
+  it("says what is left under the cap this month", async () => {
+    const store = new MemorySpend();
+    const cap = new SpendCap(store, "x", 1_000_000);
+    expect(await cap.remaining(NOW)).toBe(1_000_000);
+    await cap.reserve(400_000, NOW);
+    expect(await cap.remaining(NOW)).toBe(600_000);
+    expect(await cap.remaining(new Date("2026-12-01T00:00:00Z"))).toBe(1_000_000);
+    store.totals.set("x:2026-11-01", 5_000_000);
+    expect(await cap.remaining(NOW)).toBe(0);
+    expect(await new SpendCap(store, "x", 0).remaining(NOW)).toBe(0);
+  });
+
   it("refuses when the counter can't be reached, and refuses odd amounts", async () => {
-    const broken = { reserve: async () => Promise.reject(new Error("down")) };
+    const broken = { reserve: async () => Promise.reject(new Error("down")), spent: async () => Promise.reject(new Error("down")) };
     expect(await new SpendCap(broken, "x", 1_000_000).reserve(5_000, NOW)).toBe(false);
+    expect(await new SpendCap(broken, "x", 1_000_000).remaining(NOW)).toBe(0);
     const cap = new SpendCap(new MemorySpend(), "x", 1_000_000);
     expect(await cap.reserve(0, NOW)).toBe(false);
     expect(await cap.reserve(1.5, NOW)).toBe(false);
@@ -39,7 +52,7 @@ describe("the monthly spend cap", () => {
     const x = new XProvider({ bearer: "b", spend: new SpendCap(new MemorySpend(), "x", 0), fetch });
     expect(await x.readReplies(OUR_POST, null, NOW)).toEqual({ replies: [], complete: false });
     expect(await x.readPollTotals(OUR_POST, NOW)).toBeNull();
-    expect(await x.findDeleted(["1990000000000000001"], NOW)).toEqual({ gone: [], checked: 0, complete: false });
+    expect(await x.findDeleted(["1990000000000000001"], NOW)).toEqual({ gone: [], checked: 0, spentMicros: 0, complete: false });
     expect(calls).toHaveLength(0);
   });
 

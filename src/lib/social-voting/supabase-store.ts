@@ -26,6 +26,12 @@ export class SupabaseSocialStore implements CountStore, SweepStore, SpendStore {
     return !error && data === true;
   }
 
+  async spent(platform: Platform, month: string): Promise<number> {
+    const { data, error } = await this.admin.from("social_spend").select("spent_micros").eq("platform", platform).eq("month", month).maybeSingle();
+    if (error) throw new Error("spend unavailable");
+    return z.object({ spent_micros: z.coerce.number().int().nonnegative() }).nullable().parse(data)?.spent_micros ?? 0;
+  }
+
   async linkedIds(platform: Platform): Promise<ReadonlySet<string>> {
     const ids = new Set<string>();
     for (let from = 0; ; from += PAGE) {

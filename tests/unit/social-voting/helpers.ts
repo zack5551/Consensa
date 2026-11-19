@@ -26,6 +26,9 @@ export function fakeFetch(routes: Array<[RegExp, unknown, number?]>): { fetch: F
 export class MemorySpend implements SpendStore {
   totals = new Map<string, number>();
   asked = 0;
+  async spent(platform: Platform, month: string): Promise<number> {
+    return this.totals.get(`${platform}:${month}`) ?? 0;
+  }
   async reserve(platform: Platform, month: string, micros: number, capMicros: number): Promise<boolean> {
     this.asked += 1;
     const key = `${platform}:${month}`;
