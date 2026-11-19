@@ -22,6 +22,9 @@ const raw = [
     scored: true,
     closesAt: "2026-12-09T14:45:00Z",
     forecasters: 18420,
+    // Sample data: made-up native poll totals, like every other number here. There is no real post behind it, so
+    // `sample: true` puts "Sample data" on the block and leaves the post link out.
+    socialPolls: [{ platform: "x", yes: 719, no: 521, closedAt: "2026-11-05T18:00:00Z", url: "https://x.com/Cansensa/status/0", sample: true }],
     history: series(30, [[0, 51], [12, 53], [16, 41], [24, 40], [26, 37], [29, 38]]),
     provinces: { BC: 41, AB: 47, PR: 44, ON: 36, QC: 31, AT: 39 },
     languages: { en: 40, fr: 33 },

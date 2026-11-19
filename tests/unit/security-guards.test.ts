@@ -152,6 +152,17 @@ const allowedDomains = [
   "www.w3.org", "schema.org", "localhost",
 ];
 
+/**
+ * Share and poll links, and nothing else: plain links a person follows from the question page (intent URLs and our
+ * own post URLs). We load no script, SDK or image from them and send no data, so nothing leaves until a click.
+ * These match the exact host only, never a subdomain, so an API or embed host (api.x.com, graph.facebook.com,
+ * platform.twitter.com) still fails this test until it is added on purpose, with its own check.
+ */
+const allowedExactHosts = new Set([
+  "twitter.com", "x.com", "www.x.com", "threads.net", "www.threads.net", "threads.com", "www.threads.com",
+  "instagram.com", "www.instagram.com", "facebook.com", "www.facebook.com",
+]);
+
 /** Packages that send visitor data to a third party. Rule 7: none without a privacy review and LEX's check. */
 const trackerPackages = [
   /^@vercel\/(analytics|speed-insights)$/, /google-analytics|^react-ga|gtag|^@next\/third-parties$/, /^@segment\//,
@@ -160,7 +171,14 @@ const trackerPackages = [
 ];
 
 describe("outside hosts", () => {
-  const allowed = (host: string) => allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
+  const allowed = (host: string) => allowedExactHosts.has(host) || allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
+
+  it("share hosts match exactly: no social API or embed host gets through", () => {
+    for (const host of ["api.x.com", "api.twitter.com", "platform.twitter.com", "graph.facebook.com", "connect.facebook.net", "graph.threads.net", "graph.instagram.com"]) {
+      expect(allowed(host), host).toBe(false);
+    }
+    expect(allowed("www.facebook.com")).toBe(true);
+  });
 
   for (const file of source) {
     const hosts = [...read(file).matchAll(/https?:\/\/([a-z0-9.-]+)/gi)].map((m) => m[1]!.toLowerCase());

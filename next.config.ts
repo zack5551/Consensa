@@ -47,7 +47,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // The VPN check reads this file at run time, so the call route's serverless function must ship it.
-  outputFileTracingIncludes: { "/api/calls": ["./data/ip2proxy/**"] },
+  outputFileTracingIncludes: {
+    "/api/calls": ["./data/ip2proxy/**"],
+    // The share card reads its three brand fonts from disk at run time, and the build does not find them on its own.
+    "/[locale]/q/[slug]/opengraph-image": ["./brand/fonts/ttf/*.ttf"],
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
