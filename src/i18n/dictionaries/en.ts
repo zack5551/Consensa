@@ -343,6 +343,9 @@ const en = {
     calledItLead: "This call landed on the right side of the official result.",
     calledItResult: "Result published {date}",
     calledItPageTitle: "Called it! {question}",
+    calledItFooter: "Free. No prizes. No cash value.",
+    calledItSports: "Fan forecasts only.",
+    calledItCrowd: "Canada gave yes a {crowd} chance.",
   },
   social: {
     title: "On social media",

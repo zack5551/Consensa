@@ -4,14 +4,17 @@ import { scan } from "@/engine/safety/safety";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
 import { questionState } from "@/lib/question";
-import { calledItCards, cardSafe, hasCalledItCard } from "@/lib/share";
+import type { Question } from "@/lib/question";
+import { MIN_CELL } from "@/lib/regions";
+import { calledItCards, calledItFooter, cardSafe, crowdForCard, hasCalledItCard } from "@/lib/share";
 import { calledItShareUrl, shareLinks } from "@/lib/social";
 
 vi.mock("server-only", () => ({}));
 
 /** The gambling, trading and tip rules from the engine's lexicon (CLAUDE.md rule 1), the one home of those words. */
 const lexiconRules = new Set(["gambling", "trading", "tip"]);
-/** LEX: no giveaway or reward wording on anything people share. "No prizes" / « Aucun prix » is the one allowed mention. */
+/** LEX: no giveaway or reward wording on anything people share. "No prizes" / « Aucun prix à gagner » is the one allowed mention. */
+const allowedPrizeLine = /Aucun prix à gagner\./g;
 const giveaway = [/\bgiveaway/i, /\bwin(s|ner|ners|ning)?\b/i, /\breward/i, /\bcontest/i, /\bgagn/i, /\bconcours\b/i, /\btirage/i, /\br[ée]compense/i];
 
 /** One sample question per case: resolved yes, resolved no, under review, and still open. */
@@ -84,25 +87,25 @@ describe("called-it image route", () => {
 
 describe("called-it share text", () => {
   const question = "Will the Bank of Canada cut its policy rate at its December decision?";
-  const keys = ["calledItTitle", "calledItText", "calledItLead", "calledItResult", "calledItPageTitle"] as const;
+  const keys = ["calledItTitle", "calledItText", "calledItLead", "calledItResult", "calledItPageTitle", "calledItFooter", "calledItSports", "calledItCrowd"] as const;
 
   for (const [locale, t] of [["en", en], ["fr", fr]] as const) {
     it(`has no banned words and no giveaway wording (${locale})`, () => {
-      const lines = [...keys.map((k) => t.share[k].replace("{question}", question)), t.call.calledIt];
+      const lines = [...keys.map((k) => t.share[k].replace("{question}", question).replace("{crowd}", "62 %")), t.call.calledIt];
       for (const line of lines) {
         expect(scan(line, lexiconRules), line).toEqual([]);
-        expect(giveaway.filter((re) => re.test(line)), line).toEqual([]);
+        expect(giveaway.filter((re) => re.test(line.replace(allowedPrizeLine, ""))), line).toEqual([]);
       }
     });
   }
 
   it("says the post line in both languages, with the free label", () => {
     expect(en.share.calledItText).toBe("I called it on Cansensa: {question} Free. No prizes.");
-    expect(fr.share.calledItText).toBe("J’ai vu juste sur Cansensa : {question} Gratuit. Aucun prix.");
+    expect(fr.share.calledItText).toBe("J’ai vu juste sur Cansensa : {question} Gratuit. Aucun prix à gagner.");
   });
 
   it("the card can draw every label with the brand fonts alone", () => {
-    for (const t of [en, fr]) for (const text of [t.call.calledIt, t.share.calledItResult, t.resolution.answerIs, t.question.chance]) expect(cardSafe(text)).toBe(text);
+    for (const t of [en, fr]) for (const text of [t.call.calledIt, t.share.calledItResult, t.resolution.answerIs, t.share.calledItFooter, t.share.calledItSports, t.share.calledItCrowd, t.legal.sportsFooter]) expect(cardSafe(text)).toBe(text);
   });
 
   it("links to the question and the side only: no user ID, no tracking", () => {
@@ -113,5 +116,68 @@ describe("called-it share text", () => {
     expect(new URL(links.x).searchParams.get("url")).toBe(url);
     expect(new URL(links.facebook).searchParams.get("u")).toBe(url);
     for (const link of Object.values(links)) expect([...new URL(link).searchParams.keys()].every((k) => ["text", "url", "u"].includes(k))).toBe(true);
+  });
+});
+
+/** A resolved yes question to vary, for the cases the samples do not cover. */
+const base = (): Question => structuredClone(getQuestion(resolvedYes)!);
+
+describe("called-it card: legal footer (LEX)", () => {
+  it("says free, no prizes and no cash value on every card", () => {
+    expect(en.share.calledItFooter).toBe("Free. No prizes. No cash value.");
+    expect(fr.share.calledItFooter).toBe("Gratuit. Aucun prix à gagner. Aucune valeur monétaire.");
+    expect(calledItFooter(en, "economy")).toEqual({ footer: "Free. No prizes. No cash value.", sports: [] });
+    expect(calledItFooter(fr, "weather")).toEqual({ footer: "Gratuit. Aucun prix à gagner. Aucune valeur monétaire.", sports: [] });
+  });
+
+  it("adds the fan-forecast line, then the non-affiliation line, on sports questions only", () => {
+    expect(calledItFooter(en, "sports").sports).toEqual(["Fan forecasts only.", en.legal.sportsFooter]);
+    expect(calledItFooter(fr, "sports").sports).toEqual(["Prévisions de partisans seulement.", fr.legal.sportsFooter]);
+    for (const category of ["economy", "weather", "housing", "culture", "science"] as const) expect(calledItFooter(en, category).sports, category).toEqual([]);
+  });
+});
+
+describe("called-it card: the crowd line", () => {
+  it("is worded as a chance of yes", () => {
+    expect(en.share.calledItCrowd).toBe("Canada gave yes a {crowd} chance.");
+    expect(fr.share.calledItCrowd).toBe("Le Canada donnait {crowd} de chances au oui.");
+  });
+
+  it("shows only from 5 real calls up, the same floor as every published number", () => {
+    expect(MIN_CELL).toBe(5);
+    expect(crowdForCard({ forecasters: MIN_CELL - 1, hiddenProvinces: [] }, 62)).toBeNull();
+    expect(crowdForCard({ forecasters: 0, hiddenProvinces: [] }, 62)).toBeNull();
+    expect(crowdForCard({ forecasters: MIN_CELL, hiddenProvinces: [] }, 62)).toBe(62);
+    expect(crowdForCard({ forecasters: 1240, hiddenProvinces: [] }, 62)).toBe(62);
+  });
+});
+
+describe("called-it card: no card without a right side", () => {
+  it("does not exist for an unscored poll, even once it resolves", () => {
+    const poll = { ...base(), scored: false };
+    for (const side of ["yes", "no"]) expect(hasCalledItCard(poll, side, SAMPLE_NOW), side).toBe(false);
+    expect(calledItCards([poll], SAMPLE_NOW)).toEqual([]);
+  });
+
+  it("does not exist for a cancelled or voided question, or any outcome other than yes or no", () => {
+    for (const outcome of ["cancelled", "canceled", "void", "voided", "annulled", "n/a", ""]) {
+      const q = base();
+      // The schema allows yes or no only today; this is the shape a cancelled or voided result would take.
+      q.resolution.result = { ...q.resolution.result!, outcome: outcome as "yes" };
+      for (const side of ["yes", "no", outcome]) expect(hasCalledItCard(q, side, SAMPLE_NOW), `${outcome} ${side}`).toBe(false);
+      expect(calledItCards([q], SAMPLE_NOW), outcome).toEqual([]);
+    }
+  });
+
+  it("the image route draws no card for a cancelled or unscored question", async () => {
+    const live = await import("@/lib/live");
+    const cancelled = base();
+    cancelled.resolution.result = { ...cancelled.resolution.result!, outcome: "cancelled" as "yes" };
+    const unscored = { ...base(), scored: false };
+    for (const q of [cancelled, unscored]) {
+      const spy = vi.spyOn(live, "withLiveQuestion").mockResolvedValue(q);
+      await expect(image("en", resolvedYes, "yes")).rejects.toMatchObject(notFound);
+      spy.mockRestore();
+    }
   });
 });

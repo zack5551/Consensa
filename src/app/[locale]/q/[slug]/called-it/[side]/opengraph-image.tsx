@@ -8,7 +8,7 @@ import { BRAND_NAME } from "@/lib/brand";
 import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
 import { withLiveQuestion } from "@/lib/live";
 import { crowdNow } from "@/lib/question";
-import { calledItCards, cardSafe, crowdForCard, hasCalledItCard } from "@/lib/share";
+import { calledItCards, calledItFooter, cardSafe, crowdForCard, hasCalledItCard } from "@/lib/share";
 import { shareCardColors as c } from "@/lib/share-card-colors";
 import { fill } from "@/lib/text";
 
@@ -18,8 +18,10 @@ import { fill } from "@/lib/text";
  * One action: none on the card itself; it is the picture behind a shared link to the called-it page.
  * Privacy: built from the question slug and the side that happened, and nothing else. No name, no account, no call
  * value: the address and the picture are the same for everyone who was on that side.
- * It exists only once the result is official and not under review, and only for the side that happened; anything else is a 404.
- * LEX: text and percentages only, the free/no-value label on every card, and the non-affiliation line on sports.
+ * It exists only for a scored question whose official yes-or-no result is in and not under review, and only for the side
+ * that happened; anything else (an open, disputed, unscored, cancelled or voided question) is a 404, so no card is drawn.
+ * LEX: text and percentages only, the free/no-prize/no-value label on every card, and on sports the fan-forecast and
+ * non-affiliation lines. The crowd's number shows only from 5 calls up (crowdForCard), as a chance of yes.
  */
 export const alt = BRAND_NAME;
 export const size = { width: 1200, height: 630 };
@@ -38,7 +40,7 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
   if (!isLocale(locale) || !q || !result || !hasCalledItCard(q, side, SAMPLE_NOW)) notFound();
   const t = getDictionary(locale);
   const crowd = crowdForCard(q, crowdNow(q));
-  const sports = q.category === "sports";
+  const legal = calledItFooter(t, q.category);
   const yes = side === "yes";
   const text = cardSafe(q.question[locale]);
   const questionSize = text.length > 110 ? 36 : text.length > 70 ? 40 : 46;
@@ -48,7 +50,7 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
 
   return new ImageResponse(
     (
-      <CardFrame footer={cardSafe(sports ? t.share.cardSports : t.share.cardNoValue)} sportsFooter={sports ? cardSafe(t.legal.sportsFooter) : undefined}>
+      <CardFrame footer={cardSafe(legal.footer)} sportsFooter={legal.sports.map(cardSafe)}>
         <CardWordmark />
 
         <div style={{ display: "flex", flexDirection: "column", flex: 1, justifyContent: "center", gap: 14 }}>
@@ -62,11 +64,10 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
           <span>{published}</span>
         </div>
 
-        {/* The crowd's chance of yes, only when it is real (crowdForCard), the same rule as the question card. */}
+        {/* The crowd's chance of yes, only when it is real and from 5 calls up (crowdForCard), the same rule as the question card. */}
         {crowd !== null && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 14, fontSize: 22, fontWeight: 600, color: c.inkMuted }}>
-            <span style={{ fontFamily: "Manrope", fontWeight: 700, fontSize: 19, letterSpacing: 1.6, textTransform: "uppercase", color: c.canada }}>{cardSafe(t.question.canadaSaid)}</span>
-            <span style={{ color: c.ink }}>{cardSafe(`${formatPercent(crowd, locale)} ${t.question.chance}`)}</span>
+            <span style={{ color: c.ink }}>{cardSafe(fill(t.share.calledItCrowd, { crowd: formatPercent(crowd, locale) }))}</span>
             <span>{cardSafe(`· ${fill(t.share.cardCalls, { n: formatCount(q.forecasters, locale) })}`)}</span>
           </div>
         )}

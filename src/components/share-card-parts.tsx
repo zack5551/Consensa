@@ -44,19 +44,23 @@ export function CardWordmark() {
 /**
  * The frame: a Canada-red rule, the card on a sunken ground, and the legal lines under it.
  * LEX: `footer` is the free/no-value label, on every card. A sports card passes `sportsFooter` too (the non-affiliation
- * line), at the same size so it stays readable in a feed; the frame tightens to make room for it.
- * Pass both lines already through `cardSafe`.
+ * line, and on the "Called it!" card the fan-forecast line before it), at the same size so it stays readable in a feed;
+ * the frame tightens to make room for it. Pass every line already through `cardSafe`.
  */
-export function CardFrame({ footer, sportsFooter, children }: { footer: string; sportsFooter?: string; children: ReactNode }) {
-  const sports = sportsFooter !== undefined;
+export function CardFrame({ footer, sportsFooter, children }: { footer: string; sportsFooter?: string | readonly string[]; children: ReactNode }) {
+  const sportsLines = sportsFooter === undefined ? [] : typeof sportsFooter === "string" ? [sportsFooter] : sportsFooter;
+  const sports = sportsLines.length > 0;
+  const tight = sportsLines.length > 1;
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: c.sunken, color: c.ink, fontFamily: "Inter", borderTop: `14px solid ${c.canada}`, padding: sports ? "20px 40px 14px" : "26px 40px 20px" }}>
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, background: c.surface, border: `2px solid ${c.line}`, borderRadius: 28, padding: sports ? "22px 40px 20px" : "28px 40px 24px" }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: c.sunken, color: c.ink, fontFamily: "Inter", borderTop: `14px solid ${c.canada}`, padding: tight ? "16px 40px 12px" : sports ? "20px 40px 14px" : "26px 40px 20px" }}>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, background: c.surface, border: `2px solid ${c.line}`, borderRadius: 28, padding: tight ? "18px 40px 16px" : sports ? "22px 40px 20px" : "28px 40px 24px" }}>
         {children}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 2, padding: "10px 12px 0", fontSize: 19, fontWeight: 600, color: c.inkMuted }}>
         <span>{footer}</span>
-        {sports && <span>{sportsFooter}</span>}
+        {sportsLines.map((line) => (
+          <span key={line}>{line}</span>
+        ))}
       </div>
     </div>
   );

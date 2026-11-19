@@ -20,8 +20,9 @@ for (const locale of ["en", "fr"] as const) {
       await expect(page.getByRole("main").getByRole("link")).toHaveCount(1);
       await expect(page.getByRole("main").getByRole("link", { name: locale === "en" ? "Make your call" : "Faire ma prévision" })).toHaveAttribute("href", `/${locale}/board`);
       await expect(page.getByRole("main").getByText(locale === "en" ? "Free to play. No cash value. No purchase necessary." : "Gratuit. Aucune valeur monétaire. Aucun achat requis.")).toBeVisible();
-      // Sample numbers never travel: no crowd number on a shared page until it is real.
-      await expect(page.getByRole("main").getByText(locale === "en" ? "Canada said" : "Le Canada prévoyait")).toHaveCount(0);
+      await expect(page.getByRole("main").getByText(locale === "en" ? "Free. No prizes. No cash value." : "Gratuit. Aucun prix à gagner. Aucune valeur monétaire.")).toBeVisible();
+      // Sample numbers never travel: no crowd number on a shared page until it is real (5 calls or more).
+      await expect(page.getByRole("main").getByText(locale === "en" ? "Canada gave yes" : "Le Canada donnait")).toHaveCount(0);
       const results = await new AxeBuilder({ page }).withTags(tags).analyze();
       expect(results.violations.map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(" ")).join(", ")})`)).toEqual([]);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -85,7 +86,7 @@ test("a right call offers Share your call, linking to the called-it page with no
     expect(x.searchParams.get("url")).toMatch(plain);
     expect(x.searchParams.get("text")).toContain(locale === "en" ? "I called it on Cansensa: " : "J’ai vu juste sur Cansensa : ");
     // The post says nothing about the person: it ends with the free label, and the call value is not in it.
-    expect(x.searchParams.get("text")).toMatch(locale === "en" ? /\? Free\. No prizes\.$/ : /\? Gratuit\. Aucun prix\.$/);
+    expect(x.searchParams.get("text")).toMatch(locale === "en" ? /\? Free\. No prizes\.$/ : /\? Gratuit\. Aucun prix à gagner\.$/);
     expect(x.searchParams.get("text")).not.toMatch(new RegExp(`\\b${call}\\s?%`));
 
     const threads = await href("threads");
