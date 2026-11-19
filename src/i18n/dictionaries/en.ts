@@ -25,6 +25,13 @@ const en = {
     socialTitle: "Linked social accounts",
     designTitle: "Design system",
     notFoundTitle: "Page not found",
+    resolutionsDescription: "Every closed Cansensa question, its official result and how the crowd did. Corrections and reviews are logged too.",
+    methodologyDescription: "How Cansensa works: how “Canada says” is made, how calls are scored with the Brier score, and how questions resolve from official sources.",
+    termsDescription: "The terms for using Cansensa, a free Canadian forecasting app for adults. No money, no purchases, no prizes.",
+    privacyDescription: "What Cansensa keeps about you, where it’s stored and how to see, correct or delete it. Accounts, calls and analytics are stored in Montreal.",
+    leaderboardDescription: "Canada’s most accurate forecasters on Cansensa, ranked by Brier score against the crowd, not by points.",
+    provincesDescription: "How each region of Canada forecasts on Cansensa: where they agree, where they split, and whose crowd called it best.",
+    recordDescription: "Your Cansensa record: how accurate your calls are, compared with Canada.",
   },
   nav: {
     today: "Today",

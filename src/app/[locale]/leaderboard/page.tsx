@@ -15,7 +15,7 @@ type Params = Promise<{ locale: string }>;
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getDictionary(locale).leaderboard.title, alternates: pageAlternates(locale, "/leaderboard") };
+  return { title: getDictionary(locale).leaderboard.title, description: getDictionary(locale).meta.leaderboardDescription, alternates: pageAlternates(locale, "/leaderboard") };
 }
 
 export default async function LeaderboardPage({ params }: { params: Params }) {

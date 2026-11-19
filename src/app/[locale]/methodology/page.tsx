@@ -19,7 +19,7 @@ import { brierScore } from "@/lib/scoring";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getDictionary(locale).methodology.title, alternates: pageAlternates(locale, "/methodology") };
+  return { title: getDictionary(locale).methodology.title, description: getDictionary(locale).meta.methodologyDescription, alternates: pageAlternates(locale, "/methodology") };
 }
 
 export const revalidate = 3600;

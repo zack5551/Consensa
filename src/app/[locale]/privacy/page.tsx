@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   return {
-    title: getDictionary(locale).legalPages.privacy.title,
+    title: getDictionary(locale).legalPages.privacy.title, description: getDictionary(locale).meta.privacyDescription,
     alternates: pageAlternates(locale, "/privacy"),
   };
 }

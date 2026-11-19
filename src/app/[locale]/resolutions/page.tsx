@@ -22,7 +22,7 @@ import { askedByLabel } from "@/lib/asked-by";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
-  return { title: getDictionary(locale).log.title, alternates: pageAlternates(locale, "/resolutions") };
+  return { title: getDictionary(locale).log.title, description: getDictionary(locale).meta.resolutionsDescription, alternates: pageAlternates(locale, "/resolutions") };
 }
 
 export default async function ResolutionsPage({ params }: { params: Promise<{ locale: string }> }) {
