@@ -10,7 +10,7 @@ import { crowdLeansOtherWay, crowdOnSide, fromProbability, SURE_DEFAULT, SURE_MA
 import { isBotCheckFailed, isOutsideCanada, isVpnRefused, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
 import { formatBrier, formatCount, formatPercent } from "@/lib/format";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
-import { provinces, type Province, type QuestionState } from "@/lib/question";
+import { hasStarted, provinces, type Province, type QuestionOutcome, type QuestionState } from "@/lib/question";
 import { brierScore, gapToCrowd, versusCrowd } from "@/lib/scoring";
 import { accountsEnabled } from "@/lib/supabase/env";
 import { fill } from "@/lib/text";
@@ -30,8 +30,10 @@ type Props = {
   /** False where the page shows no crowd number: the answer bars then carry no percentages. */
   crowdShown?: boolean;
   state?: QuestionState;
+  /** Sports: when the game starts. The page may have been rendered earlier, so the panel stops offering a call at this time on its own. */
+  startsAt?: string;
   scored?: boolean;
-  outcome?: "yes" | "no";
+  outcome?: QuestionOutcome;
   /** Already formatted for the locale, e.g. "October 21, 2026". */
   closedOn?: string;
   /** This question's region numbers. With the region from onboarding, your own region shows beside Canada. */
@@ -84,8 +86,9 @@ function signedInOnce(): Promise<boolean | null> {
  * After saving, the same panel shows where Canada stands as two answer bars. The stored call is still a 1–99
  * probability of yes (see src/lib/call-side.ts).
  * Once a question closes, the panel shows your call and, after the result, "Called it!" or "Not this time."
+ * A cancelled question shows neither and no score: nobody is scored on a game that was not played.
  */
-export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, closes = "", crowdShown = true, state = "open", scored = true, outcome, closedOn = "", regions }: Props) {
+export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, closes = "", crowdShown = true, state = "open", startsAt, scored = true, outcome, closedOn = "", regions }: Props) {
   const [side, setSide] = useState<Side | null>(null);
   const [sure, setSure] = useState<number>(SURE_DEFAULT);
   const [saved, setSaved] = useState(false);
@@ -102,7 +105,22 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   // Where keyboard focus goes after a step changes, so it never falls back to the top of the page.
   const focusNext = useRef<"slider" | "change" | null>(null);
   const pct = (v: number) => formatPercent(v, locale);
-  const accepting = state === "open" || state === "closingSoon";
+  const [started, setStarted] = useState(false);
+  const accepting = (state === "open" || state === "closingSoon") && !started;
+  // Pre-game only (LEX): once the game starts, the panel shows the closed view even if the page is older than that.
+  const shownState: QuestionState = started && (state === "open" || state === "closingSoon") ? "closed" : state;
+
+  useEffect(() => {
+    if (!startsAt) return;
+    if (hasStarted(startsAt, new Date())) {
+      setStarted(true);
+      return;
+    }
+    const ms = Date.parse(startsAt) - Date.now();
+    if (ms > 2 ** 31 - 1) return;
+    const timer = window.setTimeout(() => setStarted(true), ms);
+    return () => window.clearTimeout(timer);
+  }, [startsAt]);
 
   useEffect(() => {
     setRegion(myRegion());
@@ -147,7 +165,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
           {t.closedTitle}
         </h2>
         <p className="mt-1 text-body-sm text-ink-2">{fill(t.closedBody, { date: closedOn })}</p>
-        <ClosedResult stored={stored} crowd={crowd} state={state} outcome={outcome} scored={scored} t={t} canadaSays={canadaSays} pct={pct} locale={locale} />
+        <ClosedResult stored={stored} crowd={crowd} state={shownState} outcome={outcome} scored={scored} t={t} canadaSays={canadaSays} pct={pct} locale={locale} />
       </section>
     );
   }
@@ -352,14 +370,15 @@ function ClosedResult({
   stored: number | null;
   crowd: number;
   state: QuestionState;
-  outcome?: "yes" | "no";
+  outcome?: QuestionOutcome;
   scored: boolean;
   t: Dictionary["call"];
   canadaSays: string;
   pct: (v: number) => string;
   locale: Locale;
 }) {
-  const resolved = state === "resolved" && outcome !== undefined;
+  // A cancelled question has no answer: no verdict and no score for anyone.
+  const resolved = state === "resolved" && (outcome === "yes" || outcome === "no");
   let verdict: string | null = null;
   let hit = false;
   if (resolved && stored !== null) {
@@ -395,6 +414,7 @@ function ClosedResult({
         )}
         {state === "closed" && stored !== null && <p className="m-0 mt-1 text-ink-2">{t.waiting}</p>}
         {state === "disputed" && <p className="m-0 mt-1 text-ink-2">{t.disputed}</p>}
+        {state === "cancelled" && <p className="m-0 mt-1 text-ink-2">{t.cancelled}</p>}
       </div>
     </div>
   );

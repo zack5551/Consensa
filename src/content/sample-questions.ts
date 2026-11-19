@@ -1,4 +1,4 @@
-import { isOpen, questionSchema, questionState, type Question } from "@/lib/question";
+import { isOpen, outcomes, questionSchema, questionState, type Question } from "@/lib/question";
 import { z } from "zod";
 import liveQuestions from "./live-questions.json";
 import liveResults from "./live-results.json";
@@ -294,7 +294,7 @@ const raw = [
  * scripts/pull-live-questions.mjs at build time, empty unless CONSENSA_LIVE_QUESTIONS=1) come first; a live
  * question that's invalid or reuses a sample's slug is skipped rather than failing the build.
  */
-const resultSchema = z.object({ slug: z.string(), outcome: z.enum(["yes", "no"]), publishedAt: z.iso.datetime(), disputed: z.boolean() });
+const resultSchema = z.object({ slug: z.string(), outcome: z.enum(outcomes), publishedAt: z.iso.datetime(), disputed: z.boolean() });
 /**
  * Automatic results from the engine (see src/engine/site-results.ts), confirmed from official data. They replace a
  * hand-written result, because the official reading is the record. An invalid entry is skipped.

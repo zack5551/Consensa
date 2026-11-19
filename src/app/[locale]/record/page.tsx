@@ -44,7 +44,8 @@ export default async function RecordPage({ params }: { params: Params }) {
   const pending = sampleQuestions
     .filter((q) => {
       const s = questionState(q, SAMPLE_NOW);
-      return q.scored && s !== "resolved";
+      // A cancelled question is never scored, so it isn't waiting for anything.
+      return q.scored && s !== "resolved" && s !== "cancelled";
     })
     .map((q) => ({ slug: q.slug, href: `/${locale}/q/${q.slug}`, question: q.question[locale], closes: fill(t.record.closesOn, { date: formatLongDate(callsCloseAt(q), locale) }) }));
 

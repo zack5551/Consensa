@@ -42,3 +42,11 @@ describe("sample forecasters", () => {
     expect(regions.some((r) => rankForecasters(sampleForecasters, { region: r }).length < MIN_CELL)).toBe(true);
   });
 });
+
+describe("cancelled questions and the record", () => {
+  it("never reach the results, so no record, leaderboard or province score counts them", () => {
+    const slug = "oilers-canucks-nov-3-2026";
+    expect(sampleResults.map((r) => r.slug)).not.toContain(slug);
+    for (const f of sampleForecasters) expect(f.calls.map((c) => c.slug)).not.toContain(slug);
+  });
+});

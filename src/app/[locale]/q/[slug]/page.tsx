@@ -26,7 +26,7 @@ import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
-import { callsCloseAt, crowdNow, crowdVerdict, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
+import { callsCloseAt, crowdNow, crowdVerdict, eventStart, nextUp, questionState, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { socialPollLine, questionShareUrl, shareLinks } from "@/lib/social";
@@ -85,8 +85,10 @@ export default async function QuestionPage({ params }: { params: Params }) {
     chartSummary += ` ${fill(template, { change: Math.abs(swing.change), days })}`;
   }
   const result = q.resolution.result;
-  const answer = result ? (result.outcome === "yes" ? t.question.yes : t.question.no) : "";
-  const settled = state === "resolved" || state === "disputed" || state === "closed";
+  // A cancelled question has no answer: the pill and the result row say so, and nothing reads as yes or no.
+  const answer = result ? (result.outcome === "cancelled" ? t.resolution.noAnswer : result.outcome === "yes" ? t.question.yes : t.question.no) : "";
+  const settled = state === "resolved" || state === "disputed" || state === "closed" || state === "cancelled";
+  const start = eventStart(q);
   // How the crowd moved this week, beside the count. Open questions only: a settled number no longer moves.
   const move = settled ? null : weekMove(q);
   const moveText =
@@ -127,7 +129,9 @@ export default async function QuestionPage({ params }: { params: Params }) {
           ? fill(t.stateNote.resolved, { answer: answer.toLowerCase(), crowd: pct(yes) })
           : state === "disputed"
             ? t.stateNote.disputed
-            : "";
+            : state === "cancelled"
+              ? fill(t.stateNote.cancelled, { crowd: pct(yes) })
+              : "";
 
   const base = siteUrl();
   const breadcrumb = schemaOrg("BreadcrumbList", {
@@ -155,6 +159,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
       calls={q.forecasters}
       closes={closes}
       state={state}
+      startsAt={q.category === "sports" ? start : undefined}
       scored={q.scored}
       outcome={result?.outcome}
       closedOn={formatLongDate(callsCloseAt(q), locale)}
@@ -195,16 +200,27 @@ export default async function QuestionPage({ params }: { params: Params }) {
                 <span className="uppercase tracking-wide">
                   {closes}
                 </span>
-                {q.category === "sports" && q.startsAt && (
+                {q.category === "sports" && start && !q.game && (
                   <>
                     <span aria-hidden="true">·</span>
-                    <span className="uppercase tracking-wide">{fill(t.question.startsTime, { when: formatEasternTime(q.startsAt, locale) })}</span>
+                    <span className="uppercase tracking-wide">{fill(t.question.startsTime, { when: formatEasternTime(start, locale) })}</span>
                   </>
                 )}
               </>
             )}
           </div>
           <h1 className="m-0 font-display text-headline font-bold leading-tight tracking-tight text-balance">{q.question[locale]}</h1>
+          {/* A game question names its matchup and scheduled start in words only (LEX: no team or league logos, no photos). */}
+          {q.game && (
+            <p className="m-0 text-body-sm text-ink-2" data-testid="game-line">
+              {fill(t.question.game, {
+                league: (t.question.leagues as Record<string, string>)[q.game.league] ?? q.game.league,
+                away: q.game.away,
+                home: q.game.home,
+                when: formatEasternTime(q.game.startsAt, locale),
+              })}
+            </p>
+          )}
           <StateNote state={state} title={t.states[state]}>
             {note}
           </StateNote>
@@ -225,7 +241,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
               <span className="text-body-lg text-ink-2">{t.question.chance}</span>
               {result && (
                 <span className="ml-auto self-center rounded-full bg-ink px-3 py-1 text-body-sm font-bold text-paper">
-                  {fill(t.resolution.answerIs, { answer })}
+                  {result.outcome === "cancelled" ? answer : fill(t.resolution.answerIs, { answer })}
                 </span>
               )}
             </span>

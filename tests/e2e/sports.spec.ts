@@ -19,7 +19,7 @@ for (const locale of ["en", "fr"] as const) {
   }
 
   test(`the sports browse page in ${locale} shows the footer, and axe passes`, async ({ page }) => {
-    await page.goto(`/${locale}/browse/sports`);
+    await page.goto(`/${locale}/browse/sports?show=results`);
     await expect(page.getByText(labels[locale].footer)).toBeVisible();
     const results = await new AxeBuilder({ page }).withTags(tags).analyze();
     expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
@@ -47,4 +47,70 @@ test("a sports question takes scored calls: the panel shows what the call would 
   await page.goto("/en/q/leafs-playoffs-2027");
   await page.getByRole("button", { name: "Yes", exact: true }).click();
   await expect(page.getByText(/you’d score/).locator("visible=true").first()).toBeVisible();
+});
+
+// A game question (sample fixture): the matchup and start time in words, calls closing at the start.
+const game = {
+  en: { line: "NHL · Maple Leafs at Canadiens · Nov 21, 7:00 p.m. ET", closes: "Closes Nov 21, 7:00 p.m. ET" },
+  fr: { line: /LNH · Maple Leafs c\. Canadiens · 21 nov\.,\s19\sh \(HE\)/, closes: /Fermeture le 21 nov\.,\s19\sh \(HE\)/ },
+} as const;
+
+// The cancelled sample: the game was not played, so there is no answer and nobody is scored.
+const cancelled = {
+  en: { badge: "Cancelled", note: /The game was not played, so there is no answer and nobody is scored\. Canada said 57% before it was cancelled\./, noAnswer: "No answer: game not played", panel: "The game was not played, so no call on this question is scored.", line: "NHL · Canucks at Oilers · Nov 3, 9:00 p.m. ET", calledIt: "Called it!", missed: "Not this time." },
+  fr: { badge: "Annulée", note: /Le match n’a pas eu lieu\s: il n’y a donc pas de réponse et personne n’est évalué\. Le Canada prévoyait 57\s% avant l’annulation\./, noAnswer: /Aucune réponse\s: match non joué/, panel: /Le match n’a pas eu lieu\s: aucune prévision sur cette question n’est évaluée\./, line: /LNH · Canucks c\. Oilers · 3 nov\.,\s21\sh \(HE\)/, calledIt: "Vu juste!", missed: "Pas cette fois." },
+} as const;
+
+for (const locale of ["en", "fr"] as const) {
+  test(`a game question in ${locale} shows the matchup and start time as text, and axe passes`, async ({ page }) => {
+    await page.goto(`/${locale}/q/canadiens-leafs-nov-21-2026`);
+    await expect(page.getByTestId("game-line")).toHaveText(game[locale].line);
+    await expect(page.getByText(game[locale].closes).first()).toBeVisible();
+    await expect(page.locator("article img")).toHaveCount(0);
+    const results = await new AxeBuilder({ page }).withTags(tags).analyze();
+    expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+  });
+
+  test(`the cancelled game in ${locale} says so, scores nobody, and axe passes`, async ({ page }) => {
+    const c = cancelled[locale];
+    await page.goto(`/${locale}/q/oilers-canucks-nov-3-2026`);
+    // A saved call on either side gets no verdict and no score.
+    for (const value of ["80", "20"]) {
+      await page.evaluate((v) => window.localStorage.setItem("consensa:call:oilers-canucks-nov-3-2026", v), value);
+      await page.reload();
+      await expect(page.getByText(c.panel).locator("visible=true").first()).toBeVisible();
+      await expect(page.getByText(c.calledIt)).toHaveCount(0);
+      await expect(page.getByText(c.missed)).toHaveCount(0);
+      await expect(page.getByText(/Brier/)).toHaveCount(0);
+    }
+    await expect(page.getByText(c.badge, { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(c.note)).toBeVisible();
+    await expect(page.getByText(c.noAnswer).first()).toBeVisible();
+    await expect(page.getByTestId("game-line")).toHaveText(c.line);
+    await expect(page.getByText(labels[locale].label)).toBeVisible();
+    await expect(page.getByText(labels[locale].footer)).toBeVisible();
+    const results = await new AxeBuilder({ page }).withTags(tags).analyze();
+    expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+  });
+
+  test(`lists in ${locale} show the cancelled state, and its share card renders`, async ({ page, request }) => {
+    await page.goto(`/${locale}/resolutions`);
+    const row = page.locator("li", { has: page.locator('a[href$="/q/oilers-canucks-nov-3-2026"]') });
+    await expect(row.getByText(cancelled[locale].badge, { exact: true }).first()).toBeVisible();
+    await expect(row.getByText("—")).toBeVisible();
+    await page.goto(`/${locale}/browse/sports?show=results`);
+    // The board draws a table on desktop and a list on phones; one of the two is visible.
+    const boardRow = page.locator("tr:visible, li:visible").filter({ has: page.locator('a[href$="/q/oilers-canucks-nov-3-2026"]') });
+    await expect(boardRow.getByText(cancelled[locale].badge, { exact: true })).toBeVisible();
+    const res = await request.get(`/${locale}/q/oilers-canucks-nov-3-2026/opengraph-image`);
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toContain("image/png");
+  });
+}
+
+test("a game page opened after the start offers no call, even though the page was rendered before it", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-22T00:00:01Z") });
+  await page.goto("/en/q/canadiens-leafs-nov-21-2026");
+  await expect(page.getByRole("heading", { name: "Calls have closed" }).locator("visible=true").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Yes", exact: true })).toHaveCount(0);
 });

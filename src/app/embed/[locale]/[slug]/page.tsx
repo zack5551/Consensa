@@ -43,7 +43,8 @@ export default async function EmbedPage({ params }: { params: Params }) {
   const t = getDictionary(locale);
   const yes = crowdNow(q);
   const pct = (v: number) => formatPercent(v, locale);
-  const open = isOpen(questionState(q, SAMPLE_NOW));
+  const state = questionState(q, SAMPLE_NOW);
+  const open = isOpen(state);
   const href = `/${locale}/q/${q.slug}?utm_source=embed`;
 
   return (
@@ -53,6 +54,7 @@ export default async function EmbedPage({ params }: { params: Params }) {
         <span>{t.embed.poweredBy}</span>
       </p>
       <h1 className="m-0 font-display text-title-sm font-bold leading-snug text-balance">{q.question[locale]}</h1>
+      {state === "cancelled" && <p className="m-0 text-body-sm text-ink-2">{t.share.cardCancelled}</p>}
       <p className="m-0 flex flex-wrap items-baseline gap-x-2">
         <span className="text-body-sm font-bold text-canada">{open ? t.question.canadaSays : t.question.canadaSaid}</span>
         <span className="font-display text-headline font-semibold tabular text-side-a-text">{pct(yes)}</span>

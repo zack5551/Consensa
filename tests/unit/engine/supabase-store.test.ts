@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toSiteQuestion } from "@/engine/live";
+import { editorResult, newRecord } from "@/engine/resolve/policy";
 import { newItem, publish } from "@/engine/review";
 import { applyDashboardStatus, SupabaseStore, type FetchFn } from "@/engine/supabase-store";
 import type { Flag, QueueItem } from "@/engine/types";
@@ -44,6 +45,19 @@ describe("SupabaseStore", () => {
     expect(write?.init?.method).toBe("POST");
     expect(JSON.parse(String(write?.init?.body))[0]).toMatchObject({ id: "q1", status: "approved" });
     expect((write?.init?.headers as Record<string, string>).apikey).toBe("sb_secret_0123456789abcdef");
+  });
+
+  it("saves a cancelled result in the record and leaves the yes/no column empty", async () => {
+    const bodies: unknown[] = [];
+    const fake: FetchFn = async (_url, init) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response("");
+    };
+    const store = new SupabaseStore({ url: "https://x.supabase.co", secretKey: "sb_secret_0123456789abcdef", fetch: fake, now: () => NOW });
+    await store.putResolution(editorResult(newRecord("game-q"), "cancelled", "ed-1", NOW, false, "Game called off."));
+    await store.putResolution(editorResult(newRecord("other-q"), "no", "ed-1", NOW));
+    expect(bodies[0]).toMatchObject([{ slug: "game-q", state: "resolved", outcome: null, record: { outcome: "cancelled", editorNote: "Game called off." } }]);
+    expect(bodies[1]).toMatchObject([{ slug: "other-q", outcome: "no" }]);
   });
 
   it("throws with the status when Supabase refuses", async () => {

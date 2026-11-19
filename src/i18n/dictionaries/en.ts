@@ -316,12 +316,14 @@ const en = {
     closed: "Closed",
     resolved: "Resolved",
     disputed: "Under review",
+    cancelled: "Cancelled",
   },
   stateNote: {
     closingSoon: "This question closes {date}. Make your call before then.",
     closed: "Calls have closed. The official result is expected {date}.",
     resolved: "The answer was {answer}. Canada said {crowd} when calls closed.",
     disputed: "The official result is under review. Scores wait until the review ends.",
+    cancelled: "The game was not played, so there is no answer and nobody is scored. Canada said {crowd} before it was cancelled.",
   },
   share: {
     title: "Share this question",
@@ -335,6 +337,7 @@ const en = {
     text: "{question} Make your call on Cansensa. Free. No prizes.",
     cardNoValue: "Free to play. No cash value.",
     cardSports: "Free. No prizes. Fan forecasts only.",
+    cardCancelled: "Cancelled: the game was not played.",
   },
   social: {
     title: "On social media",
@@ -357,6 +360,8 @@ const en = {
     closes: "Closes",
     closesTime: "Closes {when} ET",
     startsTime: "Starts {when} ET",
+    game: "{league} · {away} at {home} · {when} ET",
+    leagues: { NHL: "NHL", CFL: "CFL", MLS: "MLS", CPL: "CPL", NBA: "NBA", MLB: "MLB", PWHL: "PWHL" },
     closed: "Closed",
     poll: "Poll · not scored",
     scored: "Scored",
@@ -453,6 +458,7 @@ const en = {
     botCheckFailed: "The quick check on your device didn’t pass, so this call stays on this device for now. Reload the page and try again.",
     botWidget,
     disputed: "Scores wait until the review ends.",
+    cancelled: "The game was not played, so no call on this question is scored.",
   },
   embed: {
     cta: "Make your call on Cansensa",
@@ -546,6 +552,7 @@ const en = {
       notEndorsed: "Cansensa is not affiliated with or endorsed by {name}.",
     },
     answerIs: "Answer: {answer}",
+    noAnswer: "No answer: game not played",
     log: "Every result is published in the public resolution log.",
   },
   board: {

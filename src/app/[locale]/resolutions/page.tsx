@@ -66,7 +66,7 @@ export default async function ResolutionsPage({ params }: { params: Promise<{ lo
               <dl className="m-0 grid grid-cols-2 gap-4 text-body-sm sm:grid-cols-4">
                 <div>
                   <dt className="text-ink-2">{c.answer}</dt>
-                  <dd className="m-0 font-display text-title-sm font-bold">{r ? (r.outcome === "yes" ? t.question.yes : t.question.no) : t.log.pending}</dd>
+                  <dd className="m-0 font-display text-title-sm font-bold">{r ? (r.outcome === "cancelled" ? t.states.cancelled : r.outcome === "yes" ? t.question.yes : t.question.no) : t.log.pending}</dd>
                 </div>
                 <div>
                   <dt className="text-ink-2">{c.crowd}</dt>

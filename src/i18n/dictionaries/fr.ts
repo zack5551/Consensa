@@ -318,12 +318,14 @@ const fr = {
     closed: "Fermée",
     resolved: "Résolue",
     disputed: "En révision",
+    cancelled: "Annulée",
   },
   stateNote: {
     closingSoon: "Cette question ferme le {date}. Faites votre prévision d’ici là.",
     closed: "Les prévisions sont fermées. Le résultat officiel est attendu le {date}.",
     resolved: "La réponse était {answer}. Le Canada prévoyait {crowd} à la fermeture.",
     disputed: "Le résultat officiel est en révision. L’évaluation attend la fin de la révision.",
+    cancelled: "Le match n’a pas eu lieu : il n’y a donc pas de réponse et personne n’est évalué. Le Canada prévoyait {crowd} avant l’annulation.",
   },
   share: {
     title: "Partager cette question",
@@ -337,6 +339,7 @@ const fr = {
     text: "{question} Faites votre prévision sur Cansensa. Gratuit. Aucun prix.",
     cardNoValue: "Gratuit. Aucune valeur monétaire.",
     cardSports: "Gratuit. Aucun prix. Prévisions de partisans seulement.",
+    cardCancelled: "Annulée : le match n’a pas eu lieu.",
   },
   social: {
     title: "Sur les réseaux sociaux",
@@ -359,6 +362,8 @@ const fr = {
     closes: "Fermeture le",
     closesTime: "Fermeture le {when} (HE)",
     startsTime: "Début le {when} (HE)",
+    game: "{league} · {away} c. {home} · {when} (HE)",
+    leagues: { NHL: "LNH", CFL: "LCF", MLS: "MLS", CPL: "PLC", NBA: "NBA", MLB: "MLB", PWHL: "LPHF" },
     closed: "Fermée",
     poll: "Sondage · non évalué",
     scored: "Évaluée",
@@ -455,6 +460,7 @@ const fr = {
     botCheckFailed: "La vérification rapide sur votre appareil n’a pas réussi. Cette prévision reste donc sur cet appareil pour l’instant. Rechargez la page et réessayez.",
     botWidget,
     disputed: "L’évaluation attend la fin de la révision.",
+    cancelled: "Le match n’a pas eu lieu : aucune prévision sur cette question n’est évaluée.",
   },
   embed: {
     cta: "Faites votre prévision sur Cansensa",
@@ -548,6 +554,7 @@ const fr = {
       notEndorsed: "Cansensa n’a aucun lien avec {name}, qui ne l’approuve pas.",
     },
     answerIs: "Réponse : {answer}",
+    noAnswer: "Aucune réponse : match non joué",
     log: "Chaque résultat est publié dans le registre public des résolutions.",
   },
   board: {

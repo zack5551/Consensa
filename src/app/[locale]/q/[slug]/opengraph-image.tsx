@@ -14,7 +14,8 @@ import { shareCardColors as c } from "@/lib/share-card-colors";
 
 /**
  * The share card for one question, 1200×630.
- * One message: the question and where Canada stands on it ("Make your call" until 5 people have called).
+ * One message: the question and where Canada stands on it ("Make your call" until 5 people have called). A cancelled
+ * question says it was cancelled instead, with no number and no invitation to call.
  * One action: none on the card itself; it is the picture behind a shared link to the question page.
  * LEX: text and percentages only, no team or league logos, no photos, and the free/no-value label on every card.
  * It reads the same content and crowd number as the page (withLiveQuestion), refreshed on the same one-minute clock.
@@ -72,7 +73,9 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
           {text}
         </div>
 
-        {crowd === null ? (
+        {state === "cancelled" ? (
+          <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 700, fontSize: 48, color: c.inkMuted, marginBottom: 28 }}>{cardSafe(t.share.cardCancelled)}</div>
+        ) : crowd === null ? (
           <div style={{ display: "flex", fontFamily: "Manrope", fontWeight: 700, fontSize: 64, color: c.sideAText, marginBottom: 28 }}>{cardSafe(t.question.makeYourCall)}</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", marginBottom: 28 }}>

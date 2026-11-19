@@ -10,6 +10,14 @@ export type Province = (typeof provinces)[number];
 const bilingual = z.object({ en: z.string().min(1), fr: z.string().min(1) });
 const percent = z.number().min(0).max(100);
 
+/** How a question can end. `cancelled`: the event never took place (a game called off or postponed), so nobody is scored. */
+export const outcomes = ["yes", "no", "cancelled"] as const;
+export type QuestionOutcome = (typeof outcomes)[number];
+
+/** One game, as text only (LEX: names describe facts; no logos, jerseys or photos). `startsAt` is the scheduled start. */
+export const gameSchema = z.object({ league: z.string().min(1), home: z.string().min(1), away: z.string().min(1), startsAt: z.iso.datetime() }).strict();
+export type Game = z.infer<typeof gameSchema>;
+
 export const questionSchema = z.object({
   slug: z.string().regex(/^[a-z0-9-]+$/),
   category: z.enum(categories),
@@ -18,6 +26,8 @@ export const questionSchema = z.object({
   closesAt: z.iso.datetime(),
   /** When the game or event starts. Required for sports, which are pre-game only: calls close at the earlier of this and `closesAt`. */
   startsAt: z.iso.datetime().optional(),
+  /** Sports only: the one game this question is about. Its start counts as `startsAt`. */
+  game: gameSchema.optional(),
   forecasters: z.number().int().nonnegative(),
   /** Daily crowd probability (percent), oldest first. The last value is "now". */
   history: z.array(percent).min(2),
@@ -45,23 +55,37 @@ export const questionSchema = z.object({
     resolvesAt: z.iso.datetime(),
     /** Set once the official source has published. `disputed` means the result is under review. */
     result: z
-      .object({ outcome: z.enum(["yes", "no"]), publishedAt: z.iso.datetime(), disputed: z.boolean().default(false) })
+      .object({ outcome: z.enum(outcomes), publishedAt: z.iso.datetime(), disputed: z.boolean().default(false) })
       .optional(),
   }),
-}).refine((q) => q.category !== "sports" || q.startsAt !== undefined, { path: ["startsAt"], message: "Sports questions need startsAt." });
+})
+  .refine((q) => q.category !== "sports" || eventStart(q) !== undefined, { path: ["startsAt"], message: "Sports questions need startsAt." })
+  .refine((q) => q.game === undefined || q.category === "sports", { path: ["game"], message: "Only sports questions have a game." })
+  .refine((q) => q.game === undefined || q.startsAt === undefined || Date.parse(q.startsAt) === Date.parse(q.game.startsAt), { path: ["game", "startsAt"], message: "startsAt and game.startsAt must match." });
 
 export type Question = z.infer<typeof questionSchema>;
 
-/** When calls stop: the close date, or the event start for sports if that comes first. */
-export function callsCloseAt(q: Pick<Question, "closesAt" | "startsAt" | "category">): string {
-  return q.category === "sports" && q.startsAt !== undefined && Date.parse(q.startsAt) < Date.parse(q.closesAt) ? q.startsAt : q.closesAt;
+/** When the game or event starts: the game's start when the question names one, otherwise `startsAt`. */
+export function eventStart(q: { startsAt?: string; game?: { startsAt: string } }): string | undefined {
+  return q.game?.startsAt ?? q.startsAt;
+}
+
+/** When calls stop: the close date, or the event start for sports if that comes first. Never after the start of a game. */
+export function callsCloseAt(q: Pick<Question, "closesAt" | "startsAt" | "category" | "game">): string {
+  const start = eventStart(q);
+  return q.category === "sports" && start !== undefined && Date.parse(start) < Date.parse(q.closesAt) ? start : q.closesAt;
+}
+
+/** True once the game or event has started (`start` from `eventStart`): from then on, no new call is offered. */
+export function hasStarted(start: string | undefined, now: Date): boolean {
+  return start !== undefined && Date.parse(start) <= now.getTime();
 }
 
 export function crowdNow(q: Question): number {
   return q.history[q.history.length - 1] ?? 0;
 }
 
-export const questionStates = ["open", "closingSoon", "closed", "resolved", "disputed"] as const;
+export const questionStates = ["open", "closingSoon", "closed", "resolved", "disputed", "cancelled"] as const;
 export type QuestionState = (typeof questionStates)[number];
 
 /** Questions closing within this window show the "closing soon" state. */
@@ -70,10 +94,11 @@ export const CLOSING_SOON_MS = 72 * 60 * 60 * 1000;
 /**
  * Where a question is in its life: open → closing soon → closed (waiting for the official result) → resolved.
  * A published result that's under review is "disputed" and isn't scored until the review ends.
+ * "cancelled" is the other ending: the event never took place, so there is no answer and nobody is scored.
  */
 export function questionState(q: Question, now: Date): QuestionState {
   const result = q.resolution.result;
-  if (result) return result.disputed ? "disputed" : "resolved";
+  if (result) return result.disputed ? "disputed" : result.outcome === "cancelled" ? "cancelled" : "resolved";
   const msLeft = Date.parse(callsCloseAt(q)) - now.getTime();
   if (msLeft <= 0) return "closed";
   if (msLeft <= CLOSING_SOON_MS) return "closingSoon";
@@ -110,10 +135,10 @@ export function weekMove(q: Question): { direction: "up" | "down" | "flat"; poin
   return { direction: change > 0 ? "up" : change < 0 ? "down" : "flat", points: Math.abs(change) };
 }
 
-/** The crowd's chance when calls closed, scored against the result. Null until a non-disputed result exists. */
+/** The crowd's chance when calls closed, scored against the result. Null until a non-disputed yes or no exists: a cancelled question is never scored. */
 export function crowdBrier(q: Question): number | null {
   const r = q.resolution.result;
-  if (!r || r.disputed || !q.scored) return null;
+  if (!r || r.disputed || r.outcome === "cancelled" || !q.scored) return null;
   const p = crowdNow(q) / 100;
   return (p - (r.outcome === "yes" ? 1 : 0)) ** 2;
 }
