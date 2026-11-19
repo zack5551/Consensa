@@ -320,6 +320,7 @@ const en = {
   question: {
     canadaSays: "Canada says",
     canadaSaid: "Canada said",
+    canadaSource: "from Cansensa participants",
     chance: "chance",
     yes: "Yes",
     no: "No",
