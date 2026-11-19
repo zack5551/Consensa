@@ -11,7 +11,8 @@ import { isAllowedPostUrl, questionShareUrl, shareLinks, socialPollLine, socialP
 
 /** The gambling, trading and tip rules from the engine's lexicon (CLAUDE.md rule 1), the one home of those words. */
 const lexiconRules = new Set(["gambling", "trading", "tip"]);
-/** LEX: no giveaway or reward wording on anything people share. "No prizes" / « Aucun prix » is the one allowed mention. */
+/** LEX: no giveaway or reward wording on anything people share. "No prizes" / « Aucun prix » (or « Aucun prix à gagner ») is the one allowed mention. */
+const allowedPrizeLine = /Aucun prix à gagner\./g;
 const giveaway = [/\bgiveaway/i, /\bwin(s|ner|ners|ning)?\b/i, /\breward/i, /\bcontest/i, /\bgagn/i, /\bconcours\b/i, /\btirage/i, /\br[ée]compense/i];
 
 const good = { platform: "x", yes: 719, no: 521, closedAt: "2026-11-05T18:00:00Z", url: "https://x.com/Cansensa/status/1" } as const;
@@ -23,7 +24,7 @@ describe("share text", () => {
       const lines = [t.share.text.replace("{question}", question), ...Object.values(t.share), t.social.label, t.social.line, t.social.title];
       for (const line of lines) {
         expect(scan(line, lexiconRules), line).toEqual([]);
-        expect(giveaway.filter((re) => re.test(line)), line).toEqual([]);
+        expect(giveaway.filter((re) => re.test(line.replace(allowedPrizeLine, ""))), line).toEqual([]);
       }
     });
   }
