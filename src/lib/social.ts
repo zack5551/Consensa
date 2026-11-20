@@ -90,8 +90,8 @@ export type SocialLink = z.infer<typeof socialLinkSchema>;
 
 export type PostLink = { platform: SocialPlatform; url: string };
 
-/** One platform row on a question page: its poll result, if any, and our official post there, if any. */
-export type SocialRow = { platform: SocialPlatform; poll?: SocialPoll; url?: string };
+/** One platform row on a question page: its poll result, and our official post there if we have one. */
+export type SocialRow = { platform: SocialPlatform; poll: SocialPoll; url?: string };
 
 type PostSources = {
   socialLinks?: readonly SocialLink[];
@@ -140,14 +140,15 @@ export function socialPollLine(poll: SocialPoll, labels: SocialPollLabels, local
 
 /**
  * The question page's social rows, in the fixed platform order: each poll's result next to its own post (a real poll
- * that isn't on our account falls back to the platform's official link), then a logo-only row for a platform with a
- * post but no result yet. A sample poll never links anywhere.
+ * that isn't on our account falls back to the platform's official link). A platform shows only once it has a result
+ * (zack, 2026-11-20). A sample poll never links anywhere. For a sports question, pass the start as `pollsCloseBy`.
  */
-export function questionSocialRows(q: PostSources, locale: Locale): SocialRow[] {
+export function questionSocialRows(q: PostSources, locale: Locale, options: { pollsCloseBy?: string } = {}): SocialRow[] {
   const links = new Map(questionPostLinks(q, locale).map((l) => [l.platform, l.url]));
+  // Sports are pre-game only (LEX): a platform poll that ran past the start isn't shown.
+  const by = options.pollsCloseBy ? Date.parse(options.pollsCloseBy) : Infinity;
   return socialPlatforms.flatMap((platform) => {
-    const polls = (q.socialPolls ?? []).filter((p) => p.platform === platform);
-    if (polls.length === 0) return links.has(platform) ? [{ platform, url: links.get(platform) }] : [];
+    const polls = (q.socialPolls ?? []).filter((p) => p.platform === platform && Date.parse(p.closedAt) <= by);
     return polls.map((poll) => ({ platform, poll, url: poll.sample ? undefined : isOfficialPost(platform, poll.url) ? poll.url : links.get(platform) }));
   });
 }

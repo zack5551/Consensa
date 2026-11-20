@@ -194,10 +194,11 @@ export default async function QuestionPage({ params }: { params: Params }) {
       label={t.social.label}
       openLabel={t.social.openPost}
       sampleLabel={polls.some((p) => p.sample) ? t.social.sample : undefined}
-      rows={questionSocialRows(q, locale).map((r) => ({
+      rows={questionSocialRows(q, locale, { pollsCloseBy: q.category === "sports" ? start : undefined }).map((r) => ({
         platform: r.platform,
         name: t.social.platforms[r.platform],
-        line: r.poll && socialPollLine(r.poll, t.social, locale),
+        line: socialPollLine(r.poll, t.social, locale),
+        yes: (r.poll.yes / (r.poll.yes + r.poll.no)) * 100,
         href: r.url,
       }))}
     />

@@ -221,10 +221,11 @@ describe("questionPostLinks (the platform logos on a question page)", () => {
 describe("questionSocialRows (each logo with its own poll result)", () => {
   const ig = { platform: "instagram" as const, yes: 6, no: 4, closedAt: "2026-11-20T18:00:00Z", url: "https://www.instagram.com/stories/cansensus/9/" };
 
-  it("puts each result on its own platform's row, then logo-only rows, in platform order", () => {
-    const rows = questionSocialRows({ socialPolls: [ig], socialLinks: [{ platform: "x", url: "https://x.com/CANsensus/status/1" }] }, "en");
+  it("puts each result on its own platform's row, in platform order, and hides a platform with no result yet", () => {
+    const x = { ...ig, platform: "x" as const, url: "https://x.com/CANsensus/status/1" };
+    const rows = questionSocialRows({ socialPolls: [ig, x], socialLinks: [{ platform: "facebook", url: "https://www.facebook.com/CANsensus/posts/1" }] }, "en");
     expect(rows).toEqual([
-      { platform: "x", url: "https://x.com/CANsensus/status/1" },
+      { platform: "x", poll: x, url: x.url },
       { platform: "instagram", poll: ig, url: ig.url },
     ]);
   });
@@ -234,6 +235,11 @@ describe("questionSocialRows (each logo with its own poll result)", () => {
     const foreign = { ...ig, url: "https://www.instagram.com/someoneelse/p/1/" };
     expect(questionSocialRows({ socialPolls: [foreign] }, "en")[0]?.url).toBeUndefined();
     expect(questionSocialRows({ socialPolls: [foreign], socialLinks: [{ platform: "instagram", url: "https://www.instagram.com/cansensus/p/2/" }] }, "en")[0]?.url).toBe("https://www.instagram.com/cansensus/p/2/");
+  });
+
+  it("on a sports question, drops a platform poll that closed after the start (pre-game only)", () => {
+    expect(questionSocialRows({ socialPolls: [ig] }, "en", { pollsCloseBy: "2026-11-20T18:00:00Z" })).toHaveLength(1);
+    expect(questionSocialRows({ socialPolls: [ig] }, "en", { pollsCloseBy: "2026-11-20T17:59:00Z" })).toEqual([]);
   });
 
   it("is empty when there is nothing to show", () => {
