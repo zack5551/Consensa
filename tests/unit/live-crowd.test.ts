@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sampleQuestions } from "@/content/sample-questions";
 import { applyLive, MIN_CROWD, parseCrowdRows, publishedRegionCount, REGION_COUNT_MIN, regionCallCount, summarize } from "@/lib/live-crowd";
+import { formatCallCount } from "@/lib/format";
 import { questionSchema } from "@/lib/question";
 import { crowdNow } from "@/lib/question";
 
@@ -23,10 +24,22 @@ describe("applyLive", () => {
     expect(applyLive(q, undefined)).toBe(q);
   });
   it("uses the real number and count, with no sample points mixed into the history", () => {
+    const live = applyLive(q, { n: 1243, mean: 63 });
+    expect(crowdNow(live)).toBe(63);
+    expect(live.forecasters).toBe(1240);
+    expect(live.fewCalls).toBeUndefined();
+    expect(new Set(live.history)).toEqual(new Set([63]));
+  });
+  it("shows Canada's average from 5 calls, but no count until 50 (the exact count never leaves the server)", () => {
     const live = applyLive(q, { n: 12, mean: 63 });
     expect(crowdNow(live)).toBe(63);
-    expect(live.forecasters).toBe(12);
-    expect(new Set(live.history)).toEqual(new Set([63]));
+    expect(live.forecasters).toBe(0);
+    expect(live.fewCalls).toBe(true);
+    expect(JSON.stringify(live)).not.toMatch(/"forecasters":12\b/);
+    expect(questionSchema.safeParse(live).success).toBe(true);
+    expect(formatCallCount(live, "en")).toBe("<50");
+    expect(formatCallCount(live, "fr")).toBe("<\u00a050");
+    expect(formatCallCount(applyLive(q, { n: 57, mean: 63 }), "en")).toBe("50");
   });
 });
 

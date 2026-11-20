@@ -6,7 +6,7 @@ import { isLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { askedByLabel } from "@/lib/asked-by";
 import { BRAND_NAME } from "@/lib/brand";
-import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
+import { formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { withLiveQuestion } from "@/lib/live";
 import { crowdNow } from "@/lib/question";
 import { calledItCards, calledItFooter, cardSafe, crowdForCard, hasCalledItCard } from "@/lib/share";
@@ -72,7 +72,7 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
         {crowd !== null && (
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 14, fontSize: 22, fontWeight: 600, color: c.inkMuted }}>
             <span style={{ color: c.ink }}>{cardSafe(fill(t.share.calledItCrowd, { crowd: formatPercent(crowd, locale) }))}</span>
-            <span>{cardSafe(`· ${fill(t.share.cardCalls, { n: formatCount(q.forecasters, locale) })}`)}</span>
+            <span>{cardSafe(`· ${fill(t.share.cardCalls, { n: formatCallCount(q, locale) })}`)}</span>
           </div>
         )}
       </CardFrame>

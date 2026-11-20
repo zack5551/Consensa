@@ -10,7 +10,7 @@ import { track } from "@/lib/analytics";
 import { setBotWidgetStrings } from "@/lib/bot-check-client";
 import { crowdLeansOtherWay, crowdOnSide, fromProbability, SURE_DEFAULT, SURE_MAX, SURE_MIN, sureGap, toProbability, type Side } from "@/lib/call-side";
 import { isBotCheckFailed, isOutsideCanada, isTermsOutdated, isVpnRefused, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
-import { formatBrier, formatCount, formatPercent } from "@/lib/format";
+import { formatBrier, formatCallCount, formatPercent } from "@/lib/format";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
 import { hasStarted, provinces, type Province, type QuestionOutcome, type QuestionState } from "@/lib/question";
 import { parseRegionCount, regionCallsLine, regionCountUrl } from "@/lib/region-calls";
@@ -30,6 +30,8 @@ type Props = {
   sides: Record<Side, string>;
   /** How many calls the crowd number is built from. */
   calls: number;
+  /** A live crowd under 50 calls: the count reads "<50" instead of a number (see `publishedCallCount`). */
+  fewCalls?: true;
   /** When calls close, already worded and formatted for the locale, e.g. "Closes Dec. 9". */
   closes?: string;
   /** False where the page shows no crowd number: the answer bars then carry no percentages. */
@@ -98,7 +100,7 @@ function signedInOnce(): Promise<boolean | null> {
  * Once a question closes, the panel shows your call and, after the result, "Called it!" or "Not this time."
  * A cancelled question shows neither and no score: nobody is scored on a game that was not played.
  */
-export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, closes = "", crowdShown = true, state = "open", startsAt, scored = true, outcome, closedOn = "", regions, calledItShare }: Props) {
+export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, fewCalls, closes = "", crowdShown = true, state = "open", startsAt, scored = true, outcome, closedOn = "", regions, calledItShare }: Props) {
   const [side, setSide] = useState<Side | null>(null);
   const [sure, setSure] = useState<number>(SURE_DEFAULT);
   const [saved, setSaved] = useState(false);
@@ -211,8 +213,8 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
 
   // Before a call: "22,980 calls · Closes Dec. 9". Under the results (LEX): "Average of 22,980 calls · Closes Dec. 9", because
   // Canada's number is the average of the calls, not a count of votes. Without a crowd number to show, only when it closes.
-  const count = formatCount(calls, locale);
-  const meta = [crowdShown ? (saved ? fill(t.averageOf, { n: count }) : calls === 1 ? t.callsOne : fill(t.calls, { n: count })) : "", closes].filter(Boolean);
+  const count = formatCallCount({ forecasters: calls, fewCalls }, locale);
+  const meta = [crowdShown ? (saved ? fill(t.averageOf, { n: count }) : calls === 1 && !fewCalls ? t.callsOne : fill(t.calls, { n: count })) : "", closes].filter(Boolean);
   // Each part stays on one line with its dot, so a narrow panel breaks between parts and never inside "Closes Apr 15, 7:00 p.m. ET".
   const metaLine = meta.map((part, i) => (
     <Fragment key={part}>

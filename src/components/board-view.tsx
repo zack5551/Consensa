@@ -11,7 +11,7 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
 import { applyBoardQuery, boardFilters, boardQueryString, boardSorts, changeLabel, changeText, defaultBoardQuery, parseBoardQuery, type BoardQuery, type BoardRow } from "@/lib/board";
 import { readAllCalls, subscribeCalls } from "@/lib/calls-store";
-import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
+import { formatCount, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { categories, isOpen, type Category } from "@/lib/question";
 import { fill } from "@/lib/text";
 
@@ -198,7 +198,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
                         </span>
                       </span>
                     </td>
-                    <td className="hidden px-4 py-3 text-right align-middle text-body-sm text-ink-2 tabular lg:table-cell">{formatCount(r.forecasters, locale)}</td>
+                    <td className="hidden px-4 py-3 text-right align-middle text-body-sm text-ink-2 tabular lg:table-cell">{formatCallCount(r, locale)}</td>
                     <td className="py-3 pl-4 pr-0 text-right align-middle text-body-sm text-ink-2 tabular">{formatShortDate(r.closesAt, locale)}</td>
                   </tr>
                 ))}
@@ -229,7 +229,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
                 </span>
                 <span className="flex flex-wrap items-center justify-between gap-2 text-caption text-ink-2 tabular">
                   <span>
-                    {formatCount(r.forecasters, locale)} · {formatShortDate(r.closesAt, locale)}
+                    {formatCallCount(r, locale)} · {formatShortDate(r.closesAt, locale)}
                   </span>
                   <YourCallBadge slug={r.slug} template={t.question.yourCall} format={locale} />
                 </span>

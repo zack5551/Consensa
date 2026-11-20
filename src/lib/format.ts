@@ -67,3 +67,9 @@ export function formatBrier(value: number, locale: Locale): string {
 export function formatDayHeading(iso: string, locale: Locale, timeZone = "UTC"): string {
   return formatDate(new Intl.DateTimeFormat(intlLocale[locale], { weekday: "long", month: "long", day: "numeric", timeZone }), new Date(iso), locale);
 }
+
+/** A question's call count as shown: "<50" while a live crowd is under 50 calls (see `publishedCallCount`), else the number. */
+export function formatCallCount(q: { forecasters: number; fewCalls?: true }, locale: Locale): string {
+  return q.fewCalls ? (locale === "fr" ? "<\u00a050" : "<50") : formatCount(q.forecasters, locale);
+}
+

@@ -18,7 +18,7 @@ import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { askedByLabel } from "@/lib/asked-by";
 import { BRAND_NAME } from "@/lib/brand";
-import { formatCount, formatLongDate, formatPercent } from "@/lib/format";
+import { formatLongDate, formatPercent, formatCallCount } from "@/lib/format";
 import { withLiveQuestion } from "@/lib/live";
 import { crowdNow } from "@/lib/question";
 import { calledItCards, crowdForCard, hasCalledItCard } from "@/lib/share";
@@ -88,7 +88,7 @@ export default async function CalledItPage({ params }: { params: Params }) {
         {crowd !== null && (
           <p className="m-0 border-t border-line pt-4 text-body-sm text-ink-2">
             <span className="text-ink tabular">{fill(t.share.calledItCrowd, { crowd: formatPercent(crowd, locale) })}</span> ·{" "}
-            {fill(t.share.cardCalls, { n: formatCount(q.forecasters, locale) })}
+            {fill(t.share.cardCalls, { n: formatCallCount(q, locale) })}
           </p>
         )}
 

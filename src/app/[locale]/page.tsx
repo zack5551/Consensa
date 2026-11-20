@@ -15,7 +15,7 @@ import { SAMPLE_NOW, sampleQuestions as sample, todaysFive } from "@/content/sam
 import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
+import { formatCount, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { buildLandingStats } from "@/lib/landing-stats";
 import { callsCloseAt, categories, crowdNow, crowdRecord, isOpen, questionState, scoreBadge } from "@/lib/question";
 import { provinceSummary } from "@/lib/province-summary";
@@ -121,7 +121,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
             format={pct}
           />
           <p className="m-0 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-body-sm text-ink-2">
-            <span className="tabular">{fill(l.showcaseCount, { n: formatCount(lead.forecasters, locale) })}</span>
+            <span className="tabular">{fill(l.showcaseCount, { n: formatCallCount(lead, locale) })}</span>
             <span className="font-semibold text-link underline underline-offset-4" aria-hidden="true">
               {l.showcaseOpen}
             </span>
@@ -219,7 +219,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
                       </span>
                       <span aria-hidden="true">·</span>
                       <span>
-                        {formatCount(q.forecasters, locale)} {t.question.forecasters}
+                        {formatCallCount(q, locale)} {t.question.forecasters}
                       </span>
                     </p>
                   </div>
