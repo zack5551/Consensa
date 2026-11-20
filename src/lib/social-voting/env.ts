@@ -49,3 +49,22 @@ export function autoReplyOn(env: Env = process.env): boolean {
   const e = socialEnv(env);
   return e.SOCIAL_VOTING === "1" && e.SOCIAL_AUTO_REPLY === "1";
 }
+
+/** One thing that still has to be set before social voting can do anything, named by its setting, never its value. */
+export type SocialGap = "link-secret" | "x-link" | "x-read" | "x-cap";
+
+/**
+ * What is still missing for social voting to work end to end on X, checked from the settings alone. The flag can be
+ * on with gaps: the daily step then names them in the log (see `runSocialStep`) instead of failing quietly, and a
+ * missing link secret keeps it from running at all. Meta has no gaps here: its sign-in doesn't exist yet.
+ */
+export function socialGaps(env: Env = process.env): SocialGap[] {
+  const e = socialEnv(env);
+  const gaps: SocialGap[] = [];
+  if (!e.SOCIAL_LINK_SECRET) gaps.push("link-secret");
+  if (!e.X_CLIENT_ID) gaps.push("x-link");
+  if (!e.X_BEARER_TOKEN) gaps.push("x-read");
+  if (e.X_MONTHLY_CAP_USD <= 0) gaps.push("x-cap");
+  return gaps;
+}
+

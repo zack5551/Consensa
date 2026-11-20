@@ -10,6 +10,22 @@ import { provinces, type Province, type Question } from "@/lib/question";
 
 export const MIN_CROWD = 5;
 
+/**
+ * The region row's call count is coarser than the averages (AEGIS hold on #111). With an exact count beside a
+ * small region's average, the change from one visit to the next gives away the call that was just made:
+ * (n + 1) × new average − n × old average. So a count is published only from REGION_COUNT_MIN calls, rounded down
+ * to a multiple of REGION_COUNT_STEP. From 50 calls up, the average is rounded to a whole percent, which alone
+ * blurs any one call by ±25 points or more, and the count moves only once every 10 calls.
+ */
+export const REGION_COUNT_MIN = 50;
+export const REGION_COUNT_STEP = 10;
+
+/** The count the region row may show for `n` calls, or null below REGION_COUNT_MIN. */
+export function publishedRegionCount(n: number): number | null {
+  if (!Number.isInteger(n) || n < REGION_COUNT_MIN) return null;
+  return Math.floor(n / REGION_COUNT_STEP) * REGION_COUNT_STEP;
+}
+
 /** One row from `crowd_summary`: a count and a sum of probabilities for a question, region and language. */
 export type CrowdRow = { slug: string; region: string | null; locale: string | null; n: number; total: number };
 
@@ -123,7 +139,11 @@ export function applyLive<T extends Question>(q: T, live: LiveCrowd | undefined)
   };
 }
 
-/** One region's call count for the call panel, or null when it isn't published (thin region or suppressed). */
+/**
+ * One region's call count for the call panel, rounded down to 10s, or null when it isn't published: under
+ * REGION_COUNT_MIN calls, a hidden region, or complementary suppression.
+ */
 export function regionCallCount(live: LiveCrowd | undefined, region: Province): number | null {
-  return live?.provinceCounts?.[region] ?? null;
+  const n = live?.provinceCounts?.[region];
+  return n === undefined ? null : publishedRegionCount(n);
 }

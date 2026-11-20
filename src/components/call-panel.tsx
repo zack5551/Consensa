@@ -11,7 +11,6 @@ import { setBotWidgetStrings } from "@/lib/bot-check-client";
 import { crowdLeansOtherWay, crowdOnSide, fromProbability, SURE_DEFAULT, SURE_MAX, SURE_MIN, sureGap, toProbability, type Side } from "@/lib/call-side";
 import { isBotCheckFailed, isOutsideCanada, isTermsOutdated, isVpnRefused, readCall, saveCall, subscribeOutsideCanada } from "@/lib/calls-store";
 import { formatBrier, formatCount, formatPercent } from "@/lib/format";
-import { MIN_CROWD } from "@/lib/live-crowd";
 import { PROFILE_STORAGE_KEY } from "@/lib/onboarding";
 import { hasStarted, provinces, type Province, type QuestionOutcome, type QuestionState } from "@/lib/question";
 import { parseRegionCount, regionCallsLine, regionCountUrl } from "@/lib/region-calls";
@@ -223,7 +222,7 @@ export function CallPanel({ slug, crowd, locale, t, canadaSays, sides, calls, cl
   // Your region's number shows once you've saved a call, so it informs the result, not the call itself.
   const regionValue = saved && region !== null && regions && !regions.hidden?.includes(region) ? regions.values[region] : null;
   // The count shows only at or above the privacy floor; below it (or with no count yet) the row keeps its countless wording.
-  const regionLine = region !== null && regions ? regionCallsLine(t, regions.names[region], regionCount !== undefined && regionCount >= MIN_CROWD ? regionCount : undefined, locale) : null;
+  const regionLine = region !== null && regions ? regionCallsLine(t, regions.names[region], regionCount, locale) : null;
 
   return (
     <section aria-labelledby={`${id}-title`} className="rounded-card border border-line border-t-4 border-t-ink bg-surface p-5">

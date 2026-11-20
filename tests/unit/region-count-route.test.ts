@@ -7,7 +7,7 @@ vi.mock("@/lib/supabase/admin", () => ({ adminSupabase: () => ({ rpc }) }));
 const slug = "boc-cut-dec-2026";
 const rows = [
   { slug, region: "QC", locale: "fr", n: "5", total: "300" },
-  { slug, region: "ON", locale: "en", n: "6", total: "240" },
+  { slug, region: "ON", locale: "en", n: "63", total: "2520" },
   { slug, region: "BC", locale: "en", n: "7", total: "350" },
 ];
 
@@ -27,12 +27,13 @@ describe("GET /api/crowd/region", () => {
   it("answers with the one region asked for and nothing about the others", async () => {
     const res = await get(`slug=${slug}&region=ON`);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ n: 6 });
+    expect(await res.json()).toEqual({ n: 60 });
     expect(res.headers.get("cache-control")).toContain("s-maxage=60");
   });
 
-  it("answers null for a thin region and when counts are suppressed", async () => {
+  it("answers null for a thin region, under 50 calls, and when counts are suppressed", async () => {
     expect(await (await get(`slug=${slug}&region=AT`)).json()).toEqual({ n: null });
+    expect(await (await get(`slug=${slug}&region=QC`)).json()).toEqual({ n: null });
     rpc.mockResolvedValue({ data: [...rows, { slug, region: "AT", locale: "en", n: "1", total: "90" }], error: null });
     expect(await (await get(`slug=${slug}&region=ON`)).json()).toEqual({ n: null });
   });
