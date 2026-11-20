@@ -8,7 +8,7 @@ import { StateBadge } from "@/components/state-badge";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import type { BoardRow } from "@/lib/board";
-import { formatCount, formatPercent } from "@/lib/format";
+import { formatCount, formatPercent, formatCallCount } from "@/lib/format";
 import { highlight, search, type SearchField } from "@/lib/search";
 import { fill } from "@/lib/text";
 
@@ -160,7 +160,7 @@ export function SearchView({ docs, locale, t, states, categories, forecasters, b
                 <span className="flex items-baseline gap-3 text-caption text-ink-2 tabular sm:justify-end">
                   <span className="font-display text-title-sm font-bold text-ink">{pct(r.crowd)}</span>
                   <span>
-                    {formatCount(r.forecasters, locale)} {forecasters}
+                    {formatCallCount(r, locale)} {forecasters}
                   </span>
                 </span>
               </li>

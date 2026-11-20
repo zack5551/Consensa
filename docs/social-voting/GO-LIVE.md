@@ -17,6 +17,9 @@ waits for Meta's app review.
 - [ ] AEGIS has passed the last PR touching social voting.
 - [ ] The Privacy Policy linked-account rows (EN and FR) and the Terms §2 line are live on the site, with a new
       "last updated" date, a notice banner and a new consent-log version. It's an opt-in feature, so no 30-day wait.
+      The rows are already on main but only show once `SOCIAL_VOTING=1`. FORGE ships a small PR for switch day: the
+      new "last updated" date and changelog line, the "Privacy Policy updated" banner, and the version seen in the
+      consent log (no TERMS_VERSION bump).
 - [ ] zack signs off on LEX rule 7 for the X data flow (X is in the US; data only comes in, to Montréal).
 - [ ] zack OKs the X read cost (it breaks the free-only rule; see `X_MONTHLY_CAP_USD` below).
 - [ ] The election polling-day freeze is built, or political questions take no social replies until it is.

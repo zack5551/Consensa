@@ -3,7 +3,7 @@ import { CardFrame, CardWordmark, cardFonts, cardSize } from "@/components/share
 import type { Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { askedByLabel } from "@/lib/asked-by";
-import { formatCount, formatPercent, formatShortDate } from "@/lib/format";
+import { formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { callsCloseAt, crowdNow, questionState, type Question } from "@/lib/question";
 import { calledItFooter, cardSafe, crowdForCard } from "@/lib/share";
 import { shareCardColors as c } from "@/lib/share-card-colors";
@@ -28,7 +28,7 @@ export async function shareCardImage(q: Question, locale: Locale, now: Date): Pr
   const text = cardSafe(q.question[locale]);
   const questionSize = text.length > 110 ? 40 : text.length > 70 ? 46 : 54;
   const closes = settled ? t.share.cardClosed : fill(t.share.cardCloses, { date: formatShortDate(callsCloseAt(q), locale) });
-  const meta = cardSafe(crowd === null ? closes : `${fill(t.share.cardCalls, { n: formatCount(q.forecasters, locale) })} · ${closes}`);
+  const meta = cardSafe(crowd === null ? closes : `${fill(t.share.cardCalls, { n: formatCallCount(q, locale) })} · ${closes}`);
   // LEX: a guest or brand question's "Asked by" / "Sponsored by" label goes on the card too, right above the question.
   const askedBy = q.askedBy ? cardSafe(askedByLabel(q.askedBy, t.question.askedBy)) : null;
 

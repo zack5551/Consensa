@@ -26,6 +26,17 @@ export function publishedRegionCount(n: number): number | null {
   return Math.floor(n / REGION_COUNT_STEP) * REGION_COUNT_STEP;
 }
 
+/**
+ * Canada's call count follows the same rule as the region row (AEGIS, after #121): with an exact n beside a
+ * whole-percent average, someone who knows when a person called can work out that call within ±n/2 points. So a
+ * live count shows only from 50 calls, rounded down to 10s; below that, pages say "<50". Canada's average itself
+ * still shows from MIN_CROWD calls.
+ */
+export function publishedCallCount(n: number): { forecasters: number; fewCalls?: true } {
+  const shown = publishedRegionCount(n);
+  return shown === null ? { forecasters: 0, fewCalls: true } : { forecasters: shown };
+}
+
 /** One row from `crowd_summary`: a count and a sum of probabilities for a question, region and language. */
 export type CrowdRow = { slug: string; region: string | null; locale: string | null; n: number; total: number };
 
@@ -131,7 +142,7 @@ export function applyLive<T extends Question>(q: T, live: LiveCrowd | undefined)
   const fr = live.languages?.fr;
   return {
     ...q,
-    forecasters: live.n,
+    ...publishedCallCount(live.n),
     history: [live.mean, live.mean],
     provinces: shown,
     hiddenProvinces,

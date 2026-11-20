@@ -20,7 +20,7 @@ import { SAMPLE_NOW, todaysFive } from "@/content/sample-questions";
 import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { formatCount, formatDayHeading, formatPercent, formatShortDate } from "@/lib/format";
+import { formatDayHeading, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { callsCloseAt, crowdNow, questionState, scoreBadge } from "@/lib/question";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
@@ -122,7 +122,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
         <p className="m-0 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-body-sm text-ink-2">
           <span className="inline-flex items-center gap-2 tabular">
             <span className="size-2 rounded-full bg-canada" aria-hidden="true" />
-            {formatCount(lead.forecasters, locale)} {t.question.forecasters}
+            {formatCallCount(lead, locale)} {t.question.forecasters}
           </span>
           <span className="relative z-10 flex items-center gap-3">
             <YourCallBadge slug={lead.slug} template={t.question.yourCall} format={locale} />
@@ -170,7 +170,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
                   </h3>
                   <p className="m-0 flex flex-wrap items-center gap-x-4 gap-y-1 text-body-sm text-ink-2">
                     <span className="tabular">
-                      {formatCount(q.forecasters, locale)} {t.question.forecasters}
+                      {formatCallCount(q, locale)} {t.question.forecasters}
                     </span>
                     <span className="relative z-10">
                       <YourCallBadge slug={q.slug} template={t.question.yourCall} format={locale} />

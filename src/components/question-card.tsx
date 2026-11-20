@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
-import { formatCount, formatEasternTime, formatPercent, formatShortDate } from "@/lib/format";
+import { formatEasternTime, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { fill } from "@/lib/text";
 import { callsCloseAt, crowdNow, isOpen, scoreBadge, type Question, type QuestionState } from "@/lib/question";
 import { CrowdBar } from "./crowd-bar";
@@ -54,7 +54,7 @@ export function QuestionCard({ q, locale, t, states, state = "open", href, lead 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-2 text-body-sm text-ink-2">
           <span className={`size-2 rounded-full ${open ? "bg-canada" : "bg-ink-3"}`} aria-hidden="true" />
-          {formatCount(q.forecasters, locale)} {t.forecasters}
+          {formatCallCount(q, locale)} {t.forecasters}
         </span>
         <span className="flex items-center gap-2">
           <YourCallBadge slug={q.slug} template={t.yourCall} format={locale} />

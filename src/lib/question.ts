@@ -34,6 +34,11 @@ export const questionSchema = z.object({
   /** Sports only: the one game this question is about. Its start counts as `startsAt`. */
   game: gameSchema.optional(),
   forecasters: z.number().int().nonnegative(),
+  /**
+   * Live crowds only: true while fewer than 50 calls are behind the number. `forecasters` is then 0 and pages show
+   * "<50" instead of a count, so an exact small count never leaves the server (AEGIS). See `publishedCallCount`.
+   */
+  fewCalls: z.literal(true).optional(),
   /** Daily crowd probability (percent), oldest first. The last value is "now". */
   history: z.array(percent).min(2),
   provinces: z.record(z.enum(provinces), percent),

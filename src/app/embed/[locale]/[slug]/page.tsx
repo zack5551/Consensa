@@ -15,7 +15,7 @@ import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-quest
 import { withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { formatCount, formatPercent } from "@/lib/format";
+import { formatPercent, formatCallCount } from "@/lib/format";
 import { crowdNow, isOpen, questionState } from "@/lib/question";
 import { provinceSummary } from "@/lib/province-summary";
 
@@ -76,7 +76,7 @@ export default async function EmbedPage({ params }: { params: Params }) {
       />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-caption text-ink-2">
-          {formatCount(q.forecasters, locale)} {t.question.forecasters}
+          {formatCallCount(q, locale)} {t.question.forecasters}
         </span>
         <a href={href} target="_blank" rel="noopener" className="rounded-control bg-ink px-3 py-2 text-body-sm font-bold text-paper hover:opacity-90">
           {open ? t.embed.cta : t.embed.closed} ↗

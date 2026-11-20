@@ -26,7 +26,7 @@ import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-quest
 import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { formatCount, formatEasternTime, formatLongDate, formatPercent, formatShortDate } from "@/lib/format";
+import { formatEasternTime, formatLongDate, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { callsCloseAt, crowdNow, crowdVerdict, eventStart, isOpen, nextUp, questionState, resolutionTitle, scoreBadge, sourceUrl, topicRecord, weekMove } from "@/lib/question";
 import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
@@ -173,6 +173,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
       canadaSays={settled ? t.question.canadaSaid : t.question.canadaSays}
       sides={{ yes: t.question.yes, no: t.question.no }}
       calls={q.forecasters}
+      fewCalls={q.fewCalls}
       closes={closes}
       state={state}
       startsAt={q.category === "sports" ? start : undefined}
@@ -270,7 +271,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
           <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-ink-2">
             <span className={`size-2 rounded-full ${settled ? "bg-ink-3" : "bg-canada"}`} aria-hidden="true" />
             <span>
-              {formatCount(q.forecasters, locale)} {t.question.forecasters}
+              {formatCallCount(q, locale)} {t.question.forecasters}
             </span>
             {move && moveText && (
               <>

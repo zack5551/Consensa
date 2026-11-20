@@ -20,6 +20,8 @@ export type BoardRow = {
   crowd: number;
   change: number;
   forecasters: number;
+  /** Under 50 live calls: show "<50" (see `publishedCallCount`). */
+  fewCalls?: true;
   closesAt: string;
   scored: boolean;
   /** The last two weeks of the crowd's chance, for the sparkline. */
@@ -35,6 +37,7 @@ export function toBoardRow(q: Question, now: Date): BoardRow {
     crowd: crowdNow(q),
     change: crowdChange(q, 7),
     forecasters: q.forecasters,
+    ...(q.fewCalls ? { fewCalls: true as const } : {}),
     closesAt: callsCloseAt(q),
     scored: q.scored,
     spark: q.history.slice(-14),
