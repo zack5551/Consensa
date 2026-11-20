@@ -280,7 +280,7 @@ const en = {
         languages: { title: "English and French, equally", body: "This summary, the full policy, our terms and our support are all available in both languages." },
         botCheck: { title: "A quick check stops bots", body: "A short check runs on your device to tell people from bots. Nothing about you is sent anywhere." },
         connection: { title: "A connection check keeps the crowd Canadian", body: "When you make a call, our server in Montréal checks whether it comes from outside Canada or through a VPN or proxy, using a database kept on that server, so your IP address isn’t sent to anyone. Those calls aren’t accepted. We keep no record of the check for any person, only anonymous daily totals." },
-        social: { title: "Linked social accounts (only if you link one)", body: "So your replies to official @CANsensus posts on X, Facebook or Instagram can count as your calls. We keep the platform’s ID for your account and, only if you choose to show it, your handle. We don’t keep your posts, followers, profile or sign-in tokens. Signing in to link happens on the platform itself, which applies its own privacy policy." },
+        social: { title: "Linked social accounts (only if you link one)", body: "So your replies to official @CANsensus posts on X (Facebook and Instagram later) can count as your calls. We keep the platform’s ID for your account and, only if you choose to show it, your handle. We don’t keep your posts, followers, profile or sign-in tokens. Signing in to link happens on the platform itself, which applies its own privacy policy." },
         socialKept: { title: "Linked social account (platform ID, and handle if shown)", body: "Until you unlink it or delete your account, then deleted at once" },
       },
     },
