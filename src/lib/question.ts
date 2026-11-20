@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { askedBySchema } from "@/lib/asked-by";
-import { socialPollSchema } from "@/lib/social";
+import { socialLinkSchema, socialPollSchema } from "@/lib/social";
 import { socialPostSchema } from "@/lib/social-voting/types";
 
 export const provinces = ["BC", "AB", "PR", "ON", "QC", "AT"] as const;
@@ -59,6 +59,8 @@ export const questionSchema = z.object({
     .optional(),
   /** Hand-entered native poll totals from official CANsensus posts. Shown apart from the crowd, never mixed into it. */
   socialPolls: z.array(socialPollSchema).optional(),
+  /** Editors' links to this question's official posts, one per platform. The page's platform logos link to these first. */
+  socialLinks: z.array(socialLinkSchema).optional(),
   resolution: z.object({
     /** `url` is the source's English page. `urlFr` is the same page in French, when the publisher has one; /fr links to it. */
     source: z.object({ name: bilingual, url: z.url({ protocol: /^https$/ }), urlFr: z.url({ protocol: /^https$/ }).optional() }),

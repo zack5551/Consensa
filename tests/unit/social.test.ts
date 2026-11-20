@@ -7,7 +7,7 @@ import fr from "@/i18n/dictionaries/fr";
 import { scan } from "@/engine/safety/safety";
 import { calledItFooter, cardSafe, crowdForCard } from "@/lib/share";
 import { shareCardColors, shareCardTokens } from "@/lib/share-card-colors";
-import { isAllowedPostUrl, questionShareUrl, shareLinks, socialPollLine, socialPollSchema } from "@/lib/social";
+import { isAllowedPostUrl, questionPostLinks, questionShareUrl, shareLinks, socialLinkSchema, socialPollLine, socialPollSchema } from "@/lib/social";
 
 /** The gambling, trading and tip rules from the engine's lexicon (CLAUDE.md rule 1), the one home of those words. */
 const lexiconRules = new Set(["gambling", "trading", "tip"]);
@@ -147,5 +147,52 @@ describe("share card", () => {
       const m = light.match(new RegExp(`${token}:\\s*(#[0-9a-fA-F]{6})`));
       expect(m?.[1]?.toLowerCase(), token).toBe(shareCardColors[key as keyof typeof shareCardColors].toLowerCase());
     }
+  });
+});
+
+describe("questionPostLinks (the platform logos on a question page)", () => {
+  const poll = { platform: "x" as const, yes: 3, no: 1, closedAt: "2026-11-05T18:00:00Z", url: "https://x.com/CANsensus/status/77" };
+
+  it("gives one link per platform, in a fixed order, editor links first", () => {
+    const links = questionPostLinks(
+      {
+        socialLinks: [
+          { platform: "facebook", url: "https://www.facebook.com/CANsensus/posts/1" },
+          { platform: "x", url: "https://x.com/CANsensus/status/5" },
+          { platform: "x", url: "https://x.com/CANsensus/status/6" },
+        ],
+        socialPolls: [poll],
+      },
+      "en",
+    );
+    expect(links).toEqual([
+      { platform: "x", url: "https://x.com/CANsensus/status/5" },
+      { platform: "facebook", url: "https://www.facebook.com/CANsensus/posts/1" },
+    ]);
+  });
+
+  it("uses a real poll's post and an X post id, never a sample poll", () => {
+    expect(questionPostLinks({ socialPolls: [{ ...poll, sample: true }] }, "en")).toEqual([]);
+    expect(questionPostLinks({ socialPolls: [poll] }, "en")).toEqual([{ platform: "x", url: poll.url }]);
+    expect(questionPostLinks({ socialPosts: [{ platform: "x", postId: "123", locale: "fr" }] }, "fr")).toEqual([{ platform: "x", url: "https://x.com/i/status/123" }]);
+    // Meta ids don't make an address on their own, and an X id posted in French stays off the English page.
+    expect(questionPostLinks({ socialPosts: [{ platform: "facebook", postId: "1_2", locale: "en" }, { platform: "x", postId: "9", locale: "fr" }] }, "en")).toEqual([]);
+  });
+
+  it("keeps a French-only link off the English page", () => {
+    const q = { socialLinks: [{ platform: "instagram" as const, url: "https://www.instagram.com/p/abc/", locale: "fr" as const }] };
+    expect(questionPostLinks(q, "en")).toEqual([]);
+    expect(questionPostLinks(q, "fr")).toHaveLength(1);
+  });
+
+  it("drops any address that isn't https on that platform's own host", () => {
+    const bad = ["http://x.com/a", "https://x.com.evil.ca/a", "https://user:pw@x.com/a", "javascript:alert(1)", "https://instagram.com/a"];
+    expect(questionPostLinks({ socialLinks: bad.map((url) => ({ platform: "x" as const, url })) }, "en")).toEqual([]);
+  });
+
+  it("the content schema refuses a link on the wrong platform or with extra fields", () => {
+    expect(socialLinkSchema.safeParse({ platform: "x", url: "https://www.facebook.com/p/1" }).success).toBe(false);
+    expect(socialLinkSchema.safeParse({ platform: "threads", url: "https://www.threads.net/@cansensus/post/1" }).success).toBe(true);
+    expect(socialLinkSchema.safeParse({ platform: "x", url: "https://x.com/a", user: "someone" }).success).toBe(false);
   });
 });

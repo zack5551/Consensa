@@ -371,6 +371,8 @@ const fr = {
     votes: "{n} votes",
     votesOne: "{n} vote",
     viewPost: "Voir la publication",
+    postsTitle: "Nos publications sur cette question",
+    openPost: "Ouvrir notre publication sur {platform} (nouvel onglet)",
     sample: "Données d’exemple",
     platforms: { x: "X", threads: "Threads", instagram: "Instagram", facebook: "Facebook" },
   },

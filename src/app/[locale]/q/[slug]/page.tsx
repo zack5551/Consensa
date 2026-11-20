@@ -15,6 +15,7 @@ import { LanguageSplit } from "@/components/language-split";
 import { ProvinceSplit } from "@/components/province-split";
 import { ShareBar } from "@/components/share-bar";
 import { SocialPolls } from "@/components/social-polls";
+import { SocialPostLinks } from "@/components/social-post-links";
 import { JsonLd } from "@/components/json-ld";
 import { BRAND_NAME } from "@/lib/brand";
 import { ScreenView } from "@/components/screen-view";
@@ -32,7 +33,7 @@ import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { askedByLabel } from "@/lib/asked-by";
 import { hasCalledItCard } from "@/lib/share";
-import { calledItShareUrl, socialPollLine, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
+import { calledItShareUrl, questionPostLinks, socialPollLine, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
 import { AskedByLabel } from "@/components/asked-by-label";
 import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
@@ -189,13 +190,16 @@ export default async function QuestionPage({ params }: { params: Params }) {
   const shareText = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", askedBy, closed: !isOpen(state) });
   const polls = q.socialPolls ?? [];
   const social = (
-    <SocialPolls
-      title={t.social.title}
-      label={t.social.label}
-      viewPost={t.social.viewPost}
-      sampleLabel={polls.some((p) => p.sample) ? t.social.sample : undefined}
-      rows={polls.map((p) => ({ platform: t.social.platforms[p.platform], line: socialPollLine(p, t.social, locale), href: p.sample ? undefined : p.url }))}
-    />
+    <>
+      <SocialPostLinks title={t.social.postsTitle} openLabel={t.social.openPost} platforms={t.social.platforms} links={questionPostLinks(q, locale)} />
+      <SocialPolls
+        title={t.social.title}
+        label={t.social.label}
+        viewPost={t.social.viewPost}
+        sampleLabel={polls.some((p) => p.sample) ? t.social.sample : undefined}
+        rows={polls.map((p) => ({ platform: t.social.platforms[p.platform], line: socialPollLine(p, t.social, locale), href: p.sample ? undefined : p.url }))}
+      />
+    </>
   );
 
   return (

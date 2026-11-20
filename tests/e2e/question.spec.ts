@@ -306,6 +306,30 @@ test("the social block shows its label and the poll line, apart from Canada says
   await expect(page.getByTestId("social-polls")).toHaveCount(0);
 });
 
+test("platform logos open the question's official posts, and only real ones", async ({ page }) => {
+  await page.goto("/en/q/canadiens-leafs-nov-21-2026");
+  const nav = page.getByRole("navigation", { name: "Our posts on this question" }).locator("visible=true");
+  await expect(nav).toHaveCount(1);
+  const links = nav.getByRole("link");
+  // Fixed order X, Instagram, Facebook; the French-only Threads post stays off the English page.
+  expect(await links.evaluateAll((els) => els.map((el) => el.getAttribute("data-platform")))).toEqual(["x", "instagram", "facebook"]);
+  await expect(nav.getByRole("link", { name: "Open our X post (new tab)" })).toHaveAttribute("href", "https://x.com/i/status/1");
+  for (const el of await links.all()) {
+    await expect(el).toHaveAttribute("target", "_blank");
+    await expect(el).toHaveAttribute("rel", "noopener noreferrer");
+  }
+
+  await page.goto("/fr/q/canadiens-leafs-nov-21-2026");
+  const navFr = page.getByRole("navigation", { name: "Nos publications sur cette question" }).locator("visible=true");
+  await expect(navFr.getByRole("link", { name: "Ouvrir notre publication sur Threads (nouvel onglet)" })).toHaveAttribute("href", "https://www.threads.com/@cansensus/post/1");
+  // The X post is the English one, so French shows Instagram, Facebook and Threads.
+  await expect(navFr.getByRole("link")).toHaveCount(3);
+
+  // A sample poll has no real post, so no logo.
+  await page.goto("/en/q/boc-cut-dec-2026");
+  await expect(page.getByTestId("social-post-links")).toHaveCount(0);
+});
+
 test("the share card is a 200 PNG in both languages, and the page asks for the large card", async ({ page, request }) => {
   for (const slug of ["boc-cut-dec-2026", "leafs-playoffs-2027"]) {
     for (const locale of ["en", "fr"]) {
