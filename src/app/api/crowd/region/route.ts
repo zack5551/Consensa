@@ -9,8 +9,8 @@ import { callerIp } from "@/lib/server/proxy-check";
 /**
  * How many calls one region's average is built from, for the call panel's region row. The visitor's region lives in
  * their browser, so the panel asks for that one region instead of the page shipping every region's count. Answers
- * `{ n: null }` whenever the count isn't published (preview mode, fewer than 5 calls, or complementary suppression
- * in `summarize`). Aggregates only: never a row per person.
+ * `{ n: null }` whenever the count isn't published (preview mode, fewer than 50 calls, or complementary
+ * suppression in `summarize`). A published count is rounded down to 10s (`publishedRegionCount`). Aggregates only: never a row per person.
  *
  * Hardened (AEGIS): rate limited per address, only known questions still taking calls (404 otherwise, before any
  * database read), and exactly two query params (400 for anything else), so extra params can't bust the CDN cache.

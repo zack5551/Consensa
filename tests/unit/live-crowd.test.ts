@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sampleQuestions } from "@/content/sample-questions";
-import { applyLive, MIN_CROWD, parseCrowdRows, regionCallCount, summarize } from "@/lib/live-crowd";
+import { applyLive, MIN_CROWD, parseCrowdRows, publishedRegionCount, REGION_COUNT_MIN, regionCallCount, summarize } from "@/lib/live-crowd";
 import { questionSchema } from "@/lib/question";
 import { crowdNow } from "@/lib/question";
 
@@ -79,9 +79,16 @@ describe("live splits", () => {
   });
 
   it("gives out one region's count at a time, or null when it isn't published", () => {
+    const big = summarize([
+      { slug: q.slug, region: "QC", locale: "fr", n: 57, total: 57 * 60 },
+      { slug: q.slug, region: "ON", locale: "en", n: 1243, total: 1243 * 40 },
+    ]).get(q.slug);
+    expect(regionCallCount(big, "QC")).toBe(50);
+    expect(regionCallCount(big, "ON")).toBe(1240);
+    expect(regionCallCount(big, "BC")).toBeNull();
+    // Under 50 calls a region keeps its average but shows no count.
     const live = summarize(rows.slice(0, 2)).get(q.slug);
-    expect(regionCallCount(live, "ON")).toBe(6);
-    expect(regionCallCount(live, "BC")).toBeNull();
+    expect(regionCallCount(live, "ON")).toBeNull();
     expect(regionCallCount(summarize(rows).get(q.slug), "ON")).toBeNull();
     expect(regionCallCount(undefined, "ON")).toBeNull();
   });
@@ -111,5 +118,22 @@ describe("parseCrowdRows", () => {
   it("returns nothing for anything but an array", () => {
     expect(parseCrowdRows(null)).toEqual([]);
     expect(parseCrowdRows({ slug: "a-q" })).toEqual([]);
+  });
+});
+
+describe("publishedRegionCount", () => {
+  it("shows nothing under 50 calls, then rounds down to 10s", () => {
+    for (const n of [0, 1, 5, 49]) expect(publishedRegionCount(n)).toBeNull();
+    expect(publishedRegionCount(REGION_COUNT_MIN)).toBe(50);
+    expect(publishedRegionCount(59)).toBe(50);
+    expect(publishedRegionCount(60)).toBe(60);
+    expect(publishedRegionCount(4317)).toBe(4310);
+    expect(publishedRegionCount(Number.NaN)).toBeNull();
+    expect(publishedRegionCount(50.5)).toBeNull();
+  });
+
+  it("doesn't move for nine calls in a row, so one new call can't be read off it", () => {
+    const shown = new Set(Array.from({ length: 9 }, (_, i) => publishedRegionCount(61 + i)));
+    expect([...shown]).toEqual([60]);
   });
 });

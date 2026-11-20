@@ -14,7 +14,9 @@ import { runFromEnv } from "@/engine/run";
 import { siteDueQuestions } from "@/engine/site-results";
 import { SupabaseStore } from "@/engine/supabase-store";
 import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { socialGaps, socialVotingOn } from "@/lib/social-voting/env";
 import { runSocialStep } from "@/lib/social-voting/run";
+import { logErrorCode } from "@/lib/server/error-code-log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,6 +65,12 @@ async function runCycle(env: EngineEnv) {
   });
   // Social voting (sprint 11): count replies from linked accounts on our official posts. Null, and nothing is called,
   // while SOCIAL_VOTING is off. A failure here never fails the cycle; the report is counts only.
+  // Go-live: with the flag on, name each missing setting in the log (the setting, never its value), so a half-set
+  // switch shows up instead of doing nothing quietly. Without a link secret the step itself stays off.
+  if (socialVotingOn()) {
+    for (const gap of socialGaps()) logErrorCode("social-voting", `missing-${gap}`);
+    if (!supabase) logErrorCode("social-voting", "missing-database");
+  }
   const social = await runSocialStep(new Date()).catch(() => ({ failed: true }));
   return NextResponse.json({ ...result, social }, { headers: { "cache-control": "no-store" } });
 }
