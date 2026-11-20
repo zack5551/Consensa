@@ -25,7 +25,7 @@ export const moreSampleQuestions = [
     languages: { en: 65, fr: 68 },
     events: [{ dayIndex: 19, label: { en: "Monthly GDP estimate", fr: "Estimation mensuelle du PIB" } }],
     resolution: {
-      source: { name: { en: "Statistics Canada · GDP by industry", fr: "Statistique Canada · PIB par industrie" }, url: "https://www150.statcan.gc.ca/n1/en/subjects/economic_accounts/gross_domestic_product" },
+      source: { name: { en: "Statistics Canada · GDP by industry", fr: "Statistique Canada · PIB par industrie" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3610043401" },
       rule: {
         en: "Resolves YES if Statistics Canada's first estimate of real GDP for Q3 2026 shows growth above 0.0% quarter over quarter.",
         fr: "Résolue OUI si la première estimation du PIB réel du 3e trimestre de 2026 par Statistique Canada montre une croissance supérieure à 0,0 % d’un trimestre à l’autre.",
@@ -431,7 +431,7 @@ export const moreSampleQuestions = [
       ],
     },
     resolution: {
-      source: { name: { en: "Canada Mortgage and Housing Corporation", fr: "Société canadienne d’hypothèques et de logement" }, url: "https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/market-reports/housing-market-data" },
+      source: { name: { en: "Canada Mortgage and Housing Corporation", fr: "Société canadienne d’hypothèques et de logement" }, url: "https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-data/data-tables/housing-market-data/monthly-housing-starts-construction-data-tables" },
       rule: {
         en: "Resolves YES if CMHC reports total housing starts in Canada for 2026 above 250,000.",
         fr: "Résolue OUI si la SCHL déclare un total de logements commencés au Canada en 2026 supérieur à 250 000.",
@@ -500,7 +500,7 @@ export const moreSampleQuestions = [
       ],
     },
     resolution: {
-      source: { name: { en: "Environment and Climate Change Canada", fr: "Environnement et Changement climatique Canada" }, url: "https://weather.gc.ca/city/pages/on-143_metric_e.html" },
+      source: { name: { en: "Environment and Climate Change Canada", fr: "Environnement et Changement climatique Canada" }, url: "https://climate.weather.gc.ca/" },
       rule: {
         en: "Resolves YES if Environment and Climate Change Canada reports at least 2 cm of snow on the ground at Toronto Pearson on the morning of December 25, 2026.",
         fr: "Résolue OUI si Environnement et Changement climatique Canada rapporte au moins 2 cm de neige au sol à Toronto Pearson le matin du 25 décembre 2026.",

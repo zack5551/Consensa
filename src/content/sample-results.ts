@@ -140,7 +140,7 @@ const raw = [
     slug: "giller-shortlist-2026",
     category: "culture",
     question: { en: "Will a debut novel make the 2026 Giller Prize shortlist?", fr: "Un premier roman figurera-t-il parmi les finalistes du prix Giller 2026?" },
-    source: { en: "Scotiabank Giller Prize", fr: "Prix Giller Banque Scotia" },
+    source: { en: "Giller Prize", fr: "Prix Giller" },
     resolvedAt: "2026-10-06",
     outcome: 1,
     regions: cells([54, 49, 51, 57, 48, 55], mix(2600)),

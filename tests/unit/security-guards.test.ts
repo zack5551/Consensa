@@ -152,7 +152,7 @@ const allowedDomains = [
   "statcan.gc.ca", "bankofcanada.ca", "banqueducanada.ca", "canada.ca", "gc.ca", "cmhc-schl.gc.ca", "elections.ca",
   // News outlets and cultural bodies cited as resolution sources
   "cbc.ca", "radio-canada.ca", "globalnews.ca", "crea.ca", "academy.ca", "telefilm.ca", "numeris.ca",
-  "junoawards.ca", "scotiabankgillerprize.ca", "polarismusicprize.ca", "nhl.com", "cfl.ca",
+  "junoawards.ca", "gillerprize.ca", "scotiabankgillerprize.ca", "polarismusicprize.ca", "nhl.com", "cfl.ca",
   "nasa.gov", "nobelprize.org", "imdb.com", "boxofficemojo.com",
   // Read by the engine on the server only; no user data is sent
   "trends.google.com",

@@ -47,6 +47,7 @@ export const resolutionDomains: readonly string[] = [
   "crea.ca",
   "cmhc-schl.gc.ca",
   "elections.ca",
+  "gillerprize.ca",
   "scotiabankgillerprize.ca",
   "junoawards.ca",
   "polarismusicprize.ca",
