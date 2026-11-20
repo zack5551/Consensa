@@ -7,11 +7,21 @@ project memory (social-voting go-live checklist), and LEX's rules are in `/mnt/p
 **What goes live first: X.** Replies on our own X posts count in "Canada says" once the person has linked their X
 account. Meta stopped letting apps sign in ordinary Instagram accounts in December 2024 (only business and creator
 accounts can), so Instagram replies can't be tied to a CANsensus account yet. Instagram poll results can still be
-shown under "On social media", typed in by hand. Facebook and Threads are in the same position.
+shown under "On social media", typed in by hand, with the line "Not verified. May include people outside Canada and
+under 18." Typed-in totals never count in "Canada says". Facebook Login still works for personal accounts, but the id
+it gives is app-scoped and isn't proven to match the id on a comment (AEGIS note 3), so Facebook waits too. Threads
+waits for Meta's app review.
 
 ## 1. Before anything else
 - [ ] LEX has passed the social-voting rules.
 - [ ] AEGIS has passed the last PR touching social voting.
+- [ ] The Privacy Policy linked-account rows (EN and FR) and the Terms §2 line are live on the site, with a new
+      "last updated" date, a notice banner and a new consent-log version. It's an opt-in feature, so no 30-day wait.
+- [ ] zack signs off on LEX rule 7 for the X data flow (X is in the US; data only comes in, to Montréal).
+- [ ] zack OKs the X read cost (it breaks the free-only rule; see `X_MONTHLY_CAP_USD` below).
+- [ ] The election polling-day freeze is built, or political questions take no social replies until it is.
+- [ ] AEGIS confirms the unticked consent box, the separate username opt-in, one-click unlink and the monthly
+      Canada and VPN re-check.
 
 ## 2. The database (zack, in the Supabase SQL editor)
 Open the SQL editor: https://supabase.com/dashboard/project/_/sql/new. For each file, open it on GitHub, use the
@@ -28,6 +38,8 @@ must say `true`. If a row says `false`, its `step` column names the file above t
 - [ ] Open a developer account at https://developer.x.com and create a project and an app.
 - [ ] Turn on OAuth 2.0 for the app, as a "Web App". Callback URL: `https://consensa-omega.vercel.app/api/account/social/callback`.
 - [ ] Make the official @CANsensus posts that questions will point to. FORGE adds their ids to the questions.
+      Every post carries "Free. No prizes." Sports posts also carry "Fan forecasts only." and the line saying we
+      aren't affiliated with the league or teams, and go up before the game only.
 
 ## 4. Settings in Vercel (zack)
 Open https://vercel.com/consensa/consensa/settings/environment-variables. Add each one as its own variable. Never
