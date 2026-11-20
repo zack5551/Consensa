@@ -25,7 +25,7 @@ const allowedPostHosts = new Set(Object.values(postHosts).flatMap((hosts) => hos
 export function isAllowedPostUrl(value: string): boolean {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.username === "" && url.password === "" && allowedPostHosts.has(url.hostname);
+    return url.protocol === "https:" && url.username === "" && url.password === "" && url.port === "" && allowedPostHosts.has(url.hostname);
   } catch {
     return false;
   }
@@ -36,6 +36,21 @@ export function isOnPlatform(platform: SocialPlatform, value: string): boolean {
   if (!isAllowedPostUrl(value)) return false;
   const host = new URL(value).hostname;
   return postHosts[platform].some((h) => host === h || host === `www.${h}`);
+}
+
+/** Our handle on every platform (zack, 2026-11-19). Compared without case: the platforms ignore it in addresses. */
+export const OFFICIAL_HANDLE = "cansensus";
+
+/**
+ * True when the URL is a post on our own account (LEX: a logo links only to an official @CANsensus post). The handle
+ * must be the first part of the path: x.com/CANsensus/status/…, threads.com/@cansensus/post/…,
+ * facebook.com/CANsensus/posts/…, instagram.com/cansensus/p/… or, for a story, instagram.com/stories/cansensus/….
+ */
+export function isOfficialPost(platform: SocialPlatform, value: string): boolean {
+  if (!isOnPlatform(platform, value)) return false;
+  const parts = new URL(value).pathname.split("/").filter(Boolean).map((p) => p.toLowerCase());
+  const owner = platform === "instagram" && parts[0] === "stories" ? parts[1] : parts[0];
+  return (platform === "threads" ? owner === `@${OFFICIAL_HANDLE}` : owner === OFFICIAL_HANDLE) && parts.length >= 2;
 }
 
 const count = z.number().int().nonnegative();
@@ -70,7 +85,7 @@ export const socialLinkSchema = z
     locale: z.enum(["en", "fr"]).optional(),
   })
   .strict()
-  .refine((l) => isOnPlatform(l.platform, l.url), { path: ["url"], message: "Post URL must be on the same platform as the link." });
+  .refine((l) => isOfficialPost(l.platform, l.url), { path: ["url"], message: "Post URL must be a post on our own @CANsensus account on that platform." });
 export type SocialLink = z.infer<typeof socialLinkSchema>;
 
 export type PostLink = { platform: SocialPlatform; url: string };
@@ -85,16 +100,16 @@ type PostSources = {
 /**
  * One official post per platform for a question page, in a fixed platform order. An editor's link wins, then a real
  * poll's post, then an X post id. Sample polls have no real post, so they never make a link. Every address is checked
- * again here, so a bad value from any source is dropped rather than linked.
+ * again here (https, the platform's own host, our own account), so a bad value from any source is dropped, not linked.
  */
 export function questionPostLinks(q: PostSources, locale: Locale): PostLink[] {
   const found = new Map<SocialPlatform, string>();
   const add = (platform: SocialPlatform, url: string) => {
-    if (!found.has(platform) && isOnPlatform(platform, url)) found.set(platform, url);
+    if (!found.has(platform) && isOfficialPost(platform, url)) found.set(platform, url);
   };
   for (const l of q.socialLinks ?? []) if (!l.locale || l.locale === locale) add(l.platform, l.url);
   for (const p of q.socialPolls ?? []) if (!p.sample) add(p.platform, p.url);
-  for (const p of q.socialPosts ?? []) if (p.platform === "x" && p.locale === locale && /^[0-9]{1,32}$/.test(p.postId)) add("x", `https://x.com/i/status/${p.postId}`);
+  for (const p of q.socialPosts ?? []) if (p.platform === "x" && p.locale === locale && /^[0-9]{1,32}$/.test(p.postId)) add("x", `https://x.com/CANsensus/status/${p.postId}`);
   return socialPlatforms.flatMap((platform) => {
     const url = found.get(platform);
     return url ? [{ platform, url }] : [];

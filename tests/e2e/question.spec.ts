@@ -313,7 +313,7 @@ test("platform logos open the question's official posts, and only real ones", as
   const links = nav.getByRole("link");
   // Fixed order X, Instagram, Facebook; the French-only Threads post stays off the English page.
   expect(await links.evaluateAll((els) => els.map((el) => el.getAttribute("data-platform")))).toEqual(["x", "instagram", "facebook"]);
-  await expect(nav.getByRole("link", { name: "Open our X post (new tab)" })).toHaveAttribute("href", "https://x.com/i/status/1");
+  await expect(nav.getByRole("link", { name: "Open our X post (new tab)" })).toHaveAttribute("href", "https://x.com/CANsensus/status/1");
   for (const el of await links.all()) {
     await expect(el).toHaveAttribute("target", "_blank");
     await expect(el).toHaveAttribute("rel", "noopener noreferrer");

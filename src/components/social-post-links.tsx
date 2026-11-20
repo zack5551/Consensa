@@ -2,8 +2,8 @@ import type { PostLink, SocialPlatform } from "@/lib/social";
 import { fill } from "@/lib/text";
 
 /**
- * The platforms' own marks, one colour (each brand's guidelines allow a single-colour version), drawn in our ink so
- * they follow light and dark mode. Paths match the official logos; never recolour or reshape them.
+ * The platforms' own marks in their one-colour form: pure black in light mode, pure white in dark (`.brand-mark`,
+ * the only colours all four brands allow). Paths match the official logos; never recolour or reshape them.
  */
 const marks: Record<SocialPlatform, string> = {
   x: "M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z",
@@ -43,9 +43,9 @@ export function SocialPostLinks({ title, openLabel, platforms, links }: Props) {
               referrerPolicy="no-referrer"
               aria-label={fill(openLabel, { platform: platforms[l.platform] })}
               data-platform={l.platform}
-              className="inline-grid size-11 place-items-center rounded-control border border-line bg-surface text-ink hover:bg-sunken"
+              className="inline-grid size-11 place-items-center rounded-control border border-line bg-surface hover:bg-sunken"
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="size-5" fill="currentColor">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="brand-mark size-5" fill="currentColor">
                 <path d={marks[l.platform]} />
               </svg>
             </a>

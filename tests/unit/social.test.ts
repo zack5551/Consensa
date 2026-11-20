@@ -7,7 +7,7 @@ import fr from "@/i18n/dictionaries/fr";
 import { scan } from "@/engine/safety/safety";
 import { calledItFooter, cardSafe, crowdForCard } from "@/lib/share";
 import { shareCardColors, shareCardTokens } from "@/lib/share-card-colors";
-import { isAllowedPostUrl, questionPostLinks, questionShareUrl, shareLinks, socialLinkSchema, socialPollLine, socialPollSchema } from "@/lib/social";
+import { isAllowedPostUrl, isOfficialPost, questionPostLinks, questionShareUrl, shareLinks, socialLinkSchema, socialPollLine, socialPollSchema, type SocialPlatform } from "@/lib/social";
 
 /** The gambling, trading and tip rules from the engine's lexicon (CLAUDE.md rule 1), the one home of those words. */
 const lexiconRules = new Set(["gambling", "trading", "tip"]);
@@ -174,25 +174,46 @@ describe("questionPostLinks (the platform logos on a question page)", () => {
   it("uses a real poll's post and an X post id, never a sample poll", () => {
     expect(questionPostLinks({ socialPolls: [{ ...poll, sample: true }] }, "en")).toEqual([]);
     expect(questionPostLinks({ socialPolls: [poll] }, "en")).toEqual([{ platform: "x", url: poll.url }]);
-    expect(questionPostLinks({ socialPosts: [{ platform: "x", postId: "123", locale: "fr" }] }, "fr")).toEqual([{ platform: "x", url: "https://x.com/i/status/123" }]);
+    expect(questionPostLinks({ socialPosts: [{ platform: "x", postId: "123", locale: "fr" }] }, "fr")).toEqual([{ platform: "x", url: "https://x.com/CANsensus/status/123" }]);
     // Meta ids don't make an address on their own, and an X id posted in French stays off the English page.
     expect(questionPostLinks({ socialPosts: [{ platform: "facebook", postId: "1_2", locale: "en" }, { platform: "x", postId: "9", locale: "fr" }] }, "en")).toEqual([]);
   });
 
   it("keeps a French-only link off the English page", () => {
-    const q = { socialLinks: [{ platform: "instagram" as const, url: "https://www.instagram.com/p/abc/", locale: "fr" as const }] };
+    const q = { socialLinks: [{ platform: "instagram" as const, url: "https://www.instagram.com/cansensus/p/abc/", locale: "fr" as const }] };
     expect(questionPostLinks(q, "en")).toEqual([]);
     expect(questionPostLinks(q, "fr")).toHaveLength(1);
   });
 
   it("drops any address that isn't https on that platform's own host", () => {
-    const bad = ["http://x.com/a", "https://x.com.evil.ca/a", "https://user:pw@x.com/a", "javascript:alert(1)", "https://instagram.com/a"];
+    const bad = ["https://x.com:8443/CANsensus/status/1", "http://x.com/CANsensus/status/1", "https://x.com.evil.ca/CANsensus/status/1", "https://user:pw@x.com/CANsensus/status/1", "javascript:alert(1)", "https://instagram.com/cansensus/p/1"];
     expect(questionPostLinks({ socialLinks: bad.map((url) => ({ platform: "x" as const, url })) }, "en")).toEqual([]);
   });
 
   it("the content schema refuses a link on the wrong platform or with extra fields", () => {
     expect(socialLinkSchema.safeParse({ platform: "x", url: "https://www.facebook.com/p/1" }).success).toBe(false);
     expect(socialLinkSchema.safeParse({ platform: "threads", url: "https://www.threads.net/@cansensus/post/1" }).success).toBe(true);
-    expect(socialLinkSchema.safeParse({ platform: "x", url: "https://x.com/a", user: "someone" }).success).toBe(false);
+    expect(socialLinkSchema.safeParse({ platform: "x", url: "https://x.com/CANsensus/status/1", user: "someone" }).success).toBe(false);
+  });
+
+  it("links only to posts on our own @CANsensus account (LEX)", () => {
+    const ok: [SocialPlatform, string][] = [
+      ["x", "https://x.com/CANsensus/status/1"],
+      ["threads", "https://www.threads.com/@cansensus/post/abc"],
+      ["facebook", "https://www.facebook.com/CANsensus/posts/1"],
+      ["instagram", "https://www.instagram.com/cansensus/p/abc/"],
+      ["instagram", "https://www.instagram.com/stories/CANsensus/123/"],
+    ];
+    for (const [platform, url] of ok) expect(isOfficialPost(platform, url), url).toBe(true);
+    const others: [SocialPlatform, string][] = [
+      ["x", "https://x.com/someoneelse/status/1"],
+      ["x", "https://x.com/i/status/1"],
+      ["x", "https://x.com/CANsensus"],
+      ["threads", "https://www.threads.com/cansensus/post/abc"],
+      ["facebook", "https://www.facebook.com/CANsensusFake/posts/1"],
+      ["instagram", "https://www.instagram.com/p/abc/"],
+      ["instagram", "https://www.instagram.com/stories/someoneelse/1/"],
+    ];
+    for (const [platform, url] of others) expect(isOfficialPost(platform, url), url).toBe(false);
   });
 });

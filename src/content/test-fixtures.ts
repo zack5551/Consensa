@@ -25,7 +25,7 @@ export function fixtureQuestions(): z.input<typeof questionSchema>[] {
       forecasters: 9480,
       // Made-up post addresses, so e2e can check the platform logos. Fixtures never ship.
       socialLinks: [
-        { platform: "instagram", url: "https://www.instagram.com/stories/cansensus/1/" },
+        { platform: "instagram", url: "https://www.instagram.com/stories/CANsensus/1/" },
         { platform: "facebook", url: "https://www.facebook.com/CANsensus/posts/1" },
         { platform: "threads", url: "https://www.threads.com/@cansensus/post/1", locale: "fr" },
       ],
