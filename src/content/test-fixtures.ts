@@ -30,6 +30,11 @@ export function fixtureQuestions(): z.input<typeof questionSchema>[] {
         { platform: "threads", url: "https://www.threads.com/@cansensus/post/1", locale: "fr" },
       ],
       socialPosts: [{ platform: "x", postId: "1", locale: "en" }],
+      // Made-up totals, as an editor would type them in from each platform's poll.
+      socialPolls: [
+        { platform: "x", yes: 812, no: 431, closedAt: "2026-11-20T18:00:00Z", url: "https://x.com/CANsensus/status/1" },
+        { platform: "instagram", yes: 2104, no: 1388, closedAt: "2026-11-20T18:00:00Z", url: "https://www.instagram.com/stories/CANsensus/1/" },
+      ],
       history: series(30, [[0, 52], [16, 49], [29, 54]]),
       provinces: { BC: 50, AB: 48, PR: 51, ON: 34, QC: 78, AT: 57 },
       languages: { en: 44, fr: 76 },

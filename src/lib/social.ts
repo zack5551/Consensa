@@ -90,6 +90,9 @@ export type SocialLink = z.infer<typeof socialLinkSchema>;
 
 export type PostLink = { platform: SocialPlatform; url: string };
 
+/** One platform row on a question page: its poll result, if any, and our official post there, if any. */
+export type SocialRow = { platform: SocialPlatform; poll?: SocialPoll; url?: string };
+
 type PostSources = {
   socialLinks?: readonly SocialLink[];
   socialPolls?: readonly SocialPoll[];
@@ -132,6 +135,20 @@ export function socialPollLine(poll: SocialPoll, labels: SocialPollLabels, local
     date: formatShortDate(poll.closedAt, locale),
     percent: formatPercent((poll.yes / total) * 100, locale),
     votes: fill(total === 1 ? labels.votesOne : labels.votes, { n: formatCount(total, locale) }),
+  });
+}
+
+/**
+ * The question page's social rows, in the fixed platform order: each poll's result next to its own post (a real poll
+ * that isn't on our account falls back to the platform's official link), then a logo-only row for a platform with a
+ * post but no result yet. A sample poll never links anywhere.
+ */
+export function questionSocialRows(q: PostSources, locale: Locale): SocialRow[] {
+  const links = new Map(questionPostLinks(q, locale).map((l) => [l.platform, l.url]));
+  return socialPlatforms.flatMap((platform) => {
+    const polls = (q.socialPolls ?? []).filter((p) => p.platform === platform);
+    if (polls.length === 0) return links.has(platform) ? [{ platform, url: links.get(platform) }] : [];
+    return polls.map((poll) => ({ platform, poll, url: poll.sample ? undefined : isOfficialPost(platform, poll.url) ? poll.url : links.get(platform) }));
   });
 }
 

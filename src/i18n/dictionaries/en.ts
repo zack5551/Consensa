@@ -368,8 +368,6 @@ const en = {
     line: "{platform} poll, {date}: {percent} yes · {votes}",
     votes: "{n} votes",
     votesOne: "{n} vote",
-    viewPost: "View the post",
-    postsTitle: "Our posts on this question",
     openPost: "Open our {platform} post (new tab)",
     sample: "Sample data",
     platforms: { x: "X", threads: "Threads", instagram: "Instagram", facebook: "Facebook" },

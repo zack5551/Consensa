@@ -306,28 +306,32 @@ test("the social block shows its label and the poll line, apart from Canada says
   await expect(page.getByTestId("social-polls")).toHaveCount(0);
 });
 
-test("platform logos open the question's official posts, and only real ones", async ({ page }) => {
+test("each platform's logo opens our post, with its own poll result beside it", async ({ page }) => {
   await page.goto("/en/q/canadiens-leafs-nov-21-2026");
-  const nav = page.getByRole("navigation", { name: "Our posts on this question" }).locator("visible=true");
-  await expect(nav).toHaveCount(1);
-  const links = nav.getByRole("link");
+  const block = page.getByTestId("social-polls").locator("visible=true");
+  await expect(block).toHaveCount(1);
+  const links = block.getByRole("link");
   // Fixed order X, Instagram, Facebook; the French-only Threads post stays off the English page.
   expect(await links.evaluateAll((els) => els.map((el) => el.getAttribute("data-platform")))).toEqual(["x", "instagram", "facebook"]);
-  await expect(nav.getByRole("link", { name: "Open our X post (new tab)" })).toHaveAttribute("href", "https://x.com/CANsensus/status/1");
+  await expect(block.getByRole("link", { name: "Open our X post (new tab)" })).toHaveAttribute("href", "https://x.com/CANsensus/status/1");
   for (const el of await links.all()) {
     await expect(el).toHaveAttribute("target", "_blank");
     await expect(el).toHaveAttribute("rel", "noopener noreferrer");
   }
+  // Each result sits on its own platform's row; Facebook has a post but no result yet.
+  const items = block.getByRole("listitem");
+  await expect(items.nth(0)).toContainText("X poll, Nov 20: 65% yes · 1,243 votes");
+  await expect(items.nth(1)).toContainText("Instagram poll, Nov 20: 60% yes · 3,492 votes");
+  await expect(items.nth(2)).toHaveText("Facebook");
+  await expect(block.getByText("Not verified. May include people outside Canada and under 18.")).toBeVisible();
+  // Never inside Canada says.
+  await expect(page.getByRole("region", { name: "Canada says" }).getByText(/3,492/)).toHaveCount(0);
 
   await page.goto("/fr/q/canadiens-leafs-nov-21-2026");
-  const navFr = page.getByRole("navigation", { name: "Nos publications sur cette question" }).locator("visible=true");
-  await expect(navFr.getByRole("link", { name: "Ouvrir notre publication sur Threads (nouvel onglet)" })).toHaveAttribute("href", "https://www.threads.com/@cansensus/post/1");
-  // The X post is the English one, so French shows Instagram, Facebook and Threads.
-  await expect(navFr.getByRole("link")).toHaveCount(3);
-
-  // A sample poll has no real post, so no logo.
-  await page.goto("/en/q/boc-cut-dec-2026");
-  await expect(page.getByTestId("social-post-links")).toHaveCount(0);
+  const bloc = page.getByTestId("social-polls").locator("visible=true");
+  await expect(bloc.getByRole("link", { name: "Ouvrir notre publication sur Threads (nouvel onglet)" })).toHaveAttribute("href", "https://www.threads.com/@cansensus/post/1");
+  // The X post id is the English one, but the X poll result links its own post on every page.
+  expect(await bloc.getByRole("link").evaluateAll((els) => els.map((el) => el.getAttribute("data-platform")))).toEqual(["x", "threads", "instagram", "facebook"]);
 });
 
 test("the share card is a 200 PNG in both languages, and the page asks for the large card", async ({ page, request }) => {

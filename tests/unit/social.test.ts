@@ -7,7 +7,7 @@ import fr from "@/i18n/dictionaries/fr";
 import { scan } from "@/engine/safety/safety";
 import { calledItFooter, cardSafe, crowdForCard } from "@/lib/share";
 import { shareCardColors, shareCardTokens } from "@/lib/share-card-colors";
-import { isAllowedPostUrl, isOfficialPost, questionPostLinks, questionShareUrl, shareLinks, socialLinkSchema, socialPollLine, socialPollSchema, type SocialPlatform } from "@/lib/social";
+import { isAllowedPostUrl, isOfficialPost, questionPostLinks, questionSocialRows, questionShareUrl, shareLinks, socialLinkSchema, socialPollLine, socialPollSchema, type SocialPlatform } from "@/lib/social";
 
 /** The gambling, trading and tip rules from the engine's lexicon (CLAUDE.md rule 1), the one home of those words. */
 const lexiconRules = new Set(["gambling", "trading", "tip"]);
@@ -215,5 +215,28 @@ describe("questionPostLinks (the platform logos on a question page)", () => {
       ["instagram", "https://www.instagram.com/stories/someoneelse/1/"],
     ];
     for (const [platform, url] of others) expect(isOfficialPost(platform, url), url).toBe(false);
+  });
+});
+
+describe("questionSocialRows (each logo with its own poll result)", () => {
+  const ig = { platform: "instagram" as const, yes: 6, no: 4, closedAt: "2026-11-20T18:00:00Z", url: "https://www.instagram.com/stories/cansensus/9/" };
+
+  it("puts each result on its own platform's row, then logo-only rows, in platform order", () => {
+    const rows = questionSocialRows({ socialPolls: [ig], socialLinks: [{ platform: "x", url: "https://x.com/CANsensus/status/1" }] }, "en");
+    expect(rows).toEqual([
+      { platform: "x", url: "https://x.com/CANsensus/status/1" },
+      { platform: "instagram", poll: ig, url: ig.url },
+    ]);
+  });
+
+  it("a sample result never links, and a poll off our account falls back to our official link", () => {
+    expect(questionSocialRows({ socialPolls: [{ ...ig, sample: true }] }, "en")).toEqual([{ platform: "instagram", poll: { ...ig, sample: true }, url: undefined }]);
+    const foreign = { ...ig, url: "https://www.instagram.com/someoneelse/p/1/" };
+    expect(questionSocialRows({ socialPolls: [foreign] }, "en")[0]?.url).toBeUndefined();
+    expect(questionSocialRows({ socialPolls: [foreign], socialLinks: [{ platform: "instagram", url: "https://www.instagram.com/cansensus/p/2/" }] }, "en")[0]?.url).toBe("https://www.instagram.com/cansensus/p/2/");
+  });
+
+  it("is empty when there is nothing to show", () => {
+    expect(questionSocialRows({}, "fr")).toEqual([]);
   });
 });
