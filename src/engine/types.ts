@@ -103,7 +103,7 @@ export const resolverSchema = z.discriminatedUnion("kind", [
   }),
   z.object({
     kind: z.literal("manual"),
-    /** What the editor checks, in one line, e.g. "Winner announced on scotiabankgillerprize.ca". */
+    /** What the editor checks, in one line, e.g. "Winner announced on gillerprize.ca". */
     check: z.string().min(1),
   }),
 ]);

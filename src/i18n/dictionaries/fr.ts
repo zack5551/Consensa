@@ -155,7 +155,7 @@ const fr = {
   search: {
     title: "Rechercher",
     label: "Rechercher des questions",
-    placeholder: "Essayez « neige », « snow » ou « Juno »",
+    placeholder: "Essayez « neige » ou « snow »",
     hint: "La recherche couvre le français et l’anglais.",
     results: "{n} questions correspondent à « {q} »",
     resultsOne: "1 question correspond à « {q} »",

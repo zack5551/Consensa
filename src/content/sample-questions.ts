@@ -67,7 +67,7 @@ const raw = [
     languages: { en: 31, fr: 30 },
     events: [{ dayIndex: 21, label: { en: "Shortlist", fr: "Liste finale" } }],
     resolution: {
-      source: { name: { en: "Scotiabank Giller Prize", fr: "Prix Giller Banque Scotia" }, url: "https://scotiabankgillerprize.ca/" },
+      source: { name: { en: "Giller Prize", fr: "Prix Giller" }, url: "https://gillerprize.ca/" },
       rule: {
         en: "Resolves YES if the 2026 winner is the author’s first published book of fiction, as described by the prize.",
         fr: "Résolue OUI si l’œuvre gagnante de 2026 est le premier livre de fiction publié de son auteur ou autrice, selon le prix.",
