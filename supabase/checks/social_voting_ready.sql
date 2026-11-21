@@ -47,7 +47,8 @@ with checks(step, item, ready) as (
                                           and not has_table_privilege('anon', 'public.social_reply_restore_log', 'select')
                                           and not has_table_privilege('authenticated', 'public.social_reply_restore_log', 'select')),
     -- 4. social_poll_finder
-    ('4', 'column social_post_reads.poll_ends_at', exists (select 1 from information_schema.columns
-                                                    where table_schema = 'public' and table_name = 'social_post_reads' and column_name = 'poll_ends_at'))
+    ('4', 'columns poll_ends_at, poll_source, post_url', (select count(*) = 3 from information_schema.columns
+                                                    where table_schema = 'public' and table_name = 'social_post_reads'
+                                                      and column_name in ('poll_ends_at', 'poll_source', 'post_url')))
 )
 select step, item, ready from checks order by step, ready, item;

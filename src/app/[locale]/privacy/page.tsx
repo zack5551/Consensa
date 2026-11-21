@@ -27,8 +27,9 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = getDictionary(locale).legalPages;
-  // LEX's linked-account rows describe a collection that only exists with social voting, so they show only while it is on.
-  const hidden: readonly string[] = socialVotingOn() ? [] : ["social", "socialKept"];
+  // LEX's linked-account and comment-count rows describe collections that only exist with social voting, so they show
+  // only while it is on.
+  const hidden: readonly string[] = socialVotingOn() ? [] : ["social", "socialKept", "socialCounts"];
   const points = Object.fromEntries(Object.entries(t.privacy.points).filter(([k]) => !hidden.includes(k)));
   return (
     <>

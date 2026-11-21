@@ -6,7 +6,7 @@
 import { callsCloseAt, isOpen, questionState, type Question } from "@/lib/question";
 import type { OfficialPost } from "./count";
 import type { FoundPoll } from "./providers/x";
-import type { PollTotals } from "./types";
+import type { Platform, PollTotals } from "./types";
 
 export type DiscoveredPoll = OfficialPost & { poll: PollTotals; endsAt: string | null };
 
@@ -27,10 +27,17 @@ export function questionFromLink(link: string, ownHosts: ReadonlySet<string>): {
 }
 
 /**
- * Each found poll that links one of our open questions, as an official post with its totals. The first question
- * link in a post decides; a post linking two different questions is skipped, since its votes can't be split.
+ * Each of our own posts that links one of our open questions, as an official post on that platform, with what was
+ * found. The first question link in a post decides; a post linking two different questions is skipped, since its
+ * votes can't be split.
  */
-export function matchOwnPolls(found: readonly FoundPoll[], questions: readonly Q[], ownHosts: ReadonlySet<string>, now: Date): DiscoveredPoll[] {
+export function matchOwnPosts<T extends { postId: string; links: readonly string[] }>(
+  platform: Platform,
+  found: readonly T[],
+  questions: readonly Q[],
+  ownHosts: ReadonlySet<string>,
+  now: Date,
+): { post: OfficialPost; found: T }[] {
   const open = new Map(questions.filter((q) => isOpen(questionState(q as Question, now))).map((q) => [q.slug, q]));
   return found.flatMap((f) => {
     const targets = f.links.flatMap((l) => {
@@ -41,8 +48,13 @@ export function matchOwnPolls(found: readonly FoundPoll[], questions: readonly Q
     const target = targets[0];
     const q = target && open.get(target.slug);
     if (!target || !q || slugs.size !== 1) return [];
-    return [{ platform: "x" as const, postId: f.postId, slug: q.slug, locale: target.locale, closesAt: callsCloseAt(q), poll: f.poll, endsAt: f.endsAt }];
+    return [{ post: { platform, postId: f.postId, slug: q.slug, locale: target.locale, closesAt: callsCloseAt(q) }, found: f }];
   });
+}
+
+/** The X polls among our own posts that link one of our open questions, with their totals. */
+export function matchOwnPolls(found: readonly FoundPoll[], questions: readonly Q[], ownHosts: ReadonlySet<string>, now: Date): DiscoveredPoll[] {
+  return matchOwnPosts("x", found, questions, ownHosts, now).map(({ post, found: f }) => ({ ...post, poll: f.poll, endsAt: f.endsAt }));
 }
 
 /** Our own hosts, from the public site address plus any extra ones the deployment answers on. */

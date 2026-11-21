@@ -8,8 +8,20 @@ import { fill } from "@/lib/text";
  */
 export type SocialPollRow = { platform: SocialPlatform; name: string; line: string; yes: number; href?: string };
 
-/** "Canada says" next to the first platform's poll: the checked Canada-only number beside the open one (zack). */
-export type SocialCompare = { canadaLabel: string; canadaValue: string; canadaNote: string; pollLabel: string; pollValue: string; pollNote: string };
+/**
+ * "Canada says" next to the first platform's result: the Canada-checked number beside the open one (zack). LEX: like
+ * with like, so each number says what it is ("54% chance", "65% voted yes").
+ */
+export type SocialCompare = {
+  canadaLabel: string;
+  canadaValue: string;
+  canadaUnit: string;
+  canadaNote: string;
+  pollLabel: string;
+  pollValue: string;
+  pollUnit: string;
+  pollNote: string;
+};
 
 type Props = {
   title: string;
@@ -42,13 +54,15 @@ export function SocialPolls({ title, label, openLabel, rows, sampleLabel, compar
         <dl className="m-0 grid grid-cols-2 gap-3" data-testid="social-compare">
           {(
             [
-              [compare.canadaLabel, compare.canadaValue, compare.canadaNote, "text-canada"],
-              [compare.pollLabel, compare.pollValue, compare.pollNote, "text-ink-2"],
+              [compare.canadaLabel, compare.canadaValue, compare.canadaUnit, compare.canadaNote, "text-canada"],
+              [compare.pollLabel, compare.pollValue, compare.pollUnit, compare.pollNote, "text-ink-2"],
             ] as const
-          ).map(([name, value, note, tone]) => (
-            <div key={name} className="grid gap-0.5 rounded-control border border-line bg-surface p-3">
+          ).map(([name, value, unit, note, tone]) => (
+            <div key={name} className="grid content-start gap-0.5 rounded-control border border-line bg-surface p-3">
               <dt className={`m-0 text-caption font-bold uppercase tracking-wide ${tone}`}>{name}</dt>
-              <dd className="m-0 font-display text-title font-bold text-ink tabular">{value}</dd>
+              <dd className="m-0 text-body-sm text-ink-2">
+                <span className="font-display text-title font-bold text-ink tabular">{value}</span> {unit}
+              </dd>
               <dd className="m-0 text-caption text-ink-2">{note}</dd>
             </div>
           ))}

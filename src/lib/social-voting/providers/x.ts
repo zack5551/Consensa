@@ -63,7 +63,7 @@ export const POLL_SCAN_SIZE = 10;
 const POLL_SCAN_WINDOW_MS = 8 * 24 * 60 * 60 * 1000;
 
 /** The YES/NO split of a two-way poll whose options read as yes and no (EN or FR); anything else is left alone. */
-function yesNo(options: readonly { label: string; votes: number }[]): PollTotals | null {
+export function yesNo(options: readonly { label: string; votes: number }[]): PollTotals | null {
   const yes = options.filter((o) => parseVote(o.label) === "yes");
   const no = options.filter((o) => parseVote(o.label) === "no");
   if (options.length !== 2 || yes.length !== 1 || no.length !== 1) return null;
@@ -157,16 +157,12 @@ export class XProvider implements SocialProvider {
    * Finds the polls zack posts by hand on our own account (zack, 2026-11-21): our latest posts from the last 8 days,
    * with their polls' totals in the same read. Only our own account is read, by its handle. Every request reserves
    * its worst case against the monthly cap first and hands back what it didn't use; a refused reservation or a
-   * failed request finds nothing this run.
+   * failed request finds nothing this run. With `accountId` (X_ACCOUNT_ID) the handle lookup is skipped (AEGIS).
    */
-  async findOwnPolls(handle: string, now: Date): Promise<FoundPoll[]> {
+  async findOwnPolls(handle: string, now: Date, accountId?: string): Promise<FoundPoll[]> {
     if (!/^[A-Za-z0-9_]{1,15}$/.test(handle)) return [];
-    if (!(await this.config.spend.reserve(X_READ_COST_MICROS, now))) return [];
-    const user = userSchema.safeParse(await this.get(`/users/by/username/${handle}`));
-    if (!user.success) {
-      await this.config.spend.release(X_READ_COST_MICROS, now);
-      return [];
-    }
+    const userId = accountId !== undefined ? (id.safeParse(accountId).success ? accountId : null) : await this.lookUp(handle, now);
+    if (!userId) return [];
     const reserved = POLL_SCAN_SIZE * X_READ_COST_MICROS;
     if (!(await this.config.spend.reserve(reserved, now))) return [];
     const query = new URLSearchParams({
@@ -177,7 +173,7 @@ export class XProvider implements SocialProvider {
       expansions: "attachments.poll_ids",
       "poll.fields": "options,end_datetime",
     });
-    const timeline = timelineSchema.safeParse(await this.get(`/users/${user.data.data.id}/tweets?${query.toString()}`));
+    const timeline = timelineSchema.safeParse(await this.get(`/users/${userId}/tweets?${query.toString()}`));
     if (!timeline.success) {
       await this.config.spend.release(reserved, now);
       return [];
@@ -192,6 +188,15 @@ export class XProvider implements SocialProvider {
       const links = (post.entities?.urls ?? []).flatMap((u) => (u.expanded_url ? [u.expanded_url] : []));
       return [{ postId: post.id, poll: totals, endsAt: found.end_datetime ?? null, links }];
     });
+  }
+
+  /** Our account's id from its handle: one paid read, reserved first and handed back if the read fails. */
+  private async lookUp(handle: string, now: Date): Promise<string | null> {
+    if (!(await this.config.spend.reserve(X_READ_COST_MICROS, now))) return null;
+    const user = userSchema.safeParse(await this.get(`/users/by/username/${handle}`));
+    if (user.success) return user.data.data.id;
+    await this.config.spend.release(X_READ_COST_MICROS, now);
+    return null;
   }
 
   /**

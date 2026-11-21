@@ -306,13 +306,13 @@ test("the social block shows its label and the poll line, apart from Canada says
   await expect(page.getByTestId("social-polls")).toHaveCount(0);
 });
 
-test("each platform's logo opens our post, with its own poll result and bar beside it", async ({ page }) => {
+test("each platform's logo opens our post, with its own result and bar beside it", async ({ page }) => {
   await page.goto("/en/q/canadiens-leafs-nov-21-2026");
   const block = page.getByTestId("social-polls").locator("visible=true");
   await expect(block).toHaveCount(1);
   const links = block.getByRole("link");
-  // Only platforms with a result show: Facebook and Threads have posts but no result yet, so they stay hidden.
-  expect(await links.evaluateAll((els) => els.map((el) => el.getAttribute("data-platform")))).toEqual(["x", "instagram"]);
+  // Every platform with a result, in the fixed order: polls on X and Threads, comments on Instagram, reactions on Facebook.
+  expect(await links.evaluateAll((els) => els.map((el) => el.getAttribute("data-platform")))).toEqual(["x", "threads", "instagram", "facebook"]);
   await expect(block.getByRole("link", { name: "Open our X post (new tab)" })).toHaveAttribute("href", "https://x.com/CANsensus/status/1");
   await expect(block.getByRole("link", { name: "Open our Instagram post (new tab)" })).toHaveAttribute("href", "https://www.instagram.com/stories/CANsensus/1/");
   for (const el of await links.all()) {
@@ -322,15 +322,17 @@ test("each platform's logo opens our post, with its own poll result and bar besi
   // Canada says beside the X poll: the Canada-only number and the open one, each labelled.
   const compare = block.getByTestId("social-compare");
   await expect(compare).toContainText("Canada says");
-  await expect(compare).toContainText("54%");
-  await expect(compare).toContainText("Calls from Canada only");
+  await expect(compare).toContainText("54% chance");
+  await expect(compare).toContainText("Canada-checked calls");
   await expect(compare).toContainText("X poll");
-  await expect(compare).toContainText("65%");
+  await expect(compare).toContainText("65% voted yes");
   await expect(compare).toContainText("Anyone can vote");
   const items = block.getByRole("listitem");
-  await expect(items).toHaveCount(2);
+  await expect(items).toHaveCount(4);
   await expect(items.nth(0)).toContainText("X poll, Nov 20: 65% yes · 1,243 votes");
-  await expect(items.nth(1)).toContainText("Instagram poll, Nov 20: 60% yes · 3,492 votes");
+  await expect(items.nth(1)).toContainText("Threads poll, Nov 20: 61% yes · 502 votes");
+  await expect(items.nth(2)).toContainText("Instagram comments, Nov 20: 60% YES · 3,492 comments");
+  await expect(items.nth(3)).toContainText("Facebook reactions, Nov 20: 61% yes (👍 yes, 😢 no) · 1,550 reactions");
   await expect(block.getByText("Not verified. May include people outside Canada and under 18.")).toBeVisible();
   // Never inside Canada says.
   await expect(page.getByRole("region", { name: "Canada says" }).getByText(/3,492/)).toHaveCount(0);
@@ -340,7 +342,9 @@ test("each platform's logo opens our post, with its own poll result and bar besi
   await expect(bloc.getByRole("link", { name: "Ouvrir notre publication sur Instagram (nouvel onglet)" })).toBeVisible();
   await expect(bloc.getByTestId("social-compare")).toContainText("Selon le Canada");
   await expect(bloc.getByTestId("social-compare")).toContainText("Tout le monde peut voter");
-  await expect(bloc.getByText("Sondage Instagram, 20 nov.\u00A0: 60\u00A0% de oui · 3\u00A0492\u00A0votes")).toBeVisible();
+  await expect(bloc.getByTestId("social-compare")).toContainText("Prévisions vérifiées au Canada");
+  await expect(bloc.getByText("Commentaires Instagram, 20 nov.\u00A0: 60\u00A0% de OUI · 3\u00A0492\u00A0commentaires")).toBeVisible();
+  await expect(bloc.getByText("Réactions Facebook, 20 nov.\u00A0: 61\u00A0% de oui (👍 oui, 😢 non) · 1\u00A0550\u00A0réactions")).toBeVisible();
 });
 
 test("the share card is a 200 PNG in both languages, and the page asks for the large card", async ({ page, request }) => {

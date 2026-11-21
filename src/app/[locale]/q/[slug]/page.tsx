@@ -32,7 +32,7 @@ import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { askedByLabel } from "@/lib/asked-by";
 import { hasCalledItCard } from "@/lib/share";
-import { calledItShareUrl, questionSocialRows, socialPollLine, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
+import { calledItShareUrl, questionSocialRows, socialPollLine, type SocialPoll, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
 import { AskedByLabel } from "@/components/asked-by-label";
 import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
@@ -193,7 +193,10 @@ export default async function QuestionPage({ params }: { params: Params }) {
   const found = await liveSocialPolls(q.slug);
   const polls = [...contentPolls, ...found.filter((f) => !contentPolls.some((p) => p.url === f.url))];
   const socialRows = questionSocialRows({ ...q, socialPolls: polls }, locale, { pollsCloseBy: q.category === "sports" ? callsCloseAt(q) : undefined });
-  const firstPoll = socialRows[0]?.poll;
+  // AEGIS: a real poll beats a made-up sample for the side-by-side.
+  const firstPoll = (socialRows.find((r) => !r.poll.sample) ?? socialRows[0])?.poll;
+  const pollName = (p: SocialPoll) =>
+    fill(p.source === "reactions" ? t.social.reactionsLabel : p.source === "comments" ? t.social.commentsLabel : t.social.pollLabel, { platform: t.social.platforms[p.platform] });
   const social = (
     <SocialPolls
       title={t.social.title}
@@ -204,9 +207,11 @@ export default async function QuestionPage({ params }: { params: Params }) {
         firstPoll && {
           canadaLabel: settled ? t.question.canadaSaid : t.question.canadaSays,
           canadaValue: formatPercent(yes, locale),
+          canadaUnit: t.social.canadaUnit,
           canadaNote: t.social.canadaNote,
-          pollLabel: fill(t.social.pollLabel, { platform: t.social.platforms[firstPoll.platform] }),
+          pollLabel: pollName(firstPoll),
           pollValue: formatPercent((firstPoll.yes / (firstPoll.yes + firstPoll.no)) * 100, locale),
+          pollUnit: t.social.pollUnit,
           pollNote: t.social.pollNote,
         }
       }

@@ -48,7 +48,7 @@ describe("the readiness check zack pastes into Supabase", () => {
     );
     expect(tables.length).toBeGreaterThan(5);
     for (const t of tables) expect(sql, t).toContain(`'public.${t}'`);
-    expect(sql).toContain("column_name = 'poll_ends_at'");
+    for (const c of ["poll_ends_at", "poll_source", "post_url"]) expect(sql).toContain(`'${c}'`);
   });
 
   it("checks that the app's own key can't approve a sweep or restore a reply", () => {

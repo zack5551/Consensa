@@ -68,6 +68,8 @@ export const socialPollSchema = z
     /** When the platform's poll ends, when known. Sports show only a poll that ends before the game starts (LEX). */
     endsAt: z.iso.datetime().optional(),
     url: z.string().refine(isAllowedPostUrl, { message: "Post URL must be https on x.com, threads.net, threads.com, instagram.com or facebook.com." }),
+    /** Where the totals come from when it isn't the platform's own poll: reactions (Facebook) or YES/NO comments. */
+    source: z.enum(["reactions", "comments"]).optional(),
     /** True for made-up preview numbers, so they are never mistaken for real totals. */
     sample: z.boolean().optional(),
   })
@@ -127,18 +129,32 @@ export type SocialPollLabels = {
   platforms: Record<SocialPlatform, string>;
   /** "{platform} poll, {date}: {percent} yes · {votes}" */
   line: string;
+  /** "{platform} reactions, {date}: {percent} 👍 yes · {votes}" */
+  lineReactions: string;
+  /** "{platform} comments, {date}: {percent} YES · {votes}" */
+  lineComments: string;
   votes: string;
   votesOne: string;
+  reactions: string;
+  reactionsOne: string;
+  comments: string;
+  commentsOne: string;
 };
 
-/** "X poll, Nov. 19: 58% yes · 1,240 votes": platform and close date named, totals only. */
+/** "X poll, Nov. 19: 58% yes · 1,240 votes": platform, source and close date named, totals only. */
 export function socialPollLine(poll: SocialPoll, labels: SocialPollLabels, locale: Locale): string {
   const total = poll.yes + poll.no;
-  return fill(labels.line, {
+  const [line, many, one] =
+    poll.source === "reactions"
+      ? [labels.lineReactions, labels.reactions, labels.reactionsOne]
+      : poll.source === "comments"
+        ? [labels.lineComments, labels.comments, labels.commentsOne]
+        : [labels.line, labels.votes, labels.votesOne];
+  return fill(line, {
     platform: labels.platforms[poll.platform],
     date: formatShortDate(poll.closedAt, locale),
     percent: formatPercent((poll.yes / total) * 100, locale),
-    votes: fill(total === 1 ? labels.votesOne : labels.votes, { n: formatCount(total, locale) }),
+    votes: fill(total === 1 ? one : many, { n: formatCount(total, locale) }),
   });
 }
 
@@ -210,25 +226,44 @@ export function withAskedBy(text: string, askedBy: string | undefined): string {
 export type PollPostLabels = {
   /** The full text: vote for fun, how to count in "Canada says", the link, "Free. No prizes." */
   pollPost: string;
-  /** The same without the reply route, for a question too long for the full text. */
+  /** The same without the reply route: the only one to post until social voting is on (LEX). */
   pollPostShort: string;
-  /** LEX's fan-forecast line, added for sports. */
+  /** The last resort for a long question: only the link and "Free. No prizes." */
+  pollPostMin: string;
+  /** Facebook, which has no poll an app can read: 👍 for yes, 😢 for no. */
+  reactPost: string;
+  /** Instagram without a poll: YES or NO in the comments. */
+  commentPost: string;
+  /** LEX's fan-forecast and non-affiliation lines, added for sports. */
   pollPostSports: string;
 };
 
 /** X counts every link as 23 characters, whatever its length. */
 const X_LINK_LENGTH = 23;
 export const X_POST_LIMIT = 280;
+/** Threads allows 500 characters. */
+const THREADS_POST_LIMIT = 500;
 
 /**
- * The text zack posts with a hand-made X poll (zack, 2026-11-21): the question, "vote for fun", how to count in
- * "Canada says", and the plain question link the daily run uses to find the poll. Sports add LEX's fan-forecast line.
- * A question too long for one X post gets the short text, which drops the reply route.
+ * The text zack posts with a hand-made poll (zack, 2026-11-21): the question, "vote for fun", the plain question
+ * link the daily run uses to find the post, and "Free. No prizes." Sports add LEX's lines. On X and Threads, the
+ * reply route ("reply YES or NO from a linked account") is added only with `replyRoute`, once social voting is on
+ * (LEX), and only when it fits; a question too long for even the short text gets only the link. Facebook asks for
+ * reactions and Instagram for comments.
  */
-export function pollPostText(labels: PollPostLabels, question: string, link: string, sports: boolean): string {
-  const text = (template: string) => `${fill(template, { question, link })}${sports ? ` ${labels.pollPostSports}` : ""}`;
-  const full = text(labels.pollPost);
-  return xPostLength(full) <= X_POST_LIMIT ? full : text(labels.pollPostShort);
+export function pollPostText(
+  labels: PollPostLabels,
+  question: string,
+  link: string,
+  options: { sports: boolean; platform?: SocialPlatform; replyRoute?: boolean },
+): string {
+  const text = (template: string) => `${fill(template, { question, link })}${options.sports ? ` ${labels.pollPostSports}` : ""}`;
+  const platform = options.platform ?? "x";
+  if (platform === "facebook") return text(labels.reactPost);
+  if (platform === "instagram") return text(labels.commentPost);
+  const fits = (t: string) => (platform === "x" ? xPostLength(t) <= X_POST_LIMIT : [...t].length <= THREADS_POST_LIMIT);
+  const choices = [...(options.replyRoute ? [labels.pollPost] : []), labels.pollPostShort].map(text);
+  return choices.find(fits) ?? text(labels.pollPostMin);
 }
 
 /** The length X counts for a post: characters, with every link as 23. */

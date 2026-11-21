@@ -253,23 +253,35 @@ describe("the text zack posts with an X poll", () => {
   it("fits in one X post for every sample question, in both languages", () => {
     for (const q of sampleQuestions) {
       for (const [dict, locale] of [[en, "en"], [fr, "fr"]] as const) {
-        const text = pollPostText(dict.social, q.question[locale], link, q.category === "sports");
-        expect(xPostLength(text), `${q.slug} ${locale}`).toBeLessThanOrEqual(X_POST_LIMIT);
-        expect(text).toContain(link);
+        for (const replyRoute of [false, true]) {
+          const text = pollPostText(dict.social, q.question[locale], link, { sports: q.category === "sports", replyRoute });
+          expect(xPostLength(text), `${q.slug} ${locale}`).toBeLessThanOrEqual(X_POST_LIMIT);
+          expect(text).toContain(link);
+        }
       }
     }
   });
 
-  it("uses the full text when it fits, the short one only for a long question", () => {
-    expect(pollPostText(en.social, "Q?", link, false)).toContain("reply YES or NO from a linked account");
+  it("adds the reply route only once social voting is on, and only when it fits (LEX)", () => {
+    expect(pollPostText(en.social, "Q?", link, { sports: false })).not.toContain("linked account");
+    expect(pollPostText(en.social, "Q?", link, { sports: false, replyRoute: true })).toContain("reply YES or NO from a linked account");
     const long = `${"Will it ".repeat(20)}?`;
-    expect(pollPostText(en.social, long, link, false)).not.toContain("linked account");
+    expect(pollPostText(en.social, long, link, { sports: false, replyRoute: true })).not.toContain("linked account");
+    expect(pollPostText(en.social, long, link, { sports: false, replyRoute: true, platform: "threads" })).toContain("linked account");
   });
 
-  it("says free and no prizes, and sports say fan forecasts only", () => {
-    expect(pollPostText(en.social, "Q?", link, false)).toMatch(/Free\. No prizes\.$/);
-    expect(pollPostText(en.social, "Q?", link, true)).toMatch(/Fan forecasts only\.$/);
-    expect(pollPostText(fr.social, "Q?", link, true)).toMatch(/Prévisions de partisans seulement\.$/);
+  it("asks for reactions on Facebook and comments on Instagram", () => {
+    expect(pollPostText(en.social, "Q?", link, { sports: false, platform: "facebook" })).toContain("react 👍 for yes or 😢 for no");
+    expect(pollPostText(fr.social, "Q?", link, { sports: false, platform: "instagram" })).toContain("commentez OUI ou NON");
+  });
+
+  it("says free and no prizes, and sports say fan forecasts only and not affiliated", () => {
+    for (const platform of ["x", "threads", "facebook", "instagram"] as const) {
+      expect(pollPostText(en.social, "Q?", link, { sports: false, platform })).toMatch(/Free\. No prizes\.$/);
+      expect(pollPostText(fr.social, "Q?", link, { sports: false, platform })).toMatch(/Gratuit\. Aucun prix à gagner\.$/);
+      expect(pollPostText(en.social, "Q?", link, { sports: true, platform })).toMatch(/Fan forecasts only\. Not affiliated with any league or team\.$/);
+      expect(pollPostText(fr.social, "Q?", link, { sports: true, platform })).toMatch(/Prévisions de partisans seulement\. Non affilié à aucune ligue ni équipe\.$/);
+    }
   });
 
   it("counts a link as 23 characters, like X", () => {

@@ -7,8 +7,8 @@ import { siteUrl } from "@/lib/site-url";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { fill } from "@/lib/text";
 import { OFFICIAL_HANDLE_DISPLAY } from "@/lib/social";
-import { AUTO_REPLY_MAX_PER_CYCLE, countSocialReplies, officialPosts, type CountReport, type OfficialPost } from "./count";
-import { matchOwnPolls, ownHostsFrom } from "./discover";
+import { AUTO_REPLY_MAX_PER_CYCLE, countSocialReplies, officialPosts, type CountReport, type OfficialPost, type ReadPatch } from "./count";
+import { matchOwnPolls, matchOwnPosts, ownHostsFrom } from "./discover";
 import { autoReplyOn, socialEnv, socialVotingOn } from "./env";
 import { MetaProvider } from "./providers/meta";
 import { XProvider } from "./providers/x";
@@ -27,7 +27,7 @@ export function autoReplyText(base: string): Record<"en" | "fr", string> {
 
 /**
  * Counts only. `sweep` is null when the deleted-reply sweep itself failed this run (it runs again tomorrow).
- * `pollsFound`: polls posted by hand on @CANsensus that link one of our open questions (`discover.ts`).
+ * `pollsFound`: posts on our own accounts with YES/NO totals that link one of our open questions (`discover.ts`).
  */
 export type SocialReport = CountReport & { sweep: SweepReport | null; pollsFound: number };
 
@@ -55,24 +55,35 @@ export async function runSocialStep(now: Date, env: Record<string, string | unde
   const xSpend = new SpendCap(store, "x", usdToMicros(config.X_MONTHLY_CAP_USD));
   const xProvider = config.X_BEARER_TOKEN ? new XProvider({ bearer: config.X_BEARER_TOKEN, spend: xSpend, replyToken: config.X_REPLY_TOKEN }) : undefined;
   if (xProvider) providers.x = xProvider;
-  if (config.META_PAGE_TOKEN) providers.facebook = new MetaProvider({ platform: "facebook", accessToken: config.META_PAGE_TOKEN });
-  if (config.META_INSTAGRAM_TOKEN) providers.instagram = new MetaProvider({ platform: "instagram", accessToken: config.META_INSTAGRAM_TOKEN });
-  if (config.META_THREADS_TOKEN) providers.threads = new MetaProvider({ platform: "threads", accessToken: config.META_THREADS_TOKEN });
+  const meta: MetaProvider[] = [];
+  if (config.META_PAGE_TOKEN) meta.push(new MetaProvider({ platform: "facebook", accessToken: config.META_PAGE_TOKEN }));
+  if (config.META_INSTAGRAM_TOKEN) meta.push(new MetaProvider({ platform: "instagram", accessToken: config.META_INSTAGRAM_TOKEN, accountId: config.META_INSTAGRAM_ID }));
+  if (config.META_THREADS_TOKEN) meta.push(new MetaProvider({ platform: "threads", accessToken: config.META_THREADS_TOKEN }));
+  for (const m of meta) providers[m.platform] = m;
 
   const posts: OfficialPost[] = officialPosts(sampleQuestions, now);
   // zack, 2026-11-21: a poll posted by hand on @CANsensus with a question's link in it is found here, its totals
   // saved for the question page, and it joins the official posts (so linked replies under it count too).
+  // The same for Threads and Instagram polls, Facebook reaction posts and Instagram YES/NO comment posts.
   let pollsFound = 0;
+  const own = ownHostsFrom([siteUrl(), env.NEXT_PUBLIC_SITE_URL, env.VERCEL_PROJECT_PRODUCTION_URL]);
+  const known = new Set(posts.map((p) => `${p.platform}:${p.postId}`));
+  const keep = async (post: OfficialPost, patch: ReadPatch) => {
+    const saved = await store.saveRead(post, patch, now).then(() => true, () => false);
+    if (!saved) return;
+    pollsFound += 1;
+    if (!known.has(`${post.platform}:${post.postId}`)) posts.push({ ...post, pollKnown: true });
+    known.add(`${post.platform}:${post.postId}`);
+  };
   if (xProvider) {
-    const found = await xProvider.findOwnPolls(OFFICIAL_HANDLE_DISPLAY, now).catch(() => []);
-    const own = ownHostsFrom([siteUrl(), env.NEXT_PUBLIC_SITE_URL, env.VERCEL_PROJECT_PRODUCTION_URL]);
-    const known = new Set(posts.filter((p) => p.platform === "x").map((p) => p.postId));
-    for (const { poll, endsAt, ...post } of matchOwnPolls(found, sampleQuestions, own, now)) {
-      const saved = await store.saveRead(post, { poll, pollEndsAt: endsAt }, now).then(() => true, () => false);
-      if (!saved) continue;
-      pollsFound += 1;
-      if (!known.has(post.postId)) posts.push({ ...post, pollKnown: true });
-      known.add(post.postId);
+    const found = await xProvider.findOwnPolls(OFFICIAL_HANDLE_DISPLAY, now, config.X_ACCOUNT_ID).catch(() => []);
+    for (const { poll, endsAt, ...post } of matchOwnPolls(found, sampleQuestions, own, now)) await keep(post, { poll, pollEndsAt: endsAt });
+  }
+  for (const m of meta) {
+    const found = await m.findOwnPosts(now).catch(() => []);
+    for (const { post, found: f } of matchOwnPosts(m.platform, found, sampleQuestions, own, now)) {
+      const poll = f.poll ?? (await m.readPollTotals(post.postId).catch(() => null));
+      if (poll && f.url) await keep(post, { poll, pollEndsAt: f.endsAt, postUrl: f.url });
     }
   }
   // LEX: daily, not weekly. A failed sweep never stops the count. On X (the paid one) the sweep gets at most half

@@ -35,6 +35,17 @@ export function officialPosts(questions: readonly SocialQuestion[], now: Date): 
     );
 }
 
+/**
+ * What a read saves for a post. `pollEndsAt` and `postUrl` need the 20261121000000 migration; only the finders send
+ * them. `postUrl` is our own post's address (Instagram and Threads ids don't make one on their own).
+ */
+export interface ReadPatch {
+  readThrough?: Date;
+  poll?: PollTotals;
+  pollEndsAt?: string | null;
+  postUrl?: string | null;
+}
+
 export type CountOutcome = "counted" | "duplicate" | "website_wins" | "older_reply" | "closed" | "before_link" | "unlinked" | "retry";
 
 export interface CountStore {
@@ -43,7 +54,7 @@ export interface CountStore {
   /** Copies the question's close time to the database, which refuses late replies itself. */
   ensureWindow(slug: string, closesAt: string): Promise<void>;
   readThrough(platform: Platform, postId: string): Promise<Date | null>;
-  saveRead(post: OfficialPost, patch: { readThrough?: Date; poll?: PollTotals; pollEndsAt?: string | null }, now: Date): Promise<void>;
+  saveRead(post: OfficialPost, patch: ReadPatch, now: Date): Promise<void>;
   /** "retry" when the database's 2-second rule refused it for now. */
   countReply(input: { platform: Platform; replyId: string; postId: string; authorId: string; slug: string; probability: number; at: string }): Promise<CountOutcome>;
   /** Pauses links not re-checked since the cut-off. Returns how many. Never deletes a link (AEGIS note 5). */

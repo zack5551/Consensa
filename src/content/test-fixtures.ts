@@ -30,10 +30,12 @@ export function fixtureQuestions(): z.input<typeof questionSchema>[] {
         { platform: "threads", url: "https://www.threads.com/@cansensus/post/1", locale: "fr" },
       ],
       socialPosts: [{ platform: "x", postId: "1", locale: "en" }],
-      // Made-up totals, as an editor would type them in from each platform's poll.
+      // Made-up totals, as the daily run would find them: X and Threads polls, Instagram YES/NO comments, Facebook reactions.
       socialPolls: [
         { platform: "x", yes: 812, no: 431, closedAt: "2026-11-20T18:00:00Z", url: "https://x.com/CANsensus/status/1" },
-        { platform: "instagram", yes: 2104, no: 1388, closedAt: "2026-11-20T18:00:00Z", url: "https://www.instagram.com/stories/CANsensus/1/" },
+        { platform: "threads", yes: 304, no: 198, closedAt: "2026-11-20T18:00:00Z", url: "https://www.threads.com/@cansensus/post/1" },
+        { platform: "instagram", yes: 2104, no: 1388, closedAt: "2026-11-20T18:00:00Z", url: "https://www.instagram.com/stories/CANsensus/1/", source: "comments" },
+        { platform: "facebook", yes: 940, no: 610, closedAt: "2026-11-20T18:00:00Z", url: "https://www.facebook.com/CANsensus/posts/1", source: "reactions" },
       ],
       history: series(30, [[0, 52], [16, 49], [29, 54]]),
       provinces: { BC: 50, AB: 48, PR: 51, ON: 34, QC: 78, AT: 57 },

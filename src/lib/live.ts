@@ -57,11 +57,11 @@ export async function liveSocialPolls(slug: string): Promise<SocialPoll[]> {
   if (!admin) return [];
   const { data, error } = await admin
     .from("social_post_reads")
-    .select("platform, post_id, poll_yes, poll_no, poll_read_at, poll_ends_at")
+    .select("platform, post_id, poll_yes, poll_no, poll_read_at, poll_ends_at, poll_source, post_url")
     .eq("slug", slug)
-    .eq("platform", "x")
     .not("poll_yes", "is", null)
-    .limit(10);
+    .order("poll_read_at", { ascending: false })
+    .limit(20);
   if (error || !Array.isArray(data)) return [];
   return data.flatMap((raw) => {
     const row = pollReadRow.safeParse(raw);

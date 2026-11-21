@@ -198,7 +198,7 @@ describe("Meta adapter (fixtures only until Meta approves the app)", () => {
     const { fetch } = fakeFetch([[/comments/, fixture("meta-facebook-comments.json")]]);
     const meta = new MetaProvider({ platform: "facebook", accessToken: "t", fetch });
     expect((await meta.readReplies("5001", new Date("2026-11-18T14:10:00Z"))).replies.map((r) => r.replyId)).toEqual(["5001_7002"]);
-    expect(await meta.readPollTotals()).toBeNull();
+    expect(await meta.readPollTotals("not-an-id")).toBeNull();
     expect(metaTime("2026-11-18T14:00:00+0000")).toBe("2026-11-18T14:00:00.000Z");
     expect(metaTime("soon")).toBeNull();
   });

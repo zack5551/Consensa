@@ -49,6 +49,19 @@ must say `true`. If a row says `false`, its `step` column names the file above t
       Every post carries "Free. No prizes." Sports posts also carry "Fan forecasts only." and the line saying we
       aren't affiliated with the league or teams, and go up before the game only.
 
+## 3b. Facebook, Instagram and Threads totals (zack, later)
+These show under "On social media" only, never in "Canada says". They need a free Meta developer app linked to the
+CANsensus Page, the Instagram professional account and the Threads account, and Meta's review of
+`pages_read_engagement`, `instagram_basic` + `instagram_manage_comments`, and `threads_basic`. Before Instagram
+comments are counted, the Privacy Policy row on counting YES/NO comments goes in, and the PIA gets rows for all three (LEX).
+- [ ] **Threads:** post a poll with two options, "Yes" and "No" (or "Oui" and "Non"), and the question's link.
+- [ ] **Facebook:** Facebook has no poll an app can read. Post on the Page: "React 👍 for yes or 😢 for no", with
+      the question's link. LEX: Meta treats "react to vote" posts as engagement bait, which can cut a post's reach,
+      so try one post first and check Meta's current guidance.
+- [ ] **Instagram:** a post with a Yes/No poll if the app offers one; otherwise ask for YES or NO in the comments.
+      Comments are read and counted in memory, one per account; no name, text or id is kept.
+- [ ] The daily run reads each account's latest 25 posts from the last 8 days and ties a post to a question by its link.
+
 ## 4. Settings in Vercel (zack)
 Open https://vercel.com/consensa/consensa/settings/environment-variables. Add each one as its own variable. Never
 paste the values into a chat.
@@ -60,6 +73,10 @@ paste the values into a chat.
 | `X_CLIENT_SECRET` | From the same page (OAuth 2.0 Client Secret). |
 | `X_BEARER_TOKEN` | From the same page (Bearer Token). |
 | `X_MONTHLY_CAP_USD` | The most X reads may cost in a month, in US dollars, for example `5`. At 0, nothing is read. |
+| `X_ACCOUNT_ID` | Optional: @CANsensus's numeric X id. Saves one paid lookup a day. |
+| `META_PAGE_TOKEN` | Later, after Meta's review: the CANsensus Page's token (Facebook reactions). |
+| `META_INSTAGRAM_TOKEN`, `META_INSTAGRAM_ID` | Later: the Instagram professional account's token and id. |
+| `META_THREADS_TOKEN` | Later: the Threads account's token. |
 
 Leave `SOCIAL_AUTO_REPLY` unset. It posts publicly, so it stays off until zack says yes.
 Never set `CONSENSA_TEST_FIXTURES` in Vercel.
