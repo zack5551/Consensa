@@ -17,6 +17,8 @@ export interface OfficialPost {
   slug: string;
   locale: "en" | "fr";
   closesAt: string;
+  /** Set for a poll the finder already read this run (`discover.ts`): its totals are saved, so they aren't read twice. */
+  pollKnown?: boolean;
 }
 
 type SocialQuestion = Pick<Question, "slug" | "closesAt" | "startsAt" | "category" | "resolution"> & { socialPosts?: unknown };
@@ -33,6 +35,17 @@ export function officialPosts(questions: readonly SocialQuestion[], now: Date): 
     );
 }
 
+/**
+ * What a read saves for a post. `pollEndsAt` and `postUrl` need the 20261121000000 migration; only the finders send
+ * them. `postUrl` is our own post's address (Instagram and Threads ids don't make one on their own).
+ */
+export interface ReadPatch {
+  readThrough?: Date;
+  poll?: PollTotals;
+  pollEndsAt?: string | null;
+  postUrl?: string | null;
+}
+
 export type CountOutcome = "counted" | "duplicate" | "website_wins" | "older_reply" | "closed" | "before_link" | "unlinked" | "retry";
 
 export interface CountStore {
@@ -41,7 +54,7 @@ export interface CountStore {
   /** Copies the question's close time to the database, which refuses late replies itself. */
   ensureWindow(slug: string, closesAt: string): Promise<void>;
   readThrough(platform: Platform, postId: string): Promise<Date | null>;
-  saveRead(post: OfficialPost, patch: { readThrough?: Date; poll?: PollTotals }, now: Date): Promise<void>;
+  saveRead(post: OfficialPost, patch: ReadPatch, now: Date): Promise<void>;
   /** "retry" when the database's 2-second rule refused it for now. */
   countReply(input: { platform: Platform; replyId: string; postId: string; authorId: string; slug: string; probability: number; at: string }): Promise<CountOutcome>;
   /** Pauses links not re-checked since the cut-off. Returns how many. Never deletes a link (AEGIS note 5). */
@@ -107,7 +120,7 @@ export async function countSocialReplies(opts: CountOptions): Promise<CountRepor
     if (!provider) continue;
     report.posts += 1;
     try {
-      const poll = await provider.readPollTotals(post.postId, now);
+      const poll = post.pollKnown ? null : await provider.readPollTotals(post.postId, now);
       if (poll) {
         await store.saveRead(post, { poll }, now);
         report.pollsRead += 1;

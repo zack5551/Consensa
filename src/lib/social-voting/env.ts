@@ -9,7 +9,9 @@
  * - X_BEARER_TOKEN: app-only token for reading replies and poll totals on our own posts.
  * - X_MONTHLY_CAP_USD: the hard monthly spend cap for X reads. 0 or unset means nothing is read.
  * - X_REPLY_TOKEN: the official account's own token, used only by the auto-reply.
+ * - X_ACCOUNT_ID: our own X account's numeric id (optional). Saves the poll finder one paid lookup a day (AEGIS).
  * - META_PAGE_TOKEN, META_INSTAGRAM_TOKEN, META_THREADS_TOKEN: our own accounts' read tokens (after Meta's review).
+ * - META_INSTAGRAM_ID: our Instagram professional account's id, which the Instagram finder reads its posts from.
  */
 import { z } from "zod";
 
@@ -23,6 +25,8 @@ const envSchema = z.object({
   X_BEARER_TOKEN: text,
   X_MONTHLY_CAP_USD: z.coerce.number().min(0).max(10_000).default(0),
   X_REPLY_TOKEN: text,
+  X_ACCOUNT_ID: z.string().regex(/^[0-9]{1,30}$/).optional(),
+  META_INSTAGRAM_ID: z.string().regex(/^[0-9]{1,30}$/).optional(),
   META_PAGE_TOKEN: text,
   META_INSTAGRAM_TOKEN: text,
   META_THREADS_TOKEN: text,

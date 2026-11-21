@@ -374,7 +374,8 @@ describe("the sweep in the daily step", () => {
     await runSocialStep(NOW, { ...keys, SOCIAL_VOTING: "1" });
     expect(SWEEP_BUDGET_SHARE).toBe(0.5);
     expect(h.sweepArgs[0]?.allowanceMicros).toEqual({ x: 10_000_000 });
-    expect(h.ops).toEqual(["social_spend"]);
+    // The poll finder asks for its first read before the sweep (refused here), then the sweep's share is read once.
+    expect(h.ops).toEqual(["reserve_social_spend", "social_spend"]);
 
     h.spent = 25_000_000; // cap used up: the sweep gets nothing
     await runSocialStep(NOW, { ...keys, SOCIAL_VOTING: "1" });

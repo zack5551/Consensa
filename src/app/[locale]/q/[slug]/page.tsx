@@ -23,7 +23,7 @@ import { SportsNotice } from "@/components/sports-notice";
 import { StateBadge } from "@/components/state-badge";
 import { StateNote } from "@/components/state-note";
 import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
-import { withLiveCrowd, withLiveQuestion } from "@/lib/live";
+import { liveSocialPolls, withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatEasternTime, formatLongDate, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
@@ -32,7 +32,7 @@ import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { askedByLabel } from "@/lib/asked-by";
 import { hasCalledItCard } from "@/lib/share";
-import { calledItShareUrl, questionSocialRows, socialPollLine, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
+import { calledItShareUrl, questionSocialRows, socialPollLine, type SocialPoll, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
 import { AskedByLabel } from "@/components/asked-by-label";
 import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
@@ -188,14 +188,34 @@ export default async function QuestionPage({ params }: { params: Params }) {
   // Social v1: plain question link, no tracking. Native poll totals sit apart from the crowd.
   const shareUrl = questionShareUrl(siteUrl(), locale, q.slug);
   const shareText = questionShareText(t.share, q.question[locale], { sports: q.category === "sports", askedBy, closed: !isOpen(state) });
-  const polls = q.socialPolls ?? [];
+  // Hand-entered totals from content, plus X polls the daily run found on @CANsensus (none while social voting is off).
+  const contentPolls = q.socialPolls ?? [];
+  const found = await liveSocialPolls(q.slug);
+  const polls = [...contentPolls, ...found.filter((f) => !contentPolls.some((p) => p.url === f.url))];
+  const socialRows = questionSocialRows({ ...q, socialPolls: polls }, locale, { pollsCloseBy: q.category === "sports" ? callsCloseAt(q) : undefined });
+  // AEGIS: a real poll beats a made-up sample for the side-by-side.
+  const firstPoll = (socialRows.find((r) => !r.poll.sample) ?? socialRows[0])?.poll;
+  const pollName = (p: SocialPoll) =>
+    fill(p.source === "reactions" ? t.social.reactionsLabel : p.source === "comments" ? t.social.commentsLabel : t.social.pollLabel, { platform: t.social.platforms[p.platform] });
   const social = (
     <SocialPolls
       title={t.social.title}
       label={t.social.label}
       openLabel={t.social.openPost}
       sampleLabel={polls.some((p) => p.sample) ? t.social.sample : undefined}
-      rows={questionSocialRows(q, locale, { pollsCloseBy: q.category === "sports" ? start : undefined }).map((r) => ({
+      compare={
+        firstPoll && {
+          canadaLabel: settled ? t.question.canadaSaid : t.question.canadaSays,
+          canadaValue: formatPercent(yes, locale),
+          canadaUnit: t.social.canadaUnit,
+          canadaNote: t.social.canadaNote,
+          pollLabel: pollName(firstPoll),
+          pollValue: formatPercent((firstPoll.yes / (firstPoll.yes + firstPoll.no)) * 100, locale),
+          pollUnit: t.social.pollUnit,
+          pollNote: t.social.pollNote,
+        }
+      }
+      rows={socialRows.map((r) => ({
         platform: r.platform,
         name: t.social.platforms[r.platform],
         line: socialPollLine(r.poll, t.social, locale),

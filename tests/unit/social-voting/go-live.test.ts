@@ -34,20 +34,21 @@ describe("the readiness check zack pastes into Supabase", () => {
     expect(sql.trim().startsWith("with checks")).toBe(true);
   });
 
-  it("names the three migrations in the order they must run", () => {
-    const order = ["20261119000000_social_voting", "20261120000000_social_sweep_approval", "20261120001000_social_sweep_withdrawals"];
+  it("names the four migrations in the order they must run", () => {
+    const order = ["20261119000000_social_voting", "20261120000000_social_sweep_approval", "20261120001000_social_sweep_withdrawals", "20261121000000_social_poll_finder"];
     const at = order.map((f) => raw.indexOf(f));
     expect(at.every((i) => i > 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
   });
 
-  it("checks every table the three migrations create", () => {
+  it("checks every table the migrations create, and the poll finder's column", () => {
     const migrations = ["20261119000000_social_voting", "20261120000000_social_sweep_approval", "20261120001000_social_sweep_withdrawals"];
     const tables = migrations.flatMap((f) =>
       [...readFileSync(join(root, "supabase", "migrations", `${f}.sql`), "utf8").matchAll(/create table if not exists public\.([a-z_]+)/g)].map((m) => m[1]),
     );
     expect(tables.length).toBeGreaterThan(5);
     for (const t of tables) expect(sql, t).toContain(`'public.${t}'`);
+    for (const c of ["poll_ends_at", "poll_source", "post_url"]) expect(sql).toContain(`'${c}'`);
   });
 
   it("checks that the app's own key can't approve a sweep or restore a reply", () => {

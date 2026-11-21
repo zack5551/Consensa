@@ -3,10 +3,11 @@
 -- Read-only: this only looks, it changes nothing. Paste it into the Supabase SQL editor and press Run. Every row
 -- should say ready = true. A false row names what is missing; the "step" column says which file fixes it.
 --
--- It is not a migration and never runs by itself. Run it after the three social-voting migrations, in this order:
+-- It is not a migration and never runs by itself. Run it after the four social-voting migrations, in this order:
 --   1. supabase/migrations/20261119000000_social_voting.sql
 --   2. supabase/migrations/20261120000000_social_sweep_approval.sql
 --   3. supabase/migrations/20261120001000_social_sweep_withdrawals.sql
+--   4. supabase/migrations/20261121000000_social_poll_finder.sql
 -- Needs pg_cron turned on (it has been since 2026-11-12).
 
 with checks(step, item, ready) as (
@@ -44,6 +45,10 @@ with checks(step, item, ready) as (
                                           and not has_function_privilege('service_role', 'public.restore_social_reply(text, text, text)', 'execute')),
     ('3', 'visitors cannot read the logs', to_regclass('public.social_reply_restore_log') is not null
                                           and not has_table_privilege('anon', 'public.social_reply_restore_log', 'select')
-                                          and not has_table_privilege('authenticated', 'public.social_reply_restore_log', 'select'))
+                                          and not has_table_privilege('authenticated', 'public.social_reply_restore_log', 'select')),
+    -- 4. social_poll_finder
+    ('4', 'columns poll_ends_at, poll_source, post_url', (select count(*) = 3 from information_schema.columns
+                                                    where table_schema = 'public' and table_name = 'social_post_reads'
+                                                      and column_name in ('poll_ends_at', 'poll_source', 'post_url')))
 )
 select step, item, ready from checks order by step, ready, item;

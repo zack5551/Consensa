@@ -37,10 +37,19 @@ export interface DeletedCheck {
   complete: boolean;
 }
 
+/**
+ * Where a platform's YES/NO totals come from: its own poll, the reactions on our post (Facebook: 👍 yes, 😢 no), or
+ * the YES/NO comments on our post (Instagram, one per account, counted in memory). Totals only, nothing about a person.
+ */
+export const pollSources = ["poll", "reactions", "comments"] as const;
+export type PollSource = (typeof pollSources)[number];
+
 /** A native poll's totals as the platform reports them. Never mixed into "Canada says". */
 export interface PollTotals {
   yes: number;
   no: number;
+  /** Left out for a poll. */
+  source?: PollSource;
 }
 
 /** One platform's reader. It only ever reads posts listed as official in content (`socialPosts`). */

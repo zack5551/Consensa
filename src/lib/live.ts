@@ -4,6 +4,9 @@ import { vpnSharePercent } from "@/lib/call-origin";
 import type { Province, Question } from "@/lib/question";
 import { applyLive, parseCrowdRows, regionCallCount, summarize } from "@/lib/live-crowd";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { socialPollSchema, type SocialPoll } from "@/lib/social";
+import { socialVotingOn } from "@/lib/social-voting/env";
+import { pollFromRead, pollReadRow } from "@/lib/social-voting/poll-reads";
 
 /** Questions with real crowd numbers where at least 5 people have called. Preview mode returns them unchanged. */
 export async function withLiveCrowd<T extends Question>(qs: readonly T[]): Promise<T[]> {
@@ -42,4 +45,27 @@ export async function vpnShareLast30Days(): Promise<number | null> {
   if (error || typeof row !== "object" || row === null) return null;
   const parsed = originShareRow.safeParse(row);
   return parsed.success ? vpnSharePercent(parsed.data) : null;
+}
+
+/**
+ * X poll totals the daily run found for this question (polls zack posts on @CANsensus, `social-voting/discover.ts`).
+ * Nothing is read while social voting is off, and any error just shows no totals. Shown under "On social media",
+ * never in "Canada says".
+ */
+export async function liveSocialPolls(slug: string): Promise<SocialPoll[]> {
+  const admin = socialVotingOn() ? adminSupabase() : null;
+  if (!admin) return [];
+  const { data, error } = await admin
+    .from("social_post_reads")
+    .select("platform, post_id, poll_yes, poll_no, poll_read_at, poll_ends_at, poll_source, post_url")
+    .eq("slug", slug)
+    .not("poll_yes", "is", null)
+    .order("poll_read_at", { ascending: false })
+    .limit(20);
+  if (error || !Array.isArray(data)) return [];
+  return data.flatMap((raw) => {
+    const row = pollReadRow.safeParse(raw);
+    const poll = row.success ? pollFromRead(row.data) : null;
+    return poll && socialPollSchema.safeParse(poll).success ? [poll] : [];
+  });
 }
