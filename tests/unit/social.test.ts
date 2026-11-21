@@ -7,7 +7,7 @@ import fr from "@/i18n/dictionaries/fr";
 import { scan } from "@/engine/safety/safety";
 import { calledItFooter, cardSafe, crowdForCard } from "@/lib/share";
 import { shareCardColors, shareCardTokens } from "@/lib/share-card-colors";
-import { isAllowedPostUrl, isOfficialPost, questionPostLinks, questionSocialRows, questionShareUrl, shareLinks, socialLinkSchema, socialPollLine, socialPollSchema, type SocialPlatform } from "@/lib/social";
+import { isAllowedPostUrl, isOfficialPost, pollPostText, questionPostLinks, questionSocialRows, xPostLength, X_POST_LIMIT, questionShareUrl, shareLinks, socialLinkSchema, socialPollLine, socialPollSchema, type SocialPlatform } from "@/lib/social";
 
 /** The gambling, trading and tip rules from the engine's lexicon (CLAUDE.md rule 1), the one home of those words. */
 const lexiconRules = new Set(["gambling", "trading", "tip"]);
@@ -245,4 +245,39 @@ describe("questionSocialRows (each logo with its own poll result)", () => {
   it("is empty when there is nothing to show", () => {
     expect(questionSocialRows({}, "fr")).toEqual([]);
   });
+});
+
+describe("the text zack posts with an X poll", () => {
+  const link = "https://consensa-omega.vercel.app/en/q/boc-cut-dec-2026";
+
+  it("fits in one X post for every sample question, in both languages", () => {
+    for (const q of sampleQuestions) {
+      for (const [dict, locale] of [[en, "en"], [fr, "fr"]] as const) {
+        const text = pollPostText(dict.social, q.question[locale], link, q.category === "sports");
+        expect(xPostLength(text), `${q.slug} ${locale}`).toBeLessThanOrEqual(X_POST_LIMIT);
+        expect(text).toContain(link);
+      }
+    }
+  });
+
+  it("uses the full text when it fits, the short one only for a long question", () => {
+    expect(pollPostText(en.social, "Q?", link, false)).toContain("reply YES or NO from a linked account");
+    const long = `${"Will it ".repeat(20)}?`;
+    expect(pollPostText(en.social, long, link, false)).not.toContain("linked account");
+  });
+
+  it("says free and no prizes, and sports say fan forecasts only", () => {
+    expect(pollPostText(en.social, "Q?", link, false)).toMatch(/Free\. No prizes\.$/);
+    expect(pollPostText(en.social, "Q?", link, true)).toMatch(/Fan forecasts only\.$/);
+    expect(pollPostText(fr.social, "Q?", link, true)).toMatch(/Prévisions de partisans seulement\.$/);
+  });
+
+  it("counts a link as 23 characters, like X", () => {
+    expect(xPostLength(`a ${"https://example.ca/" + "x".repeat(200)} b`)).toBe(27);
+  });
+});
+
+it("a sports poll that ends after the game starts stays off the page, even while its totals are early", () => {
+  const ig = { platform: "x" as const, yes: 6, no: 4, closedAt: "2026-11-20T12:00:00Z", endsAt: "2026-11-21T00:00:00Z", url: "https://x.com/CANsensus/status/9" };
+  expect(questionSocialRows({ socialPolls: [ig] }, "en", { pollsCloseBy: "2026-11-20T18:00:00Z" })).toEqual([]);
 });

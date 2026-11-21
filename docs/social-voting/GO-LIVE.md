@@ -33,6 +33,7 @@ Open the SQL editor: https://supabase.com/dashboard/project/_/sql/new. For each 
 1. `supabase/migrations/20261119000000_social_voting.sql`
 2. `supabase/migrations/20261120000000_social_sweep_approval.sql`
 3. `supabase/migrations/20261120001000_social_sweep_withdrawals.sql`
+4. `supabase/migrations/20261121000000_social_poll_finder.sql`
 
 Then paste `supabase/checks/social_voting_ready.sql` and press Run. It only looks and changes nothing. Every row
 must say `true`. If a row says `false`, its `step` column names the file above that didn't run.
@@ -40,7 +41,11 @@ must say `true`. If a row says `false`, its `step` column names the file above t
 ## 3. X (zack)
 - [ ] Open a developer account at https://developer.x.com and create a project and an app.
 - [ ] Turn on OAuth 2.0 for the app, as a "Web App". Callback URL: `https://consensa-omega.vercel.app/api/account/social/callback`.
-- [ ] Make the official @CANsensus posts that questions will point to. FORGE adds their ids to the questions.
+- [ ] Make the official @CANsensus posts that questions will point to. For a poll, post it by hand like any X poll:
+      two choices, "Yes" and "No" (or "Oui" and "Non"), and the question's CANsensus link in the post
+      (`…/en/q/<question>` or `…/fr/q/<question>`). The daily run finds it on its own (it reads our 10 latest posts
+      from the last 8 days), and the totals show on that question under "On social media". One question link per
+      post. Sports polls must end before the game starts. Nothing needs adding to the questions by hand.
       Every post carries "Free. No prizes." Sports posts also carry "Fan forecasts only." and the line saying we
       aren't affiliated with the league or teams, and go up before the game only.
 

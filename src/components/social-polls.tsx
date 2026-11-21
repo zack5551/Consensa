@@ -8,6 +8,9 @@ import { fill } from "@/lib/text";
  */
 export type SocialPollRow = { platform: SocialPlatform; name: string; line: string; yes: number; href?: string };
 
+/** "Canada says" next to the first platform's poll: the checked Canada-only number beside the open one (zack). */
+export type SocialCompare = { canadaLabel: string; canadaValue: string; canadaNote: string; pollLabel: string; pollValue: string; pollNote: string };
+
 type Props = {
   title: string;
   /** LEX's label: "Not verified. May include people outside Canada and under 18." */
@@ -17,6 +20,7 @@ type Props = {
   rows: readonly SocialPollRow[];
   /** Set when any row is made-up preview data. */
   sampleLabel?: string;
+  compare?: SocialCompare;
 };
 
 const box = "inline-grid size-11 shrink-0 place-items-center rounded-control border border-line bg-surface";
@@ -26,7 +30,7 @@ const box = "inline-grid size-11 shrink-0 place-items-center rounded-control bor
  * poll result beside it. Shown apart from "Canada says" and never mixed into it. Totals only, no usernames. Plain
  * links: nothing loads from the platforms until someone taps one. Renders nothing when there are no rows.
  */
-export function SocialPolls({ title, label, openLabel, rows, sampleLabel }: Props) {
+export function SocialPolls({ title, label, openLabel, rows, sampleLabel, compare }: Props) {
   if (rows.length === 0) return null;
   return (
     <section aria-label={title} className="grid gap-3 border-t border-line pt-4" data-testid="social-polls">
@@ -34,6 +38,22 @@ export function SocialPolls({ title, label, openLabel, rows, sampleLabel }: Prop
         {title}
         {sampleLabel && <span className="font-normal normal-case tracking-normal"> · {sampleLabel}</span>}
       </h2>
+      {compare && (
+        <dl className="m-0 grid grid-cols-2 gap-3" data-testid="social-compare">
+          {(
+            [
+              [compare.canadaLabel, compare.canadaValue, compare.canadaNote, "text-canada"],
+              [compare.pollLabel, compare.pollValue, compare.pollNote, "text-ink-2"],
+            ] as const
+          ).map(([name, value, note, tone]) => (
+            <div key={name} className="grid gap-0.5 rounded-control border border-line bg-surface p-3">
+              <dt className={`m-0 text-caption font-bold uppercase tracking-wide ${tone}`}>{name}</dt>
+              <dd className="m-0 font-display text-title font-bold text-ink tabular">{value}</dd>
+              <dd className="m-0 text-caption text-ink-2">{note}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
       <ul className="m-0 grid list-none gap-2 p-0">
         {rows.map((r) => (
           <li key={`${r.platform}-${r.line}`} className="flex items-center gap-3 text-body-sm text-ink tabular">

@@ -55,13 +55,15 @@ export class SupabaseSocialStore implements CountStore, SweepStore, SpendStore {
     return at ? new Date(at) : null;
   }
 
-  async saveRead(post: OfficialPost, patch: { readThrough?: Date; poll?: PollTotals }, now: Date): Promise<void> {
+  async saveRead(post: OfficialPost, patch: { readThrough?: Date; poll?: PollTotals; pollEndsAt?: string | null }, now: Date): Promise<void> {
     const row = {
       platform: post.platform,
       post_id: post.postId,
       slug: post.slug,
       ...(patch.readThrough ? { read_through: patch.readThrough.toISOString() } : {}),
       ...(patch.poll ? { poll_yes: patch.poll.yes, poll_no: patch.poll.no, poll_read_at: now.toISOString() } : {}),
+      // Needs the 20261121000000 migration; only the poll finder sends it.
+      ...(patch.pollEndsAt !== undefined ? { poll_ends_at: patch.pollEndsAt } : {}),
     };
     const { error } = await this.admin.from("social_post_reads").upsert(row, { onConflict: "platform,post_id" });
     if (error) throw new Error("reads unavailable");

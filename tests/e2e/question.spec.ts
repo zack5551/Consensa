@@ -319,6 +319,14 @@ test("each platform's logo opens our post, with its own poll result and bar besi
     await expect(el).toHaveAttribute("target", "_blank");
     await expect(el).toHaveAttribute("rel", "noopener noreferrer");
   }
+  // Canada says beside the X poll: the Canada-only number and the open one, each labelled.
+  const compare = block.getByTestId("social-compare");
+  await expect(compare).toContainText("Canada says");
+  await expect(compare).toContainText("54%");
+  await expect(compare).toContainText("Calls from Canada only");
+  await expect(compare).toContainText("X poll");
+  await expect(compare).toContainText("65%");
+  await expect(compare).toContainText("Anyone can vote");
   const items = block.getByRole("listitem");
   await expect(items).toHaveCount(2);
   await expect(items.nth(0)).toContainText("X poll, Nov 20: 65% yes · 1,243 votes");
@@ -330,6 +338,8 @@ test("each platform's logo opens our post, with its own poll result and bar besi
   await page.goto("/fr/q/canadiens-leafs-nov-21-2026");
   const bloc = page.getByTestId("social-polls").locator("visible=true");
   await expect(bloc.getByRole("link", { name: "Ouvrir notre publication sur Instagram (nouvel onglet)" })).toBeVisible();
+  await expect(bloc.getByTestId("social-compare")).toContainText("Selon le Canada");
+  await expect(bloc.getByTestId("social-compare")).toContainText("Tout le monde peut voter");
   await expect(bloc.getByText("Sondage Instagram, 20 nov.\u00A0: 60\u00A0% de oui · 3\u00A0492\u00A0votes")).toBeVisible();
 });
 

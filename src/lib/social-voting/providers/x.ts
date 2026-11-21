@@ -34,6 +34,42 @@ const pollSchema = z.object({
     .object({ polls: z.array(z.object({ options: z.array(z.object({ label: z.string().max(100), votes: z.number().int().nonnegative() })) })).optional() })
     .optional(),
 });
+const option = z.object({ label: z.string().max(100), votes: z.number().int().nonnegative() });
+const userSchema = z.object({ data: z.object({ id }) });
+const timelineSchema = z.object({
+  data: z
+    .array(
+      z.object({
+        id,
+        attachments: z.object({ poll_ids: z.array(z.string().max(40)).optional() }).optional(),
+        entities: z.object({ urls: z.array(z.object({ expanded_url: z.string().max(2000).optional() })).optional() }).optional(),
+      }),
+    )
+    .optional(),
+  includes: z.object({ polls: z.array(z.object({ id: z.string().max(40), options: z.array(option), end_datetime: z.iso.datetime().optional() })).optional() }).optional(),
+});
+
+/** One poll found on our own account: its post, the YES/NO totals, when it ends, and the links in the post. */
+export interface FoundPoll {
+  postId: string;
+  poll: PollTotals;
+  endsAt: string | null;
+  links: string[];
+}
+
+/** How many of our latest posts the poll finder reads each run (X's smallest page is 5). */
+export const POLL_SCAN_SIZE = 10;
+/** X polls run at most 7 days; the finder looks back a day longer. */
+const POLL_SCAN_WINDOW_MS = 8 * 24 * 60 * 60 * 1000;
+
+/** The YES/NO split of a two-way poll whose options read as yes and no (EN or FR); anything else is left alone. */
+function yesNo(options: readonly { label: string; votes: number }[]): PollTotals | null {
+  const yes = options.filter((o) => parseVote(o.label) === "yes");
+  const no = options.filter((o) => parseVote(o.label) === "no");
+  if (options.length !== 2 || yes.length !== 1 || no.length !== 1) return null;
+  return { yes: yes[0]!.votes, no: no[0]!.votes };
+}
+
 const lookupSchema = z.object({
   data: z.array(z.object({ id })).optional(),
   errors: z.array(z.object({ resource_id: z.string().optional(), type: z.string().optional() })).optional(),
@@ -113,12 +149,49 @@ export class XProvider implements SocialProvider {
       return null;
     }
     const options = parsed.data.includes?.polls?.[0]?.options;
-    if (!options) return null;
     // Only a two-way YES/NO poll is read; any other poll is left alone.
-    const yes = options.filter((o) => parseVote(o.label) === "yes");
-    const no = options.filter((o) => parseVote(o.label) === "no");
-    if (options.length !== 2 || yes.length !== 1 || no.length !== 1) return null;
-    return { yes: yes[0]!.votes, no: no[0]!.votes };
+    return options ? yesNo(options) : null;
+  }
+
+  /**
+   * Finds the polls zack posts by hand on our own account (zack, 2026-11-21): our latest posts from the last 8 days,
+   * with their polls' totals in the same read. Only our own account is read, by its handle. Every request reserves
+   * its worst case against the monthly cap first and hands back what it didn't use; a refused reservation or a
+   * failed request finds nothing this run.
+   */
+  async findOwnPolls(handle: string, now: Date): Promise<FoundPoll[]> {
+    if (!/^[A-Za-z0-9_]{1,15}$/.test(handle)) return [];
+    if (!(await this.config.spend.reserve(X_READ_COST_MICROS, now))) return [];
+    const user = userSchema.safeParse(await this.get(`/users/by/username/${handle}`));
+    if (!user.success) {
+      await this.config.spend.release(X_READ_COST_MICROS, now);
+      return [];
+    }
+    const reserved = POLL_SCAN_SIZE * X_READ_COST_MICROS;
+    if (!(await this.config.spend.reserve(reserved, now))) return [];
+    const query = new URLSearchParams({
+      max_results: String(POLL_SCAN_SIZE),
+      exclude: "replies,retweets",
+      start_time: new Date(now.getTime() - POLL_SCAN_WINDOW_MS).toISOString().replace(/\.\d{3}Z$/, "Z"),
+      "tweet.fields": "attachments,entities",
+      expansions: "attachments.poll_ids",
+      "poll.fields": "options,end_datetime",
+    });
+    const timeline = timelineSchema.safeParse(await this.get(`/users/${user.data.data.id}/tweets?${query.toString()}`));
+    if (!timeline.success) {
+      await this.config.spend.release(reserved, now);
+      return [];
+    }
+    const posts = timeline.data.data ?? [];
+    await this.config.spend.release((POLL_SCAN_SIZE - Math.min(posts.length, POLL_SCAN_SIZE)) * X_READ_COST_MICROS, now);
+    const polls = new Map((timeline.data.includes?.polls ?? []).map((p) => [p.id, p]));
+    return posts.flatMap((post) => {
+      const found = polls.get(post.attachments?.poll_ids?.[0] ?? "");
+      const totals = found && yesNo(found.options);
+      if (!found || !totals) return [];
+      const links = (post.entities?.urls ?? []).flatMap((u) => (u.expanded_url ? [u.expanded_url] : []));
+      return [{ postId: post.id, poll: totals, endsAt: found.end_datetime ?? null, links }];
+    });
   }
 
   /**

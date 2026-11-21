@@ -38,8 +38,10 @@ export function isOnPlatform(platform: SocialPlatform, value: string): boolean {
   return postHosts[platform].some((h) => host === h || host === `www.${h}`);
 }
 
-/** Our handle on every platform (zack, 2026-11-19). Compared without case: the platforms ignore it in addresses. */
-export const OFFICIAL_HANDLE = "cansensus";
+/** Our handle on every platform, as written (zack, 2026-11-19). */
+export const OFFICIAL_HANDLE_DISPLAY = "CANsensus";
+/** The same handle for comparing: the platforms ignore case in addresses. */
+export const OFFICIAL_HANDLE = OFFICIAL_HANDLE_DISPLAY.toLowerCase();
 
 /**
  * True when the URL is a post on our own account (LEX: a logo links only to an official @CANsensus post). The handle
@@ -61,8 +63,10 @@ export const socialPollSchema = z
     platform: z.enum(socialPlatforms),
     yes: count,
     no: count,
-    /** When the platform's poll closed. */
+    /** When the totals were taken: when the platform's poll closed, or the last read of a poll still running. */
     closedAt: z.iso.datetime(),
+    /** When the platform's poll ends, when known. Sports show only a poll that ends before the game starts (LEX). */
+    endsAt: z.iso.datetime().optional(),
     url: z.string().refine(isAllowedPostUrl, { message: "Post URL must be https on x.com, threads.net, threads.com, instagram.com or facebook.com." }),
     /** True for made-up preview numbers, so they are never mistaken for real totals. */
     sample: z.boolean().optional(),
@@ -112,7 +116,7 @@ export function questionPostLinks(q: PostSources, locale: Locale): PostLink[] {
   };
   for (const l of q.socialLinks ?? []) if (!l.locale || l.locale === locale) add(l.platform, l.url);
   for (const p of q.socialPolls ?? []) if (!p.sample) add(p.platform, p.url);
-  for (const p of q.socialPosts ?? []) if (p.platform === "x" && p.locale === locale && /^[0-9]{1,32}$/.test(p.postId)) add("x", `https://x.com/CANsensus/status/${p.postId}`);
+  for (const p of q.socialPosts ?? []) if (p.platform === "x" && p.locale === locale && /^[0-9]{1,32}$/.test(p.postId)) add("x", `https://x.com/${OFFICIAL_HANDLE_DISPLAY}/status/${p.postId}`);
   return socialPlatforms.flatMap((platform) => {
     const url = found.get(platform);
     return url ? [{ platform, url }] : [];
@@ -148,7 +152,7 @@ export function questionSocialRows(q: PostSources, locale: Locale, options: { po
   // Sports are pre-game only (LEX): a platform poll that ran past the start isn't shown.
   const by = options.pollsCloseBy ? Date.parse(options.pollsCloseBy) : Infinity;
   return socialPlatforms.flatMap((platform) => {
-    const polls = (q.socialPolls ?? []).filter((p) => p.platform === platform && Date.parse(p.closedAt) <= by);
+    const polls = (q.socialPolls ?? []).filter((p) => p.platform === platform && Date.parse(p.endsAt ?? p.closedAt) <= by);
     return polls.map((poll) => ({ platform, poll, url: poll.sample ? undefined : isOfficialPost(platform, poll.url) ? poll.url : links.get(platform) }));
   });
 }
@@ -201,4 +205,33 @@ export function questionShareText(labels: ShareTextLabels, question: string, opt
 /** Any share post about a guest or brand question (the question post, the "Called it!" post) leads with its label. */
 export function withAskedBy(text: string, askedBy: string | undefined): string {
   return askedBy ? `${askedBy} · ${text}` : text;
+}
+
+export type PollPostLabels = {
+  /** The full text: vote for fun, how to count in "Canada says", the link, "Free. No prizes." */
+  pollPost: string;
+  /** The same without the reply route, for a question too long for the full text. */
+  pollPostShort: string;
+  /** LEX's fan-forecast line, added for sports. */
+  pollPostSports: string;
+};
+
+/** X counts every link as 23 characters, whatever its length. */
+const X_LINK_LENGTH = 23;
+export const X_POST_LIMIT = 280;
+
+/**
+ * The text zack posts with a hand-made X poll (zack, 2026-11-21): the question, "vote for fun", how to count in
+ * "Canada says", and the plain question link the daily run uses to find the poll. Sports add LEX's fan-forecast line.
+ * A question too long for one X post gets the short text, which drops the reply route.
+ */
+export function pollPostText(labels: PollPostLabels, question: string, link: string, sports: boolean): string {
+  const text = (template: string) => `${fill(template, { question, link })}${sports ? ` ${labels.pollPostSports}` : ""}`;
+  const full = text(labels.pollPost);
+  return xPostLength(full) <= X_POST_LIMIT ? full : text(labels.pollPostShort);
+}
+
+/** The length X counts for a post: characters, with every link as 23. */
+export function xPostLength(text: string): number {
+  return [...text.replace(/https?:\/\/\S+/g, "x".repeat(X_LINK_LENGTH))].length;
 }
