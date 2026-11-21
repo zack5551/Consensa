@@ -25,10 +25,32 @@ const allowedPostHosts = new Set(Object.values(postHosts).flatMap((hosts) => hos
 export function isAllowedPostUrl(value: string): boolean {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.username === "" && url.password === "" && allowedPostHosts.has(url.hostname);
+    return url.protocol === "https:" && url.username === "" && url.password === "" && url.port === "" && allowedPostHosts.has(url.hostname);
   } catch {
     return false;
   }
+}
+
+/** True when the URL is on the given platform's own hosts (an X poll can't point to Facebook). */
+export function isOnPlatform(platform: SocialPlatform, value: string): boolean {
+  if (!isAllowedPostUrl(value)) return false;
+  const host = new URL(value).hostname;
+  return postHosts[platform].some((h) => host === h || host === `www.${h}`);
+}
+
+/** Our handle on every platform (zack, 2026-11-19). Compared without case: the platforms ignore it in addresses. */
+export const OFFICIAL_HANDLE = "cansensus";
+
+/**
+ * True when the URL is a post on our own account (LEX: a logo links only to an official @CANsensus post). The handle
+ * must be the first part of the path: x.com/CANsensus/status/…, threads.com/@cansensus/post/…,
+ * facebook.com/CANsensus/posts/…, instagram.com/cansensus/p/… or, for a story, instagram.com/stories/cansensus/….
+ */
+export function isOfficialPost(platform: SocialPlatform, value: string): boolean {
+  if (!isOnPlatform(platform, value)) return false;
+  const parts = new URL(value).pathname.split("/").filter(Boolean).map((p) => p.toLowerCase());
+  const owner = platform === "instagram" && parts[0] === "stories" ? parts[1] : parts[0];
+  return (platform === "threads" ? owner === `@${OFFICIAL_HANDLE}` : owner === OFFICIAL_HANDLE) && parts.length >= 2;
 }
 
 const count = z.number().int().nonnegative();
@@ -46,11 +68,56 @@ export const socialPollSchema = z
     sample: z.boolean().optional(),
   })
   .refine((p) => p.yes + p.no > 0, { path: ["yes"], message: "A poll needs at least one vote." })
-  .refine((p) => postHosts[p.platform].some((h) => [h, `www.${h}`].includes(new URL(p.url).hostname)), {
+  .refine((p) => isOnPlatform(p.platform, p.url), {
     path: ["url"],
     message: "Post URL must be on the same platform as the poll.",
   });
 export type SocialPoll = z.infer<typeof socialPollSchema>;
+
+/**
+ * An editor's link to this question's official post on one platform (an Instagram story poll, a Facebook post).
+ * `locale` keeps a French post off the English page; leave it out when one post serves both.
+ */
+export const socialLinkSchema = z
+  .object({
+    platform: z.enum(socialPlatforms),
+    url: z.string().refine(isAllowedPostUrl, { message: "Post URL must be https on x.com, threads.net, threads.com, instagram.com or facebook.com." }),
+    locale: z.enum(["en", "fr"]).optional(),
+  })
+  .strict()
+  .refine((l) => isOfficialPost(l.platform, l.url), { path: ["url"], message: "Post URL must be a post on our own @CANsensus account on that platform." });
+export type SocialLink = z.infer<typeof socialLinkSchema>;
+
+export type PostLink = { platform: SocialPlatform; url: string };
+
+/** One platform row on a question page: its poll result, and our official post there if we have one. */
+export type SocialRow = { platform: SocialPlatform; poll: SocialPoll; url?: string };
+
+type PostSources = {
+  socialLinks?: readonly SocialLink[];
+  socialPolls?: readonly SocialPoll[];
+  /** The official posts read for replies. Only X ids map to a public address on their own. */
+  socialPosts?: readonly { platform: string; postId: string; locale: string }[];
+};
+
+/**
+ * One official post per platform for a question page, in a fixed platform order. An editor's link wins, then a real
+ * poll's post, then an X post id. Sample polls have no real post, so they never make a link. Every address is checked
+ * again here (https, the platform's own host, our own account), so a bad value from any source is dropped, not linked.
+ */
+export function questionPostLinks(q: PostSources, locale: Locale): PostLink[] {
+  const found = new Map<SocialPlatform, string>();
+  const add = (platform: SocialPlatform, url: string) => {
+    if (!found.has(platform) && isOfficialPost(platform, url)) found.set(platform, url);
+  };
+  for (const l of q.socialLinks ?? []) if (!l.locale || l.locale === locale) add(l.platform, l.url);
+  for (const p of q.socialPolls ?? []) if (!p.sample) add(p.platform, p.url);
+  for (const p of q.socialPosts ?? []) if (p.platform === "x" && p.locale === locale && /^[0-9]{1,32}$/.test(p.postId)) add("x", `https://x.com/CANsensus/status/${p.postId}`);
+  return socialPlatforms.flatMap((platform) => {
+    const url = found.get(platform);
+    return url ? [{ platform, url }] : [];
+  });
+}
 
 export type SocialPollLabels = {
   platforms: Record<SocialPlatform, string>;
@@ -68,6 +135,21 @@ export function socialPollLine(poll: SocialPoll, labels: SocialPollLabels, local
     date: formatShortDate(poll.closedAt, locale),
     percent: formatPercent((poll.yes / total) * 100, locale),
     votes: fill(total === 1 ? labels.votesOne : labels.votes, { n: formatCount(total, locale) }),
+  });
+}
+
+/**
+ * The question page's social rows, in the fixed platform order: each poll's result next to its own post (a real poll
+ * that isn't on our account falls back to the platform's official link). A platform shows only once it has a result
+ * (zack, 2026-11-20). A sample poll never links anywhere. For a sports question, pass the start as `pollsCloseBy`.
+ */
+export function questionSocialRows(q: PostSources, locale: Locale, options: { pollsCloseBy?: string } = {}): SocialRow[] {
+  const links = new Map(questionPostLinks(q, locale).map((l) => [l.platform, l.url]));
+  // Sports are pre-game only (LEX): a platform poll that ran past the start isn't shown.
+  const by = options.pollsCloseBy ? Date.parse(options.pollsCloseBy) : Infinity;
+  return socialPlatforms.flatMap((platform) => {
+    const polls = (q.socialPolls ?? []).filter((p) => p.platform === platform && Date.parse(p.closedAt) <= by);
+    return polls.map((poll) => ({ platform, poll, url: poll.sample ? undefined : isOfficialPost(platform, poll.url) ? poll.url : links.get(platform) }));
   });
 }
 

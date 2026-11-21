@@ -98,3 +98,20 @@
   background: var(--cn-side-a-soft);
   color: var(--cn-side-a-text);
 }
+
+/*
+ * Other brands' marks (X, Threads, Instagram, Facebook) on the question page's post links. Their one-colour rules
+ * allow only pure black or pure white (LEX, 2026-11-20), so these are the platforms' colours, not ours: never use
+ * them for anything else.
+ */
+.brand-mark {
+  color: black;
+}
+:root[data-theme="dark"] .brand-mark {
+  color: white;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand-mark {
+    color: white;
+  }
+}

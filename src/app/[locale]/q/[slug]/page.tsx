@@ -32,7 +32,7 @@ import { largestSwing } from "@/lib/swing";
 import { provinceSummary } from "@/lib/province-summary";
 import { askedByLabel } from "@/lib/asked-by";
 import { hasCalledItCard } from "@/lib/share";
-import { calledItShareUrl, socialPollLine, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
+import { calledItShareUrl, questionSocialRows, socialPollLine, questionShareText, questionShareUrl, shareLinks, withAskedBy } from "@/lib/social";
 import { AskedByLabel } from "@/components/asked-by-label";
 import { siteUrl } from "@/lib/site-url";
 import { fill } from "@/lib/text";
@@ -193,9 +193,15 @@ export default async function QuestionPage({ params }: { params: Params }) {
     <SocialPolls
       title={t.social.title}
       label={t.social.label}
-      viewPost={t.social.viewPost}
+      openLabel={t.social.openPost}
       sampleLabel={polls.some((p) => p.sample) ? t.social.sample : undefined}
-      rows={polls.map((p) => ({ platform: t.social.platforms[p.platform], line: socialPollLine(p, t.social, locale), href: p.sample ? undefined : p.url }))}
+      rows={questionSocialRows(q, locale, { pollsCloseBy: q.category === "sports" ? start : undefined }).map((r) => ({
+        platform: r.platform,
+        name: t.social.platforms[r.platform],
+        line: socialPollLine(r.poll, t.social, locale),
+        yes: (r.poll.yes / (r.poll.yes + r.poll.no)) * 100,
+        href: r.url,
+      }))}
     />
   );
 
