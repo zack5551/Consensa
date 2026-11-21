@@ -82,7 +82,8 @@ export async function runSocialStep(now: Date, env: Record<string, string | unde
   for (const m of meta) {
     const found = await m.findOwnPosts(now).catch(() => []);
     for (const { post, found: f } of matchOwnPosts(m.platform, found, sampleQuestions, own, now)) {
-      const poll = f.poll ?? (await m.readPollTotals(post.postId).catch(() => null));
+      // AEGIS: reactions or comments are read only on a post that asks for them; a plain link post shows nothing.
+      const poll = f.poll ?? (f.asksVote ? await m.readPollTotals(post.postId).catch(() => null) : null);
       if (poll && f.url) await keep(post, { poll, pollEndsAt: f.endsAt, postUrl: f.url });
     }
   }

@@ -61,6 +61,8 @@ comments are counted, the Privacy Policy row on counting YES/NO comments goes in
 - [ ] **Instagram:** a post with a Yes/No poll if the app offers one; otherwise ask for YES or NO in the comments.
       Comments are read and counted in memory, one per account; no name, text or id is kept.
 - [ ] The daily run reads each account's latest 25 posts from the last 8 days and ties a post to a question by its link.
+      Reactions and comments are read only on a post that asks for them as our texts do (Facebook: both 👍 and 😢
+      named; Instagram: "YES or NO" / "OUI ou NON" in capitals), so a plain post with the link never shows as a vote.
 
 ## 4. Settings in Vercel (zack)
 Open https://vercel.com/consensa/consensa/settings/environment-variables. Add each one as its own variable. Never

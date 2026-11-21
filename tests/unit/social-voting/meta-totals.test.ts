@@ -7,7 +7,9 @@ import { sampleQuestions } from "@/content/sample-questions";
 import { socialPollSchema } from "@/lib/social";
 import { matchOwnPosts } from "@/lib/social-voting/discover";
 import { pollFromRead } from "@/lib/social-voting/poll-reads";
-import { linksIn, MetaProvider, metaPoll, ownPostUrl, REACTION_VOTES } from "@/lib/social-voting/providers/meta";
+import en from "@/i18n/dictionaries/en";
+import fr from "@/i18n/dictionaries/fr";
+import { asksForVotes, linksIn, MetaProvider, metaPoll, ownPostUrl, REACTION_VOTES } from "@/lib/social-voting/providers/meta";
 import { fakeFetch, NOW } from "./helpers";
 
 const SITE = new Set(["consensa-omega.vercel.app"]);
@@ -85,7 +87,7 @@ describe("Meta totals for the question page", () => {
       ],
     ]);
     const found = await new MetaProvider({ platform: "threads", accessToken: "t", fetch }).findOwnPosts(NOW);
-    expect(found).toEqual([{ postId: "18001", links: [link], url: "https://www.threads.com/@cansensus/post/AbC_1", poll: { yes: 5, no: 5 }, endsAt: "2026-11-22T15:00:00.000Z" }]);
+    expect(found).toEqual([{ postId: "18001", links: [link], url: "https://www.threads.com/@cansensus/post/AbC_1", poll: { yes: 5, no: 5 }, endsAt: "2026-11-22T15:00:00.000Z", asksVote: false }]);
     expect(calls[0]!.url).toContain("since=");
     const matched = matchOwnPosts("threads", found, sampleQuestions, SITE, NOW);
     expect(matched.map((m) => m.post)).toEqual([{ platform: "threads", postId: "18001", slug: open.slug, locale: "fr", closesAt: expect.any(String) }]);
@@ -96,7 +98,19 @@ describe("Meta totals for the question page", () => {
     expect(await new MetaProvider({ platform: "instagram", accessToken: "t", fetch }).findOwnPosts(NOW)).toEqual([]);
     expect(calls).toHaveLength(0);
     const found = await new MetaProvider({ platform: "instagram", accessToken: "t", fetch, accountId: "42" }).findOwnPosts(NOW);
-    expect(found[0]).toMatchObject({ postId: "17890", url: "https://www.instagram.com/cansensus/p/XyZ/", poll: null });
+    expect(found[0]).toMatchObject({ postId: "17890", url: "https://www.instagram.com/cansensus/p/XyZ/", poll: null, asksVote: false });
+  });
+
+  it("reads reactions or comments only on a post that asks for votes, as our own texts do (AEGIS)", () => {
+    for (const d of [en, fr]) {
+      expect(asksForVotes("facebook", d.social.reactPost)).toBe(true);
+      expect(asksForVotes("instagram", d.social.commentPost)).toBe(true);
+      expect(asksForVotes("facebook", d.social.pollPostShort)).toBe(false);
+      expect(asksForVotes("instagram", d.social.pollPostShort)).toBe(false);
+    }
+    expect(asksForVotes("facebook", "New question 👍")).toBe(false);
+    expect(asksForVotes("instagram", "yes or no?")).toBe(false);
+    expect(asksForVotes("threads", en.social.reactPost)).toBe(false);
   });
 
   it("builds only our own post addresses, and reads links out of plain text", () => {

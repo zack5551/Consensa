@@ -86,6 +86,23 @@ export interface FoundPost {
   url: string | null;
   poll: PollTotals | null;
   endsAt: string | null;
+  /** True when the post itself asks for votes (AEGIS): a plain post with our link is never read as a vote. */
+  asksVote: boolean;
+}
+
+/** The reaction emoji our Facebook vote post names (the dictionaries' reactPost, EN and FR). */
+const REACTION_PROMPT = ["👍", "😢"] as const;
+
+/**
+ * Whether a post asks for votes the way our own texts do: on Facebook it names both reactions; on Instagram it asks
+ * for YES or NO (OUI ou NON) in capitals. A post with a poll always counts as one. Kept in step with the
+ * dictionaries' reactPost and commentPost by a test.
+ */
+export function asksForVotes(platform: MetaPlatform, text: string | undefined): boolean {
+  const t = text ?? "";
+  if (platform === "facebook") return REACTION_PROMPT.every((e) => t.includes(e));
+  if (platform === "instagram") return /\b(?:YES|OUI)\b[^\n]{0,20}\b(?:NO|NON)\b/.test(t);
+  return false;
 }
 
 /** Full links written in a post's text. Meta posts carry links as plain text, so they are read from it. */
@@ -223,10 +240,12 @@ export class MetaProvider implements SocialProvider {
       const at = metaTime(post.data.created_time ?? post.data.timestamp);
       if (!at || Date.parse(at) < earliest) return [];
       const p = post.data.poll_attachment;
+      const text = post.data.message ?? post.data.text ?? post.data.caption;
       return [
         {
           postId: post.data.id,
-          links: linksIn(post.data.message ?? post.data.text ?? post.data.caption),
+          links: linksIn(text),
+          asksVote: asksForVotes(this.platform, text),
           url: ownPostUrl(this.platform, post.data.id, post.data.permalink),
           poll: p ? metaPoll(p) : null,
           endsAt: p ? metaTime(p.expiration_timestamp ?? undefined) : null,
