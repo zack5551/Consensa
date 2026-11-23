@@ -91,7 +91,7 @@ export function fixtureQuestions(): z.input<typeof questionSchema>[] {
       languages: { en: 31, fr: 30 },
       events: [],
       resolution: {
-        source: { name: { en: "Test source", fr: "Source d’essai" }, url: "https://example.com/" },
+        source: { name: { en: "Test source", fr: "Source d’essai" }, url: "https://gillerprize.ca/" },
         rule: { en: "Test only. Resolves YES if the test source says yes.", fr: "Essai seulement. Résolue OUI si la source d’essai dit oui." },
         resolvesAt: "2026-11-17T03:00:00Z",
       },
@@ -108,7 +108,7 @@ export function fixtureQuestions(): z.input<typeof questionSchema>[] {
       languages: { en: 51, fr: 43 },
       events: [],
       resolution: {
-        source: { name: { en: "Test source", fr: "Source d’essai" }, url: "https://example.com/" },
+        source: { name: { en: "Test source", fr: "Source d’essai" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701" },
         rule: { en: "Test only. Resolves YES if the test source says 7.0% or higher.", fr: "Essai seulement. Résolue OUI si la source d’essai indique 7,0\u00a0% ou plus." },
         resolvesAt: "2026-11-07T13:30:00Z",
       },
