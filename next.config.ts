@@ -57,6 +57,7 @@ const nextConfig: NextConfig = {
     // The share cards read their three brand fonts from disk at run time, and the build does not find them on its own.
     "/[locale]/q/[slug]/opengraph-image": ["./brand/fonts/ttf/*.ttf"],
     "/[locale]/q/[slug]/called-it/[side]/opengraph-image": ["./brand/fonts/ttf/*.ttf"],
+    "/[locale]/recap/[month]/opengraph-image": ["./brand/fonts/ttf/*.ttf"],
     // Linking a social account runs the same VPN check (sprint 11).
     "/api/account/social/start": ["./data/ip2proxy/**"],
     "/api/account/social/callback": ["./data/ip2proxy/**"],

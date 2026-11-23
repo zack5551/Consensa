@@ -2,6 +2,7 @@
  * Screen: landing (home, /en and /fr).
  * One message: "What Canada thinks happens next", shown live with a real question and its province split.
  * One action: make today's five calls.
+ * Returning visitors whose calls got an answer since they were last here see a one-time "Since your last visit" panel first.
  */
 import type { Metadata } from "next";
 import { pageAlternates } from "@/lib/alternates";
@@ -10,6 +11,7 @@ import { notFound } from "next/navigation";
 import { CrowdBar } from "@/components/crowd-bar";
 import { ProvinceSplit } from "@/components/province-split";
 import { ScreenView } from "@/components/screen-view";
+import { SinceLastVisit } from "@/components/since-last-visit";
 import { localeHref } from "@/components/shell/nav-items";
 import { sampleQuestions as sample, todaysFive } from "@/content/sample-questions";
 import { siteNow } from "@/lib/clock";
@@ -18,6 +20,7 @@ import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { buildLandingStats } from "@/lib/landing-stats";
+import { localizedAnswered } from "@/lib/come-back";
 import { callsCloseAt, categories, crowdNow, crowdRecord, isOpen, questionState, scoreBadge } from "@/lib/question";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
@@ -67,6 +70,16 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   return (
     <div className="grid gap-16 sm:gap-24">
       <ScreenView locale={locale} screen="landing" />
+
+      {/* Shows once, only to someone whose calls got an answer since their last visit: their numbers stay in their browser. */}
+      <SinceLastVisit
+        items={localizedAnswered(sampleQuestions, locale, siteNow())}
+        t={t.comeBack}
+        answerLabels={{ yes: t.question.yes, no: t.question.no, answerIs: t.resolution.answerIs }}
+        recordHref={href("/record")}
+        locale={locale}
+        now={siteNow().toISOString()}
+      />
 
       {/* Hero: the promise on the left, the proof (the day's lead question) on the right. */}
       <section aria-labelledby="hero-title" className="grid items-start gap-10 pt-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16 lg:pt-10">

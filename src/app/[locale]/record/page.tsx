@@ -2,6 +2,7 @@
  * Screen: My record / « Mon bilan ».
  * One message: how sharp your calls are compared with Canada ("26% sharper than Canada").
  * One action: make today's calls (the record only grows with new calls).
+ * Under the header: "Your October", the month in review built from this browser's calls (accuracy only, shareable).
  * Foot of the page: the account area (choices, download my data, delete my account) once accounts are on.
  */
 import type { Metadata } from "next";
@@ -10,6 +11,7 @@ import { notFound } from "next/navigation";
 import { AccountPanel } from "@/components/account-panel";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { PendingCalls } from "@/components/pending-calls";
+import { MonthlyRecap } from "@/components/monthly-recap";
 import { askedByLabel } from "@/lib/asked-by";
 import { RecordView } from "@/components/record-view";
 import { ScreenView } from "@/components/screen-view";
@@ -18,7 +20,10 @@ import { sampleQuestions } from "@/content/sample-questions";
 import { siteNow } from "@/lib/clock";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { formatLongDate } from "@/lib/format";
+import { formatLongDate, formatMonth, formatShortDate } from "@/lib/format";
+import { localizedAnswered, monthKey, previousMonth } from "@/lib/come-back";
+import { withLiveCrowd } from "@/lib/live";
+import { siteUrl } from "@/lib/site-url";
 import { rankForecasters } from "@/lib/leaderboard";
 import { callsCloseAt, questionState } from "@/lib/question";
 import { socialVotingOn } from "@/lib/social-voting/env";
@@ -46,6 +51,13 @@ export default async function RecordPage({ params }: { params: Params }) {
   const myRow = board.find((r) => r.handle === SAMPLE_ME);
   const teaser = [...board.slice(0, 3), ...(myRow && myRow.rank > 3 ? [myRow] : [])];
 
+  const now = siteNow();
+  const month = previousMonth(now);
+  const monthName = formatMonth(month, locale);
+  const recapItems = localizedAnswered(await withLiveCrowd(sampleQuestions), locale, now)
+    .filter((q) => monthKey(q.publishedAt) === month)
+    .map((q) => ({ ...q, shortDate: formatShortDate(q.publishedAt, locale) }));
+
   const pending = sampleQuestions
     .filter((q) => {
       const s = questionState(q, siteNow());
@@ -71,6 +83,20 @@ export default async function RecordPage({ params }: { params: Params }) {
         </div>
         {todayLink}
       </header>
+
+      <MonthlyRecap
+        items={recapItems}
+        month={month}
+        monthName={monthName}
+        t={t.recap}
+        verdicts={t.comeBack.verdict}
+        brierLine={t.comeBack.brierLine}
+        share={t.share}
+        categories={t.board.categories}
+        answerLabels={{ yes: t.question.yes, no: t.question.no }}
+        shareUrl={`${siteUrl()}/${locale}/recap/${month}`}
+        locale={locale}
+      />
 
       <RecordView locale={locale} t={t} forecaster={me} board={board} youLabel={t.record.you} emptyAction={todayLink}>
         <PendingCalls
