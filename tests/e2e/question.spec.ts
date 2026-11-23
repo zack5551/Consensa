@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 const tags = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
 
 /** One question per state: open, closing soon, closed (waiting for the result), resolved. */
-const pages = ["boc-cut-dec-2026", "giller-debut-2026", "jobs-rate-oct-2026", "cpi-sept-2026"] as const;
+const pages = ["boc-cut-dec-2026", "fixture-closing-soon", "fixture-closed-waiting", "cpi-sept-2026"] as const;
 
 for (const locale of ["en", "fr"] as const) {
   for (const slug of pages) {
@@ -55,7 +55,8 @@ test("a resolved question shows no weekly move", async ({ page }) => {
 
 test("a resolved question says whether Canada called it, with its record on the topic", async ({ page }) => {
   await page.goto("/en/q/cpi-sept-2026");
-  await expect(page.getByText("Canada called it. On economy questions, Canada has leaned the right way 3 times out of 3.")).toBeVisible();
+  // Out of 4, not 3: the crowd backed a hold in October, and the Bank raised its rate instead.
+  await expect(page.getByText("Canada called it. On economy questions, Canada has leaned the right way 3 times out of 4.")).toBeVisible();
   await page.goto("/fr/q/mtl-snow-oct-2026");
   await expect(page.getByText("Le Canada a vu juste.", { exact: true })).toBeVisible();
   await page.goto("/en/q/boc-cut-dec-2026");
@@ -178,21 +179,21 @@ test("a sports question says when calls close, in Eastern time, under the answer
 });
 
 test("a closing-soon question still takes a call", async ({ page }) => {
-  await page.goto("/en/q/giller-debut-2026");
+  await page.goto("/en/q/fixture-closing-soon");
   await page.getByRole("button", { name: "Yes", exact: true }).click();
   await page.getByRole("button", { name: "Save my call" }).click();
-  expect(await storedCall(page, "giller-debut-2026")).toBe("75");
+  expect(await storedCall(page, "fixture-closing-soon")).toBe("75");
   await expect(page.getByTestId("result-bars").locator("visible=true")).toBeVisible();
 });
 
 test("a closing-soon question says when it closes, on the Eastern calendar day", async ({ page }) => {
   // Calls close at 04:59 UTC on Nov 8, which is 11:59 p.m. Eastern on Nov 7 (LEX).
-  await page.goto("/en/q/giller-debut-2026");
+  await page.goto("/en/q/fixture-closing-soon");
   await expect(page.getByText(/This question closes November 7, 2026/)).toBeVisible();
 });
 
 test("a closed question stops taking calls", async ({ page }) => {
-  await page.goto("/en/q/jobs-rate-oct-2026");
+  await page.goto("/en/q/fixture-closed-waiting");
   await expect(page.getByRole("heading", { name: "Calls have closed" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Save my call" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Yes", exact: true })).toHaveCount(0);
@@ -302,7 +303,7 @@ test("the social block shows its label and the poll line, apart from Canada says
   await expect(bloc.getByText("Données d’exemple")).toBeVisible();
 
   // Hidden when a question has no polls.
-  await page.goto("/en/q/giller-debut-2026");
+  await page.goto("/en/q/fixture-closing-soon");
   await expect(page.getByTestId("social-polls")).toHaveCount(0);
 });
 
