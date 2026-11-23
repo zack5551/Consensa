@@ -7,7 +7,7 @@ import fr from "@/i18n/dictionaries/fr";
 import { scan } from "@/engine/safety/safety";
 import { calledItFooter, cardSafe, crowdForCard } from "@/lib/share";
 import { shareCardColors, shareCardTokens } from "@/lib/share-card-colors";
-import { isAllowedPostUrl, isOfficialPost, pollPostText, questionPostLinks, questionSocialRows, xPostLength, X_POST_LIMIT, questionShareUrl, shareLinks, socialLinkSchema, socialPollLine, socialPollSchema, type SocialPlatform } from "@/lib/social";
+import { isAllowedPostUrl, isOfficialPost, pollPostText, questionPostLinks, questionSocialRows, xPostLength, X_POST_LIMIT, questionShareUrl, shareImageName, shareImagePath, shareLinks, socialLinkSchema, socialPollLine, socialPollSchema, type SocialPlatform } from "@/lib/social";
 
 /** The gambling, trading and tip rules from the engine's lexicon (CLAUDE.md rule 1), the one home of those words. */
 const lexiconRules = new Set(["gambling", "trading", "tip"]);
@@ -292,4 +292,16 @@ describe("the text zack posts with an X poll", () => {
 it("a sports poll that ends after the game starts stays off the page, even while its totals are early", () => {
   const ig = { platform: "x" as const, yes: 6, no: 4, closedAt: "2026-11-20T12:00:00Z", endsAt: "2026-11-21T00:00:00Z", url: "https://x.com/CANsensus/status/9" };
   expect(questionSocialRows({ socialPolls: [ig] }, "en", { pollsCloseBy: "2026-11-20T18:00:00Z" })).toEqual([]);
+});
+
+describe("Instagram share card", () => {
+  it("points to the page's own card, same-origin, with no host and no query", () => {
+    expect(shareImagePath("https://cansensus.ca/en/q/boc-cut-dec-2026")).toBe("/en/q/boc-cut-dec-2026/opengraph-image");
+    expect(shareImagePath("https://cansensus.ca/fr/q/boc-cut-dec-2026/called-it/yes/")).toBe("/fr/q/boc-cut-dec-2026/called-it/yes/opengraph-image");
+  });
+
+  it("names the saved file after the question only", () => {
+    expect(shareImageName("https://cansensus.ca/en/q/boc-cut-dec-2026")).toBe("cansensus-boc-cut-dec-2026.png");
+    expect(shareImageName("https://cansensus.ca/fr/q/boc-cut-dec-2026/called-it/no")).toBe("cansensus-boc-cut-dec-2026-called-it-no.png");
+  });
 });

@@ -281,6 +281,22 @@ test("share buttons link to the plain question page, with no tracking", async ({
   expect(await page.locator("script[src], iframe, img").evaluateAll((els) => els.map((el) => el.getAttribute("src") ?? "").filter((src) => /twitter|x\.com|threads|facebook|instagram/.test(src)))).toEqual([]);
 });
 
+test("the Instagram button saves the share card on a computer and copies the link", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  for (const locale of ["en", "fr"] as const) {
+    await page.goto(`/${locale}/q/boc-cut-dec-2026`);
+    const button = page.locator('a[data-share="instagram"]').locator("visible=true").first();
+    await expect(button).toHaveText(locale === "en" ? "Save image for Instagram" : "Enregistrer l’image pour Instagram");
+    // Without scripts it is still a plain download of our own card: same origin, nothing from Instagram.
+    expect(await button.getAttribute("href")).toBe(`/${locale}/q/boc-cut-dec-2026/opengraph-image`);
+    const download = page.waitForEvent("download");
+    await button.click();
+    expect((await download).suggestedFilename()).toBe("cansensus-boc-cut-dec-2026.png");
+    await expect(page.getByText(locale === "en" ? "Image saved and link copied." : "Image enregistrée et lien copié.", { exact: false })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/${locale}/q/boc-cut-dec-2026$`));
+  }
+});
+
 test("the social block shows its label and the poll line, apart from Canada says", async ({ page }) => {
   await page.goto("/en/q/boc-cut-dec-2026");
   const block = page.getByTestId("social-polls").locator("visible=true");
