@@ -47,7 +47,7 @@ describe("Meta totals for the question page", () => {
         { from: { id: "8" }, message: "yes", created_time: "2026-11-21T10:00:00+0000" },
         { from: { id: "8" }, message: "❌ non", created_time: "2026-11-21T11:00:00+0000" }, // changed their mind: no
         { from: { id: "9" }, message: "✅ NO", created_time: "2026-11-21T10:00:00+0000" }, // unclear: ignored
-        { message: "YES", created_time: "2026-11-21T10:00:00+0000" }, // no author id: can't be matched, dropped
+        { message: "great post", created_time: "2026-11-21T10:00:00+0000" }, // no author id, but not a vote: no effect
       ],
     };
     const { fetch, calls } = fakeFetch([
@@ -63,6 +63,27 @@ describe("Meta totals for the question page", () => {
     expect(calls[1]!.url).toContain("fields=from%7Bid%7D%2Cmessage%2Ccreated_time");
     for (const c of calls) expect(c.url).not.toContain("page-token");
     expect(REACTION_VOTES).toEqual({ yes: "LIKE", no: "WOW" });
+  });
+
+  it("shows no Facebook total when Meta hides who voted, rather than a total that is too low (AEGIS)", async () => {
+    const ok = { data: [{ id: "1", type: "LIKE" }] };
+    const cases = [
+      { reactions: { data: [{ id: "1", type: "LIKE" }, { type: "WOW" }] }, comments: { data: [] } },
+      { reactions: ok, comments: { data: [{ message: "❌", created_time: "2026-11-21T10:00:00+0000" }] } },
+    ];
+    for (const c of cases) {
+      const { fetch } = fakeFetch([
+        [/\/reactions\?/, c.reactions],
+        [/\/comments\?/, c.comments],
+      ]);
+      expect(await new MetaProvider({ platform: "facebook", accessToken: "t", fetch }).readPollTotals("111_222")).toBeNull();
+    }
+    // A hidden id on a reaction that isn't a vote changes nothing.
+    const { fetch } = fakeFetch([
+      [/\/reactions\?/, { data: [{ id: "1", type: "LIKE" }, { type: "LOVE" }] }],
+      [/\/comments\?/, { data: [] }],
+    ]);
+    expect(await new MetaProvider({ platform: "facebook", accessToken: "t", fetch }).readPollTotals("111_222")).toEqual({ yes: 1, no: 0, source: "reactions" });
   });
 
   it("shows no Facebook total when either the reactions or the comments can't be read in full", async () => {

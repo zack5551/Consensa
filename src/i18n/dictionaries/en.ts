@@ -282,7 +282,7 @@ const en = {
         connection: { title: "A connection check keeps the crowd Canadian", body: "When you make a call, our server in Montréal checks whether it comes from outside Canada or through a VPN or proxy, using a database kept on that server, so your IP address isn’t sent to anyone. Those calls aren’t accepted. We keep no record of the check for any person, only anonymous daily totals." },
         social: { title: "Linked social accounts (only if you link one)", body: "So your replies to official @CANsensus posts on X (Facebook and Instagram later) can count as your calls. We keep the platform’s ID for your account and, only if you choose to show it, your handle. We don’t keep your posts, followers, profile or sign-in tokens. Signing in to link happens on the platform itself, which applies its own privacy policy." },
         socialKept: { title: "Linked social account (platform ID, and handle if shown)", body: "Until you unlink it or delete your account, then deleted at once" },
-        socialCounts: { title: "Totals from our own social posts", body: "We count YES/NO comments on our own Instagram posts. We don’t keep names or comment text." },
+        socialCounts: { title: "Social votes on our posts", body: "We count YES/NO votes (reactions and comments) on our own Facebook and Instagram posts that ask for them. We use account IDs only in the moment, to count each person once. We don’t keep names, IDs or comment text." },
       },
     },
     terms: {

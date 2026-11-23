@@ -66,7 +66,7 @@ const ownPostSchema = z.object({
   poll_attachment: pollAttachment.nullish(),
 });
 const pollOnlySchema = z.object({ poll_attachment: pollAttachment.nullish() });
-const reactionSchema = z.object({ id: numericId, type: z.string().max(20) });
+const reactionSchema = z.object({ id: numericId.optional(), type: z.string().max(20) });
 const fbCommentSchema = z.object({
   message: z.string().max(10_000).optional(),
   created_time: z.string().max(40).optional(),
@@ -331,23 +331,30 @@ export class MetaProvider implements SocialProvider {
    * without one, their 👍 or 😮. Reactor and commenter ids are only the keys of two maps in this function: no id,
    * name or text is kept or logged, and only the two totals leave it. Saved as "reactions" (the stored source
    * names allowed by the database don't change, so no migration).
+   * AEGIS: a vote with no person id (Meta can hide it) can't be matched, so the post shows nothing rather than a
+   * believable total that is too low.
    */
   private async countFacebookVotes(ourPostId: string): Promise<PollTotals | null> {
     const byReaction = new Map<string, Vote>();
+    let unmatched = 0;
     const reactionVote: Record<string, Vote> = { [REACTION_VOTES.yes]: "yes", [REACTION_VOTES.no]: "no" };
     const reactionsOk = await this.eachRow(`${ourPostId}/reactions`, "id,type", (row) => {
       const r = reactionSchema.safeParse(row);
       const vote = r.success ? reactionVote[r.data.type] : undefined;
-      if (r.success && vote) byReaction.set(r.data.id, vote);
+      if (!r.success || !vote) return;
+      if (r.data.id) byReaction.set(r.data.id, vote);
+      else unmatched++;
     });
-    if (!reactionsOk) return null;
+    if (!reactionsOk || unmatched > 0) return null;
     const byComment = new Map<string, Latest>();
     const commentsOk = await this.eachRow(`${ourPostId}/comments`, "from{id},message,created_time", (row) => {
       const c = fbCommentSchema.safeParse(row);
-      // No author id: the comment can't be matched to a reaction, so it is dropped rather than risk counting twice.
-      if (c.success && c.data.from) keepLatest(byComment, c.data.from.id, metaTime(c.data.created_time), parseVote(c.data.message, { marks: true }));
+      if (!c.success) return;
+      const vote = parseVote(c.data.message, { marks: true });
+      if (c.data.from) keepLatest(byComment, c.data.from.id, metaTime(c.data.created_time), vote);
+      else if (vote) unmatched++;
     });
-    if (!commentsOk) return null;
+    if (!commentsOk || unmatched > 0) return null;
     const votes = new Map<string, Vote>(byReaction);
     for (const [person, c] of byComment) votes.set(person, c.vote);
     return totals([...votes.values()].map((vote) => ({ vote })), "reactions");

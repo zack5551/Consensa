@@ -59,7 +59,7 @@ gets rows for all three (LEX).
 - [ ] **Facebook:** Facebook has no poll an app can read. Post on the Page: "React 👍 for yes or 😮 for no, or
       comment ✅ YES or ❌ NO", with the question's link. Each person counts once: their latest vote comment if they
       left one, otherwise their reaction. Reactions and comments are read and counted in memory; no name, text or id
-      is kept. Check after app review that Meta gives an author id on comments (without one a comment is skipped). LEX: Meta treats "react to vote" posts as engagement bait, which can cut a post's reach,
+      is kept. Check after app review that Meta gives a person id on reactions and comments (if it hides one on a vote, the post shows nothing), and that one real post's totals match what Facebook shows (AEGIS). LEX: Meta treats "react to vote" posts as engagement bait, which can cut a post's reach,
       so try one post first and check Meta's current guidance.
 - [ ] **Instagram:** a post with a Yes/No poll if the app offers one; otherwise ask for YES or NO in the comments.
       Comments are read and counted in memory, one per account; no name, text or id is kept.
