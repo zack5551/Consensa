@@ -38,8 +38,10 @@ export function isOnPlatform(platform: SocialPlatform, value: string): boolean {
   return postHosts[platform].some((h) => host === h || host === `www.${h}`);
 }
 
-/** Our handle on every platform (zack, 2026-11-19). Compared without case: the platforms ignore it in addresses. */
-export const OFFICIAL_HANDLE = "cansensus";
+/** Our handle on every platform, as written (zack, 2026-11-19). */
+export const OFFICIAL_HANDLE_DISPLAY = "CANsensus";
+/** The same handle for comparing: the platforms ignore case in addresses. */
+export const OFFICIAL_HANDLE = OFFICIAL_HANDLE_DISPLAY.toLowerCase();
 
 /**
  * True when the URL is a post on our own account (LEX: a logo links only to an official @CANsensus post). The handle
@@ -61,9 +63,13 @@ export const socialPollSchema = z
     platform: z.enum(socialPlatforms),
     yes: count,
     no: count,
-    /** When the platform's poll closed. */
+    /** When the totals were taken: when the platform's poll closed, or the last read of a poll still running. */
     closedAt: z.iso.datetime(),
+    /** When the platform's poll ends, when known. Sports show only a poll that ends before the game starts (LEX). */
+    endsAt: z.iso.datetime().optional(),
     url: z.string().refine(isAllowedPostUrl, { message: "Post URL must be https on x.com, threads.net, threads.com, instagram.com or facebook.com." }),
+    /** Where the totals come from when it isn't the platform's own poll: reactions (Facebook) or YES/NO comments. */
+    source: z.enum(["reactions", "comments"]).optional(),
     /** True for made-up preview numbers, so they are never mistaken for real totals. */
     sample: z.boolean().optional(),
   })
@@ -112,7 +118,7 @@ export function questionPostLinks(q: PostSources, locale: Locale): PostLink[] {
   };
   for (const l of q.socialLinks ?? []) if (!l.locale || l.locale === locale) add(l.platform, l.url);
   for (const p of q.socialPolls ?? []) if (!p.sample) add(p.platform, p.url);
-  for (const p of q.socialPosts ?? []) if (p.platform === "x" && p.locale === locale && /^[0-9]{1,32}$/.test(p.postId)) add("x", `https://x.com/CANsensus/status/${p.postId}`);
+  for (const p of q.socialPosts ?? []) if (p.platform === "x" && p.locale === locale && /^[0-9]{1,32}$/.test(p.postId)) add("x", `https://x.com/${OFFICIAL_HANDLE_DISPLAY}/status/${p.postId}`);
   return socialPlatforms.flatMap((platform) => {
     const url = found.get(platform);
     return url ? [{ platform, url }] : [];
@@ -123,18 +129,32 @@ export type SocialPollLabels = {
   platforms: Record<SocialPlatform, string>;
   /** "{platform} poll, {date}: {percent} yes · {votes}" */
   line: string;
+  /** "{platform} reactions, {date}: {percent} 👍 yes · {votes}" */
+  lineReactions: string;
+  /** "{platform} comments, {date}: {percent} YES · {votes}" */
+  lineComments: string;
   votes: string;
   votesOne: string;
+  reactions: string;
+  reactionsOne: string;
+  comments: string;
+  commentsOne: string;
 };
 
-/** "X poll, Nov. 19: 58% yes · 1,240 votes": platform and close date named, totals only. */
+/** "X poll, Nov. 19: 58% yes · 1,240 votes": platform, source and close date named, totals only. */
 export function socialPollLine(poll: SocialPoll, labels: SocialPollLabels, locale: Locale): string {
   const total = poll.yes + poll.no;
-  return fill(labels.line, {
+  const [line, many, one] =
+    poll.source === "reactions"
+      ? [labels.lineReactions, labels.reactions, labels.reactionsOne]
+      : poll.source === "comments"
+        ? [labels.lineComments, labels.comments, labels.commentsOne]
+        : [labels.line, labels.votes, labels.votesOne];
+  return fill(line, {
     platform: labels.platforms[poll.platform],
     date: formatShortDate(poll.closedAt, locale),
     percent: formatPercent((poll.yes / total) * 100, locale),
-    votes: fill(total === 1 ? labels.votesOne : labels.votes, { n: formatCount(total, locale) }),
+    votes: fill(total === 1 ? one : many, { n: formatCount(total, locale) }),
   });
 }
 
@@ -148,7 +168,7 @@ export function questionSocialRows(q: PostSources, locale: Locale, options: { po
   // Sports are pre-game only (LEX): a platform poll that ran past the start isn't shown.
   const by = options.pollsCloseBy ? Date.parse(options.pollsCloseBy) : Infinity;
   return socialPlatforms.flatMap((platform) => {
-    const polls = (q.socialPolls ?? []).filter((p) => p.platform === platform && Date.parse(p.closedAt) <= by);
+    const polls = (q.socialPolls ?? []).filter((p) => p.platform === platform && Date.parse(p.endsAt ?? p.closedAt) <= by);
     return polls.map((poll) => ({ platform, poll, url: poll.sample ? undefined : isOfficialPost(platform, poll.url) ? poll.url : links.get(platform) }));
   });
 }
@@ -201,4 +221,52 @@ export function questionShareText(labels: ShareTextLabels, question: string, opt
 /** Any share post about a guest or brand question (the question post, the "Called it!" post) leads with its label. */
 export function withAskedBy(text: string, askedBy: string | undefined): string {
   return askedBy ? `${askedBy} · ${text}` : text;
+}
+
+export type PollPostLabels = {
+  /** The full text: vote for fun, how to count in "Canada says", the link, "Free. No prizes." */
+  pollPost: string;
+  /** The same without the reply route: the only one to post until social voting is on (LEX). */
+  pollPostShort: string;
+  /** The last resort for a long question: only the link and "Free. No prizes." */
+  pollPostMin: string;
+  /** Facebook, which has no poll an app can read: 👍 for yes, 😢 for no. */
+  reactPost: string;
+  /** Instagram without a poll: YES or NO in the comments. */
+  commentPost: string;
+  /** LEX's fan-forecast and non-affiliation lines, added for sports. */
+  pollPostSports: string;
+};
+
+/** X counts every link as 23 characters, whatever its length. */
+const X_LINK_LENGTH = 23;
+export const X_POST_LIMIT = 280;
+/** Threads allows 500 characters. */
+const THREADS_POST_LIMIT = 500;
+
+/**
+ * The text zack posts with a hand-made poll (zack, 2026-11-21): the question, "vote for fun", the plain question
+ * link the daily run uses to find the post, and "Free. No prizes." Sports add LEX's lines. On X and Threads, the
+ * reply route ("reply YES or NO from a linked account") is added only with `replyRoute`, once social voting is on
+ * (LEX), and only when it fits; a question too long for even the short text gets only the link. Facebook asks for
+ * reactions and Instagram for comments.
+ */
+export function pollPostText(
+  labels: PollPostLabels,
+  question: string,
+  link: string,
+  options: { sports: boolean; platform?: SocialPlatform; replyRoute?: boolean },
+): string {
+  const text = (template: string) => `${fill(template, { question, link })}${options.sports ? ` ${labels.pollPostSports}` : ""}`;
+  const platform = options.platform ?? "x";
+  if (platform === "facebook") return text(labels.reactPost);
+  if (platform === "instagram") return text(labels.commentPost);
+  const fits = (t: string) => (platform === "x" ? xPostLength(t) <= X_POST_LIMIT : [...t].length <= THREADS_POST_LIMIT);
+  const choices = [...(options.replyRoute ? [labels.pollPost] : []), labels.pollPostShort].map(text);
+  return choices.find(fits) ?? text(labels.pollPostMin);
+}
+
+/** The length X counts for a post: characters, with every link as 23. */
+export function xPostLength(text: string): number {
+  return [...text.replace(/https?:\/\/\S+/g, "x".repeat(X_LINK_LENGTH))].length;
 }

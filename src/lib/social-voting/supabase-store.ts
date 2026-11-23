@@ -1,11 +1,11 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { CountOutcome, CountStore, OfficialPost } from "./count";
+import type { CountOutcome, CountStore, OfficialPost, ReadPatch } from "./count";
 import { idHmac, recheckCutoff } from "./link-rules";
 import type { SpendStore } from "./spend";
 import { releaseOutcomes, removeOutcomes, type ReleaseOutcome, type RemoveOutcome, type SweepStore } from "./sweep";
-import type { Platform, PollTotals } from "./types";
+import type { Platform } from "./types";
 
 const outcomes = ["counted", "duplicate", "website_wins", "older_reply", "closed", "before_link", "unlinked"] as const;
 const PAGE = 1000;
@@ -55,13 +55,16 @@ export class SupabaseSocialStore implements CountStore, SweepStore, SpendStore {
     return at ? new Date(at) : null;
   }
 
-  async saveRead(post: OfficialPost, patch: { readThrough?: Date; poll?: PollTotals }, now: Date): Promise<void> {
+  async saveRead(post: OfficialPost, patch: ReadPatch, now: Date): Promise<void> {
     const row = {
       platform: post.platform,
       post_id: post.postId,
       slug: post.slug,
       ...(patch.readThrough ? { read_through: patch.readThrough.toISOString() } : {}),
-      ...(patch.poll ? { poll_yes: patch.poll.yes, poll_no: patch.poll.no, poll_read_at: now.toISOString() } : {}),
+      // poll_source, poll_ends_at and post_url need the 20261121000000 migration (go-live runs all four first).
+      ...(patch.poll ? { poll_yes: patch.poll.yes, poll_no: patch.poll.no, poll_read_at: now.toISOString(), poll_source: patch.poll.source ?? "poll" } : {}),
+      ...(patch.pollEndsAt !== undefined ? { poll_ends_at: patch.pollEndsAt } : {}),
+      ...(patch.postUrl ? { post_url: patch.postUrl } : {}),
     };
     const { error } = await this.admin.from("social_post_reads").upsert(row, { onConflict: "platform,post_id" });
     if (error) throw new Error("reads unavailable");
