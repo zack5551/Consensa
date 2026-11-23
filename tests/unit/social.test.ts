@@ -271,7 +271,8 @@ describe("the text zack posts with an X poll", () => {
   });
 
   it("asks for reactions on Facebook and comments on Instagram", () => {
-    expect(pollPostText(en.social, "Q?", link, { sports: false, platform: "facebook" })).toContain("react 👍 for yes or 😢 for no");
+    expect(pollPostText(en.social, "Q?", link, { sports: false, platform: "facebook" })).toContain("react 👍 for yes or 😮 for no, or comment ✅ YES or ❌ NO");
+    expect(pollPostText(fr.social, "Q?", link, { sports: false, platform: "facebook" })).toContain("réagissez 👍 pour oui ou 😮 pour non, ou commentez ✅ OUI ou ❌ NON");
     expect(pollPostText(fr.social, "Q?", link, { sports: false, platform: "instagram" })).toContain("commentez OUI ou NON");
   });
 

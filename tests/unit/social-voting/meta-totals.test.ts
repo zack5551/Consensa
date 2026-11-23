@@ -27,14 +27,56 @@ const poll = (a: string, b: string, share: number, total: number) => ({
 });
 
 describe("Meta totals for the question page", () => {
-  it("reads Facebook reactions as yes and no, the token in a header only", async () => {
-    const { fetch, calls } = fakeFetch([[/graph\.facebook\.com\/111_222\?fields=/, { yes: { summary: { total_count: 940 } }, no: { summary: { total_count: 610 } } }]]);
+  it("counts Facebook reactions and vote comments, one per person, the token in a header only (zack, 2026-11-23)", async () => {
+    const reactions = {
+      data: [
+        { id: "1", type: "LIKE", name: "A" }, // 👍 only: yes
+        { id: "2", type: "WOW" }, // 😮 only: no
+        { id: "3", type: "LIKE" }, // 👍, then comments ❌: the comment wins, no
+        { id: "4", type: "LIKE" }, // 👍 and ✅ YES: counted once, yes
+        { id: "5", type: "SAD" }, // not a vote reaction
+        { id: "6", type: "LOVE" }, // not a vote reaction
+      ],
+    };
+    const comments = {
+      data: [
+        { from: { id: "3", name: "C" }, message: "❌", created_time: "2026-11-21T10:00:00+0000" },
+        { from: { id: "4" }, message: "✅ YES", created_time: "2026-11-21T10:00:00+0000" },
+        { from: { id: "7" }, message: "OUI", created_time: "2026-11-21T10:00:00+0000" }, // comment only: yes
+        { from: { id: "7" }, message: "great question", created_time: "2026-11-21T12:00:00+0000" }, // not a vote, earlier vote stands
+        { from: { id: "8" }, message: "yes", created_time: "2026-11-21T10:00:00+0000" },
+        { from: { id: "8" }, message: "❌ non", created_time: "2026-11-21T11:00:00+0000" }, // changed their mind: no
+        { from: { id: "9" }, message: "✅ NO", created_time: "2026-11-21T10:00:00+0000" }, // unclear: ignored
+        { message: "YES", created_time: "2026-11-21T10:00:00+0000" }, // no author id: can't be matched, dropped
+      ],
+    };
+    const { fetch, calls } = fakeFetch([
+      [/graph\.facebook\.com\/111_222\/reactions\?/, reactions],
+      [/graph\.facebook\.com\/111_222\/comments\?/, comments],
+    ]);
     const fb = new MetaProvider({ platform: "facebook", accessToken: "page-token", fetch });
-    expect(await fb.readPollTotals("111_222")).toEqual({ yes: 940, no: 610, source: "reactions" });
-    expect(calls[0]!.url).toContain(`reactions.type(${REACTION_VOTES.yes})`);
-    expect(calls[0]!.url).toContain(`reactions.type(${REACTION_VOTES.no})`);
-    expect(calls[0]!.url).not.toContain("page-token");
-    expect(REACTION_VOTES).toEqual({ yes: "LIKE", no: "SAD" });
+    const totals = await fb.readPollTotals("111_222");
+    // yes: 1, 4, 7 · no: 2, 3, 8
+    expect(totals).toEqual({ yes: 3, no: 3, source: "reactions" });
+    expect(JSON.stringify(totals)).not.toMatch(/name|"A"|"C"/);
+    expect(calls[0]!.url).toContain("fields=id%2Ctype");
+    expect(calls[1]!.url).toContain("fields=from%7Bid%7D%2Cmessage%2Ccreated_time");
+    for (const c of calls) expect(c.url).not.toContain("page-token");
+    expect(REACTION_VOTES).toEqual({ yes: "LIKE", no: "WOW" });
+  });
+
+  it("shows no Facebook total when either the reactions or the comments can't be read in full", async () => {
+    const ok = { data: [{ id: "1", type: "LIKE" }] };
+    for (const failing of [/\/reactions\?/, /\/comments\?/]) {
+      const { fetch } = fakeFetch([
+        [failing, { error: "no" }, 500],
+        [/\/(?:reactions|comments)\?/, ok],
+      ]);
+      expect(await new MetaProvider({ platform: "facebook", accessToken: "t", fetch }).readPollTotals("111_222")).toBeNull();
+    }
+    const endless = { data: [{ id: "1", type: "LIKE" }], paging: { cursors: { after: "c" }, next: "https://graph.facebook.com/next" } };
+    const { fetch } = fakeFetch([[/\/reactions\?/, endless]]);
+    expect(await new MetaProvider({ platform: "facebook", accessToken: "t", fetch }).readPollTotals("111_222")).toBeNull();
   });
 
   it("reads a Threads or Instagram YES/NO poll from Meta's shares, and leaves any other poll alone", async () => {

@@ -52,16 +52,19 @@ must say `true`. If a row says `false`, its `step` column names the file above t
 ## 3b. Facebook, Instagram and Threads totals (zack, later)
 These show under "On social media" only, never in "Canada says". They need a free Meta developer app linked to the
 CANsensus Page, the Instagram professional account and the Threads account, and Meta's review of
-`pages_read_engagement`, `instagram_basic` + `instagram_manage_comments`, and `threads_basic`. Before Instagram
-comments are counted, the Privacy Policy row on counting YES/NO comments goes in, and the PIA gets rows for all three (LEX).
+`pages_read_engagement` + `pages_read_user_content` (Facebook reactions and comments), `instagram_basic` + `instagram_manage_comments`, and `threads_basic`. Before Instagram
+or Facebook comments are counted, the Privacy Policy row on counting YES/NO comments and reactions goes in, and the PIA
+gets rows for all three (LEX).
 - [ ] **Threads:** post a poll with two options, "Yes" and "No" (or "Oui" and "Non"), and the question's link.
-- [ ] **Facebook:** Facebook has no poll an app can read. Post on the Page: "React 👍 for yes or 😢 for no", with
-      the question's link. LEX: Meta treats "react to vote" posts as engagement bait, which can cut a post's reach,
+- [ ] **Facebook:** Facebook has no poll an app can read. Post on the Page: "React 👍 for yes or 😮 for no, or
+      comment ✅ YES or ❌ NO", with the question's link. Each person counts once: their latest vote comment if they
+      left one, otherwise their reaction. Reactions and comments are read and counted in memory; no name, text or id
+      is kept. Check after app review that Meta gives an author id on comments (without one a comment is skipped). LEX: Meta treats "react to vote" posts as engagement bait, which can cut a post's reach,
       so try one post first and check Meta's current guidance.
 - [ ] **Instagram:** a post with a Yes/No poll if the app offers one; otherwise ask for YES or NO in the comments.
       Comments are read and counted in memory, one per account; no name, text or id is kept.
 - [ ] The daily run reads each account's latest 25 posts from the last 8 days and ties a post to a question by its link.
-      Reactions and comments are read only on a post that asks for them as our texts do (Facebook: both 👍 and 😢
+      Reactions and comments are read only on a post that asks for them as our texts do (Facebook: both 👍 and 😮
       named; Instagram: "YES or NO" / "OUI ou NON" in capitals), so a plain post with the link never shows as a vote.
 
 ## 4. Settings in Vercel (zack)

@@ -332,7 +332,7 @@ test("each platform's logo opens our post, with its own result and bar beside it
   await expect(items.nth(0)).toContainText("X poll, Nov 20: 65% yes · 1,243 votes");
   await expect(items.nth(1)).toContainText("Threads poll, Nov 20: 61% yes · 502 votes");
   await expect(items.nth(2)).toContainText("Instagram comments, Nov 20: 60% YES · 3,492 comments");
-  await expect(items.nth(3)).toContainText("Facebook reactions, Nov 20: 61% yes (👍 yes, 😢 no) · 1,550 reactions");
+  await expect(items.nth(3)).toContainText("Facebook reactions and comments, Nov 20: 61% yes (👍 or ✅ yes, 😮 or ❌ no) · 1,550 people");
   await expect(block.getByText("Not verified. May include people outside Canada and under 18.")).toBeVisible();
   // Never inside Canada says.
   await expect(page.getByRole("region", { name: "Canada says" }).getByText(/3,492/)).toHaveCount(0);
@@ -344,7 +344,7 @@ test("each platform's logo opens our post, with its own result and bar beside it
   await expect(bloc.getByTestId("social-compare")).toContainText("Tout le monde peut voter");
   await expect(bloc.getByTestId("social-compare")).toContainText("Prévisions vérifiées au Canada");
   await expect(bloc.getByText("Commentaires Instagram, 20 nov.\u00A0: 60\u00A0% de OUI · 3\u00A0492\u00A0commentaires")).toBeVisible();
-  await expect(bloc.getByText("Réactions Facebook, 20 nov.\u00A0: 61\u00A0% de oui (👍 oui, 😢 non) · 1\u00A0550\u00A0réactions")).toBeVisible();
+  await expect(bloc.getByText("Réactions et commentaires Facebook, 20 nov.\u00A0: 61\u00A0% de oui (👍 ou ✅ oui, 😮 ou ❌ non) · 1\u00A0550\u00A0personnes")).toBeVisible();
 });
 
 test("the share card is a 200 PNG in both languages, and the page asks for the large card", async ({ page, request }) => {
