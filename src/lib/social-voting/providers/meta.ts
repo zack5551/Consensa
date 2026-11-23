@@ -66,11 +66,11 @@ const ownPostSchema = z.object({
   poll_attachment: pollAttachment.nullish(),
 });
 const pollOnlySchema = z.object({ poll_attachment: pollAttachment.nullish() });
-const reactionSchema = z.object({ id: numericId.optional(), type: z.string().max(20) });
+const reactionSchema = z.object({ id: z.unknown().optional(), type: z.string().max(20) });
 const fbCommentSchema = z.object({
   message: z.string().max(10_000).optional(),
   created_time: z.string().max(40).optional(),
-  from: z.object({ id: numericId }).optional(),
+  from: z.object({ id: z.unknown().optional() }).nullish(),
 });
 const voteCommentSchema = z.object({
   text: z.string().max(10_000).optional(),
@@ -342,8 +342,9 @@ export class MetaProvider implements SocialProvider {
       const r = reactionSchema.safeParse(row);
       const vote = r.success ? reactionVote[r.data.type] : undefined;
       if (!r.success || !vote) return;
-      if (r.data.id) byReaction.set(r.data.id, vote);
-      else unmatched++;
+      const id = numericId.safeParse(r.data.id);
+      if (id.success) byReaction.set(id.data, vote);
+      else unmatched++; // a missing or odd id on a vote: fail closed (AEGIS)
     });
     if (!reactionsOk || unmatched > 0) return null;
     const byComment = new Map<string, Latest>();
@@ -351,7 +352,8 @@ export class MetaProvider implements SocialProvider {
       const c = fbCommentSchema.safeParse(row);
       if (!c.success) return;
       const vote = parseVote(c.data.message, { marks: true });
-      if (c.data.from) keepLatest(byComment, c.data.from.id, metaTime(c.data.created_time), vote);
+      const id = numericId.safeParse(c.data.from?.id);
+      if (id.success) keepLatest(byComment, id.data, metaTime(c.data.created_time), vote);
       else if (vote) unmatched++;
     });
     if (!commentsOk || unmatched > 0) return null;
