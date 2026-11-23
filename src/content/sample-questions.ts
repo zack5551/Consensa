@@ -1,5 +1,6 @@
 import { isOpen, outcomes, questionSchema, questionState, type Question } from "@/lib/question";
 import { z } from "zod";
+import { FIXED_TEST_NOW, siteNow } from "@/lib/clock";
 import liveQuestions from "./live-questions.json";
 import liveResults from "./live-results.json";
 import { moreSampleQuestions } from "./more-questions";
@@ -7,10 +8,9 @@ import { series } from "./series";
 import { fixtureQuestions } from "./test-fixtures";
 
 /**
- * The preview's fixed "now", so sample states (closing soon, closed, resolved) render the same on every build.
- * Live data replaces this with the real clock in M3.
+ * The fixed date tests and the engine's sample feeds run on. The site itself reads the real clock (siteNow).
  */
-export const SAMPLE_NOW = new Date("2026-11-06T12:00:00Z");
+export const SAMPLE_NOW = FIXED_TEST_NOW;
 
 const raw = [
   {
@@ -73,6 +73,8 @@ const raw = [
         fr: "Résolue OUI si l’œuvre gagnante de 2026 est le premier livre de fiction publié de son auteur ou autrice, selon le prix.",
       },
       resolvesAt: "2026-11-17T03:00:00Z",
+      // Nicholas Herring won on Nov. 16 with his second novel (gillerprize.ca), so not a debut.
+      result: { outcome: "no", publishedAt: "2026-11-17T02:00:00Z" },
     },
   },
   {
@@ -189,6 +191,8 @@ const raw = [
         fr: "Résolue OUI si le taux de chômage national désaisonnalisé d’octobre 2026 est de 7,0 % ou plus dans la première publication de l’Enquête sur la population active.",
       },
       resolvesAt: "2026-11-06T13:30:00Z",
+      // The Labour Force Survey put October at 6.7% (The Daily, Nov. 6, 2026).
+      result: { outcome: "no", publishedAt: "2026-11-06T13:30:00Z" },
     },
   },
   {
@@ -236,7 +240,8 @@ const raw = [
         fr: "Résolue OUI si la cible du taux du financement à un jour reste inchangée après la décision prévue d’octobre 2026.",
       },
       resolvesAt: "2026-10-28T14:00:00Z",
-      result: { outcome: "yes", publishedAt: "2026-10-28T14:00:00Z" },
+      // The Bank raised the target from 2.25% to 2.50% on Oct. 28, 2026, so it did not hold.
+      result: { outcome: "no", publishedAt: "2026-10-28T14:00:00Z" },
     },
   },
   {
@@ -325,6 +330,6 @@ export function getQuestion(slug: string): Question | undefined {
 }
 
 /** Today's five: the first five open questions in editorial order. */
-export function todaysFive(now: Date = SAMPLE_NOW): Question[] {
+export function todaysFive(now: Date = siteNow()): Question[] {
   return sampleQuestions.filter((q) => isOpen(questionState(q, now))).slice(0, 5);
 }

@@ -2,7 +2,8 @@ import { shareCardImage } from "@/components/share-card-image";
 import { cardSize } from "@/components/share-card-parts";
 import { BRAND_NAME } from "@/lib/brand";
 import { notFound } from "next/navigation";
-import { getQuestion, sampleQuestions, SAMPLE_NOW } from "@/content/sample-questions";
+import { getQuestion, sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { isLocale, locales } from "@/i18n/config";
 import { withLiveQuestion } from "@/lib/live";
 
@@ -28,5 +29,5 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
   const { locale, slug } = await params;
   const q = await withLiveQuestion(getQuestion(slug));
   if (!isLocale(locale) || !q) notFound();
-  return shareCardImage(q, locale, SAMPLE_NOW);
+  return shareCardImage(q, locale, siteNow());
 }

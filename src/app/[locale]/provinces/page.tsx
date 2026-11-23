@@ -10,7 +10,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProvinceSplit } from "@/components/province-split";
 import { ScreenView } from "@/components/screen-view";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { sampleResults } from "@/content/sample-results";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -20,6 +21,9 @@ import { bellwether, MIN_CELL, meanDistance, regionalAccuracy, regions, regionSl
 import { formatBrier, formatOneDecimal } from "@/lib/score-format";
 import { provinceSummary } from "@/lib/province-summary";
 import { fill } from "@/lib/text";
+
+/** Open, closed and settled states follow the real clock, so the page is rebuilt every few minutes. */
+export const revalidate = 300;
 
 type Params = Promise<{ locale: string }>;
 
@@ -43,7 +47,7 @@ export default async function ProvincesPage({ params }: { params: Params }) {
   const p = t.provinces;
   const pct = (v: number) => formatPercent(v, locale);
 
-  const open = sampleQuestions.filter((q) => isOpen(questionState(q, SAMPLE_NOW))).map((q) => ({ ...q, national: crowdNow(q) }));
+  const open = sampleQuestions.filter((q) => isOpen(questionState(q, siteNow()))).map((q) => ({ ...q, national: crowdNow(q) }));
   const bell = bellwether(open);
   const accuracy = regionalAccuracy(sampleResults);
   const accuracyBy = new Map(accuracy.map((a) => [a.region, a]));

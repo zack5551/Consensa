@@ -2,7 +2,8 @@ import type { ForecasterRecord } from "@/lib/leaderboard";
 import type { ScoredCall } from "@/lib/record";
 import type { Region } from "@/lib/regions";
 import { isOpen, questionState } from "@/lib/question";
-import { SAMPLE_NOW, sampleQuestions } from "./sample-questions";
+import { sampleQuestions } from "./sample-questions";
+import { siteNow } from "@/lib/clock";
 import { sampleResults, type Result } from "./sample-results";
 
 /**
@@ -137,7 +138,7 @@ export function getForecaster(handle: string): ForecasterRecord | undefined {
  */
 function generateOpenCalls(): Record<string, Record<string, number>> {
   const rand = rng(1107);
-  const open = sampleQuestions.filter((q) => q.scored && isOpen(questionState(q, SAMPLE_NOW)));
+  const open = sampleQuestions.filter((q) => q.scored && isOpen(questionState(q, siteNow())));
   const out: Record<string, Record<string, number>> = {};
   for (const f of sampleForecasters) {
     const mine: Record<string, number> = {};

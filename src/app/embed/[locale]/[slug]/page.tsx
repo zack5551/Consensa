@@ -11,7 +11,8 @@ import { CrowdBar } from "@/components/crowd-bar";
 import { ProvinceSplit } from "@/components/province-split";
 import { SportsNotice } from "@/components/sports-notice";
 import { Wordmark } from "@/components/wordmark";
-import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { getQuestion, sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -45,7 +46,7 @@ export default async function EmbedPage({ params }: { params: Params }) {
   const t = getDictionary(locale);
   const yes = crowdNow(q);
   const pct = (v: number) => formatPercent(v, locale);
-  const state = questionState(q, SAMPLE_NOW);
+  const state = questionState(q, siteNow());
   const open = isOpen(state);
   const href = `/${locale}/q/${q.slug}?utm_source=embed`;
 

@@ -10,6 +10,9 @@ import { LeaderboardScreen } from "@/components/leaderboard-screen";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 
+/** Open, closed and settled states follow the real clock, so the page is rebuilt every few minutes. */
+export const revalidate = 300;
+
 type Params = Promise<{ locale: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {

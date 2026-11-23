@@ -10,12 +10,16 @@ import { notFound } from "next/navigation";
 import { CrowdBar } from "@/components/crowd-bar";
 import { ScreenView } from "@/components/screen-view";
 import { Icon } from "@/components/shell/icons";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent } from "@/lib/format";
 import { categories, crowdNow, isOpen, questionState } from "@/lib/question";
 import { fill } from "@/lib/text";
+
+/** Open, closed and settled states follow the real clock, so the page is rebuilt every few minutes. */
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -33,7 +37,7 @@ export default async function BrowsePage({ params }: { params: Promise<{ locale:
 
   const topics = categories.map((c) => {
     const inTopic = sampleQuestions.filter((q) => q.category === c);
-    const open = inTopic.filter((q) => isOpen(questionState(q, SAMPLE_NOW)));
+    const open = inTopic.filter((q) => isOpen(questionState(q, siteNow())));
     const lead = [...open].sort((a, b) => b.forecasters - a.forecasters)[0];
     const calls = inTopic.reduce((n, q) => n + q.forecasters, 0);
     return { c, open: open.length, lead, calls };

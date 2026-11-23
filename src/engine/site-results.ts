@@ -18,8 +18,10 @@ export const siteResolvers: Readonly<Record<string, Resolver>> = {
   "boc-hold-oct-2026": { kind: "boc-policy-rate", decisionDate: "2026-10-28", direction: "hold" },
   "boc-cut-oct-2026": { kind: "boc-policy-rate", decisionDate: "2026-10-28", direction: "cut" },
   "boc-cut-dec-2026": { kind: "boc-policy-rate", decisionDate: "2026-12-09", direction: "cut" },
+  "boc-hike-dec-2026": { kind: "boc-policy-rate", decisionDate: "2026-12-09", direction: "hike" },
   // Statistics Canada Labour Force Survey.
   "jobs-rate-oct-2026": { kind: "statcan-vector", vectorId: LFS_UNEMPLOYMENT_VECTOR, refPeriod: "2026-10", comparator: ">=", threshold: 7, unit: "%" },
+  "jobs-rate-dec-2026": { kind: "statcan-vector", vectorId: LFS_UNEMPLOYMENT_VECTOR, refPeriod: "2026-12", comparator: ">=", threshold: 6.8, unit: "%" },
 };
 
 /** The site questions with an automatic result, in the shape the resolve step takes. */

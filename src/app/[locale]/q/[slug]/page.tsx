@@ -22,7 +22,8 @@ import { SourceCredit } from "@/components/source-credit";
 import { SportsNotice } from "@/components/sports-notice";
 import { StateBadge } from "@/components/state-badge";
 import { StateNote } from "@/components/state-note";
-import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { getQuestion, sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { liveSocialPolls, withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -76,7 +77,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
   if (!isLocale(raw) || !q) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
-  const state = questionState(q, SAMPLE_NOW);
+  const state = questionState(q, siteNow());
   const yes = crowdNow(q);
   const pct = (v: number) => formatPercent(v, locale);
   const first = q.history[0] ?? yes;
@@ -122,7 +123,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
       .filter(Boolean)
       .join(" ");
 
-  const next = nextUp(q, all, SAMPLE_NOW);
+  const next = nextUp(q, all, siteNow());
 
   const note =
     state === "closingSoon"
@@ -152,7 +153,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
   const askedBy = q.askedBy ? askedByLabel(q.askedBy, t.question.askedBy) : undefined;
 
   let calledItShare: CalledItShare | undefined;
-  if (result && hasCalledItCard(q, result.outcome, SAMPLE_NOW)) {
+  if (result && hasCalledItCard(q, result.outcome, siteNow())) {
     const url = calledItShareUrl(siteUrl(), locale, q.slug, result.outcome);
     const text = withAskedBy(fill(t.share.calledItText, { question: q.question[locale] }), askedBy);
     calledItShare = { t: t.share, text, url, links: shareLinks(text, url) };

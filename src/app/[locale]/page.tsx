@@ -11,7 +11,8 @@ import { CrowdBar } from "@/components/crowd-bar";
 import { ProvinceSplit } from "@/components/province-split";
 import { ScreenView } from "@/components/screen-view";
 import { localeHref } from "@/components/shell/nav-items";
-import { SAMPLE_NOW, sampleQuestions as sample, todaysFive } from "@/content/sample-questions";
+import { sampleQuestions as sample, todaysFive } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -41,7 +42,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const href = (path: string) => localeHref(locale, path);
 
   const sampleQuestions = await withLiveCrowd(sample);
-  const open = sampleQuestions.filter((q) => isOpen(questionState(q, SAMPLE_NOW)));
+  const open = sampleQuestions.filter((q) => isOpen(questionState(q, siteNow())));
   const firstSlug = todaysFive()[0]?.slug;
   const lead = sampleQuestions.find((q) => q.slug === firstSlug) ?? open[0] ?? sampleQuestions[0]!;
   const leadYes = crowdNow(lead);

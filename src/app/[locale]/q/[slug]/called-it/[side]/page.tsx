@@ -13,7 +13,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AskedByLabel } from "@/components/asked-by-label";
 import { SportsNotice } from "@/components/sports-notice";
-import { getQuestion, SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { getQuestion, sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { askedByLabel } from "@/lib/asked-by";
@@ -32,14 +33,14 @@ export const dynamicParams = false;
 export const revalidate = 60;
 
 export function generateStaticParams() {
-  return locales.flatMap((locale) => calledItCards(sampleQuestions, SAMPLE_NOW).map((card) => ({ locale, ...card })));
+  return locales.flatMap((locale) => calledItCards(sampleQuestions, siteNow()).map((card) => ({ locale, ...card })));
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale, slug, side } = await params;
   // The same live source as the page, so a live result gets matching metadata.
   const q = await withLiveQuestion(getQuestion(slug));
-  if (!isLocale(locale) || !q || !hasCalledItCard(q, side, SAMPLE_NOW)) return notFoundMetadata(locale);
+  if (!isLocale(locale) || !q || !hasCalledItCard(q, side, siteNow())) return notFoundMetadata(locale);
   const t = getDictionary(locale);
   const title = fill(t.share.calledItPageTitle, { question: q.question[locale] });
   const description = `${fill(t.resolution.answerIs, { answer: side === "yes" ? t.question.yes : t.question.no })}. ${t.legal.noValue}`;
@@ -58,7 +59,7 @@ export default async function CalledItPage({ params }: { params: Params }) {
   const { locale: raw, slug, side } = await params;
   const q = await withLiveQuestion(getQuestion(slug));
   const result = q?.resolution.result;
-  if (!isLocale(raw) || !q || !result || !hasCalledItCard(q, side, SAMPLE_NOW)) notFound();
+  if (!isLocale(raw) || !q || !result || !hasCalledItCard(q, side, siteNow())) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
   const crowd = crowdForCard(q, crowdNow(q));

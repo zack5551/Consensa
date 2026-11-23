@@ -1,6 +1,16 @@
-import type { questionSchema } from "@/lib/question";
+import { provinces, type questionSchema } from "@/lib/question";
 import type { z } from "zod";
 import { series } from "./series";
+
+/** A question that just opened: no calls behind it yet, so no number or province split to show. */
+const NEW_CROWD = {
+  forecasters: 0,
+  fewCalls: true as const,
+  history: [50, 50],
+  provinces: { BC: 50, AB: 50, PR: 50, ON: 50, QC: 50, AT: 50 },
+  hiddenProvinces: [...provinces],
+  events: [],
+};
 
 /**
  * More sample questions for the Board, category boards and search (ORBIT). Same rules as the rest:
@@ -10,6 +20,65 @@ import { series } from "./series";
  * The game examples used by the tests live in ./test-fixtures.ts, built in only for the e2e run.
  */
 export const moreSampleQuestions = [
+  // Opened 2026-11-23. A new question starts with no crowd yet: "<50" calls, the province tiles hidden, and an even
+  // 50% until real calls replace it.
+  {
+    slug: "boc-hike-dec-2026",
+    category: "economy",
+    question: {
+      en: "Will the Bank of Canada raise its policy rate again at its December decision?",
+      fr: "La Banque du Canada relèvera-t-elle encore son taux directeur à sa décision de décembre?",
+    },
+    scored: true,
+    closesAt: "2026-12-09T14:45:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "Bank of Canada", fr: "Banque du Canada" }, url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/", urlFr: "https://www.banqueducanada.ca/grandes-fonctions/politique-monetaire/taux-directeur/" },
+      rule: {
+        en: "Resolves YES if the Bank of Canada announces a higher target for the overnight rate than 2.50% on its scheduled December 9, 2026 decision date. Any other outcome resolves NO.",
+        fr: "Résolue OUI si la Banque du Canada annonce une cible du taux du financement à un jour supérieure à 2,50\u00a0% à sa date de décision prévue du 9 décembre 2026. Tout autre résultat donne NON.",
+      },
+      resolvesAt: "2026-12-09T15:00:00Z",
+    },
+  },
+  {
+    slug: "jobs-rate-dec-2026",
+    category: "economy",
+    question: {
+      en: "Will Canada’s December unemployment rate be 6.8% or higher?",
+      fr: "Le taux de chômage de décembre au Canada sera-t-il de 6,8\u00a0% ou plus?",
+    },
+    scored: true,
+    closesAt: "2027-01-08T13:00:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "Statistics Canada · Labour Force Survey", fr: "Statistique Canada · Enquête sur la population active" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701", urlFr: "https://www150.statcan.gc.ca/t1/tbl1/fr/tv.action?pid=1410028701" },
+      rule: {
+        en: "Resolves YES if the seasonally adjusted national unemployment rate for December 2026 is 6.8% or higher in the first Labour Force Survey release, scheduled for January 8, 2027. October’s rate was 6.7%.",
+        fr: "Résolue OUI si le taux de chômage national désaisonnalisé de décembre 2026 est de 6,8\u00a0% ou plus dans la première publication de l’Enquête sur la population active, prévue le 8 janvier 2027. Le taux d’octobre était de 6,7\u00a0%.",
+      },
+      resolvesAt: "2027-01-08T13:30:00Z",
+    },
+  },
+  {
+    slug: "montreal-snow-dec-2026",
+    category: "weather",
+    question: {
+      en: "Will Montréal get 45 cm of snow or more in December?",
+      fr: "Montréal recevra-t-elle 45\u00a0cm de neige ou plus en décembre?",
+    },
+    scored: true,
+    closesAt: "2026-12-01T05:00:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "Environment and Climate Change Canada", fr: "Environnement et Changement climatique Canada" }, url: "https://climate.weather.gc.ca/" },
+      rule: {
+        en: "Resolves YES if daily snowfall at Montréal–Trudeau (YUL, climate ID 702S006) from Dec. 1 to Dec. 31, 2026 (ET) adds up to 45\u00a0cm or more in ECCC daily data. December’s 1981–2010 normal there is about 49\u00a0cm.",
+        fr: "Résolue OUI si la neige tombée chaque jour à Montréal-Trudeau (YUL, identifiant climatologique 702S006) du 1er au 31 décembre 2026 (HE) totalise au moins 45\u00a0cm selon les données quotidiennes d’ECCC. La normale de décembre 1981-2010 y est d’environ 49\u00a0cm.",
+      },
+      resolvesAt: "2027-01-02T17:00:00Z",
+    },
+  },
   {
     slug: "gdp-q3-2026",
     category: "economy",

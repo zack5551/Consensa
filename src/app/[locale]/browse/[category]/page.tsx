@@ -12,13 +12,17 @@ import { boardStrings } from "@/components/board-strings";
 import { BoardView } from "@/components/board-view";
 import { ScreenView } from "@/components/screen-view";
 import { SportsNotice } from "@/components/sports-notice";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { toBoardRow } from "@/lib/board";
 import { formatCount } from "@/lib/format";
 import { categories, isOpen, type Category } from "@/lib/question";
 import { fill } from "@/lib/text";
+
+/** Open, closed and settled states follow the real clock, so the page is rebuilt every few minutes. */
+export const revalidate = 300;
 
 type Params = Promise<{ locale: string; category: string }>;
 
@@ -48,7 +52,7 @@ export default async function CategoryPage({ params }: { params: Params }) {
   if (!isLocale(raw) || !isCategory(category)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
-  const rows = sampleQuestions.filter((q) => q.category === category).map((q) => toBoardRow(q, SAMPLE_NOW));
+  const rows = sampleQuestions.filter((q) => q.category === category).map((q) => toBoardRow(q, siteNow()));
   const open = rows.filter((r) => isOpen(r.state)).length;
   const calls = rows.reduce((n, r) => n + r.forecasters, 0);
 

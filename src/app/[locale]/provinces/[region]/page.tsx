@@ -15,7 +15,8 @@ import { LeaderboardTable } from "@/components/leaderboard-table";
 import { ScreenView } from "@/components/screen-view";
 import { StatTile } from "@/components/stat-tile";
 import { sampleForecasters, SAMPLE_ME } from "@/content/sample-forecasters";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { sampleResults } from "@/content/sample-results";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -26,6 +27,9 @@ import { isPublishable, MIN_CELL, meanDistance, regionalAccuracy, regionFromSlug
 import { brierScore } from "@/lib/scoring";
 import { formatBrier, formatOneDecimal } from "@/lib/score-format";
 import { fill } from "@/lib/text";
+
+/** Open, closed and settled states follow the real clock, so the page is rebuilt every few minutes. */
+export const revalidate = 300;
 
 type Params = Promise<{ locale: string; region: string }>;
 
@@ -55,7 +59,7 @@ export default async function RegionPage({ params }: { params: Params }) {
   const pct = (v: number) => formatPercent(v, locale);
   const inName = p.inNames[region];
 
-  const openQuestions = sampleQuestions.filter((q) => isOpen(questionState(q, SAMPLE_NOW)));
+  const openQuestions = sampleQuestions.filter((q) => isOpen(questionState(q, siteNow())));
   const open = openQuestions.map((q) => ({ ...q, national: crowdNow(q) }));
   const gaps = regionGaps(open, region).slice(0, 5);
   const titles = new Map(openQuestions.map((q) => [q.slug, q.question[locale]]));

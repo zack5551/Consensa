@@ -31,8 +31,12 @@ describe("questionState", () => {
 
 describe("sample data", () => {
   it("covers every state the preview needs", () => {
-    const states = new Set(sampleQuestions.map((q) => questionState(q, SAMPLE_NOW)));
+    // The site runs on the real clock, so every state shows up over the calendar: closing soon an hour before a close,
+    // closed a minute after it (until the result is in), resolved once the official source publishes.
+    const moments = [SAMPLE_NOW, ...sampleQuestions.flatMap((q) => [Date.parse(callsCloseAt(q)) - 3_600_000, Date.parse(callsCloseAt(q)) + 60_000].map((t) => new Date(t)))];
+    const states = new Set(moments.flatMap((now) => sampleQuestions.map((q) => questionState(q, now))));
     for (const s of ["open", "closingSoon", "closed", "resolved"] as const) expect(states.has(s), s).toBe(true);
+    expect(questionState(getQuestion("cpi-sept-2026")!, SAMPLE_NOW)).toBe("resolved");
   });
 
   it("closes every question before its result is published", () => {
@@ -102,9 +106,10 @@ describe("crowd record", () => {
     expect(crowdBrier(getQuestion("box-office-oct-2026")!)).toBeNull();
     expect(crowdBrier(getQuestion("boc-cut-dec-2026")!)).toBeNull();
     const record = crowdRecord(sampleQuestions);
-    // cpi-sept, boc-hold-oct, mtl-snow, plus boc-cut-oct from the extra questions.
-    expect(record.resolved).toBe(4);
-    expect(record.rightSide).toBe(100);
+    // cpi-sept, boc-hold-oct, mtl-snow, giller-debut, jobs-rate-oct, plus boc-cut-oct from the extra questions.
+    expect(record.resolved).toBe(6);
+    // The crowd backed a hold in October (77%); the Bank raised instead, so five of six landed on the right side.
+    expect(record.rightSide).toBe(83);
   });
 });
 
