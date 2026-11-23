@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { sampleForecasters, sampleOpenCalls, SAMPLE_ME } from "@/content/sample-forecasters";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { formatPercent } from "@/lib/format";
@@ -23,7 +24,7 @@ const SHARPEST_N = 10;
 function sharpestLines(board: readonly LeaderboardRow[], locale: Locale) {
   const top = board.filter((r) => r.adjustedSkill > 0).slice(0, SHARPEST_N);
   return sampleQuestions
-    .filter((q) => q.scored && isOpen(questionState(q, SAMPLE_NOW)))
+    .filter((q) => q.scored && isOpen(questionState(q, siteNow())))
     .flatMap((q) => {
       const entries = top.flatMap((r) => {
         const percent = sampleOpenCalls[r.handle]?.[q.slug];

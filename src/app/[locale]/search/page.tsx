@@ -7,12 +7,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ScreenView } from "@/components/screen-view";
 import { SearchView, type SearchDoc } from "@/components/search-view";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { sortRows, toBoardRow } from "@/lib/board";
+
+/** Open, closed and settled states follow the real clock, so the page is rebuilt every few minutes. */
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -27,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
  */
 function buildDocs(): SearchDoc[] {
   const byPopularity = sortRows(
-    sampleQuestions.map((q) => toBoardRow(q, SAMPLE_NOW)),
+    sampleQuestions.map((q) => toBoardRow(q, siteNow())),
     "popular",
   );
   return byPopularity.map((row) => {

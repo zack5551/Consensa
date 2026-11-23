@@ -16,7 +16,8 @@ import { StateBadge } from "@/components/state-badge";
 import { YourCallBadge } from "@/components/your-call-badge";
 import { ScreenView } from "@/components/screen-view";
 import { TodayProgress } from "@/components/today-progress";
-import { SAMPLE_NOW, todaysFive } from "@/content/sample-questions";
+import { todaysFive } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -56,7 +57,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
 
   const kicker = "m-0 text-caption font-bold uppercase tracking-widest";
   const leadYes = crowdNow(lead);
-  const leadState = questionState(lead, SAMPLE_NOW);
+  const leadState = questionState(lead, siteNow());
 
   return (
     <div className="grid gap-10 sm:gap-12">
@@ -137,7 +138,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
       {/* The other four: a numbered running order under a heavy rule, not four identical cards. */}
       <ol className="m-0 grid list-none border-t-2 border-ink p-0" aria-label={t.today.title}>
         {rest.flatMap((q, i) => {
-          const state = questionState(q, SAMPLE_NOW);
+          const state = questionState(q, siteNow());
           const yes = crowdNow(q);
           return [
             ...(i === 2

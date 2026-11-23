@@ -14,7 +14,8 @@ import { askedByLabel } from "@/lib/asked-by";
 import { RecordView } from "@/components/record-view";
 import { ScreenView } from "@/components/screen-view";
 import { getForecaster, SAMPLE_ME, sampleForecasters } from "@/content/sample-forecasters";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatLongDate } from "@/lib/format";
@@ -22,6 +23,9 @@ import { rankForecasters } from "@/lib/leaderboard";
 import { callsCloseAt, questionState } from "@/lib/question";
 import { socialVotingOn } from "@/lib/social-voting/env";
 import { fill } from "@/lib/text";
+
+/** Open, closed and settled states follow the real clock, so the page is rebuilt every few minutes. */
+export const revalidate = 300;
 
 type Params = Promise<{ locale: string }>;
 
@@ -44,7 +48,7 @@ export default async function RecordPage({ params }: { params: Params }) {
 
   const pending = sampleQuestions
     .filter((q) => {
-      const s = questionState(q, SAMPLE_NOW);
+      const s = questionState(q, siteNow());
       // A cancelled question is never scored, so it isn't waiting for anything.
       return q.scored && s !== "resolved" && s !== "cancelled";
     })

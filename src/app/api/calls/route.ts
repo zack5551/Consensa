@@ -1,6 +1,7 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { getQuestion, SAMPLE_NOW } from "@/content/sample-questions";
+import { getQuestion } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { termsCurrent, termsGateOn, type ConsentRow } from "@/lib/account";
 import { callsCountFrom, COUNTRY_HEADER, PROXY_CHECK_TIMEOUT_MS, withinTime } from "@/lib/call-origin";
 import { callsCloseAt, isOpen, questionState } from "@/lib/question";
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
   const q = getQuestion(parsed.data.slug);
   if (!q) return NextResponse.json({ error: "unknown question" }, { status: 404, headers: noStore });
   // The site's clock: the same one every page uses to show a question as open or closed.
-  if (!isOpen(questionState(q, SAMPLE_NOW))) return NextResponse.json({ error: "closed" }, { status: 409, headers: noStore });
+  if (!isOpen(questionState(q, siteNow()))) return NextResponse.json({ error: "closed" }, { status: 409, headers: noStore });
 
   // Calls need the current Terms (Terms s. 18) once they take effect. Sign-in and the Terms page already ask again
   // after a change, but a session that stayed open across the change would otherwise keep calling under the old

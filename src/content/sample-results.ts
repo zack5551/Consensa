@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { categories, questionState, type Question } from "@/lib/question";
 import { regions, type Region } from "@/lib/regions";
 
@@ -170,7 +171,7 @@ function withTotals(r: z.infer<typeof resultSchema>): Result {
 function fromQuestion(q: Question): z.infer<typeof resultSchema> | null {
   const result = q.resolution.result;
   // Only a yes or no is a result. A cancelled question never reaches the record, the leaderboard or the province scores.
-  if (!result || result.outcome === "cancelled" || questionState(q, SAMPLE_NOW) !== "resolved" || !q.scored) return null;
+  if (!result || result.outcome === "cancelled" || questionState(q, siteNow()) !== "resolved" || !q.scored) return null;
   const counts = mix(q.forecasters);
   const percents = regions.map((r) => Math.min(99, Math.max(1, Math.round(q.provinces[r])))) as Cells;
   return {

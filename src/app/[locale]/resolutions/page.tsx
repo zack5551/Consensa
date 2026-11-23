@@ -11,13 +11,17 @@ import { AskedByLabel } from "@/components/asked-by-label";
 import { ScreenView } from "@/components/screen-view";
 import { SourceCredit } from "@/components/source-credit";
 import { StateBadge } from "@/components/state-badge";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteNow } from "@/lib/clock";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatBrier, formatLongDate, formatPercent } from "@/lib/format";
 import { crowdBrier, crowdNow, isOpen, questionState, sourceUrl } from "@/lib/question";
 import { fill } from "@/lib/text";
 import { askedByLabel } from "@/lib/asked-by";
+
+/** Open, closed and settled states follow the real clock, so the page is rebuilt every few minutes. */
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -31,7 +35,7 @@ export default async function ResolutionsPage({ params }: { params: Promise<{ lo
   const locale: Locale = raw;
   const t = getDictionary(locale);
   const rows = sampleQuestions
-    .map((q) => ({ q, state: questionState(q, SAMPLE_NOW) }))
+    .map((q) => ({ q, state: questionState(q, siteNow()) }))
     .filter(({ state }) => !isOpen(state))
     .sort((a, b) => Date.parse(b.q.resolution.result?.publishedAt ?? b.q.closesAt) - Date.parse(a.q.resolution.result?.publishedAt ?? a.q.closesAt));
   const c = t.log.columns;
