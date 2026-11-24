@@ -38,7 +38,7 @@ export interface DeletedCheck {
 }
 
 /**
- * Where a platform's YES/NO totals come from: its own poll, the reactions on our post (Facebook: 👍 yes, 😢 no), or
+ * Where a platform's YES/NO totals come from: its own poll, the reactions on our post (Facebook: 👍 or ✅ comment yes, 😮 or ❌ comment no, one per person), or
  * the YES/NO comments on our post (Instagram, one per account, counted in memory). Totals only, nothing about a person.
  */
 export const pollSources = ["poll", "reactions", "comments"] as const;

@@ -25,6 +25,22 @@ describe("reading a reply as YES or NO", () => {
     expect(parseVote(text)).toBeNull();
   });
 
+  it.each([
+    ["✅", "yes"], ["✔️", "yes"], ["☑️", "yes"], ["✅ YES", "yes"], ["✅✅", "yes"], ["Oui ✅", "yes"], ["@CANsensus ✅", "yes"],
+    ["❌", "no"], ["✖️", "no"], ["❎", "no"], ["❌ NO", "no"], ["non ❌", "no"],
+  ] as const)("on Facebook, a check or a cross counts too: %s → %s", (text, vote) => {
+    expect(parseVote(text, { marks: true })).toBe(vote);
+  });
+
+  it.each(["✅ NO", "❌ oui", "✅❌", "✅ maybe", "✅ yes please", "👍", "😮"])("on Facebook, ignores an unclear mark: %s", (text) => {
+    expect(parseVote(text, { marks: true })).toBeNull();
+  });
+
+  it("reads a lone mark only where it's asked for (Facebook), never elsewhere", () => {
+    expect(parseVote("✅")).toBeNull();
+    expect(parseVote("❌")).toBeNull();
+  });
+
   it("ignores anything that isn't text", () => {
     expect(parseVote(null)).toBeNull();
     expect(parseVote(undefined)).toBeNull();

@@ -8,7 +8,10 @@
  *
  * Totals for the question page (zack, 2026-11-21), shown under "On social media" and never in "Canada says":
  * - Threads and Instagram: the post's own YES/NO poll (Meta gives each option's share and the total).
- * - Facebook has no poll Meta lets an app read, so a Page post asks for reactions: 👍 is yes, 😢 is no.
+ * - Facebook has no poll Meta lets an app read, so a Page post asks for a reaction or a comment (zack, 2026-11-23):
+ *   👍 or a ✅/YES/OUI comment is yes, 😮 or a ❌/NO/NON comment is no. Each person counts once: their latest vote
+ *   comment if they left one, otherwise their reaction (a 👍 alone can just mean "nice post", a comment can't). The
+ *   reactions and comments are read in memory, like Instagram's comments, and only the two totals leave this file.
  * - Instagram without a poll: the YES/NO comments, one per account (its latest). LEX: they are read and counted in
  *   memory on our Montréal server, and only the two totals leave this file. No text, username or id is kept.
  * `findOwnPosts` lists our own account's recent posts with the links in them, so the daily run can tie a post to a
@@ -17,7 +20,7 @@
 import { z } from "zod";
 import { OFFICIAL_HANDLE } from "@/lib/social";
 import { parseVote } from "../parse";
-import type { FetchFn, ParsedReply, Platform, PollTotals, ReadReplies, SocialProvider } from "../types";
+import type { FetchFn, ParsedReply, Platform, PollTotals, ReadReplies, SocialProvider, Vote } from "../types";
 import { yesNo } from "./x";
 
 // Outside hosts (rule 7): US services our server reads from. Data only comes in; LEX cleared it for this sprint.
@@ -62,17 +65,24 @@ const ownPostSchema = z.object({
   timestamp: z.string().max(40).optional(),
   poll_attachment: pollAttachment.nullish(),
 });
-const reactionCount = z.object({ summary: z.object({ total_count: z.number().int().nonnegative() }) });
-const reactionsSchema = z.object({ yes: reactionCount, no: reactionCount });
 const pollOnlySchema = z.object({ poll_attachment: pollAttachment.nullish() });
+const reactionSchema = z.object({ id: numericId.optional(), type: z.string().max(20) });
+const fbCommentSchema = z.object({
+  message: z.string().max(10_000).optional(),
+  created_time: z.string().max(40).optional(),
+  from: z.object({ id: numericId }).optional(),
+});
 const voteCommentSchema = z.object({
   text: z.string().max(10_000).optional(),
   timestamp: z.string().max(40).optional(),
   from: z.object({ id: z.string().regex(/^[0-9]{1,30}$/) }).optional(),
 });
 
-/** Facebook reactions that stand for a vote (zack, 2026-11-21). One place, so a change is one line. */
-export const REACTION_VOTES = { yes: "LIKE", no: "SAD" } as const;
+/**
+ * Facebook reactions that stand for a vote. One place, so a change is one line. 😮 (WOW) replaced 😢 for no
+ * (zack, 2026-11-23, LEX: 😢 reads as grief on a fan question).
+ */
+export const REACTION_VOTES = { yes: "LIKE", no: "WOW" } as const;
 
 /** Our own posts from the last 8 days, like the X finder. */
 const OWN_POSTS_WINDOW_MS = 8 * 24 * 60 * 60 * 1000;
@@ -91,7 +101,7 @@ export interface FoundPost {
 }
 
 /** The reaction emoji our Facebook vote post names (the dictionaries' reactPost, EN and FR). */
-const REACTION_PROMPT = ["👍", "😢"] as const;
+const REACTION_PROMPT = ["👍", "😮"] as const;
 
 /**
  * Whether a post asks for votes the way our own texts do: on Facebook it names both reactions; on Instagram it asks
@@ -143,6 +153,25 @@ export function metaTime(value: string | undefined): string | null {
 
 export type MetaPlatform = Exclude<Platform, "x">;
 
+type Latest = { at: number; vote: Vote };
+
+/** Keeps each person's latest vote comment. A comment with no time or no clear vote is skipped. */
+function keepLatest(latest: Map<string, Latest>, person: string, at: string | null, vote: Vote | null): void {
+  if (!at || !vote) return;
+  const seen = latest.get(person);
+  if (!seen || Date.parse(at) >= seen.at) latest.set(person, { at: Date.parse(at), vote });
+}
+
+function totals(votes: Iterable<{ vote: Vote }>, source: "reactions" | "comments"): PollTotals {
+  let yes = 0;
+  let no = 0;
+  for (const v of votes) {
+    if (v.vote === "yes") yes++;
+    else no++;
+  }
+  return { yes, no, source };
+}
+
 export interface MetaConfig {
   platform: MetaPlatform;
   /** The Page, Instagram or Threads access token for our own account. Kept in Vercel (Sensitive). */
@@ -193,7 +222,7 @@ export class MetaProvider implements SocialProvider {
         if (!comment.success || !comment.data.from) continue; // no numeric author id: can't be matched, so dropped
         const at = metaTime(comment.data.created_time ?? comment.data.timestamp);
         if (!at || (since && Date.parse(at) < since.getTime())) continue;
-        const vote = parseVote(comment.data.message ?? comment.data.text);
+        const vote = parseVote(comment.data.message ?? comment.data.text, { marks: this.platform === "facebook" });
         if (vote) replies.push({ replyId: comment.data.id, authorId: comment.data.from.id, vote, at });
       }
       // The next page is asked for by cursor only; a full "next" address from the response is never followed.
@@ -255,17 +284,13 @@ export class MetaProvider implements SocialProvider {
   }
 
   /**
-   * The YES/NO totals for one of our posts: reactions on Facebook, the poll on Threads, and on Instagram the poll or,
+   * The YES/NO totals for one of our posts: reactions and vote comments on Facebook, the poll on Threads, and on Instagram the poll or,
    * without one, the YES/NO comments. Null when there is nothing to show or a read failed (a partial count is never
    * shown).
    */
   async readPollTotals(ourPostId: string): Promise<PollTotals | null> {
     if (!/^[0-9_]{1,64}$/.test(ourPostId)) return null;
-    if (this.platform === "facebook") {
-      const r = (vote: "yes" | "no") => `reactions.type(${REACTION_VOTES[vote]}).limit(0).summary(total_count).as(${vote})`;
-      const parsed = reactionsSchema.safeParse(await this.get(`${GRAPH}/${ourPostId}?fields=${r("yes")},${r("no")}`));
-      return parsed.success ? { yes: parsed.data.yes.summary.total_count, no: parsed.data.no.summary.total_count, source: "reactions" } : null;
-    }
+    if (this.platform === "facebook") return this.countFacebookVotes(ourPostId);
     const base = this.platform === "threads" ? THREADS_GRAPH : GRAPH;
     const poll = pollOnlySchema.safeParse(await this.get(`${base}/${ourPostId}?fields=${POLL_FIELDS}`));
     if (!poll.success) return null;
@@ -273,30 +298,65 @@ export class MetaProvider implements SocialProvider {
     return this.platform === "instagram" ? this.countVoteComments(ourPostId) : null;
   }
 
-  /** Instagram's YES/NO comments, each account's latest one. Everything but the two totals stays in this function. */
-  private async countVoteComments(ourPostId: string): Promise<PollTotals | null> {
-    const latest = new Map<string, { at: number; vote: "yes" | "no" }>();
+  /**
+   * Every row of one of our posts' edges (comments or reactions), page by page, by cursor only. False when a page
+   * failed or there were more than MAX_PAGES, so a partial count is never shown.
+   */
+  private async eachRow(edge: string, fields: string, onRow: (row: unknown) => void): Promise<boolean> {
     let after: string | undefined;
     for (let page = 0; page < MAX_PAGES; page++) {
-      const query = new URLSearchParams({ limit: String(PAGE_SIZE), fields: "text,timestamp,from" });
+      const query = new URLSearchParams({ limit: String(PAGE_SIZE), fields });
       if (after) query.set("after", after);
-      const parsed = pageSchema.safeParse(await this.get(`${GRAPH}/${ourPostId}/comments?${query.toString()}`));
-      if (!parsed.success) return null;
-      for (const row of parsed.data.data) {
-        const c = voteCommentSchema.safeParse(row);
-        const at = c.success ? metaTime(c.data.timestamp) : null;
-        const vote = c.success ? parseVote(c.data.text) : null;
-        if (!c.success || !c.data.from || !at || !vote) continue;
-        const seen = latest.get(c.data.from.id);
-        if (!seen || Date.parse(at) >= seen.at) latest.set(c.data.from.id, { at: Date.parse(at), vote });
-      }
+      const parsed = pageSchema.safeParse(await this.get(`${GRAPH}/${edge}?${query.toString()}`));
+      if (!parsed.success) return false;
+      for (const row of parsed.data.data) onRow(row);
       after = parsed.data.paging?.next ? parsed.data.paging.cursors?.after : undefined;
-      if (!after) {
-        const votes = [...latest.values()];
-        const yes = votes.filter((v) => v.vote === "yes").length;
-        return { yes, no: votes.length - yes, source: "comments" };
-      }
+      if (!after) return true;
     }
-    return null;
+    return false;
+  }
+
+  /** Instagram's YES/NO comments, each account's latest one. Everything but the two totals stays in this function. */
+  private async countVoteComments(ourPostId: string): Promise<PollTotals | null> {
+    const latest = new Map<string, Latest>();
+    const complete = await this.eachRow(`${ourPostId}/comments`, "text,timestamp,from", (row) => {
+      const c = voteCommentSchema.safeParse(row);
+      if (c.success && c.data.from) keepLatest(latest, c.data.from.id, metaTime(c.data.timestamp), parseVote(c.data.text));
+    });
+    return complete ? totals(latest.values(), "comments") : null;
+  }
+
+  /**
+   * Facebook: one vote per person (zack, 2026-11-23). A person's latest ✅/YES/OUI or ❌/NO/NON comment counts;
+   * without one, their 👍 or 😮. Reactor and commenter ids are only the keys of two maps in this function: no id,
+   * name or text is kept or logged, and only the two totals leave it. Saved as "reactions" (the stored source
+   * names allowed by the database don't change, so no migration).
+   * AEGIS: a vote with no person id (Meta can hide it) can't be matched, so the post shows nothing rather than a
+   * believable total that is too low.
+   */
+  private async countFacebookVotes(ourPostId: string): Promise<PollTotals | null> {
+    const byReaction = new Map<string, Vote>();
+    let unmatched = 0;
+    const reactionVote: Record<string, Vote> = { [REACTION_VOTES.yes]: "yes", [REACTION_VOTES.no]: "no" };
+    const reactionsOk = await this.eachRow(`${ourPostId}/reactions`, "id,type", (row) => {
+      const r = reactionSchema.safeParse(row);
+      const vote = r.success ? reactionVote[r.data.type] : undefined;
+      if (!r.success || !vote) return;
+      if (r.data.id) byReaction.set(r.data.id, vote);
+      else unmatched++;
+    });
+    if (!reactionsOk || unmatched > 0) return null;
+    const byComment = new Map<string, Latest>();
+    const commentsOk = await this.eachRow(`${ourPostId}/comments`, "from{id},message,created_time", (row) => {
+      const c = fbCommentSchema.safeParse(row);
+      if (!c.success) return;
+      const vote = parseVote(c.data.message, { marks: true });
+      if (c.data.from) keepLatest(byComment, c.data.from.id, metaTime(c.data.created_time), vote);
+      else if (vote) unmatched++;
+    });
+    if (!commentsOk || unmatched > 0) return null;
+    const votes = new Map<string, Vote>(byReaction);
+    for (const [person, c] of byComment) votes.set(person, c.vote);
+    return totals([...votes.values()].map((vote) => ({ vote })), "reactions");
   }
 }

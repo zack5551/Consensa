@@ -68,7 +68,7 @@ export const socialPollSchema = z
     /** When the platform's poll ends, when known. Sports show only a poll that ends before the game starts (LEX). */
     endsAt: z.iso.datetime().optional(),
     url: z.string().refine(isAllowedPostUrl, { message: "Post URL must be https on x.com, threads.net, threads.com, instagram.com or facebook.com." }),
-    /** Where the totals come from when it isn't the platform's own poll: reactions (Facebook) or YES/NO comments. */
+    /** Where the totals come from when it isn't the platform's own poll: reactions and comments (Facebook) or YES/NO comments. */
     source: z.enum(["reactions", "comments"]).optional(),
     /** True for made-up preview numbers, so they are never mistaken for real totals. */
     sample: z.boolean().optional(),
@@ -129,7 +129,7 @@ export type SocialPollLabels = {
   platforms: Record<SocialPlatform, string>;
   /** "{platform} poll, {date}: {percent} yes · {votes}" */
   line: string;
-  /** "{platform} reactions, {date}: {percent} 👍 yes · {votes}" */
+  /** "{platform} reactions and comments, {date}: {percent} yes (👍 or ✅ yes, 😮 or ❌ no) · {votes}" */
   lineReactions: string;
   /** "{platform} comments, {date}: {percent} YES · {votes}" */
   lineComments: string;
@@ -246,7 +246,7 @@ export type PollPostLabels = {
   pollPostShort: string;
   /** The last resort for a long question: only the link and "Free. No prizes." */
   pollPostMin: string;
-  /** Facebook, which has no poll an app can read: 👍 for yes, 😢 for no. */
+  /** Facebook, which has no poll an app can read: 👍 or a ✅ YES comment for yes, 😮 or a ❌ NO comment for no. */
   reactPost: string;
   /** Instagram without a poll: YES or NO in the comments. */
   commentPost: string;
