@@ -197,6 +197,22 @@ export function shareLinks(text: string, url: string): ShareLinks {
   };
 }
 
+/**
+ * Instagram has no web "share a link" address, so the Instagram button shares (on a phone) or saves (on a computer) the
+ * page's own share card instead. The card lives next to the page, so the path is same-origin: no outside host is asked.
+ */
+export function shareImagePath(pageUrl: string): string {
+  return `${new URL(pageUrl).pathname.replace(/\/+$/, "")}/opengraph-image`;
+}
+
+/** "cansensus-boc-cut-dec-2026.png": the saved card's file name, from the page address only (nothing about the person). */
+export function shareImageName(pageUrl: string): string {
+  const parts = new URL(pageUrl).pathname.split("/").filter(Boolean);
+  const after = parts.indexOf("q");
+  const slug = (after >= 0 ? parts.slice(after + 1) : parts).join("-").replace(/[^a-z0-9-]/gi, "");
+  return `cansensus${slug ? `-${slug}` : ""}.png`;
+}
+
 export type ShareTextLabels = {
   /** "{question} Make your call on CANsensus. Free. No prizes." */
   text: string;
