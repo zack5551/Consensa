@@ -73,3 +73,14 @@ export function formatCallCount(q: { forecasters: number; fewCalls?: true }, loc
   return q.fewCalls ? (locale === "fr" ? "<\u00a050" : "<50") : formatCount(q.forecasters, locale);
 }
 
+
+/** A month key ("2026-10") as "October" / "octobre", or with `year`, "October 2026" / "octobre 2026". */
+export function formatMonth(month: string, locale: Locale, options: { year?: boolean } = {}): string {
+  const date = new Date(`${month}-15T12:00:00Z`);
+  return new Intl.DateTimeFormat(intlLocale[locale], { month: "long", ...(options.year ? { year: "numeric" } : {}), timeZone: "UTC" }).format(date);
+}
+
+/** "octobre" → "Octobre", for a month that opens a title. */
+export function capitalize(text: string): string {
+  return text.charAt(0).toLocaleUpperCase() + text.slice(1);
+}
