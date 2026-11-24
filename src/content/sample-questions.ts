@@ -30,17 +30,18 @@ const raw = [
     provinces: { BC: 41, AB: 47, PR: 44, ON: 36, QC: 31, AT: 39 },
     languages: { en: 40, fr: 33 },
     events: [
-      { dayIndex: 15, label: { en: "Jobs report", fr: "Emploi" } },
-      { dayIndex: 25, label: { en: "Governor’s speech", fr: "Discours du gouverneur" } },
+      { dayIndex: 15, label: { en: "Rate hike", fr: "Hausse du taux" } },
+      { dayIndex: 25, label: { en: "Inflation report", fr: "Inflation" } },
     ],
     why: {
       body: {
-        en: "The crowd spent the first two weeks near 53% on a December cut. The November jobs report — stronger hiring than expected — pulled it down to 41%: fewer forecasters saw reason to cut. The Governor’s speech, repeating that each decision depends on the data, shaved it to 38%. Now the number is waiting on December 9.",
-        fr: "La foule donnait environ 53 % à une baisse en décembre pendant les deux premières semaines. L’Enquête sur la population active de novembre — plus d’embauches que prévu — l’a fait reculer à 41 % : moins de prévisionnistes voyaient une raison de baisser. Le discours du gouverneur, qui répétait que chaque décision dépend des données, l’a ramenée à 38 %. Le chiffre attend maintenant le 9 décembre.",
+        en: "The crowd started near 53% on a December cut. On Oct. 28 the Bank of Canada went the other way and raised its rate from 2.25% to 2.50%, its first move in a year, and the number fell to 41%. Unemployment rose to 6.7% in October, but inflation held at 3.1% in October, as in September, and the number slipped to 38%. It now waits on December 9.",
+        fr: "La foule donnait environ 53 % à une baisse en décembre. Le 28 octobre, la Banque du Canada a fait l’inverse : elle a relevé son taux de 2,25 % à 2,50 %, une première en un an, et le chiffre est tombé à 41 %. Le chômage a grimpé à 6,7 % en octobre, mais l’inflation est restée à 3,1 % en octobre, comme en septembre, et le chiffre a glissé à 38 %. Il attend maintenant le 9 décembre.",
       },
       sources: [
-        { en: "Statistics Canada · Labour Force Survey", fr: "Statistique Canada · Enquête sur la population active" },
-        { en: "Bank of Canada · speech", fr: "Banque du Canada · discours" },
+        { en: "Bank of Canada · rate announcement, Oct. 28, 2026", fr: "Banque du Canada · annonce du taux, 28 octobre 2026" },
+        { en: "Statistics Canada · Labour Force Survey, October 2026", fr: "Statistique Canada · Enquête sur la population active, octobre 2026" },
+        { en: "Statistics Canada · Consumer Price Index, October 2026", fr: "Statistique Canada · Indice des prix à la consommation, octobre 2026" },
       ],
     },
     resolution: {

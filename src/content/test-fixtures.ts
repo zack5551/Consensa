@@ -76,5 +76,42 @@ export function fixtureQuestions(): z.input<typeof questionSchema>[] {
         result: { outcome: "cancelled", publishedAt: "2026-11-04T03:00:00Z" },
       },
     },
+    // Two made-up questions that hold the "closing soon" and "closed, waiting for the result" states at the e2e date
+    // (Nov 6). Real questions settle on the real calendar, so they can't hold those states for the tests.
+    {
+      slug: "fixture-closing-soon",
+      category: "culture",
+      question: { en: "Test question: will this one still take a call before it closes?", fr: "Question d’essai : celle-ci prendra-t-elle encore une prévision avant de fermer?" },
+      scored: true,
+      // 04:59 UTC on Nov 8 is 11:59 p.m. Eastern on Nov 7 (LEX: closing dates are Eastern calendar days).
+      closesAt: "2026-11-08T04:59:00Z",
+      forecasters: 4120,
+      history: series(30, [[0, 22], [9, 24], [21, 33], [29, 31]]),
+      provinces: { BC: 30, AB: 27, PR: 29, ON: 34, QC: 28, AT: 33 },
+      languages: { en: 31, fr: 30 },
+      events: [],
+      resolution: {
+        source: { name: { en: "Test source", fr: "Source d’essai" }, url: "https://gillerprize.ca/" },
+        rule: { en: "Test only. Resolves YES if the test source says yes.", fr: "Essai seulement. Résolue OUI si la source d’essai dit oui." },
+        resolvesAt: "2026-11-17T03:00:00Z",
+      },
+    },
+    {
+      slug: "fixture-closed-waiting",
+      category: "economy",
+      question: { en: "Test question: will the test unemployment rate be 7.0% or higher?", fr: "Question d’essai : le taux de chômage d’essai sera-t-il de 7,0\u00a0% ou plus?" },
+      scored: true,
+      closesAt: "2026-11-05T13:00:00Z",
+      forecasters: 8655,
+      history: series(30, [[0, 58], [18, 55], [29, 49]]),
+      provinces: { BC: 47, AB: 52, PR: 46, ON: 53, QC: 41, AT: 50 },
+      languages: { en: 51, fr: 43 },
+      events: [],
+      resolution: {
+        source: { name: { en: "Test source", fr: "Source d’essai" }, url: "https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1410028701" },
+        rule: { en: "Test only. Resolves YES if the test source says 7.0% or higher.", fr: "Essai seulement. Résolue OUI si la source d’essai indique 7,0\u00a0% ou plus." },
+        resolvesAt: "2026-11-07T13:30:00Z",
+      },
+    },
   ];
 }
