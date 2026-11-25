@@ -20,6 +20,13 @@ export type Bilingual = z.infer<typeof bilingual>;
 export const sourceKinds = ["news", "official", "trend", "calendar"] as const;
 export type SourceKind = (typeof sourceKinds)[number];
 
+/**
+ * PULSE's six news scouts. Each reads its own beat's feeds and hands what it finds to one writing desk
+ * (`sources/registry.ts` for the feeds, `draft/desks.ts` for the desks). Scouts only read public feeds: no Claude cost.
+ */
+export const scoutIds = ["money", "regions", "planet", "culture", "sports", "social"] as const;
+export type ScoutId = (typeof scoutIds)[number];
+
 export const sourceSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   name: z.string().min(1),
@@ -31,6 +38,8 @@ export const sourceSchema = z.object({
   weight: z.number().min(0).max(3),
   /** Set once someone has fetched the feed from production and checked the shape. */
   verified: z.boolean(),
+  /** The scout whose beat this feed belongs to. */
+  scout: z.enum(scoutIds),
 });
 export type Source = z.infer<typeof sourceSchema>;
 
@@ -61,6 +70,8 @@ export interface Story {
   heat: number;
   /** Category guessed from keywords, before the model weighs in. */
   categoryHint: (typeof categories)[number] | null;
+  /** The scout that found most of it, when its feeds are known. Routes a story with no clear category. */
+  scout?: ScoutId;
 }
 
 // ─── Resolvers ────────────────────────────────────────────────────────────────

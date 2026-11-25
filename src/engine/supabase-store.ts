@@ -106,6 +106,13 @@ export class SupabaseStore implements EngineStore {
     await this.upsert("engine_story_runs", [{ story_id: storyId, outcome, decided_at: at.toISOString() }]);
   }
 
+  async draftedSince(since: Date): Promise<number> {
+    const rows = await this.req<unknown[]>(
+      `engine_story_runs?select=story_id&outcome=neq.blockedStory&decided_at=gte.${encodeURIComponent(since.toISOString())}&limit=2000`,
+    );
+    return rows.length;
+  }
+
   async putItem(item: QueueItem): Promise<void> {
     await this.upsert("engine_queue", [
       {

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProvinceSplit } from "@/components/province-split";
 import { ScreenView } from "@/components/screen-view";
-import { sampleQuestions } from "@/content/sample-questions";
+import { siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { sampleResults } from "@/content/sample-results";
 import { isLocale, type Locale } from "@/i18n/config";
@@ -47,7 +47,7 @@ export default async function ProvincesPage({ params }: { params: Params }) {
   const p = t.provinces;
   const pct = (v: number) => formatPercent(v, locale);
 
-  const open = sampleQuestions.filter((q) => isOpen(questionState(q, siteNow()))).map((q) => ({ ...q, national: crowdNow(q) }));
+  const open = (await siteQuestions()).filter((q) => isOpen(questionState(q, siteNow()))).map((q) => ({ ...q, national: crowdNow(q) }));
   const bell = bellwether(open);
   const accuracy = regionalAccuracy(sampleResults);
   const accuracyBy = new Map(accuracy.map((a) => [a.region, a]));

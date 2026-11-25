@@ -1,5 +1,6 @@
 /**
- * PULSE's writing team: four desks, each a Claude writer with its own beat. Every desk follows the same hard rules
+ * PULSE's writing team: five desks, each a Claude writer with its own beat, fed by five news scouts
+ * (`sources/registry.ts`). Every desk follows the same hard rules
  * (`prompt.ts`) and gets a short brief on top, so a culture story is written by the culture desk and a jobs story by
  * the economy desk. The team is one `Drafter`: the pipeline asks it to draft a story and it routes to the right desk.
  *
@@ -10,6 +11,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import type { Release } from "@/engine/sources/calendar";
+import { SCOUTS } from "@/engine/sources/registry";
 import { ClaudeDrafter, type ClaudeDrafterOptions } from "@/engine/draft/claude";
 import type { DraftContext, DraftOutcome, Drafter } from "@/engine/draft/drafter";
 import type { Draft, Signal, Story } from "@/engine/types";
@@ -28,11 +30,20 @@ const SUPPLY = `Your desk aims to send the editor at least one fair question eac
 export const DESKS: readonly Desk[] = [
   {
     id: "economy",
-    name: "Economy and housing desk",
-    categories: ["economy", "housing"],
+    name: "Economy and business desk",
+    categories: ["economy"],
     calendar: ["boc-rate", "lfs-unemployment", "cpi"],
-    brief: `# Your desk: economy and housing
-You cover the Bank of Canada, jobs, prices, wages, trade, the loonie's exchange rate, housing starts, rents and home sales. Good questions name the official number, the threshold and the release date, and prefer a machine-readable resolver (boc-policy-rate or statcan-vector). Set thresholds near the current reading so the honest answer sits between 15% and 85%.
+    brief: `# Your desk: economy and business
+You cover the Bank of Canada, jobs, prices, wages, trade, the loonie's exchange rate, gas prices, and public milestones of Canadian companies (a product launch date, a published annual figure). Good questions name the official number, the threshold and the release date, and prefer a machine-readable resolver (boc-policy-rate or statcan-vector). Set thresholds near the current reading so the honest answer sits between 15% and 85%.
+${SUPPLY}`,
+  },
+  {
+    id: "regions",
+    name: "Provinces, cities and housing desk",
+    categories: ["housing"],
+    calendar: [],
+    brief: `# Your desk: provinces, cities and housing
+You cover what happens across the country, region by region: housing starts, rents and home sales (CMHC, CREA, StatCan), transit lines and public projects with an announced opening date, city and provincial public data (ridership, traffic, permits, tourism counts), and local events with an official record. Name the province or city in the question so readers everywhere know where it is. Settle on the official city, provincial or federal source. Never about elections, parties or politicians, crime, courts, accidents or anything where people were hurt.
 ${SUPPLY}`,
   },
   {
@@ -64,9 +75,18 @@ ${SUPPLY}`,
   },
 ];
 
-/** The desk for a story, from its category hint. Stories with no clear category go to the culture and trends desk. */
-export function deskFor(story: Pick<Story, "categoryHint">, desks: readonly Desk[] = DESKS): Desk {
-  return desks.find((d) => story.categoryHint && d.categories.includes(story.categoryHint)) ?? desks.find((d) => d.id === "culture") ?? desks[0]!;
+/**
+ * The desk for a story: the one that covers its topic; with no clear topic, the desk its scout reports to; otherwise
+ * the culture and trends desk.
+ */
+export function deskFor(story: Pick<Story, "categoryHint" | "scout">, desks: readonly Desk[] = DESKS): Desk {
+  const scoutDesk = SCOUTS.find((s) => s.id === story.scout)?.desk;
+  return (
+    desks.find((d) => story.categoryHint && d.categories.includes(story.categoryHint)) ??
+    desks.find((d) => d.id === scoutDesk) ??
+    desks.find((d) => d.id === "culture") ??
+    desks[0]!
+  );
 }
 
 /**
@@ -103,7 +123,7 @@ export function calendarStories(releases: readonly Release[], now: Date, desks: 
   });
 }
 
-/** The four-desk team as one drafter: each story goes to its desk's writer. */
+/** The desk team as one drafter: each story goes to its desk's writer. */
 export class DeskTeam implements Drafter {
   readonly id: string;
   private readonly writers: Map<string, Drafter>;

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { getQuestion } from "@/content/sample-questions";
+import { siteQuestion } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { liveRegionCallCount } from "@/lib/live";
 import { isOpen, provinces, questionState } from "@/lib/question";
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   if (new Set(params).size !== params.length) return NextResponse.json({ error: "bad request" }, { status: 400, headers: noStore });
   const parsed = query.safeParse(Object.fromEntries(req.nextUrl.searchParams));
   if (!parsed.success) return NextResponse.json({ error: "bad request" }, { status: 400, headers: noStore });
-  const q = getQuestion(parsed.data.slug);
+  const q = await siteQuestion(parsed.data.slug);
   if (!q || !isOpen(questionState(q, siteNow()))) return NextResponse.json({ error: "not found" }, { status: 404, headers: noStore });
   const n = await liveRegionCallCount(q.slug, parsed.data.region);
   return NextResponse.json({ n }, { headers: cached });

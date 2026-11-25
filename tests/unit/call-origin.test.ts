@@ -25,6 +25,11 @@ vi.mock("next/server", async (orig) => ({
 }));
 vi.mock("@/lib/supabase/admin", () => ({ adminSupabase: () => ({ from: () => ({ upsert }), rpc }) }));
 vi.mock("@/lib/server/proxy-check", () => ({ checkProxy: () => checkProxy() }));
+// The runtime question list reads Supabase through Next's cache; here it's the built-in list.
+vi.mock("@/lib/site-questions", async () => {
+  const { getQuestion, sampleQuestions } = await import("@/content/sample-questions");
+  return { siteQuestion: async (slug: string) => getQuestion(slug), siteQuestions: async () => sampleQuestions };
+});
 // The person's own Terms rows, read with their session (row-level security). Current Terms by default.
 const terms = vi.hoisted(() => ({ result: null as null | { data: unknown[] | null; error: { message: string } | null } }));
 const currentTerms = () => ({ data: [{ kind: "terms", version: TERMS_VERSION, given_at: "2026-11-11T12:00:00Z", withdrawn_at: null }], error: null });

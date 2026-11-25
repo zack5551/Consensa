@@ -10,7 +10,7 @@ import { notFound } from "next/navigation";
 import { CrowdBar } from "@/components/crowd-bar";
 import { ScreenView } from "@/components/screen-view";
 import { Icon } from "@/components/shell/icons";
-import { sampleQuestions } from "@/content/sample-questions";
+import { siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -35,8 +35,9 @@ export default async function BrowsePage({ params }: { params: Promise<{ locale:
   const t = getDictionary(locale);
   const pct = (v: number) => formatPercent(v, locale);
 
+  const all = await siteQuestions();
   const topics = categories.map((c) => {
-    const inTopic = sampleQuestions.filter((q) => q.category === c);
+    const inTopic = all.filter((q) => q.category === c);
     const open = inTopic.filter((q) => isOpen(questionState(q, siteNow())));
     const lead = [...open].sort((a, b) => b.forecasters - a.forecasters)[0];
     const calls = inTopic.reduce((n, q) => n + q.forecasters, 0);

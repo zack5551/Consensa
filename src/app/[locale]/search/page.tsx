@@ -7,7 +7,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ScreenView } from "@/components/screen-view";
 import { SearchView, type SearchDoc } from "@/components/search-view";
-import { sampleQuestions } from "@/content/sample-questions";
+import type { Question } from "@/lib/question";
+import { siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
@@ -29,13 +30,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
  * Every question is indexed in both languages, whatever the reader's locale. Weights: the question
  * itself (3), its topic name (2), and its official source (1). Popular questions win ties.
  */
-function buildDocs(): SearchDoc[] {
+function buildDocs(questions: readonly Question[]): SearchDoc[] {
   const byPopularity = sortRows(
-    sampleQuestions.map((q) => toBoardRow(q, siteNow())),
+    questions.map((q) => toBoardRow(q, siteNow())),
     "popular",
   );
   return byPopularity.map((row) => {
-    const q = sampleQuestions.find((x) => x.slug === row.slug)!;
+    const q = questions.find((x) => x.slug === row.slug)!;
     return {
       row,
       fields: [
@@ -60,7 +61,7 @@ export default async function SearchPage({ params }: { params: Promise<{ locale:
     <div className="mx-auto grid w-full max-w-[760px] gap-8">
       <ScreenView locale={locale} screen="search" />
       <h1 className="m-0 font-display text-headline font-bold tracking-tight text-balance sm:text-display">{t.search.title}</h1>
-      <SearchView docs={buildDocs()} locale={locale} t={t.search} states={t.states} categories={t.board.categories} forecasters={t.question.forecasters} browseHref={`/${locale}/browse`} />
+      <SearchView docs={buildDocs(await siteQuestions())} locale={locale} t={t.search} states={t.states} categories={t.board.categories} forecasters={t.question.forecasters} browseHref={`/${locale}/browse`} />
     </div>
   );
 }

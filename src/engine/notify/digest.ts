@@ -24,6 +24,13 @@ function ottawa(at: string): string {
 const deskName = (id: string) => DESKS.find((d) => d.id === id)?.name ?? id;
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
+/**
+ * What one writer call costs on average, with its risk check, rounded up so the budget errs on the safe side: a
+ * draft is about 4-6 US cents, a decline 2-3, a check about 3 (see docs/engine/README.md). The monthly budget counts
+ * writer calls at this price; the real bill is on console.anthropic.com.
+ */
+export const COST_PER_CALL = 0.08;
+
 export function estimateCost(usage: CycleReport["usage"]): number {
   return (usage.inputTokens * PRICE.input + usage.outputTokens * PRICE.output + usage.cacheReadTokens * PRICE.cacheRead) / 1_000_000;
 }
@@ -35,10 +42,12 @@ export interface RunSummary {
   published: readonly string[];
   /** The review page link (signed, lasts a week). */
   reviewUrl?: string;
+  /** This month's estimated Claude spend (including this run) and the cap, in US$. */
+  spend?: { monthToDate: number; budget: number };
 }
 
 /** The email after every run. */
-export function summaryEmail({ report, openOnSite, published, reviewUrl }: RunSummary): Email {
+export function summaryEmail({ report, openOnSite, published, reviewUrl, spend }: RunSummary): Email {
   const all = report.decisions.filter((d) => d.decision === "queued");
   const auto = all.filter((d) => "autoApproved" in d && d.autoApproved);
   const queued = all.filter((d) => !auto.includes(d));
@@ -118,7 +127,12 @@ export function summaryEmail({ report, openOnSite, published, reviewUrl }: RunSu
   }
   lines.push("");
   lines.push(`Feeds read: ${report.feeds.ok} of ${report.feeds.ok + report.feeds.failed.length}. New headlines: ${report.feeds.newSignals}.`);
-  lines.push(`Rough Claude cost this run: about US$${estimateCost(report.usage).toFixed(2)}.`, "", REVIEW_HOW);
+  lines.push(`Rough Claude cost this run: about US$${estimateCost(report.usage).toFixed(2)}.`);
+  if (spend) {
+    const out = spend.monthToDate >= spend.budget ? " The budget is used up, so writing is paused until next month." : "";
+    lines.push(`This month so far: about US$${spend.monthToDate.toFixed(2)} of the US$${spend.budget.toFixed(0)} budget.${out}`);
+  }
+  lines.push("", REVIEW_HOW);
   return { subject, text: lines.join("\n") };
 }
 

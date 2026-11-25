@@ -134,20 +134,32 @@ export interface FeedResult {
   error?: string;
 }
 
-/** Fetches and parses every source in parallel. One failing feed never fails the cycle. */
-export async function fetchFeeds(list: readonly Source[], fetcher: FetchLike, timeoutMs = 10_000): Promise<FeedResult[]> {
+/**
+ * Fetches and parses every source in parallel. One failing feed never fails the cycle. A feed that times out, drops
+ * the connection or answers 429/5xx gets one more try after a short pause, so a brief hiccup at CBC or StatCan
+ * doesn't cost a whole run's worth of that feed's news.
+ */
+export async function fetchFeeds(list: readonly Source[], fetcher: FetchLike, timeoutMs = 10_000, retryPauseMs = 1_000): Promise<FeedResult[]> {
+  const once = async (source: Source): Promise<FeedResult & { retry: boolean }> => {
+    try {
+      const res = await fetcher(source.url, {
+        headers: { "user-agent": "CANsensusPulse/0.1", accept: "application/rss+xml, application/atom+xml, application/xml" },
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (!res.ok) return { sourceId: source.id, signals: [], dropped: 0, error: `HTTP ${res.status}`, retry: res.status === 429 || res.status >= 500 };
+      return { sourceId: source.id, ...parseFeed(await res.text(), source), retry: false };
+    } catch (err) {
+      return { sourceId: source.id, signals: [], dropped: 0, error: err instanceof Error ? err.message : String(err), retry: true };
+    }
+  };
   return Promise.all(
     list.map(async (source): Promise<FeedResult> => {
-      try {
-        const res = await fetcher(source.url, {
-          headers: { "user-agent": "CANsensusPulse/0.1", accept: "application/rss+xml, application/atom+xml, application/xml" },
-          signal: AbortSignal.timeout(timeoutMs),
-        });
-        if (!res.ok) return { sourceId: source.id, signals: [], dropped: 0, error: `HTTP ${res.status}` };
-        return { sourceId: source.id, ...parseFeed(await res.text(), source) };
-      } catch (err) {
-        return { sourceId: source.id, signals: [], dropped: 0, error: err instanceof Error ? err.message : String(err) };
+      let out = await once(source);
+      if (out.retry) {
+        await new Promise((r) => setTimeout(r, retryPauseMs));
+        out = await once(source);
       }
+      return { sourceId: out.sourceId, signals: out.signals, dropped: out.dropped, ...(out.error !== undefined ? { error: out.error } : {}) };
     }),
   );
 }

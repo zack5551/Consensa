@@ -11,7 +11,7 @@ import { boardStrings } from "@/components/board-strings";
 import { BoardView } from "@/components/board-view";
 import { ScreenView } from "@/components/screen-view";
 import { Icon } from "@/components/shell/icons";
-import { sampleQuestions } from "@/content/sample-questions";
+import { siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
@@ -33,7 +33,7 @@ export default async function BoardPage({ params }: { params: Promise<{ locale: 
   if (!isLocale(raw)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
-  const rows = (await withLiveCrowd(sampleQuestions)).map((q) => toBoardRow(q, siteNow()));
+  const rows = (await withLiveCrowd(await siteQuestions())).map((q) => toBoardRow(q, siteNow()));
 
   return (
     <div className="grid gap-10">
