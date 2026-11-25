@@ -70,6 +70,8 @@ const raw: Source[] = [
 
   // ── Canada and regions scout: national desks, every province and the North ──
   cbc("canada", "Canada", "canada", "regions"),
+  // World news that affects Canadians (zack, 2026-11-25): the Canada desk asks how it lands here.
+  cbc("world", "World", "world", "regions", 0.8),
   rc("grands-titres", "Grands titres", "info", "regions"),
   rc("dernieres-nouvelles", "Dernières nouvelles", "dernieres-nouvelles", "regions"),
   // The Globe and Mail (zack, 2026-11-25: match the depth of CBC and the Globe). Headlines are topic signals only:
@@ -173,6 +175,10 @@ export const resolutionDomains: readonly string[] = [
   "sedarplus.ca",
   // General news that affects Canadians: bills (LEGISinfo) and health system data (CIHI).
   "parl.ca",
+  // World news through its effect on Canada: oil prices (U.S. EIA), the U.S. Fed and the ECB's rate decisions.
+  "eia.gov",
+  "federalreserve.gov",
+  "ecb.europa.eu",
   "cihi.ca",
   "grammy.com",
   "oscars.org",
