@@ -553,6 +553,10 @@ const fr = {
       scaleFlip: "Pile ou face",
       scaleWrong: "Toujours faux",
     },
+    questions: {
+      title: "Comment on rédige les questions",
+      body: "Beaucoup de questions partent de l’actualité et des calendriers officiels de publication au Canada. L’IA aide à les rédiger en français et en anglais, puis des règles fixes vérifient la formulation et une deuxième révision par IA évalue le risque de chaque brouillon. Les questions à faible risque sont publiées automatiquement; tout ce qui est signalé, ainsi que toute question de sport ou de politique, attend l’équipe éditoriale. Chaque question nomme sa source officielle et sa règle exacte avant d’ouvrir.",
+    },
     resolution: {
       title: "Comment les questions sont résolues",
       body: "Chaque question évaluée nomme une source officielle et la règle exacte avant d’ouvrir. Les prévisions ferment avant que la source publie. La plupart des questions se résolvent automatiquement à partir de données officielles, lorsque deux lectures distinctes concordent. Tout cas qui demande du jugement est confié à un membre de l’équipe éditoriale.",

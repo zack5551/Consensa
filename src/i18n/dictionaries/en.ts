@@ -551,6 +551,10 @@ const en = {
       scaleFlip: "Coin flip",
       scaleWrong: "Always wrong",
     },
+    questions: {
+      title: "How questions are written",
+      body: "Many questions start from the news and Canada’s official release calendars. AI helps draft them in English and French, then fixed rules screen the wording and a second AI review rates each draft for risk. Low-risk questions are published automatically; anything flagged, plus every sports or political question, waits for an editor. Every question names its official source and exact rule before it opens.",
+    },
     resolution: {
       title: "How questions resolve",
       body: "Every scored question names one official source and the exact rule before it opens. Calls close before the source publishes. Most questions resolve automatically from official data once two separate reads agree. Anything that needs judgment goes to an editor.",
