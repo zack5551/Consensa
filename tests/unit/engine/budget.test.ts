@@ -83,6 +83,14 @@ describe("news scouts", () => {
     expect(scoutOf("google-trends-ca")?.id).toBe("social");
   });
 
+  it("reads the Globe and Mail's feed format (CDATA titles) as topic signals", async () => {
+    const globe = sources.find((x) => x.id === "globe-business")!;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title><![CDATA[The Globe and Mail]]></title><item><title><![CDATA[Made-up headline: Canadian retailer plans 40 new stores]]></title><link>https://www.theglobeandmail.com/business/article-made-up/</link><pubDate>Fri, 06 Nov 2026 10:00:00 GMT</pubDate><description><![CDATA[<p>Summary.</p>]]></description></item></channel></rss>`;
+    const [out] = await fetchFeeds([globe], async () => new Response(xml, { status: 200 }), 1000, 0);
+    expect(out!.signals.map((x) => x.title)).toEqual(["Made-up headline: Canadian retailer plans 40 new stores"]);
+    expect(out!.signals[0]!.sourceId).toBe("globe-business");
+  });
+
   it("covers every province and territory's public broadcaster feed in at least one language", () => {
     const regional = sources.filter((s) => s.scout === "regions").map((s) => s.id);
     expect(regional.length).toBeGreaterThanOrEqual(20);

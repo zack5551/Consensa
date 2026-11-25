@@ -27,7 +27,7 @@ export interface Desk {
   share?: number;
 }
 
-const SUPPLY = `Your desk aims to send the editor at least one fair question each cycle. If this story can't carry a fair question but points to a checkable angle on the same topic (for example an official release listed in <calendar>), draft that angle instead. Decline only when no angle passes every hard rule. Never bend a rule to meet the aim, and never repeat or lightly reword a question in <existing>.`;
+const SUPPLY = `Be timely and sharp: ask about what people are talking about this week, with a deadline days or weeks away when the news allows, and a specific threshold or name rather than a vague trend. Your desk aims to send the editor at least one fair question each cycle. If this story can't carry a fair question but points to a checkable angle on the same topic (for example an official release listed in <calendar>), draft that angle instead. Decline only when no angle passes every hard rule. Never bend a rule to meet the aim, and never repeat or lightly reword a question in <existing>.`;
 
 export const DESKS: readonly Desk[] = [
   {

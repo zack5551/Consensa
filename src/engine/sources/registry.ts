@@ -72,6 +72,12 @@ const raw: Source[] = [
   cbc("canada", "Canada", "canada", "regions"),
   rc("grands-titres", "Grands titres", "info", "regions"),
   rc("dernieres-nouvelles", "Dernières nouvelles", "dernieres-nouvelles", "regions"),
+  // The Globe and Mail (zack, 2026-11-25: match the depth of CBC and the Globe). Headlines are topic signals only:
+  // PULSE writes its own questions and settles them on official sources, never on the Globe's articles.
+  { id: "globe-business", name: "The Globe and Mail · Business", kind: "news", lang: "en", url: "https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/business/", format: "rss", weight: 1, verified: true, scout: "money" },
+  { id: "globe-canada", name: "The Globe and Mail · Canada", kind: "news", lang: "en", url: "https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/canada/", format: "rss", weight: 0.9, verified: false, scout: "regions" },
+  { id: "globe-arts", name: "The Globe and Mail · Arts", kind: "news", lang: "en", url: "https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/arts/", format: "rss", weight: 0.9, verified: false, scout: "culture" },
+  { id: "globe-sports", name: "The Globe and Mail · Sports", kind: "news", lang: "en", url: "https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/sports/", format: "rss", weight: 0.9, verified: false, scout: "sports" },
   { id: "global-canada", name: "Global News · Canada", kind: "news", lang: "en", url: "https://globalnews.ca/canada/feed/", format: "rss", weight: 0.8, verified: false, scout: "regions" },
   cbc("bc", "British Columbia", "canada-britishcolumbia", "regions", LOCAL),
   cbc("calgary", "Calgary", "canada-calgary", "regions", LOCAL),
