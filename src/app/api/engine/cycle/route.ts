@@ -26,7 +26,7 @@ import { logErrorCode } from "@/lib/server/error-code-log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-/** A cycle makes up to 20 writer calls across five desks in parallel; give it room (Vercel allows up to 300 s with Fluid compute). */
+/** A cycle makes up to 24 writer calls across five desks in parallel; give it room (Vercel allows up to 300 s with Fluid compute). */
 export const maxDuration = 300;
 
 function authorized(header: string | null, secret: string): boolean {
