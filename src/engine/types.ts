@@ -174,6 +174,25 @@ export interface QueueItem {
   createdAt: string;
   /** What the engine did with this draft and why, in plain English (see `explain.ts`). Older items may lack it. */
   why?: string;
+  /** The writing desk that drafted it (see `draft/desks.ts`). Older items may lack it. */
+  desk?: string;
+  /** The checker's risk scores (see `check/checker.ts`). Missing when the draft was blocked before the check. */
+  check?: CheckResult;
+}
+
+// ─── Risk check ───────────────────────────────────────────────────────────────
+
+/** What the checker scores, each 1 (no concern) to 10 (must never publish). */
+export const checkAreas = ["legal", "gambling", "accuracy", "sensitive", "french"] as const;
+export type CheckArea = (typeof checkAreas)[number];
+
+export interface CheckResult {
+  scores: Record<CheckArea, { score: number; reason: string }>;
+  /** The highest score across areas: one bad area is enough to need a person. */
+  overall: number;
+  summary: string;
+  checker: string;
+  at: string;
 }
 
 // ─── Resolution ───────────────────────────────────────────────────────────────
