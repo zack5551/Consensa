@@ -256,7 +256,9 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       st.attempts++;
       const queuedBefore = st.queued;
       try {
-        if (await draftOne(desk, story)) st.queued = queuedBefore + 1;
+        // The 1st, 4th, 7th… try at each desk asks for a fast question (closing within 7 days), so about a third of every
+        // run settles within the week and even a quiet desk gives one.
+        if (await draftOne(desk, story, st.attempts % 3 === 1)) st.queued = queuedBefore + 1;
       } catch (err) {
         // A hiccup saving one story (Supabase busy, a network blip) costs that story only: the desk moves on, the other
         // desks never notice, and the story isn't marked drafted, so the next run tries it again.
@@ -265,9 +267,9 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
     }
   };
   /** Drafts, checks and saves one story. True when it joined the queue. */
-  const draftOne = async (desk: Desk, story: Story): Promise<boolean> => {
+  const draftOne = async (desk: Desk, story: Story, fast: boolean): Promise<boolean> => {
     {
-      const o = await drafter.draft(story, { now, releases: deps.releases, existing: known });
+      const o = await drafter.draft(story, { now, releases: deps.releases, existing: known, fast });
       add(o.usage);
       const base = { storyId: story.id, headline: story.headline, heat: story.heat, desk: o.desk ?? desk.id };
       if (o.status === "error") {

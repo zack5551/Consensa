@@ -61,7 +61,11 @@ export function fence(text: string): string {
 }
 
 /** The per-story message. Order: what's stable for the cycle first, the story last. */
-export function userMessage(story: Story, now: Date, releases: readonly Release[], existing: readonly string[]): string {
+/** Added to about a third of each desk's tries, so every run has questions people see settled within days. */
+export const FAST_ASK =
+  "Make this a fast question: it should close within 7 days of now and at least 24 hours from now, with an answer known soon after (this weekend's game, the weekend box office, this week's chart, data release or decision). If this story can't give a fair question that settles that soon, write the best question it can with a later date.";
+
+export function userMessage(story: Story, now: Date, releases: readonly Release[], existing: readonly string[], fast = false): string {
   const ottawa = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", dateStyle: "full", timeStyle: "short" }).format(now);
   const cal = releases.map((r) => `- ${r.at} · ${r.name.en}${r.refPeriod ? ` (reference period ${r.refPeriod})` : ""} · ${r.sourceUrl}`).join("\n");
   const signals = story.signals
@@ -83,5 +87,5 @@ ${existing.slice(0, 200).map((q) => `- ${fence(q)}`).join("\n") || "- none"}
 ${signals}
 </story>
 
-Draft one question from this story, or decline.`;
+${fast ? `${FAST_ASK}\n\n` : ""}Draft one question from this story, or decline.`;
 }

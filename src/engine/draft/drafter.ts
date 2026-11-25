@@ -11,6 +11,12 @@ export interface DraftContext {
   releases: readonly Release[];
   /** Questions already live or queued (EN text), so the drafter doesn't repeat them. */
   existing: readonly string[];
+  /**
+   * Ask for a fast question: one that closes within 7 days (this weekend's game, the weekend box office, this week's
+   * chart or data release). The pipeline sets it on about a third of each desk's tries (zack, 2026-11-25: fast
+   * questions for launch). The 24-hour minimum still applies.
+   */
+  fast?: boolean;
 }
 
 export type DraftOutcome = (

@@ -7,7 +7,7 @@ import { CHECK_SYSTEM_PROMPT, checkMessage } from "@/engine/check/prompt";
 import { ClaudeDrafter } from "@/engine/draft/claude";
 import { calendarStories, deskFor, DESKS, DeskTeam } from "@/engine/draft/desks";
 import type { Drafter } from "@/engine/draft/drafter";
-import { SYSTEM_PROMPT } from "@/engine/draft/prompt";
+import { FAST_ASK, SYSTEM_PROMPT, userMessage } from "@/engine/draft/prompt";
 import { engineEnv } from "@/engine/config";
 import { failureEmail, summaryEmail } from "@/engine/notify/digest";
 import { sesMailer, signV4 } from "@/engine/notify/ses";
@@ -169,6 +169,19 @@ describe("steady supply", () => {
     for (const s of drafter.seen) perDesk.set(deskFor(s).id, (perDesk.get(deskFor(s).id) ?? 0) + 1);
     expect(Math.max(...perDesk.values())).toBe(1);
     expect(report.decisions.some((d) => d.decision === "queued")).toBe(true);
+  });
+
+  it("asks for a fast question (closing within 7 days) on about a third of each desk's tries (zack, 2026-11-25: for launch)", async () => {
+    const asks: { desk: string; fast: boolean }[] = [];
+    const watching: Drafter = { id: "w", draft: async (s, ctx) => (asks.push({ desk: deskFor(s).id, fast: ctx.fast === true }), { status: "skip", reason: "test", drafter: "w" }) };
+    await runCycle(base(new MemoryStore(), watching, feed(newsFor(["economy", "weather", "culture", "sports"]))));
+    const fast = asks.filter((a) => a.fast).length;
+    expect(fast / asks.length).toBeGreaterThanOrEqual(0.3);
+    expect(fast / asks.length).toBeLessThanOrEqual(0.45);
+    // Every desk that wrote got at least one, starting with its first try.
+    for (const desk of new Set(asks.map((a) => a.desk))) expect(asks.find((a) => a.desk === desk)!.fast, desk).toBe(true);
+    expect(userMessage(story([signal({ title: "Raptors host the Celtics on Friday" })]), NOW, [], [], true)).toContain(FAST_ASK);
+    expect(userMessage(story([signal({ title: "Raptors host the Celtics on Friday" })]), NOW, [], [])).not.toContain(FAST_ASK);
   });
 
   it("tells the writers about questions queued earlier in the same run, so they don't repeat them", async () => {
