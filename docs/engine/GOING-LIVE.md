@@ -23,7 +23,7 @@ Redeploy once so the variables take effect.
 
 ## 3. The schedule (free): Vercel Cron, or GitHub every 15 minutes
 
-**Vercel Cron (the one in use).** `vercel.json` asks Vercel to call `/api/engine/cycle` once a day at 15:00 UTC (10:00 ET in winter), after the Bank of Canada and Statistics Canada morning releases. It needs one variable: Vercel → **Settings → Environment Variables** → Name `CRON_SECRET`, Value 32+ random characters, scope Production, then redeploy. Vercel sends it as a bearer token, and the endpoint stays off (404) until it is set. Vercel Cron runs on the production deployment and isn't blocked by Deployment Protection. Check runs under **Settings → Cron Jobs → View Logs**. A result settles after two matching reads, so with one run a day it shows on the site about two days after the official release.
+**Vercel Cron (the one in use).** `vercel.json` asks Vercel to call `/api/engine/cycle` twice a day: 15:00 UTC (10:00 ET in winter), after the Bank of Canada and Statistics Canada morning releases, and 23:00 UTC (18:00 ET) for the day's news (`?run=evening`, the same run; two jobs because the Hobby plan allows each job once a day, and Hobby may start a job any time within its hour). It needs one variable: Vercel → **Settings → Environment Variables** → Name `CRON_SECRET`, Value 32+ random characters, scope Production, then redeploy. Vercel sends it as a bearer token, and the endpoint stays off (404) until it is set. Vercel Cron runs on the production deployment and isn't blocked by Deployment Protection. Check runs under **Settings → Cron Jobs → View Logs**. A result settles after two matching reads, so with one run a day it shows on the site about two days after the official release.
 
 **GitHub Actions (optional, every 15 minutes).**
 
@@ -40,9 +40,9 @@ GitHub → the repo → **Settings → Secrets and variables → Actions → New
 
 1. console.anthropic.com → **Settings → Limits**: set a monthly spend limit (suggested: $50). This is the hard stop.
 2. **API Keys → Create key**, then add it in Vercel as `ANTHROPIC_API_KEY`.
-3. In Vercel add `ENGINE_LIVE_FEEDS` = `1`, then redeploy. Leave `ENGINE_MAX_DRAFTS` unset (default 12 writer calls per run); an older setup suggested `2`, which starves the four desks, so delete it if it's there.
+3. In Vercel add `ENGINE_LIVE_FEEDS` = `1`, then redeploy. Leave `ENGINE_MAX_DRAFTS`, `ENGINE_DAILY_DRAFTS` and `ENGINE_MONTHLY_BUDGET_USD` unset (20 a run, 50 a day, US$95 a month); an older setup suggested `ENGINE_MAX_DRAFTS` = `2`, which starves the desks, so delete it if it's there.
 
-From then on, each run reads the real feeds, and the four writing desks (economy and housing, weather and science, culture and trends, sports) each aim to queue 2 questions, falling back on the official release calendar when the news is thin. The checker rates every queued draft. See "Cost" in `README.md`: about US$0.40–0.75 a run, so about US$12–23 a month with the daily schedule.
+From then on, each run reads the real feeds through the six news scouts, and the five writing desks each aim to queue 4 questions, falling back on the official release calendar when the news is thin. The checker rates every queued draft, and low-risk ones go live in the same run. New questions show on the site within seconds, with no rebuild: pages read them from Supabase at request time (`src/lib/site-questions.ts`, refreshed by the cycle route). See "Cost" in `README.md`: capped at US$95 a month.
 
 ## 4b. Editor emails (Amazon SES in Montréal, optional but recommended)
 

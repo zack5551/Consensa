@@ -16,6 +16,8 @@ export interface EngineStore {
   /** Story ids already drafted (or declined) recently, so a cycle doesn't pay to draft them twice. */
   wasDrafted(storyId: string): Promise<boolean>;
   markDrafted(storyId: string, outcome: string, at: Date): Promise<void>;
+  /** Writer calls (drafted or declined stories) since `since`, for the daily cost cap. Blocked stories cost nothing. */
+  draftedSince(since: Date): Promise<number>;
 
   putItem(item: QueueItem): Promise<void>;
   getItem(id: string): Promise<QueueItem | undefined>;
@@ -61,6 +63,10 @@ export class MemoryStore implements EngineStore {
 
   async markDrafted(storyId: string, outcome: string, at: Date): Promise<void> {
     this.drafted.set(storyId, { outcome, at: at.toISOString() });
+  }
+
+  async draftedSince(since: Date): Promise<number> {
+    return [...this.drafted.values()].filter((d) => d.outcome !== "blockedStory" && d.at >= since.toISOString()).length;
   }
 
   async putItem(item: QueueItem): Promise<void> {

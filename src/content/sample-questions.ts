@@ -320,10 +320,14 @@ function withResult(q: Question): Question {
   return r ? { ...q, resolution: { ...q.resolution, result: { outcome: r.outcome, publishedAt: r.publishedAt, disputed: r.disputed } } } : q;
 }
 const samples: Question[] = raw.map((q) => withResult(questionSchema.parse(q)));
-const live: Question[] = (liveQuestions as unknown[]).flatMap((q) => {
-  const parsed = questionSchema.safeParse(q);
-  return parsed.success && !samples.some((s) => s.slug === parsed.data.slug) ? [parsed.data] : [];
-});
+/** Engine questions from raw rows: valid ones only, never one that reuses a slug in `taken`. */
+export function liveQuestionsFrom(rows: readonly unknown[], taken: ReadonlySet<string>): Question[] {
+  return rows.flatMap((q) => {
+    const parsed = questionSchema.safeParse(q);
+    return parsed.success && !taken.has(parsed.data.slug) ? [withResult(parsed.data)] : [];
+  });
+}
+const live: Question[] = liveQuestionsFrom(liveQuestions as unknown[], new Set(samples.map((s) => s.slug)));
 export const sampleQuestions: readonly Question[] = [...live, ...samples];
 
 export function getQuestion(slug: string): Question | undefined {
@@ -331,6 +335,6 @@ export function getQuestion(slug: string): Question | undefined {
 }
 
 /** Today's five: the first five open questions in editorial order. */
-export function todaysFive(now: Date = siteNow()): Question[] {
-  return sampleQuestions.filter((q) => isOpen(questionState(q, now))).slice(0, 5);
+export function todaysFive(now: Date = siteNow(), list: readonly Question[] = sampleQuestions): Question[] {
+  return list.filter((q) => isOpen(questionState(q, now))).slice(0, 5);
 }

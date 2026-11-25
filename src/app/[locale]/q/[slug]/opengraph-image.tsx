@@ -2,7 +2,8 @@ import { shareCardImage } from "@/components/share-card-image";
 import { cardSize } from "@/components/share-card-parts";
 import { BRAND_NAME } from "@/lib/brand";
 import { notFound } from "next/navigation";
-import { getQuestion, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteQuestion } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { isLocale, locales } from "@/i18n/config";
 import { withLiveQuestion } from "@/lib/live";
@@ -19,7 +20,7 @@ export const alt = BRAND_NAME;
 export const size = cardSize;
 export const contentType = "image/png";
 export const revalidate = 60;
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export function generateStaticParams() {
   return locales.flatMap((locale) => sampleQuestions.map((q) => ({ locale, slug: q.slug })));
@@ -27,7 +28,7 @@ export function generateStaticParams() {
 
 export default async function Image({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
-  const q = await withLiveQuestion(getQuestion(slug));
+  const q = await withLiveQuestion(await siteQuestion(slug));
   if (!isLocale(locale) || !q) notFound();
   return shareCardImage(q, locale, siteNow());
 }

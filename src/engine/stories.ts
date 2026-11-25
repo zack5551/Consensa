@@ -9,7 +9,8 @@
  */
 import { createHash } from "node:crypto";
 import type { Category } from "@/lib/question";
-import type { Signal, Story } from "@/engine/types";
+import { SCOUTS, scoutOf } from "@/engine/sources/registry";
+import type { ScoutId, Signal, Story } from "@/engine/types";
 import { overlap, tokens } from "@/engine/text";
 
 /** FR → EN for the terms that carry Canadian stories, so a Radio-Canada headline can join a CBC story. */
@@ -130,6 +131,21 @@ function toStory(signals: Signal[], now: Date): Story {
     firstSeenAt: times[0]!,
     lastSeenAt: times[times.length - 1]!,
     heat: heatOf(signals, now),
-    categoryHint: guessCategory(signals.map((s) => s.title).join(" ")),
+    ...storyBeat(signals),
   };
+}
+
+/**
+ * The story's beat: the scout whose feeds carried the most weight, and its topic. Headline keywords win when they
+ * name a topic; otherwise the scout's own topic stands in (most French headlines, and anything from a beat feed).
+ */
+function storyBeat(signals: readonly Signal[]): Pick<Story, "categoryHint" | "scout"> {
+  const weightBy = new Map<ScoutId, number>();
+  for (const s of signals) {
+    const scout = scoutOf(s.sourceId);
+    if (scout) weightBy.set(scout.id, (weightBy.get(scout.id) ?? 0) + s.weight);
+  }
+  const top = [...weightBy.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const hint = guessCategory(signals.map((s) => s.title).join(" ")) ?? SCOUTS.find((sc) => sc.id === top)?.category ?? null;
+  return { categoryHint: hint, ...(top ? { scout: top } : {}) };
 }

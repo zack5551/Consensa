@@ -94,11 +94,18 @@ const fixedChecker = (score: number | "down"): Checker & { calls: number } => {
 
 describe("desks", () => {
   it("routes each story to its desk, with uncategorised stories going to culture and trends", () => {
-    expect(DESKS.map((d) => d.id)).toEqual(["economy", "weather", "culture", "sports"]);
-    expect(deskFor({ categoryHint: "housing" }).id).toBe("economy");
+    expect(DESKS.map((d) => d.id)).toEqual(["economy", "regions", "weather", "culture", "sports"]);
+    expect(deskFor({ categoryHint: "economy" }).id).toBe("economy");
+    expect(deskFor({ categoryHint: "housing" }).id).toBe("regions");
     expect(deskFor({ categoryHint: "science" }).id).toBe("weather");
     expect(deskFor({ categoryHint: "sports" }).id).toBe("sports");
     expect(deskFor({ categoryHint: null }).id).toBe("culture");
+    // A story with no topic goes to the desk its news scout works for.
+    expect(deskFor({ categoryHint: null, scout: "money" }).id).toBe("economy");
+    expect(deskFor({ categoryHint: null, scout: "regions" }).id).toBe("regions");
+    expect(deskFor({ categoryHint: null, scout: "social" }).id).toBe("culture");
+    // The topic wins over the scout: a sports story found by the regions scout still goes to sports.
+    expect(deskFor({ categoryHint: "sports", scout: "regions" }).id).toBe("sports");
   });
 
   it("builds cold backfill stories from the official calendar, only for desks that cover them", () => {
@@ -133,8 +140,8 @@ describe("steady supply", () => {
     const report = await runCycle({ ...base(new MemoryStore(), drafter, feed(newsFor(["economy", "weather", "culture", "sports"]))) });
     const queued = report.decisions.filter((d) => d.decision === "queued");
     const per = Object.fromEntries(DESKS.map((d) => [d.id, queued.filter((q) => q.desk === d.id).length]));
-    expect(per).toEqual({ economy: 2, weather: 2, culture: 2, sports: 2 });
-    expect(drafter.seen.length).toBe(8);
+    expect(per).toEqual({ economy: 4, regions: 0, weather: 4, culture: 4, sports: 4 });
+    expect(drafter.seen.length).toBe(16);
   });
 
   it("never goes over the run's cap on writer calls, even when every story is declined", async () => {
@@ -144,8 +151,8 @@ describe("steady supply", () => {
     expect(calls).toBe(6);
     calls = 0;
     await runCycle({ ...base(new MemoryStore(), declining, feed(newsFor(["economy", "weather", "culture", "sports"]))) });
-    // 4 desks × 4 tries each is 16, but the default cap is 12.
-    expect(calls).toBe(12);
+    // 4 busy desks × 6 tries each is 24, but the default cap is 20.
+    expect(calls).toBe(20);
   });
 
   it("writes from the release calendar when there's no news at all", async () => {
@@ -169,8 +176,8 @@ describe("the checker in the cycle", () => {
 
   it("flags a draft at or over the line, lists it in the alerts and says so in the why note", async () => {
     const store = new MemoryStore();
-    const report = await runCycle({ ...base(store, drafting(), news), checker: fixedChecker(8), desks: [DESKS[2]!] });
-    expect(report.alerts.length).toBe(2);
+    const report = await runCycle({ ...base(store, drafting(), news), checker: fixedChecker(8), desks: [DESKS[3]!] });
+    expect(report.alerts.length).toBe(4);
     expect(report.threshold).toBe(7);
     const [item] = await store.items();
     expect(item!.status).toBe("pending");
@@ -180,15 +187,15 @@ describe("the checker in the cycle", () => {
   });
 
   it("leaves a clean draft unflagged, and the line can be moved", async () => {
-    const low = await runCycle({ ...base(new MemoryStore(), drafting(), news), checker: fixedChecker(3), desks: [DESKS[2]!] });
+    const low = await runCycle({ ...base(new MemoryStore(), drafting(), news), checker: fixedChecker(3), desks: [DESKS[3]!] });
     expect(low.alerts).toEqual([]);
-    const strict = await runCycle({ ...base(new MemoryStore(), drafting(), news), checker: fixedChecker(3), desks: [DESKS[2]!], config: { checkThreshold: 3 } });
-    expect(strict.alerts.length).toBe(2);
+    const strict = await runCycle({ ...base(new MemoryStore(), drafting(), news), checker: fixedChecker(3), desks: [DESKS[3]!], config: { checkThreshold: 3 } });
+    expect(strict.alerts.length).toBe(4);
   });
 
   it("flags a draft the checker couldn't rate instead of letting it through quietly", async () => {
     const store = new MemoryStore();
-    const report = await runCycle({ ...base(store, drafting(), news), checker: fixedChecker("down"), desks: [DESKS[2]!] });
+    const report = await runCycle({ ...base(store, drafting(), news), checker: fixedChecker("down"), desks: [DESKS[3]!] });
     expect(report.alerts[0]).toMatchObject({ checkError: "API 529" });
     expect((await store.items())[0]!.flags.map((f) => f.code)).toContain("check-unavailable");
   });
@@ -196,7 +203,7 @@ describe("the checker in the cycle", () => {
   it("doesn't pay to check a draft that's already blocked", async () => {
     const checker = fixedChecker(2);
     const same: Drafter = { id: "same", draft: async () => ({ status: "draft", drafter: "same", draft: goodDraft() }) };
-    await runCycle({ ...base(new MemoryStore([{ slug: goodDraft().slug, question: goodDraft().question }]), same, news), checker, desks: [DESKS[2]!] });
+    await runCycle({ ...base(new MemoryStore([{ slug: goodDraft().slug, question: goodDraft().question }]), same, news), checker, desks: [DESKS[3]!] });
     expect(checker.calls).toBe(0);
   });
 });
@@ -274,10 +281,12 @@ describe("email", () => {
   });
 
   it("the run summary says what happened, flags first, and warns when there's nothing new or the slate runs low", async () => {
-    const report = await runCycle({ ...base(new MemoryStore(), drafting(), feed(newsFor(["culture"]))), checker: fixedChecker(8), desks: [DESKS[2]!] });
-    const mail = summaryEmail({ report, openOnSite: 5, published: [] });
-    expect(mail.subject).toBe("PULSE: 2 waiting for you, 2 flagged, slate running low");
-    expect(mail.text).toMatch(/New drafts waiting for you: 2/);
+    const report = await runCycle({ ...base(new MemoryStore(), drafting(), feed(newsFor(["culture"]))), checker: fixedChecker(8), desks: [DESKS[3]!] });
+    const mail = summaryEmail({ report, openOnSite: 5, published: [], spend: { monthToDate: 12.4, budget: 95 } });
+    expect(mail.subject).toBe("PULSE: 4 waiting for you, 4 flagged, slate running low");
+    expect(mail.text).toMatch(/New drafts waiting for you: 4/);
+    expect(mail.text).toMatch(/This month so far: about US\$12\.40 of the US\$95 budget\.\n/);
+    expect(summaryEmail({ report, published: [], spend: { monthToDate: 95.2, budget: 95 } }).text).toMatch(/budget is used up, so writing is paused until next month/);
     expect(mail.text).toMatch(/FLAGGED FOR A CLOSE LOOK\n1\. \[Culture and trends desk\] Will /);
     expect(mail.text).toMatch(/Gambling language or feel 8\/10: reads like a sportsbook line/);
     expect(mail.text).toMatch(/fewer than 8 open questions/);
@@ -293,7 +302,7 @@ describe("email", () => {
 
   it("reads its settings from the environment with safe defaults", () => {
     const env = engineEnv({});
-    expect(env).toMatchObject({ ENGINE_MAX_DRAFTS: 12, ENGINE_CHECK_THRESHOLD: 7, ENGINE_AUTO_APPROVE: "1" });
+    expect(env).toMatchObject({ ENGINE_MAX_DRAFTS: 20, ENGINE_DAILY_DRAFTS: 50, ENGINE_MONTHLY_BUDGET_USD: 95, ENGINE_CHECK_THRESHOLD: 7, ENGINE_AUTO_APPROVE: "1" });
     expect(engineEnv({ ENGINE_AUTO_APPROVE: "0" }).ENGINE_AUTO_APPROVE).toBe("0");
     expect(env.ENGINE_ALERT_EMAIL).toBeUndefined();
     expect(() => engineEnv({ ENGINE_CHECK_THRESHOLD: "11" })).toThrow();
@@ -347,7 +356,7 @@ describe("auto-approve", () => {
     const store = new MemoryStore();
     // Eight drafts: five clean, one a touch sensitive, one gambling-ish, one the checker couldn't rate.
     const checker = scriptedChecker([clean, [2, 1, 3, 1, 2], clean, [1, 1, 2, 5, 1], clean, [1, 8, 2, 1, 2], [1, 2, 4, 2, 3], "down"]);
-    const report = await runCycle({ ...base(store, drafting(), feed(newsFor(["culture"]))), checker, desks: [DESKS[2]!], config: { autoApprove: true, perDesk: 8, deskAttempts: 8 } });
+    const report = await runCycle({ ...base(store, drafting(), feed(newsFor(["culture"]))), checker, desks: [DESKS[3]!], config: { autoApprove: true, perDesk: 8, deskAttempts: 8 } });
     const queued = report.decisions.filter((d) => d.decision === "queued");
     const auto = queued.filter((d) => "autoApproved" in d && d.autoApproved);
     expect([queued.length, auto.length, report.alerts.length]).toEqual([8, 5, 2]);
@@ -371,7 +380,7 @@ describe("auto-approve", () => {
 
   it("is off unless switched on", async () => {
     const store = new MemoryStore();
-    await runCycle({ ...base(store, drafting(), feed(newsFor(["culture"]))), checker: scriptedChecker([clean]), desks: [DESKS[2]!] });
+    await runCycle({ ...base(store, drafting(), feed(newsFor(["culture"]))), checker: scriptedChecker([clean]), desks: [DESKS[3]!] });
     expect((await store.items()).every((i) => i.status === "pending")).toBe(true);
   });
 });

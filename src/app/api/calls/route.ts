@@ -1,6 +1,6 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { getQuestion } from "@/content/sample-questions";
+import { siteQuestion } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { termsCurrent, termsGateOn, type ConsentRow } from "@/lib/account";
 import { callsCountFrom, COUNTRY_HEADER, PROXY_CHECK_TIMEOUT_MS, withinTime } from "@/lib/call-origin";
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400, headers: noStore });
-  const q = getQuestion(parsed.data.slug);
+  const q = await siteQuestion(parsed.data.slug);
   if (!q) return NextResponse.json({ error: "unknown question" }, { status: 404, headers: noStore });
   // The site's clock: the same one every page uses to show a question as open or closed.
   if (!isOpen(questionState(q, siteNow()))) return NextResponse.json({ error: "closed" }, { status: 409, headers: noStore });

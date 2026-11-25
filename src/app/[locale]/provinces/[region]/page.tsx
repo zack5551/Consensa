@@ -15,7 +15,7 @@ import { LeaderboardTable } from "@/components/leaderboard-table";
 import { ScreenView } from "@/components/screen-view";
 import { StatTile } from "@/components/stat-tile";
 import { sampleForecasters, SAMPLE_ME } from "@/content/sample-forecasters";
-import { sampleQuestions } from "@/content/sample-questions";
+import { siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { sampleResults } from "@/content/sample-results";
 import { isLocale, locales, type Locale } from "@/i18n/config";
@@ -59,7 +59,7 @@ export default async function RegionPage({ params }: { params: Params }) {
   const pct = (v: number) => formatPercent(v, locale);
   const inName = p.inNames[region];
 
-  const openQuestions = sampleQuestions.filter((q) => isOpen(questionState(q, siteNow())));
+  const openQuestions = (await siteQuestions()).filter((q) => isOpen(questionState(q, siteNow())));
   const open = openQuestions.map((q) => ({ ...q, national: crowdNow(q) }));
   const gaps = regionGaps(open, region).slice(0, 5);
   const titles = new Map(openQuestions.map((q) => [q.slug, q.question[locale]]));

@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 const runFromEnv = vi.fn();
 vi.mock("@/engine/run", () => ({ runFromEnv: (...args: unknown[]) => runFromEnv(...args) }));
+const revalidateTag = vi.fn();
+vi.mock("next/cache", async (orig) => ({ ...(await orig<Record<string, unknown>>()), revalidateTag: (tag: string) => revalidateTag(tag) }));
 
 const SECRET = "s".repeat(40);
 const ENV = {
@@ -49,6 +51,11 @@ describe("cycle route health email", () => {
     const { GET } = await import("@/app/api/engine/cycle/route");
     await GET(request());
     expect(runFromEnv.mock.calls[0]![0]).toMatchObject({ checkThreshold: 7, mailer: expect.any(Function), autoApprove: true });
+    // zack's caps (2026-11-25): 20 a run, 50 a day, US$95 a month.
+    expect(runFromEnv.mock.calls[0]![0]).toMatchObject({ maxDrafts: 20, dailyDrafts: 50, monthlyBudgetUsd: 95 });
+    // Publishing refreshes the site's question list instead of rebuilding the site.
+    runFromEnv.mock.calls[0]![0].onPublished(["a-new-question"]);
+    expect(revalidateTag).toHaveBeenCalledWith("live-questions");
     vi.stubEnv("ENGINE_LIVE_FEEDS", "0");
     await GET(request());
     expect(runFromEnv.mock.calls[1]![0].mailer).toBeUndefined();

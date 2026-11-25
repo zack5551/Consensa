@@ -17,6 +17,7 @@ import { YourCallBadge } from "@/components/your-call-badge";
 import { ScreenView } from "@/components/screen-view";
 import { TodayProgress } from "@/components/today-progress";
 import { todaysFive } from "@/content/sample-questions";
+import { siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
@@ -49,7 +50,7 @@ export default async function TodayPage({ params }: { params: Promise<{ locale: 
   if (!isLocale(raw)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
-  const five = await withLiveCrowd(todaysFive());
+  const five = await withLiveCrowd(todaysFive(siteNow(), await siteQuestions()));
   const [lead, ...rest] = five;
   if (!lead) notFound();
   const pct = (v: number) => formatPercent(v, locale);

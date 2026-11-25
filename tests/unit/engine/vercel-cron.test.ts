@@ -13,8 +13,13 @@ describe("Vercel Cron", () => {
     expect(vercel.regions).toEqual(["yul1"]);
   });
 
-  it("calls the engine cycle once a day, which the Hobby plan allows", () => {
-    expect(vercel.crons).toEqual([{ path: "/api/engine/cycle", schedule: "0 15 * * *" }]);
+  it("calls the engine cycle twice a day (10 AM and 6 PM Toronto), each job once a day as the Hobby plan allows", () => {
+    expect(vercel.crons).toEqual([
+      { path: "/api/engine/cycle", schedule: "0 15 * * *" },
+      { path: "/api/engine/cycle?run=evening", schedule: "0 23 * * *" },
+    ]);
+    // Hobby cron jobs may run at most once a day: a fixed minute and hour, every day.
+    for (const c of vercel.crons ?? []) expect(c.schedule).toMatch(/^\d{1,2} \d{1,2} \* \* \*$/);
   });
 
   it("points at a route that answers GET, checks CRON_SECRET and compares it in constant time", () => {

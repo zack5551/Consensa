@@ -4,17 +4,19 @@
  *   1. Ingest: fetch every feed, keep new signals.
  *   2. Cluster: group the last 48 hours of signals into stories and score their heat.
  *   3. Screen: drop stories about deaths, violence, crime or private lives before any model call.
- *   4. Plan: four writing desks (economy and housing, weather and science, culture and trends, sports) each take
- *      their own stories, hottest first, then the official release calendar when the news runs thin.
- *   5. Draft: each desk drafts until it has queued its target (2 per cycle) or tried its limit, under a hard cap on
- *      writer calls per cycle and a time limit, so cost and run time stay predictable.
+ *   4. Plan: five writing desks (economy and business; provinces, cities and housing; weather and science; culture
+ *      and trends; sports), fed by six news scouts (`sources/registry.ts`), each take their own stories, hottest
+ *      first, then the official release calendar when the news runs thin.
+ *   5. Draft: each desk drafts until it has queued its target (4 per cycle) or tried its limit, under a hard cap on
+ *      writer calls per cycle (and per day, in `run.ts`) and a time limit, so cost and run time stay predictable.
  *   6. Check: safety screen, structural validation and dedup on every draft. Blocked drafts are kept but never shown.
  *      Then the risk checker rates every draft an editor could see, 1–10 in five areas; at or over the line it is
  *      flagged and listed in the cycle's alerts (emailed by `run.ts`).
- *   7. Queue: everything else waits for an editor.
+ *   7. Queue: low-risk drafts are approved automatically when auto-approve is on (`autoApprovable`); everything else
+ *      waits for an editor.
  *   8. Resolve: read the official source for published questions whose result is due.
  *
- * The cycle never publishes anything by itself. Only `publishApproved` does, and only for items an editor approved.
+ * Only `publishApproved` publishes, and only approved items.
  */
 import type { Question } from "@/lib/question";
 import { duplicateFlag, findDuplicate } from "@/engine/dedup";
@@ -77,9 +79,9 @@ export function autoApprovable(item: QueueItem, check: CheckOutcome | undefined,
 
 export const DEFAULT_CYCLE: CycleConfig = {
   minHeat: 15,
-  maxDrafts: 12,
-  perDesk: 2,
-  deskAttempts: 4,
+  maxDrafts: 20,
+  perDesk: 4,
+  deskAttempts: 6,
   lookbackHours: 48,
   deadlineMs: 150_000,
   checkThreshold: DEFAULT_THRESHOLD,
@@ -98,7 +100,7 @@ export interface CycleDeps {
   config?: Partial<CycleConfig>;
   /** Rates each queued draft's risk. Leave out to skip the check (mock runs, tests). */
   checker?: Checker;
-  /** The writing desks. Defaults to the four in `draft/desks.ts`. */
+  /** The writing desks. Defaults to the five in `draft/desks.ts`. */
   desks?: readonly Desk[];
 }
 
@@ -229,18 +231,30 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       if (Date.now() - clockStart > cfg.deadlineMs) break;
       budget.left--;
       attempts++;
+      try {
+        if (await draftOne(desk, story)) queued++;
+      } catch (err) {
+        // A hiccup saving one story (Supabase busy, a network blip) costs that story only: the desk moves on, the other
+        // desks never notice, and the story isn't marked drafted, so the next run tries it again.
+        decisions.push({ storyId: story.id, headline: story.headline, heat: story.heat, desk: desk.id, decision: "error", reason: err instanceof Error ? err.message : String(err) });
+      }
+    }
+  };
+  /** Drafts, checks and saves one story. True when it joined the queue. */
+  const draftOne = async (desk: Desk, story: Story): Promise<boolean> => {
+    {
       const o = await drafter.draft(story, { now, releases: deps.releases, existing: known });
       add(o.usage);
       const base = { storyId: story.id, headline: story.headline, heat: story.heat, desk: o.desk ?? desk.id };
       if (o.status === "error") {
         // Not marked as drafted: the next cycle retries it.
         decisions.push({ ...base, decision: "error", reason: o.reason });
-        continue;
+        return false;
       }
       await store.markDrafted(story.id, o.status, now);
       if (o.status === "skip") {
         decisions.push({ ...base, decision: "skipped", reason: o.reason });
-        continue;
+        return false;
       }
 
       const flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];
@@ -277,12 +291,12 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       const item: QueueItem = { ...reviewed, why, desk: base.desk, ...(check?.ok ? { check: check.result } : {}) };
       await store.putItem(item);
       decisions.push({ ...base, decision: item.status === "autoRejected" ? "autoRejected" : "queued", itemId: item.id, flags, why, ...(auto ? { autoApproved: true } : {}) });
-      if (item.status === "autoRejected") continue;
-      queued++;
+      if (item.status === "autoRejected") return false;
       known.push(o.draft.question.en);
       if (check && (!check.ok || check.result.overall >= cfg.checkThreshold)) {
         alerts.push({ itemId: item.id, desk: base.desk, draft: o.draft, ...(check.ok ? { check: check.result } : { checkError: check.reason }) });
       }
+      return true;
     }
   };
   await Promise.all(plan.map(({ desk, stories }) => runDesk(desk, stories)));

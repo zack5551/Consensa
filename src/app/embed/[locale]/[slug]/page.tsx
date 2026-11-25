@@ -11,7 +11,8 @@ import { CrowdBar } from "@/components/crowd-bar";
 import { ProvinceSplit } from "@/components/province-split";
 import { SportsNotice } from "@/components/sports-notice";
 import { Wordmark } from "@/components/wordmark";
-import { getQuestion, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteQuestion } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
@@ -22,7 +23,7 @@ import { provinceSummary } from "@/lib/province-summary";
 
 type Params = Promise<{ locale: string; slug: string }>;
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 /** Real crowd numbers refresh every minute (ISR). */
 export const revalidate = 60;
@@ -33,14 +34,14 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const q = getQuestion(slug);
+  const q = await siteQuestion(slug);
   if (!isLocale(locale) || !q) return {};
   return { title: q.question[locale], robots: { index: false } };
 }
 
 export default async function EmbedPage({ params }: { params: Params }) {
   const { locale: raw, slug } = await params;
-  const q = await withLiveQuestion(getQuestion(slug));
+  const q = await withLiveQuestion(await siteQuestion(slug));
   if (!isLocale(raw) || !q) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);

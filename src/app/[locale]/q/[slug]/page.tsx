@@ -22,7 +22,8 @@ import { SourceCredit } from "@/components/source-credit";
 import { SportsNotice } from "@/components/sports-notice";
 import { StateBadge } from "@/components/state-badge";
 import { StateNote } from "@/components/state-note";
-import { getQuestion, sampleQuestions } from "@/content/sample-questions";
+import { sampleQuestions } from "@/content/sample-questions";
+import { siteQuestion, siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { liveSocialPolls, withLiveCrowd, withLiveQuestion } from "@/lib/live";
 import { isLocale, locales, type Locale } from "@/i18n/config";
@@ -41,7 +42,8 @@ import { schemaOrg } from "@/lib/json-ld";
 
 type Params = Promise<{ locale: string; slug: string }>;
 
-export const dynamicParams = false;
+// Built pages for the known questions; a question published since the build renders on first visit (no rebuild).
+export const dynamicParams = true;
 
 /** Real crowd numbers refresh every minute (ISR). */
 export const revalidate = 60;
@@ -52,7 +54,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale, slug } = await params;
-  const q = getQuestion(slug);
+  const q = await siteQuestion(slug);
   if (!isLocale(locale) || !q) return notFoundMetadata(locale);
   return {
     title: q.question[locale],
@@ -73,7 +75,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function QuestionPage({ params }: { params: Params }) {
   const { locale: raw, slug } = await params;
-  const q = await withLiveQuestion(getQuestion(slug));
+  const q = await withLiveQuestion(await siteQuestion(slug));
   if (!isLocale(raw) || !q) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
@@ -106,7 +108,7 @@ export default async function QuestionPage({ params }: { params: Params }) {
 
   // After the result: did Canada lean the right way, and how has it done on this topic? Scored, undisputed results only.
   // Every question with live crowd numbers where they exist, so the topic record and the next calls never mix in sample numbers.
-  const all = await withLiveCrowd(sampleQuestions);
+  const all = await withLiveCrowd(await siteQuestions());
   const verdict = crowdVerdict(q);
   const record = verdict ? topicRecord(q, all) : null;
   const verdictText =

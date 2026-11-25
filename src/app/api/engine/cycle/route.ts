@@ -8,6 +8,7 @@
  * Each method is off (404) until its own secret is set.
  */
 import { timingSafeEqual } from "node:crypto";
+import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { engineEnv, type EngineEnv } from "@/engine/config";
 import { failureEmail } from "@/engine/notify/digest";
@@ -16,15 +17,16 @@ import { sesMailer, type Mailer } from "@/engine/notify/ses";
 import { runFromEnv } from "@/engine/run";
 import { siteDueQuestions } from "@/engine/site-results";
 import { SupabaseStore } from "@/engine/supabase-store";
-import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
-import { isOpen, questionState } from "@/lib/question";
+import { SAMPLE_NOW } from "@/content/sample-questions";
+import { isOpen, questionState, type Question } from "@/lib/question";
+import { LIVE_QUESTIONS_TAG, siteQuestions } from "@/lib/site-questions";
 import { socialGaps, socialVotingOn } from "@/lib/social-voting/env";
 import { runSocialStep } from "@/lib/social-voting/run";
 import { logErrorCode } from "@/lib/server/error-code-log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-/** A cycle drafts up to 6 stories with Claude; give it room (Vercel allows up to 300 s with Fluid compute). */
+/** A cycle makes up to 20 writer calls across five desks in parallel; give it room (Vercel allows up to 300 s with Fluid compute). */
 export const maxDuration = 300;
 
 function authorized(header: string | null, secret: string): boolean {
@@ -59,9 +61,9 @@ function mailerFrom(env: EngineEnv): Mailer | null {
 }
 
 /** Open questions on the site: the built slate plus anything that went live this run. */
-function openOnSite(published: readonly string[]): number {
+function openOnSite(questions: readonly Question[], published: readonly string[]): number {
   const now = new Date();
-  const open = sampleQuestions.filter((q) => isOpen(questionState(q, now))).map((q) => q.slug);
+  const open = questions.filter((q) => isOpen(questionState(q, now))).map((q) => q.slug);
   return new Set([...open, ...published]).size;
 }
 
@@ -80,7 +82,9 @@ async function runCycle(env: EngineEnv) {
 
 async function runCycleInner(env: EngineEnv, mailer: Mailer | null) {
   const liveFeeds = env.ENGINE_LIVE_FEEDS === "1";
-  const live = sampleQuestions.map((q) => ({ slug: q.slug, question: q.question }));
+  // Everything on the site, including questions published since the last build, so nothing is drafted twice.
+  const onSite = await siteQuestions();
+  const live = onSite.map((q) => ({ slug: q.slug, question: q.question }));
   // Save to Supabase only for a real run (live feeds and the Claude drafter), so sample or mock drafts never land
   // in the real review queue.
   const real = liveFeeds && Boolean(env.ANTHROPIC_API_KEY);
@@ -90,6 +94,11 @@ async function runCycleInner(env: EngineEnv, mailer: Mailer | null) {
     apiKey: env.ANTHROPIC_API_KEY,
     liveFeeds,
     maxDrafts: env.ENGINE_MAX_DRAFTS,
+    // zack (2026-11-25): keep this month near US$95. Both caps count writer calls already made.
+    dailyDrafts: env.ENGINE_DAILY_DRAFTS,
+    monthlyBudgetUsd: env.ENGINE_MONTHLY_BUDGET_USD,
+    // New questions show on the site at once, with no rebuild (Vercel budget): refresh the cached list.
+    onPublished: () => revalidateTag(LIVE_QUESTIONS_TAG),
     // Sample feeds are pinned to the sample clock so a dry run is reproducible.
     now: liveFeeds ? new Date() : SAMPLE_NOW,
     live,
@@ -98,11 +107,11 @@ async function runCycleInner(env: EngineEnv, mailer: Mailer | null) {
     checkThreshold: env.ENGINE_CHECK_THRESHOLD,
     // zack's switch (2026-11-25): drafts that pass every check go live without a person. Only on a real run.
     autoApprove: real && env.ENGINE_AUTO_APPROVE === "1",
-    ...(mailer ? { mailer, openOnSite } : {}),
+    ...(mailer ? { mailer, openOnSite: (published: readonly string[]) => openOnSite(onSite, published) } : {}),
     // The review page needs the secret that signs its link and the queue it reads.
     ...(mailer && env.CRON_SECRET && supabase ? { reviewLink: () => reviewUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL, env.CRON_SECRET!, new Date()) } : {}),
     // Automatic results read free official data on the real clock, so they run whenever Supabase can keep the record.
-    ...(supabase ? { results: { questions: siteDueQuestions(sampleQuestions), store: supabase, now: new Date() } } : {}),
+    ...(supabase ? { results: { questions: siteDueQuestions(onSite), store: supabase, now: new Date() } } : {}),
   });
   // Social voting (sprint 11): count replies from linked accounts on our official posts. Null, and nothing is called,
   // while SOCIAL_VOTING is off. A failure here never fails the cycle; the report is counts only.
