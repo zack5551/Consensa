@@ -18,9 +18,12 @@ import { MemoryStore, type EngineStore } from "@/engine/store";
 import { COST_PER_CALL, summaryEmail } from "@/engine/notify/digest";
 import type { Mailer } from "@/engine/notify/ses";
 import type { Comparable } from "@/engine/dedup";
+import type { Story } from "@/engine/types";
 
 export interface RunOptions {
   apiKey?: string;
+  /** Write only these stories (the editor's ideas from the review page). See `CycleDeps.only`. */
+  only?: readonly Story[];
   liveFeeds: boolean;
   maxDrafts: number;
   /** Most writer calls per Toronto day, across runs. Leave out for no daily cap. */
@@ -113,6 +116,7 @@ export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
       ...(opts.checkThreshold ? { checkThreshold: opts.checkThreshold } : {}),
     },
     ...(checker ? { checker } : {}),
+    ...(opts.only ? { only: opts.only } : {}),
   });
 
   // Publish what editors approved since the last run, then refresh every live question (a result may have landed).

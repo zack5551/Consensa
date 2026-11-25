@@ -6,6 +6,7 @@
  */
 import { AREA_NAMES } from "@/engine/check/checker";
 import { DESKS } from "@/engine/draft/desks";
+import { IDEA_MAX, IDEA_MIN } from "@/engine/ideas";
 import { approve, queueOrder, reject, ReviewError } from "@/engine/review";
 import type { EngineStore } from "@/engine/store";
 import { checkAreas, type QueueItem } from "@/engine/types";
@@ -95,11 +96,20 @@ ul{padding-left:20px}li{margin:4px 0}.hot,.hot b{color:var(--hot)}
 input[name=reason]{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
 button{padding:8px 16px;border-radius:8px;border:0;font-weight:600;cursor:pointer;color:#fff}
 .yes{background:var(--yes)}.no{background:var(--no)}
+form.idea{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:16px 0}
+textarea{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+form.idea button{align-self:flex-start}
 .notice{padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--card)}
 </style></head><body><main>
 <h1>PULSE: drafts waiting for you (${list.length})</h1>
 <p class="meta">Approved drafts go live on the next daily run. Rejected ones are kept for the record and never shown.</p>
 ${notice ? `<p class="notice${notice.ok ? "" : " hot"}" role="status">${esc(notice.message)}</p>` : ""}
+<form method="post" class="idea">
+<label for="idea"><b>Suggest a question</b><br><span class="meta">Type a question, a topic or a headline. The right desk writes it in English and French with an official source, the same checks apply, and a safe one goes live right away. Takes about a minute.</span></label>
+<input type="hidden" name="t" value="${esc(token)}"><input type="hidden" name="action" value="idea">
+<textarea id="idea" name="idea" rows="3" required minlength="${IDEA_MIN}" maxlength="${IDEA_MAX}" placeholder="Will a Canadian win an Oscar in March?"></textarea>
+<button class="yes">Write it</button>
+</form>
 ${body}
 </main></body></html>`;
 }
