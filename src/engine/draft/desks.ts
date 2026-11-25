@@ -23,6 +23,8 @@ export interface Desk {
   /** Calendar topics this desk can write from when the news runs thin. */
   calendar: ReadonlyArray<Release["topic"]>;
   brief: string;
+  /** This desk's weight in a run (default 1): a share of 2 gets twice the writer calls and twice the target. */
+  share?: number;
 }
 
 const SUPPLY = `Your desk aims to send the editor at least one fair question each cycle. If this story can't carry a fair question but points to a checkable angle on the same topic (for example an official release listed in <calendar>), draft that angle instead. Decline only when no angle passes every hard rule. Never bend a rule to meet the aim, and never repeat or lightly reword a question in <existing>.`;
@@ -34,7 +36,7 @@ export const DESKS: readonly Desk[] = [
     categories: ["economy"],
     calendar: ["boc-rate", "lfs-unemployment", "cpi"],
     brief: `# Your desk: economy and business
-You cover the Bank of Canada, jobs, prices, wages, trade, the loonie's exchange rate, gas prices, and public milestones of Canadian companies (a product launch date, a published annual figure). Good questions name the official number, the threshold and the release date, and prefer a machine-readable resolver (boc-policy-rate or statcan-vector). Set thresholds near the current reading so the honest answer sits between 15% and 85%.
+You cover the Bank of Canada, jobs, prices, wages, trade, the loonie's exchange rate, gas prices, and Canadian business on the world stage: Shopify, the big banks, Canadian tech and resource companies, seen through their own public filings and announcements (a reported revenue figure against a stated threshold, a launch date, a store or plant opening), and global markets as they land in Canada (Will the loonie close above 75 US cents on a given date, per the Bank of Canada's daily rate?). Never a share price, stock-market index or cryptocurrency question, and nothing that reads as investment advice. Good questions name the official number, the threshold and the release date, and prefer a machine-readable resolver (boc-policy-rate or statcan-vector). Set thresholds near the current reading so the honest answer sits between 15% and 85%.
 ${SUPPLY}`,
   },
   {
@@ -43,7 +45,7 @@ ${SUPPLY}`,
     categories: ["housing"],
     calendar: [],
     brief: `# Your desk: provinces, cities and housing
-You cover what happens across the country, region by region: housing starts, rents and home sales (CMHC, CREA, StatCan), transit lines and public projects with an announced opening date, city and provincial public data (ridership, traffic, permits, tourism counts), and local events with an official record. Name the province or city in the question so readers everywhere know where it is. Settle on the official city, provincial or federal source. Never about elections, parties or politicians, crime, courts, accidents or anything where people were hurt.
+You cover what happens across the country, region by region: housing starts, rents and home sales (CMHC, CREA, StatCan), transit lines and public projects with an announced opening date, city and provincial public data (ridership, traffic, permits, tourism counts), and local events with an official record, including world events that come to Canadian cities (the 2026 World Cup legacy, big tours and festivals, records set here). Name the province or city in the question so readers everywhere know where it is. Settle on the official city, provincial or federal source. Never about elections, parties or politicians, crime, courts, accidents or anything where people were hurt.
 ${SUPPLY}`,
   },
   {
@@ -52,7 +54,7 @@ ${SUPPLY}`,
     categories: ["weather", "science"],
     calendar: ["climate-month"],
     brief: `# Your desk: weather and science
-You cover snowfall, rain, heat and cold records at named stations, wildfire area as public data, space launches, Canadian research milestones and public science agencies (CSA, NRC, ECCC). Weather questions use eccc-daily-climate with a known station, a date window and a threshold in cm, mm or °C. Never frame a question around people harmed by weather.
+You cover snowfall, rain, heat and cold records at named stations, wildfire area as public data, space launches, Canadian research milestones and public science agencies (CSA, NRC, ECCC), and Canadians in global science and tech: Canadian astronauts and missions, Canadian AI labs and researchers, world records and big launches with a Canadian part. Weather questions use eccc-daily-climate with a known station, a date window and a threshold in cm, mm or °C. Never frame a question around people harmed by weather.
 ${SUPPLY}`,
   },
   {
@@ -60,8 +62,11 @@ ${SUPPLY}`,
     name: "Culture and trends desk",
     categories: ["culture"],
     calendar: [],
+    // zack (2026-11-25): pop culture is what people talk about, so this desk gets the biggest share of each run.
+    share: 2,
     brief: `# Your desk: culture and trends
-You cover Canadian film, music, books, TV, awards (Giller, Junos, Polaris, Canadian Screen Awards), box office and chart milestones, festivals, and what Canadians are searching for. Questions settle on a named official announcement (the award's own site, a public chart) with a manual resolver that says exactly what the editor checks. Never about a person's private life, health or relationships.
+You cover pop culture as Canadians live it: music (Drake, The Weeknd, Céline Dion, Charlotte Cardin, tours and chart runs), movies and box office, TV and streaming (Netflix, Crave, Tou.tv and what Canadians are bingeing), celebrities' public work, awards (Junos, Polaris, Giller, Canadian Screen Awards, Grammys and Oscars with a Canadian angle), video games and gaming events, viral moments and what Canadians are searching for. Global pop culture is fair game, framed as what Canadians think will happen (Will Taylor Swift's next album debut at No. 1 on the Billboard 200? Will a Canadian win a Grammy?); aim for about half your questions with a Canadian angle (a Canadian artist, film, show or event, or how it lands in Canada). Spotlight Canadians on the world stage: Will a Canadian win an Oscar? Will Drake, Tate McRae or Justin Bieber top a global chart? Will a Canadian film take a prize at Cannes or TIFF? Write questions people want to share with friends: fun, specific and talkable, still a fair yes/no with a clear deadline. Settle on a named public record (the award's own site, a public chart such as Billboard Canadian Hot 100, an official box-office or streaming top 10, the artist's or studio's own announcement) with a manual resolver that says exactly what the editor checks.
+Only a person's public work and announced plans: never their private life, health, relationships, legal troubles or anything that could hurt their reputation, and never a rumour treated as fact.
 ${SUPPLY}`,
   },
   {
@@ -70,7 +75,7 @@ ${SUPPLY}`,
     categories: ["sports"],
     calendar: [],
     brief: `# Your desk: sports
-You cover Canadian teams and athletes as scored pre-game fan forecasts: a season outcome, an award, or one game's winner with startsAt at the start time and closesAt no later than that. Settle on the league's official site. Never live or in-game, never margins, totals, exact scores, first scorers or player stat lines, never amateur, junior, university or youth sports.
+You cover Canadian teams and athletes first, plus the big world events Canadians follow (the Olympics, the World Cup, Grand Slam tennis, Formula 1, the NBA and MLB postseasons, with a Canadian angle where there is one). Spotlight Canadians abroad: Shai Gilgeous-Alexander and the Thunder, Canadians in the NHL awards race, Canadian tennis players at the Slams, Canadian drivers in F1, the national teams. All as scored pre-game fan forecasts: a season outcome, an award, or one game's winner with startsAt at the start time and closesAt no later than that. Settle on the league's official site. Never live or in-game, never margins, totals, exact scores, first scorers or player stat lines, never amateur, junior, university or youth sports.
 ${SUPPLY}`,
   },
 ];

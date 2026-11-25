@@ -53,6 +53,11 @@ export interface CycleConfig {
   checkThreshold: number;
   /** zack's switch (ENGINE_AUTO_APPROVE, on in production by default): approve drafts that pass `autoApprovable`. */
   autoApprove: boolean;
+  /**
+   * Most release-calendar stories a desk may write per run, after its news (zack, 2026-11-25: too many questions were
+   * data releases). The news people are talking about comes first; the calendar only tops up a quiet desk.
+   */
+  calendarPerDesk: number;
 }
 
 /** The engine's name in a review history when it approves a draft by itself. */
@@ -62,30 +67,40 @@ export const AUTO_STRICT = 4;
 /** Review flags the engine may acknowledge by itself. Every other review flag (sports, elections, minors, disaster,
  * trading words, a missing threshold, a poll, a long gap to the result) keeps the draft for a person. */
 const AUTO_OK_FLAGS = new Set(["manualResolver"]);
+/**
+ * Sports (zack, 2026-11-25: "yes auto approve"): a sports draft may go live by itself when its only extra flag is the
+ * standing "sports" reminder and the checker rates gambling feel at 2 or less, stricter than other topics. LEX's
+ * sports rules still hold through the fixed checks: pre-game only (closes by the start), no sportsbook-style wording
+ * (the sports word list flags it for a person), official result sources only.
+ */
+export const SPORTS_STRICT = 2;
 
 /**
  * Whether the engine may approve a draft without a person (only when zack's switch is on). All of these must hold:
  * it passed every fixed check with no blocking flag; its only review flags are on the short list above; it isn't
- * sports (LEX: every sports draft gets a person); the checker rated it, every area under the flag line, and legal,
+ * a risky sports draft (see SPORTS_STRICT); the checker rated it, every area under the flag line, and legal,
  * gambling and sensitive at 4 or less. Anything else waits in the queue and, when risky, in the email.
  */
 export function autoApprovable(item: QueueItem, check: CheckOutcome | undefined, threshold: number): boolean {
-  if (item.status !== "pending" || item.draft.category === "sports") return false;
-  if (item.flags.some((f) => f.severity === "block" || !AUTO_OK_FLAGS.has(f.code))) return false;
+  if (item.status !== "pending") return false;
+  const sports = item.draft.category === "sports";
+  if (item.flags.some((f) => f.severity === "block" || !(AUTO_OK_FLAGS.has(f.code) || (sports && f.code === "sports")))) return false;
   if (!check?.ok) return false;
   const { scores, overall } = check.result;
-  return overall < threshold && scores.legal.score <= AUTO_STRICT && scores.gambling.score <= AUTO_STRICT && scores.sensitive.score <= AUTO_STRICT;
+  const strict = sports ? SPORTS_STRICT : AUTO_STRICT;
+  return overall < threshold && scores.legal.score <= AUTO_STRICT && scores.gambling.score <= strict && scores.sensitive.score <= AUTO_STRICT;
 }
 
 export const DEFAULT_CYCLE: CycleConfig = {
   minHeat: 15,
-  maxDrafts: 20,
+  maxDrafts: 24,
   perDesk: 4,
   deskAttempts: 6,
   lookbackHours: 48,
-  deadlineMs: 150_000,
+  deadlineMs: 170_000,
   checkThreshold: DEFAULT_THRESHOLD,
   autoApprove: false,
+  calendarPerDesk: 1,
 };
 
 export interface CycleDeps {
@@ -157,11 +172,11 @@ export function pickStories(stories: readonly Story[], max: number, perCategory:
  * Each desk's reading list for this cycle: its own news stories, hottest first, then calendar backfill. Desks run in
  * parallel and each works down its own list, so a quiet beat still gets its turn and a busy one can't take them all.
  */
-export function planDesks(news: readonly Story[], backfill: readonly Story[], desks: readonly Desk[] = DESKS): Array<{ desk: Desk; stories: Story[] }> {
+export function planDesks(news: readonly Story[], backfill: readonly Story[], desks: readonly Desk[] = DESKS, calendarPerDesk = DEFAULT_CYCLE.calendarPerDesk): Array<{ desk: Desk; stories: Story[] }> {
   const byHeat = [...news].sort((a, b) => b.heat - a.heat);
   return desks.map((desk) => ({
     desk,
-    stories: [...byHeat, ...backfill].filter((s) => deskFor(s, desks).id === desk.id),
+    stories: [...byHeat.filter((s) => deskFor(s, desks).id === desk.id), ...backfill.filter((s) => deskFor(s, desks).id === desk.id).slice(0, calendarPerDesk)],
   }));
 }
 
@@ -210,7 +225,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   // 4–7. Each desk drafts its hottest stories until it meets its target, then checks and queues them.
   const desks = deps.desks ?? DESKS;
   const backlog = await undrafted(store, calendarStories(deps.releases, now, desks));
-  const plan = planDesks(candidates, backlog, desks);
+  const plan = planDesks(candidates, backlog, desks, cfg.calendarPerDesk);
   const existing = await store.comparables();
   const known = existing.map((c) => c.question.en);
   const budget = { left: cfg.maxDrafts };
@@ -223,16 +238,25 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
     usage.cacheReadTokens += u.cacheReadTokens;
   };
 
-  const runDesk = async (desk: Desk, stories: readonly Story[]) => {
-    let queued = 0;
-    let attempts = 0;
-    for (const story of stories) {
-      if (queued >= cfg.perDesk || attempts >= cfg.deskAttempts || budget.left <= 0) break;
+  // Each desk's share of the run (zack, 2026-11-25: lean into pop culture). A desk with a bigger share gets a bigger
+  // slice of the writer calls and a higher target; desks with nothing to write don't hold a slice.
+  const busy = plan.filter((p) => p.stories.length > 0);
+  const shares = busy.reduce((n, p) => n + (p.desk.share ?? 1), 0);
+  const slice = new Map(busy.map((p) => [p.desk.id, Math.floor((cfg.maxDrafts * (p.desk.share ?? 1)) / Math.max(1, shares))]));
+  const state = new Map(plan.map((p) => [p.desk.id, { next: 0, queued: 0, attempts: 0 }]));
+
+  const runDesk = async (desk: Desk, stories: readonly Story[], cap: number) => {
+    const st = state.get(desk.id)!;
+    const share = desk.share ?? 1;
+    while (st.next < stories.length) {
+      if (st.queued >= cfg.perDesk * share || st.attempts >= Math.min(cap, cfg.deskAttempts * share) || budget.left <= 0) break;
       if (Date.now() - clockStart > cfg.deadlineMs) break;
+      const story = stories[st.next++]!;
       budget.left--;
-      attempts++;
+      st.attempts++;
+      const queuedBefore = st.queued;
       try {
-        if (await draftOne(desk, story)) queued++;
+        if (await draftOne(desk, story)) st.queued = queuedBefore + 1;
       } catch (err) {
         // A hiccup saving one story (Supabase busy, a network blip) costs that story only: the desk moves on, the other
         // desks never notice, and the story isn't marked drafted, so the next run tries it again.
@@ -299,7 +323,10 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       return true;
     }
   };
-  await Promise.all(plan.map(({ desk, stories }) => runDesk(desk, stories)));
+  // First pass: every desk writes within its slice, in parallel. Second pass: whatever a quiet desk didn't use goes
+  // to the desks that still have stories, so the run still makes its full count.
+  await Promise.all(plan.map(({ desk, stories }) => runDesk(desk, stories, slice.get(desk.id) ?? 0)));
+  if (budget.left > 0) await Promise.all(plan.map(({ desk, stories }) => runDesk(desk, stories, Infinity)));
 
   // 8. Resolve
   const due = (await store.items())
