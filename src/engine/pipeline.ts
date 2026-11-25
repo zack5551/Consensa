@@ -58,6 +58,8 @@ export interface CycleConfig {
    * data releases). The news people are talking about comes first; the calendar only tops up a quiet desk.
    */
   calendarPerDesk: number;
+  /** Writers working at once per desk (times the desk's share). */
+  lanesPerDesk: number;
 }
 
 /** The engine's name in a review history when it approves a draft by itself. */
@@ -101,6 +103,7 @@ export const DEFAULT_CYCLE: CycleConfig = {
   checkThreshold: DEFAULT_THRESHOLD,
   autoApprove: false,
   calendarPerDesk: 1,
+  lanesPerDesk: 2,
 };
 
 export interface CycleDeps {
@@ -243,26 +246,35 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   const busy = plan.filter((p) => p.stories.length > 0);
   const shares = busy.reduce((n, p) => n + (p.desk.share ?? 1), 0);
   const slice = new Map(busy.map((p) => [p.desk.id, Math.floor((cfg.maxDrafts * (p.desk.share ?? 1)) / Math.max(1, shares))]));
-  const state = new Map(plan.map((p) => [p.desk.id, { next: 0, queued: 0, attempts: 0 }]));
+  const state = new Map(plan.map((p) => [p.desk.id, { next: 0, queued: 0, attempts: 0, inflight: 0 }]));
 
   const runDesk = async (desk: Desk, stories: readonly Story[], cap: number) => {
     const st = state.get(desk.id)!;
     const share = desk.share ?? 1;
+    // Each desk writes on a few lanes at once (zack, 2026-11-25: about 10 good questions a run). One writer call plus
+    // its check takes about a minute, so one lane per desk managed only two or three tries before the start limit.
+    // The lanes share the desk's counters, which are read and bumped before any await, so the caps still hold.
+    await Promise.all(Array.from({ length: Math.max(1, cfg.lanesPerDesk * share) }, () => lane(desk, stories, cap, st, share)));
+  };
+  const lane = async (desk: Desk, stories: readonly Story[], cap: number, st: { next: number; queued: number; attempts: number; inflight: number }, share: number) => {
     while (st.next < stories.length) {
-      if (st.queued >= cfg.perDesk * share || st.attempts >= Math.min(cap, cfg.deskAttempts * share) || budget.left <= 0) break;
+      if (st.queued + st.inflight >= cfg.perDesk * share || st.attempts >= Math.min(cap, cfg.deskAttempts * share) || budget.left <= 0) break;
       if (Date.now() - clockStart > cfg.deadlineMs) break;
       const story = stories[st.next++]!;
       budget.left--;
       st.attempts++;
-      const queuedBefore = st.queued;
+      // The 1st, 4th, 7th… try at each desk asks for a fast question (closing within 7 days), so about a third of every
+      // run settles within the week and even a quiet desk gives one.
+      const fast = st.attempts % 3 === 1;
+      st.inflight++;
       try {
-        // The 1st, 4th, 7th… try at each desk asks for a fast question (closing within 7 days), so about a third of every
-        // run settles within the week and even a quiet desk gives one.
-        if (await draftOne(desk, story, st.attempts % 3 === 1)) st.queued = queuedBefore + 1;
+        if (await draftOne(desk, story, fast)) st.queued++;
       } catch (err) {
         // A hiccup saving one story (Supabase busy, a network blip) costs that story only: the desk moves on, the other
         // desks never notice, and the story isn't marked drafted, so the next run tries it again.
         decisions.push({ storyId: story.id, headline: story.headline, heat: story.heat, desk: desk.id, decision: "error", reason: err instanceof Error ? err.message : String(err) });
+      } finally {
+        st.inflight--;
       }
     }
   };
