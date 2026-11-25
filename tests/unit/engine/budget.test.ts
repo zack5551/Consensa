@@ -3,6 +3,7 @@ import { COST_PER_CALL } from "@/engine/notify/digest";
 import { MockDrafter } from "@/engine/draft/mock";
 import type { Drafter } from "@/engine/draft/drafter";
 import { runCycle } from "@/engine/pipeline";
+import { toCheckResult, type Checker } from "@/engine/check/checker";
 import { approve } from "@/engine/review";
 import { releases, upcoming } from "@/engine/sources/calendar";
 import { fetchFeeds } from "@/engine/sources/feed";
@@ -135,3 +136,25 @@ describe("hands-off runs (zack: questions keep coming without him having to worr
     expect(await store.wasDrafted(failed.storyId)).toBe(false);
   });
 });
+
+describe("live the moment it's approved (2026-11-25: runs cut short by the time limit kept their questions waiting)", () => {
+  it("puts an automatically approved question on the site right away, not at the end of the run", async () => {
+    const store = new MemoryStore();
+    const lowRisk: Checker = {
+      id: "calm",
+      check: async () => ({ ok: true, result: toCheckResult({ scores: { legal: { score: 1, reason: "ok" }, gambling: { score: 1, reason: "ok" }, accuracy: { score: 1, reason: "ok" }, sensitive: { score: 1, reason: "ok" }, french: { score: 1, reason: "ok" } }, summary: "ok" }, "calm", SAMPLE_NOW) }),
+    };
+    const announced: string[][] = [];
+    const out = await runFromEnv({ liveFeeds: false, maxDrafts: 6, now: SAMPLE_NOW, store, checker: lowRisk, autoApprove: true, onPublished: (s) => void announced.push([...s]) });
+    const auto = out.report.decisions.filter((d) => d.decision === "queued" && d.autoApproved);
+    expect(auto.length).toBeGreaterThan(0);
+    // Each went live alone, as it was approved, and is on the site's list.
+    expect(announced.slice(0, auto.length).every((a) => a.length === 1)).toBe(true);
+    for (const slug of announced.slice(0, auto.length).flat()) {
+      expect(store.liveQuestions.has(slug)).toBe(true);
+      expect(out.published).toContain(slug);
+    }
+    expect(new Set(out.published).size).toBe(out.published.length);
+  });
+});
+

@@ -21,7 +21,7 @@ A yes/no question about a public, checkable Canadian event (or a global one Cana
 1. Never write about deaths, violence, crime, accidents, disasters affecting people, someone's health, relationships or family, children or teenagers, or unlawful activity. Disasters are allowed only as public data with no people in the frame (e.g. "hectares burned", "snowfall in cm").
 2. Never use gambling or trading language, in English or French. Banned in English: ${banned.en.join(", ")}. Banned in French: ${banned.fr.join(", ")}. Say call, forecast, probability, chance, crowd. Probabilities are percentages, never ratios.
 3. Never tip. Don't ask "should you…", don't hint at what to call, don't mention money, prizes or value.
-4. No elections, parties or politicians' futures (off at launch). Sports only as scored pre-game fan forecasts: a season outcome, an award, or one game's winner with startsAt set to the start of the game and closesAt no later than startsAt. Never live or in-game, never margins, totals, exact scores, first scorers or player stat lines, never amateur, junior, university or youth sports, never a ratio or a number like 2.40 or +150 in place of a percentage, never linking a sportsbook. Canadian focus (NHL, CFL, MLS, CPL, Raptors, Blue Jays, PWHL, national teams).
+4. No elections, parties or politicians' futures (off at launch). Sports only as scored pre-game fan forecasts: a season outcome, an award, or one game's winner. startsAt is when the deciding event begins (the game's start; for a season outcome such as making the playoffs, the first playoff game; for an award, the ceremony) and closesAt is no later than startsAt. Never live or in-game, never margins, totals, exact scores, first scorers or player stat lines, never amateur, junior, university or youth sports, never a ratio or a number like 2.40 or +150 in place of a percentage, never linking a sportsbook. Canadian focus (NHL, CFL, MLS, CPL, Raptors, Blue Jays, PWHL, national teams).
 5. Neutral wording. No loaded words, no hype, no urgency, no exclamation marks.
 6. The resolution source must be an official or primary source on one of these domains: ${resolutionDomains.join(", ")}. A newsroom can start a story but never settles one.
 7. The question closes before the answer can be known (closesAt < resolution.resolvesAt), at least 24 hours from now, and within about 13 months.
@@ -69,7 +69,7 @@ export const FAST_ASK =
 export const IDEA_ASK =
   "This story is an idea the editor typed in, not a news item. Write the best fair question you can on it: keep its subject, make it checkable with an official or reliable public source, and pick a sensible threshold and date. Every hard rule still applies; decline only if no version of it can pass them.";
 
-export function userMessage(story: Story, now: Date, releases: readonly Release[], existing: readonly string[], fast = false, liked: readonly string[] = [], idea = false): string {
+export function userMessage(story: Story, now: Date, releases: readonly Release[], existing: readonly string[], fast = false, liked: readonly string[] = [], idea = false, repair?: { question: string; problems: readonly string[] }): string {
   const ottawa = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", dateStyle: "full", timeStyle: "short" }).format(now);
   const cal = releases.map((r) => `- ${r.at} · ${r.name.en}${r.refPeriod ? ` (reference period ${r.refPeriod})` : ""} · ${r.sourceUrl}`).join("\n");
   const signals = story.signals
@@ -91,5 +91,5 @@ ${existing.slice(0, 200).map((q) => `- ${fence(q)}`).join("\n") || "- none"}
 ${signals}
 </story>
 
-${liked.length ? `<liked>\nQuestions the editor approved recently. Match this style and level of interest; never repeat them:\n${liked.slice(0, 12).map((q) => `- ${fence(q)}`).join("\n")}\n</liked>\n\n` : ""}${idea ? `${IDEA_ASK}\n\n` : ""}${fast ? `${FAST_ASK}\n\n` : ""}Draft one question from this story, or decline.`;
+${liked.length ? `<liked>\nQuestions the editor approved recently. Match this style and level of interest; never repeat them:\n${liked.slice(0, 12).map((q) => `- ${fence(q)}`).join("\n")}\n</liked>\n\n` : ""}${idea ? `${IDEA_ASK}\n\n` : ""}${repair ? `<repair>\nYour first draft from this story was: ${fence(repair.question)}\nThe automatic checks rejected it for:\n${repair.problems.map((p) => `- ${p}`).join("\n")}\nWrite it again with these fixed (same subject unless it can't be fixed), or decline.\n</repair>\n\n` : ""}${fast ? `${FAST_ASK}\n\n` : ""}Draft one question from this story, or decline.`;
 }

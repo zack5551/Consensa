@@ -21,6 +21,8 @@ export interface DraftContext {
   liked?: readonly string[];
   /** The story is an idea the editor typed on the review page: write it unless a hard rule says no. */
   idea?: boolean;
+  /** A second try: the writer's first draft of this story and what the automatic checks rejected it for. */
+  repair?: { question: string; problems: readonly string[] };
 }
 
 export type DraftOutcome = (

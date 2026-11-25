@@ -19,7 +19,7 @@
  * Only `publishApproved` publishes, and only approved items.
  */
 import type { Question } from "@/lib/question";
-import { duplicateFlag, findDuplicate } from "@/engine/dedup";
+import { duplicateFlag, findDuplicate, type Comparable } from "@/engine/dedup";
 import { checkFlag, DEFAULT_THRESHOLD, describeCheck, type CheckOutcome, type Checker } from "@/engine/check/checker";
 import { calendarStories, deskFor, DESKS, type Desk } from "@/engine/draft/desks";
 import type { DraftUsage, Drafter } from "@/engine/draft/drafter";
@@ -70,6 +70,8 @@ export const AUTO_STRICT = 4;
 /** Review flags the engine may acknowledge by itself. Every other review flag (sports, elections, minors, disaster,
  * trading words, a missing threshold, a poll, a long gap to the result) keeps the draft for a person. */
 const AUTO_OK_FLAGS = new Set(["manualResolver"]);
+/** Blocking problems a writer can fix in a second try: dates, sports timing, the source link, French spacing. */
+const FIXABLE = new Set(["closesTooSoon", "closesTooLate", "closesAfterResult", "sportsNoStart", "sportsClosesAfterStart", "sportsStartsAfterResult", "sourceNotOfficial", "sourceNotHttps", "frTypography", "resolverAfterResult", "resolverRange", "thresholdNotInRule"]);
 /**
  * Sports (zack, 2026-11-25: "yes auto approve"): a sports draft may go live by itself when its only extra flag is the
  * standing "sports" reminder and the checker rates gambling feel at 2 or less, stricter than other topics. LEX's
@@ -100,7 +102,7 @@ export const DEFAULT_CYCLE: CycleConfig = {
   perDesk: 4,
   deskAttempts: 6,
   lookbackHours: 48,
-  deadlineMs: 170_000,
+  deadlineMs: 150_000,
   checkThreshold: DEFAULT_THRESHOLD,
   autoApprove: false,
   calendarPerDesk: 1,
@@ -126,6 +128,11 @@ export interface CycleDeps {
    * through every screen, check and approval rule.
    */
   only?: readonly Story[];
+  /**
+   * Called the moment a draft is approved automatically, so it can go live right away instead of at the end of the
+   * run. A run that runs out of time then loses nothing it already approved. A failure here is reported, never thrown.
+   */
+  onApproved?: (item: QueueItem) => Promise<void>;
 }
 
 /** Questions a person approved (not the automatic approver), newest first: the style the editor likes. */
@@ -209,6 +216,9 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   const cfg = { ...DEFAULT_CYCLE, ...deps.config };
   const { store, drafter, now } = deps;
   const startedAt = new Date().toISOString();
+  // The start limit counts from here, feeds included: the function has 300 s in all, and a writer plus its check can
+  // take two minutes after it starts.
+  const clockStart = Date.now();
   const usage: DraftUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
 
   // 1. Ingest
@@ -250,7 +260,8 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   const existing = await store.comparables();
   const known = existing.map((c) => c.question.en);
   const budget = { left: cfg.maxDrafts };
-  const clockStart = Date.now();
+  /** Drafts this run has kept so far. Lanes write side by side, so a twin finished by another lane is caught here. */
+  const claimed: Comparable[] = [];
   const alerts: CycleAlert[] = [];
   const add = (u?: DraftUsage) => {
     if (!u) return;
@@ -299,7 +310,8 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   /** Drafts, checks and saves one story. True when it joined the queue. */
   const draftOne = async (desk: Desk, story: Story, fast: boolean): Promise<boolean> => {
     {
-      const o = await drafter.draft(story, { now, releases: deps.releases, existing: known, fast, liked, idea: isIdea(story) });
+      const ctx = { now, releases: deps.releases, existing: known, fast, liked, idea: isIdea(story) };
+      let o = await drafter.draft(story, ctx);
       add(o.usage);
       const base = { storyId: story.id, headline: story.headline, heat: story.heat, desk: o.desk ?? desk.id };
       if (o.status === "error") {
@@ -313,7 +325,19 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
         return false;
       }
 
-      const flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];
+      let flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];
+      // One repair try (zack, 2026-11-25: good questions were set aside over a date or a source). When the only
+      // blocking problems are ones a writer can fix, it gets them back once and rewrites. Safety blocks never get one.
+      const blocks = flags.filter((f) => f.severity === "block");
+      if (blocks.length > 0 && blocks.every((f) => FIXABLE.has(f.code)) && budget.left > 0) {
+        budget.left--;
+        const again = await drafter.draft(story, { ...ctx, repair: { question: o.draft.question.en, problems: blocks.map((f) => f.detail) } });
+        add(again.usage);
+        if (again.status === "draft") {
+          o = again;
+          flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];
+        }
+      }
       const dup = findDuplicate(o.draft, [...existing, ...(await store.comparables()).filter((c) => !existing.includes(c))]);
       if (dup) flags.push(duplicateFlag(dup));
 
@@ -325,6 +349,13 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
         const flag = checkFlag(check, cfg.checkThreshold);
         if (flag) flags.push(flag);
       }
+
+      // Read and claim with no await in between, so two lanes can't both keep the same question.
+      if (!flags.some((f) => f.code === "duplicate")) {
+        const twin = findDuplicate(o.draft, claimed);
+        if (twin) flags.push(duplicateFlag(twin));
+      }
+      if (!isBlocked(flags)) claimed.push({ slug: o.draft.slug, question: o.draft.question, resolver: o.draft.resolver });
 
       const drafted = newItem({
         id: `${o.draft.slug}--${story.id}`,
@@ -346,6 +377,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       const reviewed = auto ? approve(drafted, AUTO_EDITOR, now, flags.filter((f) => f.severity === "review").map((f) => f.code)) : drafted;
       const item: QueueItem = { ...reviewed, why, desk: base.desk, ...(check?.ok ? { check: check.result } : {}) };
       await store.putItem(item);
+      if (auto && deps.onApproved) await deps.onApproved(item).catch(() => undefined);
       decisions.push({ ...base, decision: item.status === "autoRejected" ? "autoRejected" : "queued", itemId: item.id, flags, why, ...(auto ? { autoApproved: true } : {}) });
       if (item.status === "autoRejected") return false;
       known.push(o.draft.question.en);

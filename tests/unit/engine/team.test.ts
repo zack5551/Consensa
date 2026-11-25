@@ -536,3 +536,33 @@ describe("feeding the writers (zack, 2026-11-25: an easier way to feed the engin
     expect(await ideaNotice({ ...report({ storyId: "idea-x", headline: "h", heat: 100, decision: "skipped", reason: "x" }), draftAllowance: 0 }, store)).toMatchObject({ ok: false, message: expect.stringContaining("limit") });
   });
 });
+
+describe("one repair try (zack, 2026-11-25: good questions were set aside over a date)", () => {
+  it("hands a fixable rejection back to the writer once, and keeps the fixed draft", async () => {
+    const seen: (string[] | undefined)[] = [];
+    const bad = uniqueDraft("fixme", 1);
+    const fixed = uniqueDraft("fixme", 2);
+    const drafter: Drafter = {
+      id: "w",
+      draft: async (_s, ctx) => {
+        seen.push(ctx.repair ? [...ctx.repair.problems] : undefined);
+        return { status: "draft", drafter: "w", draft: ctx.repair ? fixed : { ...bad, closesAt: new Date(NOW.getTime() + 3_600_000).toISOString() } };
+      },
+    };
+    const report = await runCycle({ ...base(new MemoryStore(), drafter, feed(newsFor(["culture"]))), config: { maxDrafts: 2 } });
+    expect(seen[0]).toBeUndefined();
+    expect(seen[1]).toEqual(["Closes less than 24 hours from now."]);
+    expect(report.decisions.filter((d) => d.decision === "queued").length).toBe(1);
+    expect(seen.length).toBe(2);
+  });
+
+  it("never gives a safety block a second try", async () => {
+    let calls = 0;
+    const drafter: Drafter = { id: "w", draft: async (s) => (calls++, { status: "draft", drafter: "w", draft: { ...uniqueDraft(s.id, calls), slug: "dup-slug-2026" } }) };
+    const store = new MemoryStore();
+    await runCycle({ ...base(store, drafter, feed(newsFor(["culture"]))), config: { maxDrafts: 1 } });
+    await runCycle({ ...base(store, drafter, feed(newsFor(["economy"]))), config: { maxDrafts: 1 } });
+    // The second is a duplicate (a block a writer can't fix by trying again): one call, no repair.
+    expect(calls).toBe(2);
+  });
+});
