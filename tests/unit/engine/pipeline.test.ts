@@ -46,17 +46,19 @@ describe("runCycle on the sample feeds", () => {
 
   it("doesn't pay to draft the same story twice", async () => {
     const store = new MemoryStore(live);
-    let calls = 0;
+    const seen: string[] = [];
     const counting: Drafter = { id: "count", draft: (s, c) => {
-        calls++;
+        seen.push(s.id);
         return new MockDrafter().draft(s, c);
       },
     };
-    await runCycle(deps(store, counting));
-    const first = calls;
+    // A desk that met its target leaves the rest of its stories for the next cycle, but never redrafts one.
+    for (let i = 0; i < 4; i++) await runCycle(deps(store, counting));
+    expect(seen.length).toBeGreaterThan(0);
+    expect(new Set(seen).size).toBe(seen.length);
     const again = await runCycle(deps(store, counting));
-    expect(calls).toBe(first);
     expect(again.feeds.newSignals).toBe(0);
+    expect(again.decisions).toEqual([]);
   });
 
   it("retries a story next cycle when the drafter errors", async () => {

@@ -186,6 +186,13 @@ const allowedExactHosts = new Set([
  */
 const allowedApiHosts = new Set(["api.x.com", "graph.facebook.com", "graph.threads.net"]);
 
+/**
+ * PULSE's editor email (2026-11-25): Amazon SES in Montréal, the sender docs/security/README.md names for app email.
+ * Server only, from src/engine/notify. It carries draft questions and run counts, never user data. Exact host only,
+ * so SES in any other region still fails this test.
+ */
+const allowedEmailHosts = new Set(["email.ca-central-1.amazonaws.com"]);
+
 /** Packages that send visitor data to a third party. Rule 7: none without a privacy review and LEX's check. */
 const trackerPackages = [
   /^@vercel\/(analytics|speed-insights)$/, /google-analytics|^react-ga|gtag|^@next\/third-parties$/, /^@segment\//,
@@ -194,7 +201,7 @@ const trackerPackages = [
 ];
 
 describe("outside hosts", () => {
-  const allowed = (host: string) => allowedExactHosts.has(host) || allowedApiHosts.has(host) || allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
+  const allowed = (host: string) => allowedExactHosts.has(host) || allowedApiHosts.has(host) || allowedEmailHosts.has(host) || allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
 
   it("share hosts match exactly: no other social API or embed host gets through", () => {
     for (const host of ["api.twitter.com", "platform.twitter.com", "upload.x.com", "ads-api.x.com", "connect.facebook.net", "graph.instagram.com", "www.graph.facebook.com", "pixel.facebook.com"]) {
@@ -208,6 +215,11 @@ describe("outside hosts", () => {
     const users = source.filter((f) => [...allowedApiHosts].some((host) => read(f).includes(host))).map(rel);
     expect(users.sort()).toEqual(["src/lib/social-voting/link-providers.ts", "src/lib/social-voting/providers/meta.ts", "src/lib/social-voting/providers/x.ts"]);
     for (const f of users) expect(read(join(root, f)), f).not.toMatch(/^["']use client["']/m);
+  });
+
+  it("the email host is used only by PULSE's server-side notifier", () => {
+    const users = source.filter((f) => [...allowedEmailHosts].some((host) => read(f).includes(host))).map(rel);
+    expect(users).toEqual(["src/engine/notify/ses.ts"]);
   });
 
   for (const file of source) {

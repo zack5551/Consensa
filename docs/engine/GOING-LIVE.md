@@ -40,13 +40,35 @@ GitHub → the repo → **Settings → Secrets and variables → Actions → New
 
 1. console.anthropic.com → **Settings → Limits**: set a monthly spend limit (suggested: $50). This is the hard stop.
 2. **API Keys → Create key**, then add it in Vercel as `ANTHROPIC_API_KEY`.
-3. In Vercel add `ENGINE_LIVE_FEEDS` = `1` and `ENGINE_MAX_DRAFTS` = `2`, then redeploy.
+3. In Vercel add `ENGINE_LIVE_FEEDS` = `1`, then redeploy. Leave `ENGINE_MAX_DRAFTS` unset (default 12 writer calls per run); an older setup suggested `2`, which starves the four desks, so delete it if it's there.
 
-From then on, every 15 minutes the engine reads the real feeds, drafts at most 2 new stories with Claude, and saves them to Supabase. A draft costs about 4–6 US cents, which comes to about $1–3 on a normal day.
+From then on, each run reads the real feeds, and the four writing desks (economy and housing, weather and science, culture and trends, sports) each aim to queue 2 questions, falling back on the official release calendar when the news is thin. The checker rates every queued draft. See "Cost" in `README.md`: about US$0.40–0.75 a run, so about US$12–23 a month with the daily schedule.
+
+## 4b. Editor emails (Amazon SES in Montréal, optional but recommended)
+
+After each real run PULSE emails a short summary (new drafts, flagged drafts, errors, open questions on the site), and a separate alert if a run fails. Drafts the checker rates 7/10 or higher are listed first. Without these settings everything still runs; it just sends nothing.
+
+1. Create an AWS account (needs a card; SES costs about US$0.10 per 1,000 emails): https://signin.aws.amazon.com/signup?request_type=register
+2. SES in Montréal → **Identities → Create identity → Email address**, enter the editor's address, then click the link AWS emails you: https://ca-central-1.console.aws.amazon.com/ses/home?region=ca-central-1#/identities. A new account starts in SES's "sandbox", which can only send to verified addresses. That's fine here: PULSE sends from and to that one verified address.
+3. IAM → **Users → Create user** named `pulse-mailer`, no console access: https://us-east-1.console.aws.amazon.com/iam/home#/users/create. Open the user → **Add permissions → Create inline policy → JSON**, paste the policy below, name it `send-email-only`:
+   ```json
+   { "Version": "2012-10-17", "Statement": [{ "Effect": "Allow", "Action": "ses:SendEmail", "Resource": "*", "Condition": { "StringEquals": { "aws:RequestedRegion": "ca-central-1" } } }] }
+   ```
+4. Same user → **Security credentials → Create access key → Application running outside AWS**. Keep the page open for step 5.
+5. Vercel → Settings → Environment Variables (Production), then redeploy:
+
+| Name | Value |
+|---|---|
+| `SES_ACCESS_KEY_ID` | the access key from step 4 |
+| `SES_SECRET_ACCESS_KEY` | the secret access key from step 4 (mark it Sensitive) |
+| `ENGINE_ALERT_EMAIL` | the address verified in step 2 |
+| `ENGINE_CHECK_THRESHOLD` | optional, 1–10, default `7`: the checker's flag line |
+
+The emails carry draft questions written from public news, risk scores and run counts. No user data.
 
 ## 5. Reviewing drafts (no new screen)
 
-Supabase → **Table Editor → engine_queue**, sorted by `priority`. Read `question_en`, `question_fr`, `flags` and `editor_note`, then change `status`:
+Supabase → **Table Editor → engine_queue**, sorted by `priority`. Read `question_en`, `question_fr`, `flags` and `editor_note`, then change `status`. A `check-risk` flag means the checker rated the draft 7/10 or more in some area; its detail says which and why. `check-unavailable` means the checker couldn't rate it.
 
 - `approved`: goes live on the next cycle. Approving acknowledges the flags shown.
 - `rejected` or `needsChanges`: stays in the audit log.

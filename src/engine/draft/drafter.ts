@@ -13,10 +13,14 @@ export interface DraftContext {
   existing: readonly string[];
 }
 
-export type DraftOutcome =
+export type DraftOutcome = (
   | { status: "draft"; draft: Draft; drafter: string; usage?: DraftUsage }
   | { status: "skip"; reason: string; drafter: string; usage?: DraftUsage }
-  | { status: "error"; reason: string; drafter: string; usage?: DraftUsage };
+  | { status: "error"; reason: string; drafter: string; usage?: DraftUsage }
+) & {
+  /** The writing desk that handled the story, when a team drafted it (see `desks.ts`). */
+  desk?: string;
+};
 
 export interface DraftUsage {
   inputTokens: number;

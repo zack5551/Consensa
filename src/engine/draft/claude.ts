@@ -88,17 +88,28 @@ export interface ClaudeDrafterOptions {
   model?: string;
   effort?: "low" | "medium" | "high" | "xhigh" | "max";
   client?: Anthropic;
+  /**
+   * A desk's beat, sent as a second system block after the shared rules. Frozen per desk, so each desk's prompt
+   * caches on its own while the shared rules stay the common prefix.
+   */
+  brief?: string;
 }
 
 export class ClaudeDrafter implements Drafter {
   readonly id: string;
   private readonly client: Anthropic;
   private readonly effort: NonNullable<ClaudeDrafterOptions["effort"]>;
+  private readonly system: Anthropic.Beta.BetaTextBlockParam[];
 
   constructor(opts: ClaudeDrafterOptions = {}) {
     this.client = opts.client ?? new Anthropic(opts.apiKey ? { apiKey: opts.apiKey } : {});
     this.id = opts.model ?? DRAFT_MODEL;
     this.effort = opts.effort ?? "high";
+    const cache = { type: "ephemeral", ttl: "1h" } as const;
+    this.system = [
+      { type: "text", text: SYSTEM_PROMPT, cache_control: cache },
+      ...(opts.brief ? [{ type: "text" as const, text: opts.brief, cache_control: cache }] : []),
+    ];
   }
 
   async draft(story: Story, ctx: DraftContext): Promise<DraftOutcome> {
@@ -111,7 +122,7 @@ export class ClaudeDrafter implements Drafter {
         fallbacks: "default",
         thinking: { type: "adaptive" },
         output_config: { effort: this.effort, format: betaZodOutputFormat(llmOutputSchema) },
-        system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral", ttl: "1h" } }],
+        system: this.system,
         messages: [{ role: "user", content: userMessage(story, ctx.now, ctx.releases, ctx.existing) }],
       });
     } catch (err) {

@@ -2,7 +2,8 @@
  * Wires a cycle from the environment: live or sample feeds, Claude or the mock drafter. Kept apart from the route
  * so the same wiring serves the scheduler, scripts and tests.
  */
-import { ClaudeDrafter } from "@/engine/draft/claude";
+import { ClaudeChecker, type Checker } from "@/engine/check/checker";
+import { DeskTeam } from "@/engine/draft/desks";
 import type { Drafter } from "@/engine/draft/drafter";
 import { MockDrafter } from "@/engine/draft/mock";
 import { toSiteQuestion } from "@/engine/live";
@@ -14,6 +15,8 @@ import { fetchFeeds } from "@/engine/sources/feed";
 import { sources } from "@/engine/sources/registry";
 import { sampleFeedResults } from "@/engine/sources/sample-feeds";
 import { MemoryStore, type EngineStore } from "@/engine/store";
+import { summaryEmail } from "@/engine/notify/digest";
+import type { Mailer } from "@/engine/notify/ses";
 import type { Comparable } from "@/engine/dedup";
 
 export interface RunOptions {
@@ -33,6 +36,14 @@ export interface RunOptions {
    * a result is confirmed by two reads on separate cycles.
    */
   results?: { questions: readonly DueQuestion[]; store: Pick<EngineStore, "getResolution" | "putResolution">; now: Date };
+  /** The checker's flag line, 1–10. */
+  checkThreshold?: number;
+  /** Overrides the checker (tests). With an API key and no override, the Claude checker runs. */
+  checker?: Checker;
+  /** Sends the run summary email. Leave out and nothing is emailed. */
+  mailer?: Mailer;
+  /** Counts open questions on the site, for the summary's "running low" line. */
+  openOnSite?: (published: readonly string[]) => Promise<number> | number;
 }
 
 export interface RunResult {
@@ -44,10 +55,15 @@ export interface RunResult {
   siteResults: ResolveStep[];
   /** Whether the site was asked to rebuild. */
   redeploy: boolean;
+  /** Whether the run summary email went out (null: no email set up). */
+  emailed: boolean | null;
+  emailError?: string;
 }
 
 export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
-  const drafter: Drafter = opts.apiKey ? new ClaudeDrafter({ apiKey: opts.apiKey }) : new MockDrafter();
+  // With a key: the four-desk writing team and the risk checker. Without one: the mock drafter, no checker.
+  const drafter: Drafter = opts.apiKey ? DeskTeam.claude({ apiKey: opts.apiKey }) : new MockDrafter();
+  const checker = opts.checker ?? (opts.apiKey ? new ClaudeChecker({ apiKey: opts.apiKey }) : undefined);
   const store = opts.store ?? new MemoryStore(opts.live);
   const report = await runCycle({
     store,
@@ -56,7 +72,8 @@ export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
     http: opts.liveFeeds ? httpFrom(fetch) : undefined,
     releases: upcoming(opts.now, 120, releases),
     now: opts.now,
-    config: { maxDrafts: opts.maxDrafts },
+    config: { maxDrafts: opts.maxDrafts, ...(opts.checkThreshold ? { checkThreshold: opts.checkThreshold } : {}) },
+    ...(checker ? { checker } : {}),
   });
 
   // Publish what editors approved since the last run, then refresh every live question (a result may have landed).
@@ -75,11 +92,22 @@ export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
     redeploy = res.ok;
   }
 
+  let emailed: boolean | null = null;
+  let emailError: string | undefined;
+  if (opts.mailer) {
+    const openOnSite = opts.openOnSite ? await opts.openOnSite(published) : undefined;
+    const sent = await opts.mailer(summaryEmail({ report, published, ...(openOnSite !== undefined ? { openOnSite } : {}) }));
+    emailed = sent.ok;
+    emailError = sent.error;
+  }
+
   return {
     mode: { drafter: drafter.id, feeds: opts.liveFeeds ? "live" : "sample", persisted: Boolean(opts.store) },
     report,
     published,
     siteResults,
     redeploy,
+    emailed,
+    ...(emailError ? { emailError } : {}),
   };
 }

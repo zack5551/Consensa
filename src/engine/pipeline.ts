@@ -4,10 +4,13 @@
  *   1. Ingest: fetch every feed, keep new signals.
  *   2. Cluster: group the last 48 hours of signals into stories and score their heat.
  *   3. Screen: drop stories about deaths, violence, crime or private lives before any model call.
- *   4. Pick: the hottest stories not drafted before, with at most two per category so one big story can't flood
- *      the queue, and a hard cap on drafts per cycle so cost stays predictable.
- *   5. Draft: one bilingual question per story, or a decline.
+ *   4. Plan: four writing desks (economy and housing, weather and science, culture and trends, sports) each take
+ *      their own stories, hottest first, then the official release calendar when the news runs thin.
+ *   5. Draft: each desk drafts until it has queued its target (2 per cycle) or tried its limit, under a hard cap on
+ *      writer calls per cycle and a time limit, so cost and run time stay predictable.
  *   6. Check: safety screen, structural validation and dedup on every draft. Blocked drafts are kept but never shown.
+ *      Then the risk checker rates every draft an editor could see, 1–10 in five areas; at or over the line it is
+ *      flagged and listed in the cycle's alerts (emailed by `run.ts`).
  *   7. Queue: everything else waits for an editor.
  *   8. Resolve: read the official source for published questions whose result is due.
  *
@@ -15,6 +18,8 @@
  */
 import type { Question } from "@/lib/question";
 import { duplicateFlag, findDuplicate } from "@/engine/dedup";
+import { checkFlag, DEFAULT_THRESHOLD, describeCheck, type CheckOutcome, type Checker } from "@/engine/check/checker";
+import { calendarStories, deskFor, DESKS, type Desk } from "@/engine/draft/desks";
 import type { DraftUsage, Drafter } from "@/engine/draft/drafter";
 import { explainItem } from "@/engine/explain";
 import { resolveDue, type ResolveStep } from "@/engine/resolve/due";
@@ -26,23 +31,35 @@ import type { Release } from "@/engine/sources/calendar";
 import type { FeedResult } from "@/engine/sources/feed";
 import type { EngineStore } from "@/engine/store";
 import { clusterSignals } from "@/engine/stories";
-import type { Flag, QueueItem, Resolver, Story } from "@/engine/types";
+import type { CheckResult, Draft, Flag, QueueItem, Resolver, Story } from "@/engine/types";
 import { validateDraft } from "@/engine/validate";
 
 export interface CycleConfig {
   /** Stories cooler than this aren't worth a question yet. */
   minHeat: number;
-  /** Most drafts (model calls) per cycle. */
+  /** Most writer calls per cycle, across all desks. The hard cost cap. */
   maxDrafts: number;
-  /** Most drafts per category per cycle. */
-  perCategory: number;
+  /** Supply target: each desk stops once it has queued this many questions in a cycle. */
+  perDesk: number;
+  /** Most stories one desk tries per cycle (declines count), so one desk can't spend the whole budget. */
+  deskAttempts: number;
   /** How far back signals count toward a story. */
   lookbackHours: number;
-  /** Parallel model calls. */
-  concurrency: number;
+  /** Desks stop starting new drafts after this long, so the run finishes inside the host's time limit. */
+  deadlineMs: number;
+  /** The checker's flag line: a draft whose highest risk score reaches this (1–10) is flagged and emailed. */
+  checkThreshold: number;
 }
 
-export const DEFAULT_CYCLE: CycleConfig = { minHeat: 25, maxDrafts: 6, perCategory: 2, lookbackHours: 48, concurrency: 3 };
+export const DEFAULT_CYCLE: CycleConfig = {
+  minHeat: 15,
+  maxDrafts: 12,
+  perDesk: 2,
+  deskAttempts: 4,
+  lookbackHours: 48,
+  deadlineMs: 150_000,
+  checkThreshold: DEFAULT_THRESHOLD,
+};
 
 export interface CycleDeps {
   store: EngineStore;
@@ -54,13 +71,18 @@ export interface CycleDeps {
   releases: readonly Release[];
   now: Date;
   config?: Partial<CycleConfig>;
+  /** Rates each queued draft's risk. Leave out to skip the check (mock runs, tests). */
+  checker?: Checker;
+  /** The writing desks. Defaults to the four in `draft/desks.ts`. */
+  desks?: readonly Desk[];
 }
 
+type DecisionBase = { storyId: string; headline: string; heat: number; desk?: string };
 export type StoryDecision =
-  | { storyId: string; headline: string; heat: number; decision: "blockedStory"; flags: Flag[] }
-  | { storyId: string; headline: string; heat: number; decision: "skipped"; reason: string }
-  | { storyId: string; headline: string; heat: number; decision: "error"; reason: string }
-  | { storyId: string; headline: string; heat: number; decision: "queued" | "autoRejected"; itemId: string; flags: Flag[]; why: string };
+  | (DecisionBase & { decision: "blockedStory"; flags: Flag[] })
+  | (DecisionBase & { decision: "skipped"; reason: string })
+  | (DecisionBase & { decision: "error"; reason: string })
+  | (DecisionBase & { decision: "queued" | "autoRejected"; itemId: string; flags: Flag[]; why: string });
 
 export interface CycleReport {
   startedAt: string;
@@ -71,6 +93,18 @@ export interface CycleReport {
   decisions: StoryDecision[];
   resolutions: ResolveStep[];
   usage: DraftUsage;
+  /** Queued drafts the checker rated at or over the threshold, or couldn't rate. These go in the alert email. */
+  alerts: CycleAlert[];
+  /** The flag line used this cycle (1–10). */
+  threshold: number;
+}
+
+export interface CycleAlert {
+  itemId: string;
+  desk: string;
+  draft: Draft;
+  check?: CheckResult;
+  checkError?: string;
 }
 
 /** Priority in the queue: heat, plus a bonus when the question can settle itself from official data. */
@@ -92,16 +126,21 @@ export function pickStories(stories: readonly Story[], max: number, perCategory:
   return picked;
 }
 
-async function mapLimit<T, R>(items: readonly T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
-    while (next < items.length) {
-      const i = next++;
-      out[i] = await fn(items[i]!);
-    }
-  });
-  await Promise.all(workers);
+/**
+ * Each desk's reading list for this cycle: its own news stories, hottest first, then calendar backfill. Desks run in
+ * parallel and each works down its own list, so a quiet beat still gets its turn and a busy one can't take them all.
+ */
+export function planDesks(news: readonly Story[], backfill: readonly Story[], desks: readonly Desk[] = DESKS): Array<{ desk: Desk; stories: Story[] }> {
+  const byHeat = [...news].sort((a, b) => b.heat - a.heat);
+  return desks.map((desk) => ({
+    desk,
+    stories: [...byHeat, ...backfill].filter((s) => deskFor(s, desks).id === desk.id),
+  }));
+}
+
+async function undrafted(store: EngineStore, stories: readonly Story[]): Promise<Story[]> {
+  const out: Story[] = [];
+  for (const s of stories) if (!(await store.wasDrafted(s.id))) out.push(s);
   return out;
 }
 
@@ -141,50 +180,81 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
     }
   }
 
-  // 4–7. Pick, draft, check, queue
-  const picked = pickStories(candidates, cfg.maxDrafts, cfg.perCategory);
+  // 4–7. Each desk drafts its hottest stories until it meets its target, then checks and queues them.
+  const desks = deps.desks ?? DESKS;
+  const backlog = await undrafted(store, calendarStories(deps.releases, now, desks));
+  const plan = planDesks(candidates, backlog, desks);
   const existing = await store.comparables();
-  const outcomes = await mapLimit(picked, cfg.concurrency, (story) =>
-    drafter.draft(story, { now, releases: deps.releases, existing: existing.map((c) => c.question.en) }).then((o) => ({ story, o })),
-  );
+  const known = existing.map((c) => c.question.en);
+  const budget = { left: cfg.maxDrafts };
+  const clockStart = Date.now();
+  const alerts: CycleAlert[] = [];
+  const add = (u?: DraftUsage) => {
+    if (!u) return;
+    usage.inputTokens += u.inputTokens;
+    usage.outputTokens += u.outputTokens;
+    usage.cacheReadTokens += u.cacheReadTokens;
+  };
 
-  for (const { story, o } of outcomes) {
-    if (o.usage) {
-      usage.inputTokens += o.usage.inputTokens;
-      usage.outputTokens += o.usage.outputTokens;
-      usage.cacheReadTokens += o.usage.cacheReadTokens;
-    }
-    const base = { storyId: story.id, headline: story.headline, heat: story.heat };
-    if (o.status === "error") {
-      // Not marked as drafted: the next cycle retries it.
-      decisions.push({ ...base, decision: "error", reason: o.reason });
-      continue;
-    }
-    await store.markDrafted(story.id, o.status, now);
-    if (o.status === "skip") {
-      decisions.push({ ...base, decision: "skipped", reason: o.reason });
-      continue;
-    }
+  const runDesk = async (desk: Desk, stories: readonly Story[]) => {
+    let queued = 0;
+    let attempts = 0;
+    for (const story of stories) {
+      if (queued >= cfg.perDesk || attempts >= cfg.deskAttempts || budget.left <= 0) break;
+      if (Date.now() - clockStart > cfg.deadlineMs) break;
+      budget.left--;
+      attempts++;
+      const o = await drafter.draft(story, { now, releases: deps.releases, existing: known });
+      add(o.usage);
+      const base = { storyId: story.id, headline: story.headline, heat: story.heat, desk: o.desk ?? desk.id };
+      if (o.status === "error") {
+        // Not marked as drafted: the next cycle retries it.
+        decisions.push({ ...base, decision: "error", reason: o.reason });
+        continue;
+      }
+      await store.markDrafted(story.id, o.status, now);
+      if (o.status === "skip") {
+        decisions.push({ ...base, decision: "skipped", reason: o.reason });
+        continue;
+      }
 
-    const flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];
-    const dup = findDuplicate(o.draft, [...existing, ...(await store.comparables()).filter((c) => !existing.includes(c))]);
-    if (dup) flags.push(duplicateFlag(dup));
+      const flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];
+      const dup = findDuplicate(o.draft, [...existing, ...(await store.comparables()).filter((c) => !existing.includes(c))]);
+      if (dup) flags.push(duplicateFlag(dup));
 
-    const drafted = newItem({
-      id: `${o.draft.slug}--${story.id}`,
-      storyId: story.id,
-      draft: o.draft,
-      flags,
-      provenance: story.signals.map((s) => s.url),
-      priority: priorityOf(story, o.draft.resolver),
-      drafter: o.drafter,
-      at: now,
-    });
-    const why = explainItem({ story, draft: o.draft, flags, status: drafted.status, priority: drafted.priority });
-    const item = { ...drafted, why };
-    await store.putItem(item);
-    decisions.push({ ...base, decision: item.status === "autoRejected" ? "autoRejected" : "queued", itemId: item.id, flags, why });
-  }
+      // The checker reads only drafts an editor could see; a blocked draft is never shown, so it isn't worth a call.
+      let check: CheckOutcome | undefined;
+      if (deps.checker && !isBlocked(flags)) {
+        check = await deps.checker.check(o.draft, story, now);
+        add(check.usage);
+        const flag = checkFlag(check, cfg.checkThreshold);
+        if (flag) flags.push(flag);
+      }
+
+      const drafted = newItem({
+        id: `${o.draft.slug}--${story.id}`,
+        storyId: story.id,
+        draft: o.draft,
+        flags,
+        provenance: story.signals.map((s) => s.url),
+        priority: priorityOf(story, o.draft.resolver),
+        drafter: o.drafter,
+        at: now,
+      });
+      const explained = explainItem({ story, draft: o.draft, flags, status: drafted.status, priority: drafted.priority });
+      const why = check ? `${explained} ${describeCheck(check, cfg.checkThreshold)}` : explained;
+      const item: QueueItem = { ...drafted, why, desk: base.desk, ...(check?.ok ? { check: check.result } : {}) };
+      await store.putItem(item);
+      decisions.push({ ...base, decision: item.status === "autoRejected" ? "autoRejected" : "queued", itemId: item.id, flags, why });
+      if (item.status === "autoRejected") continue;
+      queued++;
+      known.push(o.draft.question.en);
+      if (check && (!check.ok || check.result.overall >= cfg.checkThreshold)) {
+        alerts.push({ itemId: item.id, desk: base.desk, draft: o.draft, ...(check.ok ? { check: check.result } : { checkError: check.reason }) });
+      }
+    }
+  };
+  await Promise.all(plan.map(({ desk, stories }) => runDesk(desk, stories)));
 
   // 8. Resolve
   const due = (await store.items())
@@ -201,6 +271,8 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
     decisions,
     resolutions,
     usage,
+    alerts,
+    threshold: cfg.checkThreshold,
   };
 }
 
