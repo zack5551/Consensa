@@ -171,6 +171,9 @@ export const resolutionDomains: readonly string[] = [
   "billboard.com",
   // Public company filings in Canada (SEDAR+): a company's own reported figures settle business questions.
   "sedarplus.ca",
+  // General news that affects Canadians: bills (LEGISinfo) and health system data (CIHI).
+  "parl.ca",
+  "cihi.ca",
   "grammy.com",
   "oscars.org",
   "emmys.com",
