@@ -1,6 +1,6 @@
 /**
- * /api/engine/cycle: runs one PULSE cycle and returns the cycle report as JSON. Nothing here is user-facing, and
- * nothing is published without an editor.
+ * /api/engine/cycle: runs one PULSE cycle and returns the cycle report as JSON. Nothing here is user-facing. A draft
+ * goes live only when an editor approves it or, with ENGINE_AUTO_APPROVE on, when it passes every check.
  *
  * - POST: an outside scheduler (GitHub Actions) with `Authorization: Bearer $ENGINE_CRON_SECRET`.
  * - GET: Vercel Cron (vercel.json), which sends `Authorization: Bearer $CRON_SECRET` when that variable is set.
@@ -11,6 +11,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { engineEnv, type EngineEnv } from "@/engine/config";
 import { failureEmail } from "@/engine/notify/digest";
+import { reviewUrl } from "@/engine/notify/review-link";
 import { sesMailer, type Mailer } from "@/engine/notify/ses";
 import { runFromEnv } from "@/engine/run";
 import { siteDueQuestions } from "@/engine/site-results";
@@ -95,7 +96,11 @@ async function runCycleInner(env: EngineEnv, mailer: Mailer | null) {
     store,
     deployHook: env.VERCEL_DEPLOY_HOOK_URL,
     checkThreshold: env.ENGINE_CHECK_THRESHOLD,
+    // zack's switch (2026-11-25): drafts that pass every check go live without a person. Only on a real run.
+    autoApprove: real && env.ENGINE_AUTO_APPROVE === "1",
     ...(mailer ? { mailer, openOnSite } : {}),
+    // The review page needs the secret that signs its link and the queue it reads.
+    ...(mailer && env.CRON_SECRET && supabase ? { reviewLink: () => reviewUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL, env.CRON_SECRET!, new Date()) } : {}),
     // Automatic results read free official data on the real clock, so they run whenever Supabase can keep the record.
     ...(supabase ? { results: { questions: siteDueQuestions(sampleQuestions), store: supabase, now: new Date() } } : {}),
   });

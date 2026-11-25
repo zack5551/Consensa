@@ -11,7 +11,10 @@ import { SYSTEM_PROMPT } from "@/engine/draft/prompt";
 import { engineEnv } from "@/engine/config";
 import { failureEmail, summaryEmail } from "@/engine/notify/digest";
 import { sesMailer, signV4 } from "@/engine/notify/ses";
-import { runCycle } from "@/engine/pipeline";
+import { AUTO_EDITOR, autoApprovable, publishApproved, runCycle } from "@/engine/pipeline";
+import { newItem } from "@/engine/review";
+import { reviewToken, reviewUrl, verifyReviewToken } from "@/engine/notify/review-link";
+import { applyReviewAction, renderReviewPage, waiting } from "@/engine/notify/review-page";
 import { releases, upcoming } from "@/engine/sources/calendar";
 import type { FeedResult } from "@/engine/sources/feed";
 import { MemoryStore } from "@/engine/store";
@@ -273,12 +276,12 @@ describe("email", () => {
   it("the run summary says what happened, flags first, and warns when there's nothing new or the slate runs low", async () => {
     const report = await runCycle({ ...base(new MemoryStore(), drafting(), feed(newsFor(["culture"]))), checker: fixedChecker(8), desks: [DESKS[2]!] });
     const mail = summaryEmail({ report, openOnSite: 5, published: [] });
-    expect(mail.subject).toBe("PULSE: 2 new drafts, 2 flagged, slate running low");
+    expect(mail.subject).toBe("PULSE: 2 waiting for you, 2 flagged, slate running low");
     expect(mail.text).toMatch(/New drafts waiting for you: 2/);
     expect(mail.text).toMatch(/FLAGGED FOR A CLOSE LOOK\n1\. \[Culture and trends desk\] Will /);
     expect(mail.text).toMatch(/Gambling language or feel 8\/10: reads like a sportsbook line/);
     expect(mail.text).toMatch(/fewer than 8 open questions/);
-    expect(mail.text).toMatch(/Nothing publishes until you approve it\.$/);
+    expect(mail.text).toMatch(/set status to approved or rejected\.$/);
 
     const quiet = await runCycle({ ...base(new MemoryStore(), { id: "no", draft: async () => ({ status: "skip", reason: "no", drafter: "no" }) }, []) });
     const none = summaryEmail({ report: quiet, openOnSite: 12, published: [] });
@@ -290,8 +293,126 @@ describe("email", () => {
 
   it("reads its settings from the environment with safe defaults", () => {
     const env = engineEnv({});
-    expect(env).toMatchObject({ ENGINE_MAX_DRAFTS: 12, ENGINE_CHECK_THRESHOLD: 7 });
+    expect(env).toMatchObject({ ENGINE_MAX_DRAFTS: 12, ENGINE_CHECK_THRESHOLD: 7, ENGINE_AUTO_APPROVE: "1" });
+    expect(engineEnv({ ENGINE_AUTO_APPROVE: "0" }).ENGINE_AUTO_APPROVE).toBe("0");
     expect(env.ENGINE_ALERT_EMAIL).toBeUndefined();
     expect(() => engineEnv({ ENGINE_CHECK_THRESHOLD: "11" })).toThrow();
+  });
+});
+
+/** A checker that answers each call from a list of score sets (legal, gambling, accuracy, sensitive, french), or "down". */
+const scriptedChecker = (answers: Array<[number, number, number, number, number] | "down">): Checker => {
+  let i = 0;
+  return {
+    id: "scripted",
+    check: async () => {
+      const a = answers[i++ % answers.length]!;
+      if (a === "down") return { ok: false as const, reason: "API 529" };
+      const [legal, gambling, accuracy, sensitive, french] = a.map((score) => ({ score, reason: `scored ${score}` }));
+      return { ok: true as const, result: toCheckResult({ scores: { legal: legal!, gambling: gambling!, accuracy: accuracy!, sensitive: sensitive!, french: french! }, summary: "s" }, "scripted", NOW) };
+    },
+  };
+};
+
+const clean: [number, number, number, number, number] = [1, 1, 2, 1, 2];
+
+describe("auto-approve", () => {
+  const item = (over: Parameters<typeof goodDraft>[0] = {}, flags: Parameters<typeof newItem>[0]["flags"] = []) =>
+    newItem({ id: "q-1", storyId: "s-1", draft: goodDraft(over), flags, provenance: [], priority: 50, drafter: "fake", at: NOW });
+  const ok = (scores: [number, number, number, number, number]) => ({
+    ok: true as const,
+    result: toCheckResult({ scores: Object.fromEntries((["legal", "gambling", "accuracy", "sensitive", "french"] as const).map((a, i) => [a, { score: scores[i]!, reason: "r" }])) as CheckOutput["scores"], summary: "s" }, "c", NOW),
+  });
+
+  it("approves only a rated, low-risk, non-sports draft with no flag that needs a person", () => {
+    expect(autoApprovable(item(), ok(clean), 7)).toBe(true);
+    // A manual result check is fine: it only means a person confirms the answer later.
+    expect(autoApprovable(item({}, [{ code: "manualResolver", severity: "review", detail: "d" }]), ok(clean), 7)).toBe(true);
+    // Never without a rating, at or over the line, or above 4 in legal, gambling or sensitive.
+    expect(autoApprovable(item(), undefined, 7)).toBe(false);
+    expect(autoApprovable(item(), { ok: false, reason: "down" }, 7)).toBe(false);
+    expect(autoApprovable(item(), ok([1, 1, 7, 1, 1]), 7)).toBe(false);
+    expect(autoApprovable(item(), ok([5, 1, 2, 1, 1]), 7)).toBe(false);
+    expect(autoApprovable(item(), ok([1, 5, 2, 1, 1]), 7)).toBe(false);
+    expect(autoApprovable(item(), ok([1, 1, 2, 5, 1]), 7)).toBe(false);
+    expect(autoApprovable(item(), ok([1, 1, 6, 1, 6]), 7)).toBe(true);
+    // Sports, politics and anything a rule held always wait for a person, whatever the scores.
+    expect(autoApprovable(item({ category: "sports" }), ok(clean), 7)).toBe(false);
+    expect(autoApprovable(item({}, [{ code: "elections", severity: "review", detail: "d" }]), ok(clean), 7)).toBe(false);
+    expect(autoApprovable(item({}, [{ code: "trading", severity: "review", detail: "d" }]), ok(clean), 7)).toBe(false);
+    expect(autoApprovable(item({}, [{ code: "gambling", severity: "block", detail: "d" }]), ok(clean), 7)).toBe(false);
+  });
+
+  it("a typical run: most drafts go straight through, the risky ones wait and are emailed", async () => {
+    const store = new MemoryStore();
+    // Eight drafts: five clean, one a touch sensitive, one gambling-ish, one the checker couldn't rate.
+    const checker = scriptedChecker([clean, [2, 1, 3, 1, 2], clean, [1, 1, 2, 5, 1], clean, [1, 8, 2, 1, 2], [1, 2, 4, 2, 3], "down"]);
+    const report = await runCycle({ ...base(store, drafting(), feed(newsFor(["culture"]))), checker, desks: [DESKS[2]!], config: { autoApprove: true, perDesk: 8, deskAttempts: 8 } });
+    const queued = report.decisions.filter((d) => d.decision === "queued");
+    const auto = queued.filter((d) => "autoApproved" in d && d.autoApproved);
+    expect([queued.length, auto.length, report.alerts.length]).toEqual([8, 5, 2]);
+
+    const items = await store.items();
+    const approved = items.filter((i) => i.status === "approved");
+    expect(approved).toHaveLength(5);
+    expect(approved[0]!.history.at(-1)).toMatchObject({ actor: AUTO_EDITOR, to: "approved" });
+    expect(approved[0]!.why).toMatch(/Auto-approved: every risk score under 7/);
+    expect(items.filter((i) => i.status === "pending")).toHaveLength(3);
+
+    // The same run publishes them; the three held drafts stay with the editor.
+    expect(await publishApproved(store, NOW)).toHaveLength(5);
+
+    const mail = summaryEmail({ report, published: [], reviewUrl: "https://example.ca/api/engine/review?t=x" });
+    expect(mail.subject).toBe("PULSE: 5 auto-approved, 3 waiting for you, 2 flagged");
+    expect(mail.text).toMatch(/Auto-approved \(passed every check, going live\): 5\nNew drafts waiting for you: 3/);
+    expect(mail.text).toMatch(/Review and approve: https:\/\/example\.ca\/api\/engine\/review\?t=x/);
+    expect(mail.text).toMatch(/AUTO-APPROVED AND PUBLISHED/);
+  });
+
+  it("is off unless switched on", async () => {
+    const store = new MemoryStore();
+    await runCycle({ ...base(store, drafting(), feed(newsFor(["culture"]))), checker: scriptedChecker([clean]), desks: [DESKS[2]!] });
+    expect((await store.items()).every((i) => i.status === "pending")).toBe(true);
+  });
+});
+
+describe("review page", () => {
+  const SECRET = "s".repeat(40);
+
+  it("signs a week-long link that can't be forged or reused after it expires", () => {
+    const t = reviewToken(SECRET, NOW);
+    expect(verifyReviewToken(t, SECRET, NOW)).toBe(true);
+    expect(verifyReviewToken(t, SECRET, new Date(NOW.getTime() + 6.9 * 86_400_000))).toBe(true);
+    expect(verifyReviewToken(t, SECRET, new Date(NOW.getTime() + 7.1 * 86_400_000))).toBe(false);
+    expect(verifyReviewToken(t, "x".repeat(40), NOW)).toBe(false);
+    const [exp, sig] = t.split(".");
+    expect(verifyReviewToken(`${Number(exp) + 86_400}.${sig}`, SECRET, NOW)).toBe(false);
+    expect(verifyReviewToken(null, SECRET, NOW)).toBe(false);
+    expect(reviewUrl("consensa-omega.vercel.app", SECRET, NOW)).toMatch(/^https:\/\/consensa-omega\.vercel\.app\/api\/engine\/review\?t=\d+\./);
+    expect(reviewUrl(undefined, SECRET, NOW)).toBeUndefined();
+  });
+
+  it("lists waiting drafts flagged first, escapes their text, and approves or rejects one", async () => {
+    const store = new MemoryStore();
+    const mk = (id: string, en: string, flags: Parameters<typeof newItem>[0]["flags"] = []) =>
+      newItem({ id, storyId: id, draft: goodDraft({ slug: `${id}-2026`, question: { en, fr: "Est-ce que ça marche?" } }), flags, provenance: [], priority: 50, drafter: "f", at: NOW });
+    await store.putItem({ ...mk("calm", "Will the calm one pass?"), check: toCheckResult(output(2), "c", NOW) });
+    await store.putItem({ ...mk("hot", "Will <script>x</script> pass?", [{ code: "check-risk", severity: "review", detail: "Risk 8/10" }]), check: toCheckResult(output(8), "c", NOW) });
+    await store.putItem(mk("blocked", "Blocked one?", [{ code: "gambling", severity: "block", detail: "d" }]));
+
+    expect(waiting(await store.items(), 7).map((i) => i.id)).toEqual(["hot", "calm"]);
+    const html = renderReviewPage(await store.items(), "tok", 7);
+    expect(html).toContain("&lt;script&gt;x&lt;/script&gt;");
+    expect(html).not.toContain("<script>");
+    expect(html).toContain('name="robots" content="noindex, nofollow"');
+    expect(html.indexOf("&lt;script&gt;")).toBeLessThan(html.indexOf("calm one"));
+
+    expect(await applyReviewAction(store, { id: "hot", action: "approve" }, NOW)).toMatchObject({ ok: true });
+    expect((await store.getItem("hot"))!.status).toBe("approved");
+    expect(await applyReviewAction(store, { id: "calm", action: "reject", reason: "" }, NOW)).toMatchObject({ ok: true });
+    expect((await store.getItem("calm"))!.status).toBe("rejected");
+    expect(await applyReviewAction(store, { id: "blocked", action: "approve" }, NOW)).toMatchObject({ ok: false });
+    expect(await applyReviewAction(store, { id: "nope", action: "approve" }, NOW)).toMatchObject({ ok: false });
+    expect(renderReviewPage(await store.items(), "tok", 7)).toContain("Nothing is waiting for you");
   });
 });

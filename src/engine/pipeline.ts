@@ -25,7 +25,7 @@ import { explainItem } from "@/engine/explain";
 import { resolveDue, type ResolveStep } from "@/engine/resolve/due";
 import type { toResult } from "@/engine/resolve/policy";
 import type { Http } from "@/engine/resolve/resolvers";
-import { newItem, publish } from "@/engine/review";
+import { approve, newItem, publish } from "@/engine/review";
 import { isBlocked, screenDraft, screenStory } from "@/engine/safety/safety";
 import type { Release } from "@/engine/sources/calendar";
 import type { FeedResult } from "@/engine/sources/feed";
@@ -49,6 +49,30 @@ export interface CycleConfig {
   deadlineMs: number;
   /** The checker's flag line: a draft whose highest risk score reaches this (1–10) is flagged and emailed. */
   checkThreshold: number;
+  /** zack's switch (ENGINE_AUTO_APPROVE, on in production by default): approve drafts that pass `autoApprovable`. */
+  autoApprove: boolean;
+}
+
+/** The engine's name in a review history when it approves a draft by itself. */
+export const AUTO_EDITOR = "pulse-auto";
+/** Stricter line for the areas LEX cares most about: above this, a person decides even under the flag line. */
+export const AUTO_STRICT = 4;
+/** Review flags the engine may acknowledge by itself. Every other review flag (sports, elections, minors, disaster,
+ * trading words, a missing threshold, a poll, a long gap to the result) keeps the draft for a person. */
+const AUTO_OK_FLAGS = new Set(["manualResolver"]);
+
+/**
+ * Whether the engine may approve a draft without a person (only when zack's switch is on). All of these must hold:
+ * it passed every fixed check with no blocking flag; its only review flags are on the short list above; it isn't
+ * sports (LEX: every sports draft gets a person); the checker rated it, every area under the flag line, and legal,
+ * gambling and sensitive at 4 or less. Anything else waits in the queue and, when risky, in the email.
+ */
+export function autoApprovable(item: QueueItem, check: CheckOutcome | undefined, threshold: number): boolean {
+  if (item.status !== "pending" || item.draft.category === "sports") return false;
+  if (item.flags.some((f) => f.severity === "block" || !AUTO_OK_FLAGS.has(f.code))) return false;
+  if (!check?.ok) return false;
+  const { scores, overall } = check.result;
+  return overall < threshold && scores.legal.score <= AUTO_STRICT && scores.gambling.score <= AUTO_STRICT && scores.sensitive.score <= AUTO_STRICT;
 }
 
 export const DEFAULT_CYCLE: CycleConfig = {
@@ -59,6 +83,7 @@ export const DEFAULT_CYCLE: CycleConfig = {
   lookbackHours: 48,
   deadlineMs: 150_000,
   checkThreshold: DEFAULT_THRESHOLD,
+  autoApprove: false,
 };
 
 export interface CycleDeps {
@@ -82,7 +107,7 @@ export type StoryDecision =
   | (DecisionBase & { decision: "blockedStory"; flags: Flag[] })
   | (DecisionBase & { decision: "skipped"; reason: string })
   | (DecisionBase & { decision: "error"; reason: string })
-  | (DecisionBase & { decision: "queued" | "autoRejected"; itemId: string; flags: Flag[]; why: string });
+  | (DecisionBase & { decision: "queued" | "autoRejected"; itemId: string; flags: Flag[]; why: string; autoApproved?: boolean });
 
 export interface CycleReport {
   startedAt: string;
@@ -242,10 +267,16 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
         at: now,
       });
       const explained = explainItem({ story, draft: o.draft, flags, status: drafted.status, priority: drafted.priority });
-      const why = check ? `${explained} ${describeCheck(check, cfg.checkThreshold)}` : explained;
-      const item: QueueItem = { ...drafted, why, desk: base.desk, ...(check?.ok ? { check: check.result } : {}) };
+      const auto = cfg.autoApprove && autoApprovable(drafted, check, cfg.checkThreshold);
+      const why = [
+        explained,
+        ...(check ? [describeCheck(check, cfg.checkThreshold)] : []),
+        ...(auto ? [`Auto-approved: every risk score under ${cfg.checkThreshold}, legal, gambling and sensitive at ${AUTO_STRICT} or less, and no flag that needs a person.`] : []),
+      ].join(" ");
+      const reviewed = auto ? approve(drafted, AUTO_EDITOR, now, flags.filter((f) => f.severity === "review").map((f) => f.code)) : drafted;
+      const item: QueueItem = { ...reviewed, why, desk: base.desk, ...(check?.ok ? { check: check.result } : {}) };
       await store.putItem(item);
-      decisions.push({ ...base, decision: item.status === "autoRejected" ? "autoRejected" : "queued", itemId: item.id, flags, why });
+      decisions.push({ ...base, decision: item.status === "autoRejected" ? "autoRejected" : "queued", itemId: item.id, flags, why, ...(auto ? { autoApproved: true } : {}) });
       if (item.status === "autoRejected") continue;
       queued++;
       known.push(o.draft.question.en);

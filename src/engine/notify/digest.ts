@@ -15,7 +15,7 @@ export const SLATE_TARGET = 8;
 const PRICE = { input: 4, output: 20, cacheRead: 0.2 };
 
 const REVIEW_HOW =
-  "To review: Supabase → Table Editor → engine_queue. Set status to approved or rejected. Nothing publishes until you approve it.";
+  "Drafts that passed every check were approved automatically and go live with this run. Everything else waits for you: open the review page link above, or Supabase → Table Editor → engine_queue and set status to approved or rejected.";
 
 function ottawa(at: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", dateStyle: "full", timeStyle: "short" }).format(new Date(at));
@@ -33,31 +33,41 @@ export interface RunSummary {
   /** Open questions on the site right now, for the "never runs dry" check. */
   openOnSite?: number;
   published: readonly string[];
+  /** The review page link (signed, lasts a week). */
+  reviewUrl?: string;
 }
 
 /** The email after every run. */
-export function summaryEmail({ report, openOnSite, published }: RunSummary): Email {
-  const queued = report.decisions.filter((d) => d.decision === "queued");
+export function summaryEmail({ report, openOnSite, published, reviewUrl }: RunSummary): Email {
+  const all = report.decisions.filter((d) => d.decision === "queued");
+  const auto = all.filter((d) => "autoApproved" in d && d.autoApproved);
+  const queued = all.filter((d) => !auto.includes(d));
   const skipped = report.decisions.filter((d) => d.decision === "skipped").length;
   const blocked = report.decisions.filter((d) => d.decision === "blockedStory" || d.decision === "autoRejected").length;
   const errors = report.decisions.filter((d) => d.decision === "error");
   const flagged = report.alerts;
   const low = openOnSite !== undefined && openOnSite < SLATE_TARGET;
 
+  const parts = [
+    ...(auto.length > 0 ? [`${auto.length} auto-approved`] : []),
+    ...(queued.length > 0 ? [`${queued.length} waiting for you`] : []),
+    ...(flagged.length > 0 ? [`${flagged.length} flagged`] : []),
+    ...(low ? ["slate running low"] : []),
+  ];
   const subject =
-    queued.length === 0
-      ? `PULSE: no new drafts this run${errors.length > 0 ? " (errors)" : ""}`
-      : `PULSE: ${plural(queued.length, "new draft")}${flagged.length > 0 ? `, ${flagged.length} flagged` : ""}${low ? ", slate running low" : ""}`;
+    all.length === 0 ? `PULSE: no new drafts this run${errors.length > 0 ? " (errors)" : ""}${low ? ", slate running low" : ""}` : `PULSE: ${parts.join(", ")}`;
 
   const lines: string[] = [`PULSE ran on ${ottawa(report.startedAt)} (Ottawa time).`, ""];
+  lines.push(`Auto-approved (passed every check, going live): ${auto.length}`);
   lines.push(`New drafts waiting for you: ${queued.length}`);
   lines.push(`Flagged by the checker (risk ${report.threshold}/10 or more, or couldn't be rated): ${flagged.length}`);
   lines.push(`Turned down by the writers: ${skipped} · Blocked by the safety rules: ${blocked} · Errors: ${errors.length}`);
   if (openOnSite !== undefined) lines.push(`Open questions on the site: ${openOnSite} (target ${SLATE_TARGET} or more)`);
   if (published.length > 0) lines.push(`Went live this run: ${published.join(", ")}`);
+  if (reviewUrl) lines.push(`Review and approve: ${reviewUrl}`);
   lines.push("");
 
-  if (queued.length === 0) {
+  if (all.length === 0) {
     lines.push(
       errors.length > 0
         ? "No new drafts, and some stories hit errors (listed below). If the errors say the key is bad or the account is out of credit, that needs fixing."
@@ -79,6 +89,12 @@ export function summaryEmail({ report, openOnSite, published }: RunSummary): Ema
       }
       lines.push(`   Queue id: ${a.itemId}`);
     });
+    lines.push("");
+  }
+
+  if (auto.length > 0) {
+    lines.push("AUTO-APPROVED AND PUBLISHED (to take one down, ask Claude)");
+    for (const d of auto) lines.push(`- [${deskName(d.desk ?? "")}] ${"itemId" in d ? d.itemId : d.headline} (from "${d.headline}")`);
     lines.push("");
   }
 
