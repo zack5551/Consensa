@@ -7,12 +7,14 @@ import { CHECK_SYSTEM_PROMPT, checkMessage } from "@/engine/check/prompt";
 import { ClaudeDrafter } from "@/engine/draft/claude";
 import { calendarStories, deskFor, DESKS, DeskTeam } from "@/engine/draft/desks";
 import type { Drafter } from "@/engine/draft/drafter";
-import { FAST_ASK, SYSTEM_PROMPT, userMessage } from "@/engine/draft/prompt";
+import { FAST_ASK, IDEA_ASK, SYSTEM_PROMPT, userMessage } from "@/engine/draft/prompt";
+import { IDEA_MAX, ideaStory, isIdea } from "@/engine/ideas";
+import { ideaNotice } from "@/engine/notify/idea";
 import { engineEnv } from "@/engine/config";
 import { failureEmail, summaryEmail } from "@/engine/notify/digest";
 import { sesMailer, signV4 } from "@/engine/notify/ses";
-import { AUTO_EDITOR, autoApprovable, publishApproved, runCycle } from "@/engine/pipeline";
-import { newItem } from "@/engine/review";
+import { AUTO_EDITOR, autoApprovable, likedQuestions, publishApproved, runCycle, type CycleReport, type StoryDecision } from "@/engine/pipeline";
+import { approve, newItem } from "@/engine/review";
 import { reviewToken, reviewUrl, verifyReviewToken } from "@/engine/notify/review-link";
 import { applyReviewAction, renderReviewPage, waiting } from "@/engine/notify/review-page";
 import { releases, upcoming } from "@/engine/sources/calendar";
@@ -470,5 +472,67 @@ describe("review page", () => {
     expect(await applyReviewAction(store, { id: "blocked", action: "approve" }, NOW)).toMatchObject({ ok: false });
     expect(await applyReviewAction(store, { id: "nope", action: "approve" }, NOW)).toMatchObject({ ok: false });
     expect(renderReviewPage(await store.items(), "tok", 7)).toContain("Nothing is waiting for you");
+  });
+});
+
+describe("feeding the writers (zack, 2026-11-25: an easier way to feed the engine better questions)", () => {
+  it("writes the editor's idea alone, on its desk, with no feeds, calendar or resolving, and through every check", async () => {
+    const asked: { idea: boolean; story: string }[] = [];
+    const drafter: Drafter = { id: "w", draft: async (s, ctx) => (asked.push({ idea: ctx.idea === true, story: s.headline }), { status: "draft", drafter: "w", draft: uniqueDraft(s.id, 1) }) };
+    const story = ideaStory("  Will a   Canadian win an Oscar in March?  ", NOW, "https://example.ca/api/engine/review");
+    expect(story.headline).toBe("Will a Canadian win an Oscar in March?");
+    expect(isIdea(story)).toBe(true);
+    expect(ideaStory("Est-ce que Céline Dion fera une tournée?", NOW, "https://example.ca/r").langs).toEqual(["fr"]);
+    let ingested = false;
+    const store = new MemoryStore();
+    const checker = fixedChecker(2);
+    const report = await runCycle({ ...base(store, drafter), ingest: async () => ((ingested = true), feed(newsFor(["economy"]))), only: [story], checker, config: { maxDrafts: 1 } });
+    expect(ingested).toBe(false);
+    expect(asked).toEqual([{ idea: true, story: "Will a Canadian win an Oscar in March?" }]);
+    expect(checker.calls).toBe(1);
+    expect(report.decisions.map((d) => d.decision)).toEqual(["queued"]);
+    // Typing the same idea again is a fresh request.
+    await runCycle({ ...base(store, drafter), only: [story], config: { maxDrafts: 1 } });
+    expect(asked.length).toBe(2);
+    expect(userMessage(story, NOW, [], [], false, [], true)).toContain(IDEA_ASK);
+  });
+
+  it("an off-limits idea is stopped before any writer sees it", async () => {
+    let calls = 0;
+    const drafter: Drafter = { id: "w", draft: async () => (calls++, { status: "skip", reason: "x", drafter: "w" }) };
+    const report = await runCycle({ ...base(new MemoryStore(), drafter), only: [ideaStory("Will the hockey star be convicted at trial?", NOW, "https://example.ca/r")] });
+    expect(calls).toBe(0);
+    expect(report.decisions[0]!.decision).toBe("blockedStory");
+  });
+
+  it("shows the writers what a person approved, newest first, never what the engine approved by itself", async () => {
+    const store = new MemoryStore();
+    const mk = (id: string, en: string) => newItem({ id, storyId: id, draft: goodDraft({ slug: `${id}-2026`, question: { en, fr: "Est-ce que ça marche?" } }), flags: [], provenance: [], priority: 50, drafter: "f", at: NOW });
+    await store.putItem(approve(mk("a", "Will the older one pass?"), "editor (review page)", new Date(NOW.getTime() - 60_000)));
+    await store.putItem(approve(mk("b", "Will the newer one pass?"), "zack", NOW));
+    await store.putItem(approve(mk("c", "Will the engine's own pick pass?"), AUTO_EDITOR, NOW));
+    await store.putItem(mk("d", "Will the waiting one pass?"));
+    expect(likedQuestions(await store.items())).toEqual(["Will the newer one pass?", "Will the older one pass?"]);
+    const liked: (readonly string[] | undefined)[] = [];
+    const drafter: Drafter = { id: "w", draft: async (_s, ctx) => (liked.push(ctx.liked), { status: "skip", reason: "x", drafter: "w" }) };
+    await runCycle({ ...base(store, drafter, feed(newsFor(["economy"]))), config: { maxDrafts: 1 } });
+    expect(liked[0]).toEqual(["Will the newer one pass?", "Will the older one pass?"]);
+    const msg = userMessage(story([signal({ title: "Raptors host the Celtics on Friday" })]), NOW, [], [], false, ["Will the newer one pass?"]);
+    expect(msg).toContain("<liked>");
+    expect(msg).toContain("Will the newer one pass?");
+  });
+
+  it("the review page has a box to suggest a question, and says plainly what happened", async () => {
+    const html = renderReviewPage([], "tok", 7);
+    expect(html).toContain('name="action" value="idea"');
+    expect(html).toContain(`maxlength="${IDEA_MAX}"`);
+    const store = new MemoryStore();
+    const item = newItem({ id: "i1", storyId: "idea-x", draft: goodDraft({ slug: "idea-x-2026", question: { en: "Will it work?", fr: "Est-ce que ça marche?" } }), flags: [], provenance: [], priority: 50, drafter: "f", at: NOW });
+    await store.putItem(item);
+    const report = (decision: StoryDecision) => ({ report: { decisions: [decision] } as unknown as CycleReport, draftAllowance: 1, published: [] as string[] });
+    expect(await ideaNotice(report({ storyId: "idea-x", headline: "h", heat: 100, decision: "queued", itemId: "i1", flags: [], why: "" }), store)).toEqual({ ok: true, message: `Written: "Will it work?". It's waiting below for your OK.` });
+    expect(await ideaNotice({ ...report({ storyId: "idea-x", headline: "h", heat: 100, decision: "queued", itemId: "i1", flags: [], why: "" }), published: ["idea-x-2026"] }, store)).toMatchObject({ ok: true, message: expect.stringContaining("live on the site") });
+    expect(await ideaNotice(report({ storyId: "idea-x", headline: "h", heat: 100, decision: "skipped", reason: "no official source" }), store)).toMatchObject({ ok: false });
+    expect(await ideaNotice({ ...report({ storyId: "idea-x", headline: "h", heat: 100, decision: "skipped", reason: "x" }), draftAllowance: 0 }, store)).toMatchObject({ ok: false, message: expect.stringContaining("limit") });
   });
 });

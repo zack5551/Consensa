@@ -17,6 +17,10 @@ export interface DraftContext {
    * questions for launch). The 24-hour minimum still applies.
    */
   fast?: boolean;
+  /** Questions a person approved recently (EN): the style the editor likes. Newest first. */
+  liked?: readonly string[];
+  /** The story is an idea the editor typed on the review page: write it unless a hard rule says no. */
+  idea?: boolean;
 }
 
 export type DraftOutcome = (

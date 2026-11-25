@@ -24,6 +24,7 @@ import { checkFlag, DEFAULT_THRESHOLD, describeCheck, type CheckOutcome, type Ch
 import { calendarStories, deskFor, DESKS, type Desk } from "@/engine/draft/desks";
 import type { DraftUsage, Drafter } from "@/engine/draft/drafter";
 import { explainItem } from "@/engine/explain";
+import { isIdea } from "@/engine/ideas";
 import { resolveDue, type ResolveStep } from "@/engine/resolve/due";
 import type { toResult } from "@/engine/resolve/policy";
 import type { Http } from "@/engine/resolve/resolvers";
@@ -120,6 +121,21 @@ export interface CycleDeps {
   checker?: Checker;
   /** The writing desks. Defaults to the five in `draft/desks.ts`. */
   desks?: readonly Desk[];
+  /**
+   * Write only these stories (the editor's own ideas, `ideas.ts`): no feeds, no calendar, no resolving. They still go
+   * through every screen, check and approval rule.
+   */
+  only?: readonly Story[];
+}
+
+/** Questions a person approved (not the automatic approver), newest first: the style the editor likes. */
+export function likedQuestions(items: readonly QueueItem[], max = 12): string[] {
+  const approvedAt = (i: QueueItem) => i.history.filter((e) => e.to === "approved" && e.actor !== AUTO_EDITOR).at(-1)?.at;
+  return items
+    .filter((i) => approvedAt(i))
+    .sort((a, b) => approvedAt(b)!.localeCompare(approvedAt(a)!))
+    .slice(0, max)
+    .map((i) => i.draft.question.en);
 }
 
 type DecisionBase = { storyId: string; headline: string; heat: number; desk?: string };
@@ -196,7 +212,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   const usage: DraftUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
 
   // 1. Ingest
-  const results = await deps.ingest();
+  const results = deps.only ? [] : await deps.ingest();
   let newSignals = 0;
   for (const r of results) newSignals += await store.addSignals(r.signals);
   const feeds = {
@@ -207,15 +223,16 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   };
 
   // 2. Cluster
-  const recent = await store.recentSignals(new Date(now.getTime() - cfg.lookbackHours * 3_600_000));
-  const stories = clusterSignals(recent, now);
+  const recent = deps.only ? [] : await store.recentSignals(new Date(now.getTime() - cfg.lookbackHours * 3_600_000));
+  const stories = deps.only ? [...deps.only] : clusterSignals(recent, now);
   const hot = stories.filter((s) => s.heat >= cfg.minHeat);
 
   // 3. Screen, skipping stories already handled
   const decisions: StoryDecision[] = [];
   const candidates: Story[] = [];
   for (const story of hot) {
-    if (await store.wasDrafted(story.id)) continue;
+    // An idea the editor typed again is a fresh request, so it's written again.
+    if (!isIdea(story) && (await store.wasDrafted(story.id))) continue;
     const flags = screenStory(story);
     if (isBlocked(flags)) {
       decisions.push({ storyId: story.id, headline: story.headline, heat: story.heat, decision: "blockedStory", flags });
@@ -227,7 +244,8 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
 
   // 4–7. Each desk drafts its hottest stories until it meets its target, then checks and queues them.
   const desks = deps.desks ?? DESKS;
-  const backlog = await undrafted(store, calendarStories(deps.releases, now, desks));
+  const backlog = deps.only ? [] : await undrafted(store, calendarStories(deps.releases, now, desks));
+  const liked = likedQuestions(await store.items());
   const plan = planDesks(candidates, backlog, desks, cfg.calendarPerDesk);
   const existing = await store.comparables();
   const known = existing.map((c) => c.question.en);
@@ -281,7 +299,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   /** Drafts, checks and saves one story. True when it joined the queue. */
   const draftOne = async (desk: Desk, story: Story, fast: boolean): Promise<boolean> => {
     {
-      const o = await drafter.draft(story, { now, releases: deps.releases, existing: known, fast });
+      const o = await drafter.draft(story, { now, releases: deps.releases, existing: known, fast, liked, idea: isIdea(story) });
       add(o.usage);
       const base = { storyId: story.id, headline: story.headline, heat: story.heat, desk: o.desk ?? desk.id };
       if (o.status === "error") {
@@ -346,7 +364,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   const due = (await store.items())
     .filter((item) => item.status === "published")
     .map((item) => ({ slug: item.draft.slug, resolver: item.draft.resolver, resolvesAt: item.draft.resolution.resolvesAt }));
-  const resolutions: CycleReport["resolutions"] = deps.http ? await resolveDue(due, store, deps.http, now) : [];
+  const resolutions: CycleReport["resolutions"] = deps.http && !deps.only ? await resolveDue(due, store, deps.http, now) : [];
 
   return {
     startedAt,

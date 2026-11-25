@@ -65,7 +65,11 @@ export function fence(text: string): string {
 export const FAST_ASK =
   "Make this a fast question: it should close within 7 days of now and at least 24 hours from now, with an answer known soon after (this weekend's game, the weekend box office, this week's chart, data release or decision). If this story can't give a fair question that settles that soon, write the best question it can with a later date.";
 
-export function userMessage(story: Story, now: Date, releases: readonly Release[], existing: readonly string[], fast = false): string {
+/** For a story the editor typed in: it's a request, not news, so write it unless a hard rule blocks it. */
+export const IDEA_ASK =
+  "This story is an idea the editor typed in, not a news item. Write the best fair question you can on it: keep its subject, make it checkable with an official or reliable public source, and pick a sensible threshold and date. Every hard rule still applies; decline only if no version of it can pass them.";
+
+export function userMessage(story: Story, now: Date, releases: readonly Release[], existing: readonly string[], fast = false, liked: readonly string[] = [], idea = false): string {
   const ottawa = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", dateStyle: "full", timeStyle: "short" }).format(now);
   const cal = releases.map((r) => `- ${r.at} · ${r.name.en}${r.refPeriod ? ` (reference period ${r.refPeriod})` : ""} · ${r.sourceUrl}`).join("\n");
   const signals = story.signals
@@ -87,5 +91,5 @@ ${existing.slice(0, 200).map((q) => `- ${fence(q)}`).join("\n") || "- none"}
 ${signals}
 </story>
 
-${fast ? `${FAST_ASK}\n\n` : ""}Draft one question from this story, or decline.`;
+${liked.length ? `<liked>\nQuestions the editor approved recently. Match this style and level of interest; never repeat them:\n${liked.slice(0, 12).map((q) => `- ${fence(q)}`).join("\n")}\n</liked>\n\n` : ""}${idea ? `${IDEA_ASK}\n\n` : ""}${fast ? `${FAST_ASK}\n\n` : ""}Draft one question from this story, or decline.`;
 }
