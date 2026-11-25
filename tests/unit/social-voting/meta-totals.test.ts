@@ -70,6 +70,8 @@ describe("Meta totals for the question page", () => {
     const cases = [
       { reactions: { data: [{ id: "1", type: "LIKE" }, { type: "WOW" }] }, comments: { data: [] } },
       { reactions: ok, comments: { data: [{ message: "❌", created_time: "2026-11-21T10:00:00+0000" }] } },
+      { reactions: { data: [{ id: "abc", type: "LIKE" }] }, comments: { data: [] } },
+      { reactions: ok, comments: { data: [{ from: { id: "x1" }, message: "YES", created_time: "2026-11-21T10:00:00+0000" }] } },
     ];
     for (const c of cases) {
       const { fetch } = fakeFetch([
