@@ -188,7 +188,28 @@ describe("steady supply", () => {
     const existing: string[][] = [];
     const watching: Drafter = { id: "w", draft: async (s, ctx) => (existing.push([...ctx.existing]), { status: "draft", drafter: "w", draft: uniqueDraft(s.id, existing.length) }) };
     await runCycle({ ...base(new MemoryStore(), watching, feed(newsFor(["economy"]))), desks: [DESKS[0]!] });
-    expect(existing[1]!.length).toBe(existing[0]!.length + 1);
+    // Two writers start together (lanes), so the first one each finishes shows up for the next.
+    expect(existing[2]!.length).toBeGreaterThan(existing[0]!.length);
+    expect(existing.at(-1)!.length).toBe(existing[0]!.length + existing.length - 2);
+  });
+
+  it("each desk writes on several lanes at once, so a run fits about twice the tries in the same time (zack, 2026-11-25: 10+ a run)", async () => {
+    let open = 0;
+    let most = 0;
+    const slow: Drafter = {
+      id: "slow",
+      draft: async (s) => {
+        most = Math.max(most, ++open);
+        await new Promise((r) => setTimeout(r, 5));
+        open--;
+        return { status: "draft", drafter: "slow", draft: uniqueDraft(s.id, Math.floor(Math.random() * 1e6)) };
+      },
+    };
+    const report = await runCycle({ ...base(new MemoryStore(), slow, feed(newsFor(["economy", "weather", "culture", "sports"]))) });
+    // Economy, weather and sports run 2 lanes each; culture (share 2) runs 4.
+    expect(most).toBe(10);
+    const queued = report.decisions.filter((d) => d.decision === "queued");
+    expect(queued.length).toBe(20);
   });
 });
 

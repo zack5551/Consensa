@@ -27,7 +27,18 @@ export interface Desk {
   share?: number;
 }
 
-const SUPPLY = `Be timely and sharp: ask about what people are talking about this week, with a deadline days or weeks away when the news allows, and a specific threshold or name rather than a vague trend. Your desk aims to send the editor at least one fair question each cycle. If this story can't carry a fair question but points to a checkable angle on the same topic (for example an official release listed in <calendar>), draft that angle instead. Decline only when no angle passes every hard rule. Never bend a rule to meet the aim, and never repeat or lightly reword a question in <existing>.`;
+const SUPPLY = `Be timely and sharp: ask about what people are talking about this week, with a deadline days or weeks away when the news allows, and a specific threshold or name rather than a vague trend. Your desk aims to send the editor at least one fair question each cycle. If this story can't carry a fair question but points to a checkable angle on the same topic (for example an official release listed in <calendar>), draft that angle instead. Decline only when no angle passes every hard rule. Never bend a rule to meet the aim, and never repeat or lightly reword a question in <existing>.
+
+The editor's favourite questions look like these (zack, 2026-11-25). Match their style, never copy them: a name people know, a specific number or outcome, a clear date, and a reason it matters to Canadians right now. A data release on its own (next month's unemployment rate, a rate decision with no news hook) is a last resort, not a first choice.
+- Will Avengers: Doomsday earn more than US$300 million worldwide in its opening weekend (Dec. 18 to 20)?
+- Will Carly Rae Jepsen's "Run Away With Me" re-enter the Billboard Canadian Hot 100 by Dec. 31, after its streaming surge?
+- Will Netflix renew The Body for a second season by March 31, 2027?
+- Will the Montréal Victoire win their PWHL season opener? (closes at puck drop)
+- Will MLB and its players' union reach a new deal before Dec. 31, with no lockout?
+- Will the U.S. Federal Reserve raise its interest rate at its December meeting?
+- Will Couche-Tard complete its purchase of Poland's Żabka by March 31, 2027?
+- Will Stellantis announce new production for its Brampton plant by Feb. 28, 2027?
+- Will Montréal get 10 cm of snow or more before Dec. 10, after the Mont-Tremblant World Cup races were cancelled for lack of snow?`;
 
 export const DESKS: readonly Desk[] = [
   {
