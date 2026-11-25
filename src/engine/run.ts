@@ -18,7 +18,8 @@ import { MemoryStore, type EngineStore } from "@/engine/store";
 import { COST_PER_CALL, summaryEmail } from "@/engine/notify/digest";
 import type { Mailer } from "@/engine/notify/ses";
 import type { Comparable } from "@/engine/dedup";
-import type { Story } from "@/engine/types";
+import type { QueueItem, Story } from "@/engine/types";
+import { publish } from "@/engine/review";
 
 export interface RunOptions {
   apiKey?: string;
@@ -103,7 +104,17 @@ export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
       opts.monthlyBudgetUsd === undefined ? Infinity : Math.floor(opts.monthlyBudgetUsd / COST_PER_CALL) - usedThisMonth,
     ),
   );
+  // A draft approved automatically goes live at once, so a run cut short by the time limit keeps what it approved.
+  const liveNow: string[] = [];
+  const goLive = async (item: QueueItem) => {
+    const live = publish(item, opts.now);
+    await store.putItem(live);
+    await store.putLiveQuestion(toSiteQuestion(live));
+    liveNow.push(live.draft.slug);
+    if (opts.onPublished) await opts.onPublished([live.draft.slug]);
+  };
   const report = await runCycle({
+    onApproved: goLive,
     store,
     drafter,
     ingest: opts.liveFeeds ? () => fetchFeeds(sources, fetch) : async () => sampleFeedResults(),
@@ -120,7 +131,7 @@ export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
   });
 
   // Publish what editors approved since the last run, then refresh every live question (a result may have landed).
-  const published = (await publishApproved(store, opts.now)).map((q) => q.slug);
+  const published = [...liveNow, ...(await publishApproved(store, opts.now)).map((q) => q.slug)];
   for (const item of await store.items()) {
     if (item.status !== "published") continue;
     await store.putLiveQuestion(toSiteQuestion(item, await store.getResolution(item.draft.slug)));
@@ -129,7 +140,7 @@ export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
   const siteResults = opts.results ? await resolveDue(opts.results.questions, opts.results.store, httpFrom(opts.fetch ?? fetch), opts.results.now) : [];
 
   const resolved = [...report.resolutions, ...siteResults].some((r) => r.state === "resolved");
-  if (opts.onPublished && published.length > 0) await opts.onPublished(published);
+  if (opts.onPublished && published.length > liveNow.length) await opts.onPublished(published.slice(liveNow.length));
   let redeploy = false;
   // Results still ship with a build (the results log is built in). New questions don't need one with `onPublished`.
   if (opts.deployHook && (resolved || (published.length > 0 && !opts.onPublished))) {
