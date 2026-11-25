@@ -1,6 +1,7 @@
 /**
- * The editorial review queue. No AI-drafted question reaches forecasters without a person approving it
- * (BUILD_PLAN M4: "No unreviewed AI text reaches users").
+ * The editorial review queue. No AI-drafted question reaches forecasters without approval (BUILD_PLAN M4). The only
+ * approver that isn't a person is `autoApprovable` in `pipeline.ts` (zack's ENGINE_AUTO_APPROVE switch): low risk in
+ * every checked area and no flag that needs a person.
  *
  *   pending ──approve──▶ approved ──publish──▶ published
  *      │  ╲──reject───▶ rejected

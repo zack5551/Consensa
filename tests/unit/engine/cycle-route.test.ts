@@ -48,9 +48,45 @@ describe("cycle route health email", () => {
     runFromEnv.mockResolvedValue({ report: {} });
     const { GET } = await import("@/app/api/engine/cycle/route");
     await GET(request());
-    expect(runFromEnv.mock.calls[0]![0]).toMatchObject({ checkThreshold: 7, mailer: expect.any(Function) });
+    expect(runFromEnv.mock.calls[0]![0]).toMatchObject({ checkThreshold: 7, mailer: expect.any(Function), autoApprove: true });
     vi.stubEnv("ENGINE_LIVE_FEEDS", "0");
     await GET(request());
     expect(runFromEnv.mock.calls[1]![0].mailer).toBeUndefined();
+    expect(runFromEnv.mock.calls[1]![0].autoApprove).toBe(false);
+  });
+
+  it("auto-approve can be switched off, and the email links the review page when Supabase is set", async () => {
+    runFromEnv.mockResolvedValue({ report: {} });
+    vi.stubEnv("ENGINE_AUTO_APPROVE", "0");
+    vi.stubEnv("SUPABASE_URL", "https://abc.supabase.co");
+    vi.stubEnv("SUPABASE_SECRET_KEY", "k".repeat(30));
+    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "example.ca");
+    const { GET } = await import("@/app/api/engine/cycle/route");
+    await GET(request());
+    const opts = runFromEnv.mock.calls[0]![0];
+    expect(opts.autoApprove).toBe(false);
+    expect(opts.reviewLink()).toMatch(/^https:\/\/example\.ca\/api\/engine\/review\?t=\d+\./);
+  });
+});
+
+describe("review page route", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  const page = (t?: string) => new NextRequest(`https://example.ca/api/engine/review${t ? `?t=${encodeURIComponent(t)}` : ""}`);
+
+  it("is off without its settings and refuses a missing, forged or expired link", async () => {
+    const { GET, POST } = await import("@/app/api/engine/review/route");
+    vi.stubEnv("CRON_SECRET", SECRET);
+    expect((await GET(page())).status).toBe(404);
+    vi.stubEnv("SUPABASE_URL", "https://abc.supabase.co");
+    vi.stubEnv("SUPABASE_SECRET_KEY", "k".repeat(30));
+    expect((await GET(page())).status).toBe(401);
+    const { reviewToken } = await import("@/engine/notify/review-link");
+    expect((await GET(page(reviewToken("x".repeat(40), new Date())))).status).toBe(401);
+    expect((await GET(page(reviewToken(SECRET, new Date(Date.now() - 8 * 86_400_000))))).status).toBe(401);
+    const form = new FormData();
+    form.set("t", "123.abc");
+    form.set("id", "q");
+    form.set("action", "approve");
+    expect((await POST(new NextRequest("https://example.ca/api/engine/review", { method: "POST", body: form }))).status).toBe(401);
   });
 });

@@ -66,8 +66,13 @@ After each real run PULSE emails a short summary (new drafts, flagged drafts, er
 
 The emails carry draft questions written from public news, risk scores and run counts. No user data.
 
-## 5. Reviewing drafts (no new screen)
+## 5. Reviewing drafts
 
+**Auto-approve (on by default, zack 2026-11-25).** A draft goes straight to `approved` (and is published in the same run) only when all of these hold: the checker rated it, every area is under the flag line (7), legal, gambling and sensitive are 4 or less, it isn't sports, and it has no flag that needs a person (elections, trading, minors, disaster and every blocking flag hold it; a manual result check doesn't). Its history shows `pulse-auto` and its `PULSE:` note says why. To send every draft to a person instead, set `ENGINE_AUTO_APPROVE` = `0` in Vercel and redeploy.
+
+**The review page.** Each summary email has a "Review and approve" link (`/api/engine/review?t=…`), signed with `CRON_SECRET` and good for 7 days. It lists every draft still waiting, flagged first, with EN and FR, the risk scores and Approve / Reject buttons. Opening it changes nothing; only the buttons do. It needs `CRON_SECRET` and the Supabase settings, and shows 404 without them.
+
+Or in Supabase directly:
 Supabase → **Table Editor → engine_queue**, sorted by `priority`. Read `question_en`, `question_fr`, `flags` and `editor_note`, then change `status`. A `check-risk` flag means the checker rated the draft 7/10 or more in some area; its detail says which and why. `check-unavailable` means the checker couldn't rate it.
 
 - `approved`: goes live on the next cycle. Approving acknowledges the flags shown.

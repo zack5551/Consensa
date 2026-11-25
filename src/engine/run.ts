@@ -38,6 +38,10 @@ export interface RunOptions {
   results?: { questions: readonly DueQuestion[]; store: Pick<EngineStore, "getResolution" | "putResolution">; now: Date };
   /** The checker's flag line, 1–10. */
   checkThreshold?: number;
+  /** Approve low-risk drafts without a person (zack's switch). Needs the checker, so only with an API key. */
+  autoApprove?: boolean;
+  /** Builds the review page link for the summary email. */
+  reviewLink?: () => string | undefined;
   /** Overrides the checker (tests). With an API key and no override, the Claude checker runs. */
   checker?: Checker;
   /** Sends the run summary email. Leave out and nothing is emailed. */
@@ -72,7 +76,11 @@ export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
     http: opts.liveFeeds ? httpFrom(fetch) : undefined,
     releases: upcoming(opts.now, 120, releases),
     now: opts.now,
-    config: { maxDrafts: opts.maxDrafts, ...(opts.checkThreshold ? { checkThreshold: opts.checkThreshold } : {}) },
+    config: {
+      maxDrafts: opts.maxDrafts,
+      autoApprove: Boolean(opts.autoApprove && checker),
+      ...(opts.checkThreshold ? { checkThreshold: opts.checkThreshold } : {}),
+    },
     ...(checker ? { checker } : {}),
   });
 
@@ -96,7 +104,8 @@ export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
   let emailError: string | undefined;
   if (opts.mailer) {
     const openOnSite = opts.openOnSite ? await opts.openOnSite(published) : undefined;
-    const sent = await opts.mailer(summaryEmail({ report, published, ...(openOnSite !== undefined ? { openOnSite } : {}) }));
+    const reviewUrl = opts.reviewLink?.();
+    const sent = await opts.mailer(summaryEmail({ report, published, ...(openOnSite !== undefined ? { openOnSite } : {}), ...(reviewUrl ? { reviewUrl } : {}) }));
     emailed = sent.ok;
     emailError = sent.error;
   }
