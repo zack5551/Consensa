@@ -49,6 +49,7 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
   const sections = [
     ["crowd", m.crowd.title],
     ["scoring", m.scoring.title],
+    ["questions", m.questions.title],
     ["resolution", m.resolution.title],
     ["why", m.why.title],
     ["record", m.record.title],
@@ -144,6 +145,11 @@ export default async function MethodologyPage({ params }: { params: Promise<{ lo
             </ul>
           </div>
           <p className="m-0 text-body-sm text-ink-2">{m.scoring.polls}</p>
+        </section>
+
+        <section id="questions" aria-labelledby="questions-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
+          <h2 id="questions-h" className="m-0 font-display text-headline font-bold tracking-tight text-balance">{m.questions.title}</h2>
+          <p className="m-0">{m.questions.body}</p>
         </section>
 
         <section id="resolution" aria-labelledby="resolution-h" className="grid scroll-mt-20 gap-4 border-t-2 border-ink pt-5">
