@@ -132,9 +132,14 @@ export async function runFromEnv(opts: RunOptions): Promise<RunResult> {
 
   // Publish what editors approved since the last run, then refresh every live question (a result may have landed).
   const published = [...liveNow, ...(await publishApproved(store, opts.now)).map((q) => q.slug)];
+  // One bad row (an old draft shape, a Supabase blip) costs that row only, never the run or the other questions.
   for (const item of await store.items()) {
     if (item.status !== "published") continue;
-    await store.putLiveQuestion(toSiteQuestion(item, await store.getResolution(item.draft.slug)));
+    try {
+      await store.putLiveQuestion(toSiteQuestion(item, await store.getResolution(item.draft.slug)));
+    } catch (err) {
+      console.error(`engine: couldn't refresh live question ${item.draft.slug}:`, err instanceof Error ? err.message : err);
+    }
   }
 
   const siteResults = opts.results ? await resolveDue(opts.results.questions, opts.results.store, httpFrom(opts.fetch ?? fetch), opts.results.now) : [];

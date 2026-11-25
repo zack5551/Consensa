@@ -23,6 +23,11 @@ export interface DraftContext {
   idea?: boolean;
   /** A second try: the writer's first draft of this story and what the automatic checks rejected it for. */
   repair?: { question: string; problems: readonly string[] };
+  /**
+   * For a desk with two categories (weather and science): the one this try should aim for, the thinner on the site.
+   * The writer still declines rather than force a story into it.
+   */
+  category?: Draft["category"];
 }
 
 export type DraftOutcome = (

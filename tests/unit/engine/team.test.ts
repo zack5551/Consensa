@@ -20,7 +20,7 @@ import { applyReviewAction, renderReviewPage, waiting } from "@/engine/notify/re
 import { releases, upcoming } from "@/engine/sources/calendar";
 import type { FeedResult } from "@/engine/sources/feed";
 import { MemoryStore } from "@/engine/store";
-import type { Signal, Story } from "@/engine/types";
+import type { QueueItem, Signal, Story } from "@/engine/types";
 import { goodDraft, NOW, signal, story } from "./helpers";
 
 /** A distinct, valid draft per story, so dedup never merges them. */
@@ -74,6 +74,8 @@ const base = (store: MemoryStore, drafter: Drafter, ingest: FeedResult[] = []) =
   drafter,
   ingest: async () => ingest,
   releases: upcoming(NOW, 120, releases),
+  // Variety boosts (thin categories) are tested on their own; the rest of these tests use the plain shares.
+  config: { thinBelow: 0 },
   now: NOW,
 });
 
@@ -153,7 +155,7 @@ describe("steady supply", () => {
   it("never goes over the run's cap on writer calls, even when every story is declined", async () => {
     let calls = 0;
     const declining: Drafter = { id: "no", draft: async () => (calls++, { status: "skip", reason: "not checkable", drafter: "no" }) };
-    await runCycle({ ...base(new MemoryStore(), declining, feed(newsFor(["economy", "weather", "culture", "sports"]))), config: { maxDrafts: 6 } });
+    await runCycle({ ...base(new MemoryStore(), declining, feed(newsFor(["economy", "weather", "culture", "sports"]))), config: { thinBelow: 0, maxDrafts: 6 } });
     expect(calls).toBe(6);
     calls = 0;
     await runCycle({ ...base(new MemoryStore(), declining, feed(newsFor(["economy", "weather", "culture", "sports"]))) });
@@ -215,6 +217,32 @@ describe("steady supply", () => {
   });
 });
 
+describe("variety (zack, 2026-11-25: every category filled, a variety of everything)", () => {
+  const live = (category: "economy" | "weather", i: number): QueueItem => ({ id: `live-${category}-${i}`, storyId: `s-${category}-${i}`, draft: goodDraft({ slug: `live-${category}-${i}-2026`, category }), flags: [], provenance: [], priority: 50, status: "published", history: [], drafter: "w", createdAt: NOW.toISOString() });
+
+  it("gives a thin category's desk more of the run, and a two-category desk aims each try at its thinner category", async () => {
+    const store = new MemoryStore();
+    // The site already has plenty of economy and weather questions, and no science, culture or sports.
+    for (let i = 0; i < 4; i++) {
+      await store.putItem(live("economy", i));
+      await store.putItem(live("weather", i));
+    }
+    const asks: { desk: string; category?: string }[] = [];
+    const watching: Drafter = { id: "w", draft: async (s, ctx) => (asks.push({ desk: deskFor(s).id, ...(ctx.category ? { category: ctx.category } : {}) }), { status: "skip", reason: "test", drafter: "w" }) };
+    await runCycle({ ...base(store, watching, feed(newsFor(["economy", "weather", "culture", "sports"]))), config: { maxDrafts: 40 } });
+    const tries = (desk: string) => asks.filter((a) => a.desk === desk).length;
+    // Sports is thin and economy isn't, so sports gets more tries.
+    expect(tries("sports")).toBeGreaterThan(tries("economy"));
+    // The weather desk leads with science and keeps it ahead of weather.
+    const weatherDesk = asks.filter((a) => a.desk === "weather");
+    expect(weatherDesk[0]!.category).toBe("science");
+    expect(weatherDesk.filter((a) => a.category === "science").length).toBeGreaterThanOrEqual(weatherDesk.filter((a) => a.category === "weather").length);
+    // One-category desks get no category ask; the ask reaches the writer's message.
+    expect(asks.find((a) => a.desk === "sports")!.category).toBeUndefined();
+    expect(userMessage(story([signal({ title: "New telescope data" })]), NOW, [], [], false, [], false, undefined, "science")).toContain("more science questions");
+  });
+});
+
 describe("the checker in the cycle", () => {
   const news = feed(newsFor(["culture"]));
 
@@ -233,7 +261,7 @@ describe("the checker in the cycle", () => {
   it("leaves a clean draft unflagged, and the line can be moved", async () => {
     const low = await runCycle({ ...base(new MemoryStore(), drafting(), news), checker: fixedChecker(3), desks: [CULTURE_EVEN] });
     expect(low.alerts).toEqual([]);
-    const strict = await runCycle({ ...base(new MemoryStore(), drafting(), news), checker: fixedChecker(3), desks: [CULTURE_EVEN], config: { checkThreshold: 3 } });
+    const strict = await runCycle({ ...base(new MemoryStore(), drafting(), news), checker: fixedChecker(3), desks: [CULTURE_EVEN], config: { thinBelow: 0, checkThreshold: 3 } });
     expect(strict.alerts.length).toBe(4);
   });
 
@@ -405,7 +433,7 @@ describe("auto-approve", () => {
     const store = new MemoryStore();
     // Eight drafts: five clean, one a touch sensitive, one gambling-ish, one the checker couldn't rate.
     const checker = scriptedChecker([clean, [2, 1, 3, 1, 2], clean, [1, 1, 2, 5, 1], clean, [1, 8, 2, 1, 2], [1, 2, 4, 2, 3], "down"]);
-    const report = await runCycle({ ...base(store, drafting(), feed(newsFor(["culture"]))), checker, desks: [CULTURE_EVEN], config: { autoApprove: true, perDesk: 8, deskAttempts: 8 } });
+    const report = await runCycle({ ...base(store, drafting(), feed(newsFor(["culture"]))), checker, desks: [CULTURE_EVEN], config: { thinBelow: 0, autoApprove: true, perDesk: 8, deskAttempts: 8 } });
     const queued = report.decisions.filter((d) => d.decision === "queued");
     const auto = queued.filter((d) => "autoApproved" in d && d.autoApproved);
     expect([queued.length, auto.length, report.alerts.length]).toEqual([8, 5, 2]);
@@ -486,13 +514,13 @@ describe("feeding the writers (zack, 2026-11-25: an easier way to feed the engin
     let ingested = false;
     const store = new MemoryStore();
     const checker = fixedChecker(2);
-    const report = await runCycle({ ...base(store, drafter), ingest: async () => ((ingested = true), feed(newsFor(["economy"]))), only: [story], checker, config: { maxDrafts: 1 } });
+    const report = await runCycle({ ...base(store, drafter), ingest: async () => ((ingested = true), feed(newsFor(["economy"]))), only: [story], checker, config: { thinBelow: 0, maxDrafts: 1 } });
     expect(ingested).toBe(false);
     expect(asked).toEqual([{ idea: true, story: "Will a Canadian win an Oscar in March?" }]);
     expect(checker.calls).toBe(1);
     expect(report.decisions.map((d) => d.decision)).toEqual(["queued"]);
     // Typing the same idea again is a fresh request.
-    await runCycle({ ...base(store, drafter), only: [story], config: { maxDrafts: 1 } });
+    await runCycle({ ...base(store, drafter), only: [story], config: { thinBelow: 0, maxDrafts: 1 } });
     expect(asked.length).toBe(2);
     expect(userMessage(story, NOW, [], [], false, [], true)).toContain(IDEA_ASK);
   });
@@ -515,7 +543,7 @@ describe("feeding the writers (zack, 2026-11-25: an easier way to feed the engin
     expect(likedQuestions(await store.items())).toEqual(["Will the newer one pass?", "Will the older one pass?"]);
     const liked: (readonly string[] | undefined)[] = [];
     const drafter: Drafter = { id: "w", draft: async (_s, ctx) => (liked.push(ctx.liked), { status: "skip", reason: "x", drafter: "w" }) };
-    await runCycle({ ...base(store, drafter, feed(newsFor(["economy"]))), config: { maxDrafts: 1 } });
+    await runCycle({ ...base(store, drafter, feed(newsFor(["economy"]))), config: { thinBelow: 0, maxDrafts: 1 } });
     expect(liked[0]).toEqual(["Will the newer one pass?", "Will the older one pass?"]);
     const msg = userMessage(story([signal({ title: "Raptors host the Celtics on Friday" })]), NOW, [], [], false, ["Will the newer one pass?"]);
     expect(msg).toContain("<liked>");
@@ -549,7 +577,7 @@ describe("one repair try (zack, 2026-11-25: good questions were set aside over a
         return { status: "draft", drafter: "w", draft: ctx.repair ? fixed : { ...bad, closesAt: new Date(NOW.getTime() + 3_600_000).toISOString() } };
       },
     };
-    const report = await runCycle({ ...base(new MemoryStore(), drafter, feed(newsFor(["culture"]))), config: { maxDrafts: 2 } });
+    const report = await runCycle({ ...base(new MemoryStore(), drafter, feed(newsFor(["culture"]))), config: { thinBelow: 0, maxDrafts: 2 } });
     expect(seen[0]).toBeUndefined();
     expect(seen[1]).toEqual(["Closes less than 24 hours from now."]);
     expect(report.decisions.filter((d) => d.decision === "queued").length).toBe(1);
@@ -560,8 +588,8 @@ describe("one repair try (zack, 2026-11-25: good questions were set aside over a
     let calls = 0;
     const drafter: Drafter = { id: "w", draft: async (s) => (calls++, { status: "draft", drafter: "w", draft: { ...uniqueDraft(s.id, calls), slug: "dup-slug-2026" } }) };
     const store = new MemoryStore();
-    await runCycle({ ...base(store, drafter, feed(newsFor(["culture"]))), config: { maxDrafts: 1 } });
-    await runCycle({ ...base(store, drafter, feed(newsFor(["economy"]))), config: { maxDrafts: 1 } });
+    await runCycle({ ...base(store, drafter, feed(newsFor(["culture"]))), config: { thinBelow: 0, maxDrafts: 1 } });
+    await runCycle({ ...base(store, drafter, feed(newsFor(["economy"]))), config: { thinBelow: 0, maxDrafts: 1 } });
     // The second is a duplicate (a block a writer can't fix by trying again): one call, no repair.
     expect(calls).toBe(2);
   });
