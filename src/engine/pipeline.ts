@@ -70,6 +70,8 @@ export const AUTO_STRICT = 4;
 /** Review flags the engine may acknowledge by itself. Every other review flag (sports, elections, minors, disaster,
  * trading words, a missing threshold, a poll, a long gap to the result) keeps the draft for a person. */
 const AUTO_OK_FLAGS = new Set(["manualResolver"]);
+/** Blocking problems a writer can fix in a second try: dates, sports timing, the source link, French spacing. */
+const FIXABLE = new Set(["closesTooSoon", "closesTooLate", "closesAfterResult", "sportsNoStart", "sportsClosesAfterStart", "sportsStartsAfterResult", "sourceNotOfficial", "sourceNotHttps", "frTypography", "resolverAfterResult", "resolverRange", "thresholdNotInRule"]);
 /**
  * Sports (zack, 2026-11-25: "yes auto approve"): a sports draft may go live by itself when its only extra flag is the
  * standing "sports" reminder and the checker rates gambling feel at 2 or less, stricter than other topics. LEX's
@@ -308,7 +310,8 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   /** Drafts, checks and saves one story. True when it joined the queue. */
   const draftOne = async (desk: Desk, story: Story, fast: boolean): Promise<boolean> => {
     {
-      const o = await drafter.draft(story, { now, releases: deps.releases, existing: known, fast, liked, idea: isIdea(story) });
+      const ctx = { now, releases: deps.releases, existing: known, fast, liked, idea: isIdea(story) };
+      let o = await drafter.draft(story, ctx);
       add(o.usage);
       const base = { storyId: story.id, headline: story.headline, heat: story.heat, desk: o.desk ?? desk.id };
       if (o.status === "error") {
@@ -322,7 +325,19 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
         return false;
       }
 
-      const flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];
+      let flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];
+      // One repair try (zack, 2026-11-25: good questions were set aside over a date or a source). When the only
+      // blocking problems are ones a writer can fix, it gets them back once and rewrites. Safety blocks never get one.
+      const blocks = flags.filter((f) => f.severity === "block");
+      if (blocks.length > 0 && blocks.every((f) => FIXABLE.has(f.code)) && budget.left > 0) {
+        budget.left--;
+        const again = await drafter.draft(story, { ...ctx, repair: { question: o.draft.question.en, problems: blocks.map((f) => f.detail) } });
+        add(again.usage);
+        if (again.status === "draft") {
+          o = again;
+          flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];
+        }
+      }
       const dup = findDuplicate(o.draft, [...existing, ...(await store.comparables()).filter((c) => !existing.includes(c))]);
       if (dup) flags.push(duplicateFlag(dup));
 

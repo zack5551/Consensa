@@ -123,7 +123,7 @@ export class ClaudeDrafter implements Drafter {
         thinking: { type: "adaptive" },
         output_config: { effort: this.effort, format: betaZodOutputFormat(llmOutputSchema) },
         system: this.system,
-        messages: [{ role: "user", content: userMessage(story, ctx.now, ctx.releases, ctx.existing, ctx.fast, ctx.liked, ctx.idea) }],
+        messages: [{ role: "user", content: userMessage(story, ctx.now, ctx.releases, ctx.existing, ctx.fast, ctx.liked, ctx.idea, ctx.repair) }],
       });
     } catch (err) {
       if (err instanceof Anthropic.RateLimitError) return { status: "error", reason: "rate limited", drafter: this.id };
