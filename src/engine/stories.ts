@@ -118,6 +118,37 @@ export function heatOf(signals: readonly Signal[], now: Date): number {
   return Math.round(Math.min(1, raw) * decay * 100);
 }
 
+/** How close together the outlets' reports must be for a story to count as breaking. */
+export const BREAKING_WINDOW_MS = 2 * 3_600_000;
+/** A story stops counting as breaking this long after its latest report. */
+export const BREAKING_FRESH_MS = 6 * 3_600_000;
+
+/** The newsroom behind a feed: CBC's national and regional feeds are one outlet ("cbc-…"), the Globe another. */
+const outletOf = (sourceId: string) => sourceId.split("-")[0]!;
+
+/**
+ * Breaking news (zack, 2026-11-25: "how do we determine that"): at least three newsroom reports from at least two
+ * different outlets within two hours, the latest within the last six. One outlet's many feeds never make it breaking
+ * on their own, and neither do trending searches or official releases.
+ */
+export function breakingOf(signals: readonly Signal[], now: Date): boolean {
+  const news = signals.filter((s) => s.kind === "news").sort((a, b) => a.publishedAt.localeCompare(b.publishedAt));
+  if (news.length < 3 || now.getTime() - Date.parse(news.at(-1)!.publishedAt) > BREAKING_FRESH_MS) return false;
+  for (let i = 0; i < news.length; i++) {
+    const start = Date.parse(news[i]!.publishedAt);
+    const inWindow = news.filter((s, j) => j >= i && Date.parse(s.publishedAt) - start <= BREAKING_WINDOW_MS);
+    if (inWindow.length >= 3 && new Set(inWindow.map((s) => outletOf(s.sourceId))).size >= 2) return true;
+  }
+  return false;
+}
+
+/** Mostly trending searches: more than half the story's weight is from trend sources. */
+export function trendingOf(signals: readonly Signal[]): boolean {
+  const total = signals.reduce((n, s) => n + s.weight, 0);
+  const trend = signals.filter((s) => s.kind === "trend").reduce((n, s) => n + s.weight, 0);
+  return total > 0 && trend * 2 > total;
+}
+
 function toStory(signals: Signal[], now: Date): Story {
   const byWeight = [...signals].sort((a, b) => b.weight - a.weight || b.title.length - a.title.length);
   const headline = byWeight[0]!.title;
@@ -132,6 +163,8 @@ function toStory(signals: Signal[], now: Date): Story {
     lastSeenAt: times[times.length - 1]!,
     heat: heatOf(signals, now),
     ...storyBeat(signals),
+    ...(breakingOf(signals, now) ? { breaking: true } : {}),
+    ...(trendingOf(signals) ? { trending: true } : {}),
   };
 }
 

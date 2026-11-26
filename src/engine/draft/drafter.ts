@@ -3,7 +3,7 @@
  * Declining is a good outcome: most news has no checkable, harmless question in it.
  */
 import type { Release } from "@/engine/sources/calendar";
-import type { Draft, Story } from "@/engine/types";
+import type { Draft, EventRef, Story } from "@/engine/types";
 
 export interface DraftContext {
   now: Date;
@@ -28,6 +28,10 @@ export interface DraftContext {
    * The writer still declines rather than force a story into it.
    */
   category?: Draft["category"];
+  /** Several outlets broke this story in the last few hours: ask what happens next, soon. */
+  breaking?: boolean;
+  /** The big date the story is about: the question should settle at or soon after it. */
+  event?: EventRef;
 }
 
 export type DraftOutcome = (

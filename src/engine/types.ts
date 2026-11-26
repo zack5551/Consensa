@@ -72,6 +72,35 @@ export interface Story {
   categoryHint: (typeof categories)[number] | null;
   /** The scout that found most of it, when its feeds are known. Routes a story with no clear category. */
   scout?: ScoutId;
+  /** Several Canadian outlets ran it within two hours, and recently (see `breakingOf` in `stories.ts`). */
+  breaking?: boolean;
+  /** Most of its weight comes from trending searches rather than newsrooms. */
+  trending?: boolean;
+  /** The big date it's about (see `sources/events.ts`). */
+  event?: EventRef;
+}
+
+/** A big date questions are grouped under on the board: the Oscars, a Bank of Canada decision day. */
+export interface EventRef {
+  id: string;
+  name: Bilingual;
+  /** When it starts (UTC). */
+  at: string;
+}
+
+/**
+ * What the board ranks and tags a question by (zack, 2026-11-25: breaking news, big events, trending without letting
+ * it hog the spotlight). Same shape as `spotlight` in `src/lib/question.ts`.
+ */
+export interface Spotlight {
+  /** 0–100: how big the news behind the question is. */
+  newsSize: number;
+  /** When the question went live. Filled at publish. */
+  publishedAt?: string;
+  /** Show a "breaking" tag until then. */
+  breakingUntil?: string;
+  trending?: true;
+  event?: EventRef;
 }
 
 // ─── Resolvers ────────────────────────────────────────────────────────────────
@@ -189,6 +218,8 @@ export interface QueueItem {
   desk?: string;
   /** The checker's risk scores (see `check/checker.ts`). Missing when the draft was blocked before the check. */
   check?: CheckResult;
+  /** How the board should rank and tag it. Older items lack it. */
+  spotlight?: Spotlight;
 }
 
 // ─── Risk check ───────────────────────────────────────────────────────────────

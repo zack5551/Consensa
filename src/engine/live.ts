@@ -26,5 +26,9 @@ export function toSiteQuestion(item: QueueItem, record?: ResolutionRecord): Ques
     provinces: Object.fromEntries(provinces.map((p) => [p, EVEN])) as Record<Province, number>,
     events: [],
     resolution: { ...draft.resolution, ...(result ? { result } : {}) },
+    // How the board ranks and tags it. publishedAt is when it went live (the "published" step in its history).
+    ...(item.spotlight
+      ? { spotlight: { ...item.spotlight, publishedAt: item.history.findLast((h) => h.to === "published")?.at ?? item.createdAt } }
+      : {}),
   });
 }
