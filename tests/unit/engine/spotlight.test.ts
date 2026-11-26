@@ -108,9 +108,8 @@ describe("spotlight on each question", () => {
       createdAt: NOW.toISOString(),
       spotlight: { newsSize: 72 },
     };
-    const live = toSiteQuestion(publish(item, new Date("2026-11-06T13:00:00Z"))) as unknown as { spotlight?: { publishedAt: string; newsSize: number } };
-    // The site's schema gains `spotlight` in the board's PR; until then it is dropped, never wrong.
-    if (live.spotlight) expect(live.spotlight).toEqual({ newsSize: 72, publishedAt: "2026-11-06T13:00:00.000Z" });
+    const live = toSiteQuestion(publish(item, new Date("2026-11-06T13:00:00Z")));
+    expect(live.spotlight).toEqual({ newsSize: 72, publishedAt: "2026-11-06T13:00:00.000Z" });
   });
 });
 

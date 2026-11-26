@@ -9,7 +9,7 @@
  * into the question page.
  */
 import { z } from "zod";
-import { categories, type QuestionOutcome } from "@/lib/question";
+import { categories, type QuestionOutcome, type Spotlight as SiteSpotlight } from "@/lib/question";
 
 export const bilingual = z.object({ en: z.string().min(1), fr: z.string().min(1) });
 export type Bilingual = z.infer<typeof bilingual>;
@@ -90,18 +90,9 @@ export interface EventRef {
 
 /**
  * What the board ranks and tags a question by (zack, 2026-11-25: breaking news, big events, trending without letting
- * it hog the spotlight). Same shape as `spotlight` in `src/lib/question.ts`.
+ * it hog the spotlight). The site's `spotlightSchema`, except that `publishedAt` is filled when it goes live.
  */
-export interface Spotlight {
-  /** 0–100: how big the news behind the question is. */
-  newsSize: number;
-  /** When the question went live. Filled at publish. */
-  publishedAt?: string;
-  /** Show a "breaking" tag until then. */
-  breakingUntil?: string;
-  trending?: true;
-  event?: EventRef;
-}
+export type Spotlight = Omit<SiteSpotlight, "publishedAt"> & { publishedAt?: string };
 
 // ─── Resolvers ────────────────────────────────────────────────────────────────
 
