@@ -61,6 +61,8 @@ export interface CycleConfig {
   calendarPerDesk: number;
   /** Writers working at once per desk (times the desk's share). */
   lanesPerDesk: number;
+  /** A desk with fewer than this many open questions on the site in one of its categories gets an extra share. */
+  thinBelow: number;
 }
 
 /** The engine's name in a review history when it approves a draft by itself. */
@@ -107,6 +109,7 @@ export const DEFAULT_CYCLE: CycleConfig = {
   autoApprove: false,
   calendarPerDesk: 1,
   lanesPerDesk: 2,
+  thinBelow: 3,
 };
 
 export interface CycleDeps {
@@ -255,7 +258,15 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   // 4–7. Each desk drafts its hottest stories until it meets its target, then checks and queues them.
   const desks = deps.desks ?? DESKS;
   const backlog = deps.only ? [] : await undrafted(store, calendarStories(deps.releases, now, desks));
-  const liked = likedQuestions(await store.items());
+  const items = await store.items();
+  const liked = likedQuestions(items);
+  // Variety (zack, 2026-11-25: "every category being filled, a variety of everything"). Count the engine's open
+  // questions on the site by category; a desk whose category is thin gets an extra share of the run, and a desk with
+  // two categories asks each try for whichever of them is thinnest, so one easy beat (weather) can't crowd out the rest.
+  const open = new Map<Draft["category"], number>();
+  for (const i of items) if (i.status === "published" && Date.parse(i.draft.closesAt) > now.getTime()) open.set(i.draft.category, (open.get(i.draft.category) ?? 0) + 1);
+  const thin = (d: Desk) => d.categories.some((c) => (open.get(c) ?? 0) < cfg.thinBelow);
+  const shareOf = (d: Desk) => (d.share ?? 1) + (thin(d) ? 1 : 0);
   const plan = planDesks(candidates, backlog, desks, cfg.calendarPerDesk);
   const existing = await store.comparables();
   const known = existing.map((c) => c.question.en);
@@ -273,13 +284,17 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   // Each desk's share of the run (zack, 2026-11-25: lean into pop culture). A desk with a bigger share gets a bigger
   // slice of the writer calls and a higher target; desks with nothing to write don't hold a slice.
   const busy = plan.filter((p) => p.stories.length > 0);
-  const shares = busy.reduce((n, p) => n + (p.desk.share ?? 1), 0);
-  const slice = new Map(busy.map((p) => [p.desk.id, Math.floor((cfg.maxDrafts * (p.desk.share ?? 1)) / Math.max(1, shares))]));
+  const shares = busy.reduce((n, p) => n + shareOf(p.desk), 0);
+  const slice = new Map(busy.map((p) => [p.desk.id, Math.floor((cfg.maxDrafts * shareOf(p.desk)) / Math.max(1, shares))]));
   const state = new Map(plan.map((p) => [p.desk.id, { next: 0, queued: 0, attempts: 0, inflight: 0 }]));
 
+  /** Tries this run that asked for each category, so a two-category desk alternates instead of piling onto one. */
+  const asked = new Map<Draft["category"], number>();
+  const thinnest = (desk: Desk) =>
+    [...desk.categories].sort((a, b) => (open.get(a) ?? 0) + (asked.get(a) ?? 0) - ((open.get(b) ?? 0) + (asked.get(b) ?? 0)))[0];
   const runDesk = async (desk: Desk, stories: readonly Story[], cap: number) => {
     const st = state.get(desk.id)!;
-    const share = desk.share ?? 1;
+    const share = shareOf(desk);
     // Each desk writes on a few lanes at once (zack, 2026-11-25: about 10 good questions a run). One writer call plus
     // its check takes about a minute, so one lane per desk managed only two or three tries before the start limit.
     // The lanes share the desk's counters, which are read and bumped before any await, so the caps still hold.
@@ -295,9 +310,11 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       // The 1st, 4th, 7th… try at each desk asks for a fast question (closing within 7 days), so about a third of every
       // run settles within the week and even a quiet desk gives one.
       const fast = st.attempts % 3 === 1;
+      const category = desk.categories.length > 1 ? thinnest(desk) : undefined;
+      if (category) asked.set(category, (asked.get(category) ?? 0) + 1);
       st.inflight++;
       try {
-        if (await draftOne(desk, story, fast)) st.queued++;
+        if (await draftOne(desk, story, fast, category)) st.queued++;
       } catch (err) {
         // A hiccup saving one story (Supabase busy, a network blip) costs that story only: the desk moves on, the other
         // desks never notice, and the story isn't marked drafted, so the next run tries it again.
@@ -308,9 +325,9 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
     }
   };
   /** Drafts, checks and saves one story. True when it joined the queue. */
-  const draftOne = async (desk: Desk, story: Story, fast: boolean): Promise<boolean> => {
+  const draftOne = async (desk: Desk, story: Story, fast: boolean, category?: Draft["category"]): Promise<boolean> => {
     {
-      const ctx = { now, releases: deps.releases, existing: known, fast, liked, idea: isIdea(story) };
+      const ctx = { now, releases: deps.releases, existing: known, fast, liked, idea: isIdea(story), ...(category ? { category } : {}) };
       let o = await drafter.draft(story, ctx);
       add(o.usage);
       const base = { storyId: story.id, headline: story.headline, heat: story.heat, desk: o.desk ?? desk.id };
