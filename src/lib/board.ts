@@ -1,4 +1,5 @@
 import { fill } from "@/lib/text";
+import { BOARD_SPREAD, heatOf, spreadByHeat } from "@/lib/heat";
 import { callsCloseAt, categories, crowdChange, crowdNow, isOpen, questionState, type Category, type Question, type QuestionState } from "@/lib/question";
 
 /**
@@ -8,7 +9,7 @@ import { callsCloseAt, categories, crowdChange, crowdNow, isOpen, questionState,
 export const boardFilters = ["all", "open", "closingSoon", "results", "mine"] as const;
 export type BoardFilter = (typeof boardFilters)[number];
 
-export const boardSorts = ["popular", "closing", "moved"] as const;
+export const boardSorts = ["hot", "popular", "closing", "moved"] as const;
 export type BoardSort = (typeof boardSorts)[number];
 
 /** Everything a board row needs, serializable so it can cross to the client without the whole Question. */
@@ -26,9 +27,14 @@ export type BoardRow = {
   scored: boolean;
   /** The last two weeks of the crowd's chance, for the sparkline. */
   spark: number[];
+  /** Heat score (see `heatOf`): the default order. */
+  heat: number;
+  trending?: true;
+  breaking?: true;
 };
 
-export function toBoardRow(q: Question, now: Date): BoardRow {
+export function toBoardRow(q: Question, now: Date, recentCalls = 0): BoardRow {
+  const h = heatOf(q, now, recentCalls);
   return {
     slug: q.slug,
     title: q.question,
@@ -41,6 +47,9 @@ export function toBoardRow(q: Question, now: Date): BoardRow {
     closesAt: callsCloseAt(q),
     scored: q.scored,
     spark: q.history.slice(-14),
+    heat: h.score,
+    ...(h.trending ? { trending: true as const } : {}),
+    ...(h.breaking ? { breaking: true as const } : {}),
   };
 }
 
@@ -62,6 +71,13 @@ export function matchesFilter(row: BoardRow, filter: BoardFilter, called: Readon
 export function sortRows(rows: readonly BoardRow[], sort: BoardSort): BoardRow[] {
   const copy = [...rows];
   switch (sort) {
+    case "hot": {
+      // Open questions only get the heat order; ties (and lists with no heat yet) fall back to most called.
+      const byCalls = copy.sort((a, b) => b.forecasters - a.forecasters);
+      const open = byCalls.filter((r) => isOpen(r.state));
+      const settled = byCalls.filter((r) => !isOpen(r.state));
+      return [...spreadByHeat(open, BOARD_SPREAD), ...settled];
+    }
     case "popular":
       return copy.sort((a, b) => b.forecasters - a.forecasters);
     case "moved":
@@ -80,7 +96,7 @@ export function sortRows(rows: readonly BoardRow[], sort: BoardSort): BoardRow[]
 
 export type BoardQuery = { filter: BoardFilter; topic: Category | "all"; sort: BoardSort };
 
-export const defaultBoardQuery: BoardQuery = { filter: "open", topic: "all", sort: "popular" };
+export const defaultBoardQuery: BoardQuery = { filter: "open", topic: "all", sort: "hot" };
 
 /** Reads ?show=&topic=&sort= leniently: anything unknown falls back to the default instead of erroring. */
 export function parseBoardQuery(params: { show?: string | null; topic?: string | null; sort?: string | null }): BoardQuery {
