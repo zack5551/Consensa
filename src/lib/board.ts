@@ -33,6 +33,8 @@ export type BoardRow = {
   breaking?: true;
   /** Went live in the last two days (see `isNew`). */
   fresh?: true;
+  /** Points the crowd moved since yesterday's reading. */
+  day: number;
 };
 
 export function toBoardRow(q: Question, now: Date, recentCalls = 0): BoardRow {
@@ -44,6 +46,7 @@ export function toBoardRow(q: Question, now: Date, recentCalls = 0): BoardRow {
     state: questionState(q, now),
     crowd: crowdNow(q),
     change: crowdChange(q, 7),
+    day: crowdChange(q, 1),
     forecasters: q.forecasters,
     ...(q.fewCalls ? { fewCalls: true as const } : {}),
     closesAt: callsCloseAt(q),
@@ -133,6 +136,24 @@ export function applyBoardQuery(rows: readonly BoardRow[], q: BoardQuery, called
     rows.filter((r) => (q.topic === "all" || r.category === q.topic) && matchesFilter(r, q.filter, called)),
     q.sort,
   );
+}
+
+/** A move this size or bigger since yesterday puts an open question in "Top movers today". */
+export const MOVER_MIN_POINTS = 3;
+
+/** Up to `n` open questions that moved most since yesterday, biggest first. Empty on a quiet day. */
+export function topMovers(rows: readonly BoardRow[], n = 3): BoardRow[] {
+  return rows
+    .filter((r) => isOpen(r.state) && Math.abs(r.day) >= MOVER_MIN_POINTS)
+    .sort((a, b) => Math.abs(b.day) - Math.abs(a.day) || b.forecasters - a.forecasters)
+    .slice(0, n);
+}
+
+/** "Up 7 pts since yesterday" / "Down 1 pt since yesterday", or null when it didn't move. */
+export function dayText(n: number, t: { dayUp: string; dayUpOne: string; dayDown: string; dayDownOne: string }): string | null {
+  if (n === 0) return null;
+  if (n > 0) return n === 1 ? t.dayUpOne : fill(t.dayUp, { n });
+  return n === -1 ? t.dayDownOne : fill(t.dayDown, { n: -n });
 }
 
 /** How many rows the Board shows at first, and how many more each "Show more" adds. */

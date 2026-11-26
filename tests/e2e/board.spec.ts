@@ -36,7 +36,7 @@ for (const [locale, more, after] of [
 ] as const) {
   test(`/${locale}/board shows 20 questions, then the rest after "show more", with focus on the first new one`, async ({ page }) => {
     await page.goto(`/${locale}/board`);
-    const list = page.locator("main").locator("tbody tr:visible, ul > li:visible").filter({ has: page.locator("a[href*='/q/']") });
+    const list = page.locator("main [data-row]:visible");
     await expect(list).toHaveCount(20);
     const button = page.getByRole("button", { name: more });
     await button.click();
@@ -47,6 +47,8 @@ for (const [locale, more, after] of [
     // A new filter starts again at one page.
     await page.getByRole("button", { name: locale === "en" ? "All" : "Toutes", exact: true }).click();
     await expect(list).toHaveCount(20);
+    // Check from the top: mid-scroll, the sticky header overlaps links, which axe reports as small targets.
+    await page.evaluate(() => window.scrollTo(0, 0));
     expect(await axe(page)).toEqual([]);
   });
 }
@@ -111,7 +113,7 @@ for (const [locale, names, empty] of [
 ] as const) {
   test(`/${locale}/board tabs filter to breaking, trending and new questions`, async ({ page }) => {
     await page.goto(`/${locale}/board`);
-    const rows = page.getByRole("main").locator("a[href*='/q/']:visible");
+    const rows = page.getByRole("main").locator("[data-row] a[href*='/q/']:visible");
     const filters = page.getByRole("group").first();
     await filters.getByRole("button", { name: names.breaking, exact: true }).click();
     await expect(page).toHaveURL(/show=breaking/);
@@ -126,5 +128,21 @@ for (const [locale, names, empty] of [
     await page.getByRole("button", { name: names.sports, exact: true }).click();
     await expect(page.getByText(empty)).toBeVisible();
     expect(await axe(page)).toEqual([]);
+  });
+}
+
+for (const [locale, heading, since] of [
+  ["en", "Top movers today", /since yesterday/],
+  ["fr", "Plus fortes variations du jour", /depuis hier/],
+] as const) {
+  test(`/${locale}/board shows top movers and each question's move since yesterday`, async ({ page }) => {
+    await page.goto(`/${locale}/board`);
+    const movers = page.getByRole("region", { name: heading });
+    await expect(movers).toBeVisible();
+    const cards = movers.getByRole("listitem");
+    expect(await cards.count()).toBeGreaterThan(0);
+    expect(await cards.count()).toBeLessThanOrEqual(3);
+    await expect(cards.first()).toContainText(since);
+    await expect(page.locator("main [data-row]:visible").filter({ hasText: since }).first()).toBeVisible();
   });
 }
