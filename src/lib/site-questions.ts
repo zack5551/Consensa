@@ -30,14 +30,24 @@ async function readLive(): Promise<unknown[]> {
 
 const cachedLive = unstable_cache(readLive, ["engine-live-questions"], { revalidate: 300, tags: [LIVE_QUESTIONS_TAG] });
 
-/** Newest engine questions first, then the built-in list. A failed read just shows the built-in list. */
+/**
+ * Newest engine questions first, then the built-in list. An engine question on the same subject as one already shown
+ * is left off (see `sameSubject`). A failed read just shows the built-in list.
+ */
 export async function siteQuestions(): Promise<readonly Question[]> {
   const rows = await cachedLive().catch(() => []);
   if (rows.length === 0) return sampleQuestions;
-  const fresh = liveQuestionsFrom(rows, new Set(sampleQuestions.map((q) => q.slug)));
+  const fresh = liveQuestionsFrom(rows, new Set(sampleQuestions.map((q) => q.slug)), sampleQuestions);
   return fresh.length === 0 ? sampleQuestions : [...fresh, ...sampleQuestions];
 }
 
+/**
+ * One question by its link. A twin hidden from the board still opens from its link, so anyone who already made a
+ * call on it keeps their page.
+ */
 export async function siteQuestion(slug: string): Promise<Question | undefined> {
-  return getQuestion(slug) ?? (await siteQuestions()).find((q) => q.slug === slug);
+  const built = getQuestion(slug);
+  if (built) return built;
+  const rows = await cachedLive().catch(() => []);
+  return liveQuestionsFrom(rows, new Set(sampleQuestions.map((q) => q.slug))).find((q) => q.slug === slug);
 }

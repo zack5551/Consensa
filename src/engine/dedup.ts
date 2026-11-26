@@ -6,10 +6,14 @@
  *    the same Bank of Canada decision) are the same question, however they're worded. Opposite directions of the
  *    same decision ("cut?" vs "hold?") also count: one question per decision keeps the slate clean.
  * 2. Same wording. Token overlap on the EN and FR text, taking the higher of the two.
+ * 3. Same subject (zack, 2026-11-26: "some questions were put in twice"). Two questions about the same named things
+ *    in the same month are one question to a reader, however differently they're worded or settled: "Montréal, 45 cm
+ *    of snow in December" and "Montréal–Trudeau, 15 cm from Dec. 1 to 15". See `sameSubject`.
  */
 import { storyTokens } from "@/engine/stories";
 import { jaccard } from "@/engine/text";
 import type { Draft, Flag, Resolver } from "@/engine/types";
+import { sameSubject } from "@/lib/same-subject";
 
 /** Above this the wording is a near-duplicate. Tuned on the sample slate: rewordings land 0.6–0.9, neighbours under 0.4. */
 export const DUPLICATE_SIMILARITY = 0.55;
@@ -52,7 +56,9 @@ export function findDuplicate(draft: Draft, existing: readonly Comparable[]): { 
     const score = similarity(draft, other);
     if (score >= DUPLICATE_SIMILARITY && (!best || score > best.score)) best = { of: other.slug, score };
   }
-  return best ? { of: best.of, reason: `wording ${Math.round(best.score * 100)}% similar` } : null;
+  if (best) return { of: best.of, reason: `wording ${Math.round(best.score * 100)}% similar` };
+  const twin = existing.find((other) => sameSubject(draft.question.en, other.question.en));
+  return twin ? { of: twin.slug, reason: "same subject and month" } : null;
 }
 
 export function duplicateFlag(dup: { of: string; reason: string }): Flag {

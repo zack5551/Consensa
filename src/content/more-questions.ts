@@ -21,7 +21,8 @@ const NEW_CROWD = {
  */
 export const moreSampleQuestions = [
   // Opened 2026-11-26 from zack's favourite example questions (the style bar PULSE writes to). Each one checked against
-  // the news on 2026-11-25: dates, names and the hook. The Fed question from the same list is already live (engine).
+  // the news on 2026-11-25: dates, names and the hook. The Fed, Carly Rae Jepsen
+  // and Montréal snow questions from the same list are left to the engine, which already asks them (one question each).
   {
     slug: "avengers-doomsday-opening-2026",
     category: "culture",
@@ -39,25 +40,6 @@ export const moreSampleQuestions = [
         fr: "Résolue OUI si Box Office Mojo indique des recettes mondiales d’ouverture de plus de 300\u00a0millions\u00a0$\u00a0US pour Avengers\u00a0: Doomsday, en comptant tous les marchés de sa première journée en salle jusqu’au dimanche 20 décembre 2026 (sortie en Amérique du Nord le 18 décembre). Sinon, elle est résolue NON.",
       },
       resolvesAt: "2026-12-22T17:00:00Z",
-    },
-  },
-  {
-    slug: "carly-rae-jepsen-canadian-hot-100-2026",
-    category: "culture",
-    question: {
-      en: "Will Carly Rae Jepsen’s “Run Away With Me” make the Billboard Canadian Hot 100 in December, after its GTA VI streaming surge?",
-      fr: "«\u00a0Run Away With Me\u00a0» de Carly Rae Jepsen entrera-t-elle au Canadian Hot 100 de Billboard en décembre, grâce à GTA VI?",
-    },
-    scored: true,
-    closesAt: "2026-11-30T05:00:00Z",
-    ...NEW_CROWD,
-    resolution: {
-      source: { name: { en: "Billboard Canadian Hot 100", fr: "Billboard Canadian Hot 100" }, url: "https://www.billboard.com/charts/canadian-hot-100/" },
-      rule: {
-        en: "Resolves YES if “Run Away With Me” by Carly Rae Jepsen appears on any Billboard Canadian Hot 100 chart published from Dec. 1 to Dec. 29, 2026. Otherwise it resolves NO.",
-        fr: "Résolue OUI si «\u00a0Run Away With Me\u00a0» de Carly Rae Jepsen figure sur un palmarès Billboard Canadian Hot 100 publié entre le 1er et le 29 décembre 2026. Sinon, elle est résolue NON.",
-      },
-      resolvesAt: "2026-12-30T17:00:00Z",
     },
   },
   {
@@ -155,25 +137,6 @@ export const moreSampleQuestions = [
         fr: "Résolue OUI si Stellantis ou Roshel annonce d’ici le 28 février 2027 (HE) que la vente de l’usine d’assemblage de Brampton conclue le 9 novembre 2026 est annulée ou renversée, de sorte que l’usine reste à Stellantis. Sinon, elle est résolue NON.",
       },
       resolvesAt: "2027-03-01T17:00:00Z",
-    },
-  },
-  {
-    slug: "montreal-snow-10cm-dec9-2026",
-    category: "weather",
-    question: {
-      en: "Will Montréal get 10 cm of snow or more by Dec. 9, after the Mont-Tremblant World Cup races were cancelled for lack of snow?",
-      fr: "Montréal recevra-t-elle 10\u00a0cm de neige ou plus d’ici le 9 décembre, après l’annulation de la Coupe du monde à Tremblant faute de neige?",
-    },
-    scored: true,
-    closesAt: "2026-11-27T05:00:00Z",
-    ...NEW_CROWD,
-    resolution: {
-      source: { name: { en: "Environment and Climate Change Canada", fr: "Environnement et Changement climatique Canada" }, url: "https://climate.weather.gc.ca/" },
-      rule: {
-        en: "Resolves YES if daily snowfall at Montréal–Trudeau (YUL, climate ID 702S006) from Nov. 27 to Dec. 9, 2026 (ET) adds up to 10\u00a0cm or more in ECCC daily data. Otherwise it resolves NO.",
-        fr: "Résolue OUI si la neige tombée chaque jour à Montréal-Trudeau (YUL, identifiant climatologique 702S006) du 27 novembre au 9 décembre 2026 (HE) totalise au moins 10\u00a0cm selon les données quotidiennes d’ECCC. Sinon, elle est résolue NON.",
-      },
-      resolvesAt: "2026-12-11T17:00:00Z",
     },
   },
   // Opened 2026-11-23. A new question starts with no crowd yet: "<50" calls, the province tiles hidden, and an even
