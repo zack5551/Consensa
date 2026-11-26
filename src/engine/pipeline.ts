@@ -20,7 +20,7 @@
  */
 import type { Question } from "@/lib/question";
 import { duplicateFlag, findDuplicate, type Comparable } from "@/engine/dedup";
-import { checkFlag, DEFAULT_THRESHOLD, describeCheck, type CheckOutcome, type Checker } from "@/engine/check/checker";
+import { AREA_NAMES, checkFlag, DEFAULT_THRESHOLD, describeCheck, type CheckOutcome, type Checker } from "@/engine/check/checker";
 import { calendarStories, deskFor, DESKS, type Desk } from "@/engine/draft/desks";
 import type { DraftUsage, Drafter } from "@/engine/draft/drafter";
 import { explainItem } from "@/engine/explain";
@@ -35,7 +35,7 @@ import type { FeedResult } from "@/engine/sources/feed";
 import type { EngineStore } from "@/engine/store";
 import { BIG_EVENTS, eventFor, eventStories, type BigEvent } from "@/engine/sources/events";
 import { clusterSignals } from "@/engine/stories";
-import type { CheckResult, Draft, Flag, QueueItem, Resolver, Spotlight, Story } from "@/engine/types";
+import type { CheckArea, CheckResult, Draft, Flag, QueueItem, Resolver, Spotlight, Story } from "@/engine/types";
 import { validateDraft } from "@/engine/validate";
 
 export interface CycleConfig {
@@ -79,6 +79,13 @@ export const AUTO_STRICT = 4;
  * trading words, a missing threshold, a poll, a long gap to the result) keeps the draft for a person. */
 const AUTO_OK_FLAGS = new Set(["manualResolver"]);
 /** Blocking problems a writer can fix in a second try: dates, sports timing, the source link, French spacing. */
+/**
+ * Review flags a writer can fix the same way (2026-11-26: the test run kept 7 drafts and only 2 went live). Each one
+ * stops auto-approval, yet each is wording only: a rule that doesn't open "Resolves YES if…", EN and FR carrying
+ * different numbers, a question over the length limit. The writer gets them back once, like the blocks below, so a
+ * good question isn't left waiting for a person over a phrasing slip. The approval rule itself doesn't change.
+ */
+const FIXABLE_REVIEW = new Set(["frRuleOpening", "enRuleOpening", "numbersDiffer.question", "numbersDiffer.rule", "long.en", "long.fr", "thresholdNotInRule"]);
 const FIXABLE = new Set(["closesTooSoon", "closesTooLate", "closesAfterResult", "sportsNoStart", "sportsClosesAfterStart", "sportsStartsAfterResult", "sourceNotOfficial", "sourceNotHttps", "frTypography", "resolverAfterResult", "resolverRange", "thresholdNotInRule"]);
 /**
  * Sports (zack, 2026-11-25: "yes auto approve"): a sports draft may go live by itself when its only extra flag is the
@@ -157,6 +164,41 @@ export function likedQuestions(items: readonly QueueItem[], max = 12): string[] 
     .sort((a, b) => approvedAt(b)!.localeCompare(approvedAt(a)!))
     .slice(0, max)
     .map((i) => i.draft.question.en);
+}
+
+/**
+ * What held recent drafts back, so the writers learn from it (zack, 2026-11-26: "we gotta learn and adapt … train our
+ * engine"). Looks at the last few days of drafts that didn't go live on their own: the flags that stopped them, the
+ * checker area that scored too high, the questions an editor turned down (with the editor's note). Returns the most
+ * common reasons first, each once, worded for the writer. Every run reads it fresh, so the lessons follow what the
+ * engine gets wrong now, and a mistake it stops making drops off by itself. The approval rule doesn't change.
+ */
+export function heldLessons(items: readonly QueueItem[], now: Date, max = 6, days = 3): string[] {
+  const since = now.getTime() - days * 86_400_000;
+  const counts = new Map<string, { n: number; text: string }>();
+  const add = (key: string, text: string) => {
+    const seen = counts.get(key);
+    counts.set(key, { n: (seen?.n ?? 0) + 1, text: seen?.text ?? text });
+  };
+  const ignore = new Set([...AUTO_OK_FLAGS, "sports", "check-risk", "check-unavailable"]);
+  for (const item of items) {
+    if (Date.parse(item.createdAt) < since) continue;
+    const byPerson = item.history.filter((e) => e.actor !== AUTO_EDITOR && e.actor !== "engine" && (e.to === "rejected" || e.to === "needsChanges")).at(-1);
+    if (byPerson) {
+      add(`editor:${item.id}`, `The editor turned down "${item.draft.question.en}"${byPerson.note ? `: ${byPerson.note}` : ""}. Don't write it again or anything like it.`);
+      continue;
+    }
+    if (item.status === "published" || item.status === "approved") continue;
+    for (const f of item.flags) if (!ignore.has(f.code)) add(`flag:${f.code}`, f.code === "duplicate" ? "Repeated a question already on the site. Check the existing list first and pick a different angle." : f.detail);
+    if (item.check) {
+      const [area, top] = (Object.entries(item.check.scores) as [CheckArea, { score: number; reason: string }][]).sort((a, b) => b[1].score - a[1].score)[0] ?? [];
+      if (area && top && top.score > AUTO_STRICT) add(`check:${area}`, `The risk checker rated "${AREA_NAMES[area]}" ${top.score}/10: ${top.reason}`);
+    }
+  }
+  return [...counts.values()]
+    .sort((a, b) => b.n - a.n)
+    .slice(0, max)
+    .map((c) => (c.n > 1 ? `${c.text} (${c.n} times)` : c.text));
 }
 
 type DecisionBase = { storyId: string; headline: string; heat: number; desk?: string };
@@ -301,6 +343,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   const backlog = deps.only ? [] : await undrafted(store, calendarStories(deps.releases, now, desks));
   const items = await store.items();
   const liked = likedQuestions(items);
+  const lessons = heldLessons(items, now);
   // Variety (zack, 2026-11-25: "every category being filled, a variety of everything"). Count the engine's open
   // questions on the site by category; a desk whose category is thin gets an extra share of the run, and a desk with
   // two categories asks each try for whichever of them is thinnest, so one easy beat (weather) can't crowd out the rest.
@@ -387,6 +430,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
         // A breaking story asks for a question about what happens next, which is a fast one.
         fast: fast || story.breaking === true,
         liked,
+        lessons,
         idea: isIdea(story),
         ...(category ? { category } : {}),
         ...(story.breaking ? { breaking: true } : {}),
@@ -410,9 +454,10 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       // One repair try (zack, 2026-11-25: good questions were set aside over a date or a source). When the only
       // blocking problems are ones a writer can fix, it gets them back once and rewrites. Safety blocks never get one.
       const blocks = flags.filter((f) => f.severity === "block");
-      if (blocks.length > 0 && blocks.every((f) => FIXABLE.has(f.code)) && budget.left > 0) {
+      const fixable = [...blocks, ...flags.filter((f) => FIXABLE_REVIEW.has(f.code))];
+      if (fixable.length > 0 && blocks.every((f) => FIXABLE.has(f.code)) && budget.left > 0) {
         budget.left--;
-        const again = await drafter.draft(story, { ...ctx, repair: { question: o.draft.question.en, problems: blocks.map((f) => f.detail) } });
+        const again = await drafter.draft(story, { ...ctx, repair: { question: o.draft.question.en, problems: fixable.map((f) => f.detail) } });
         add(again.usage);
         if (again.status === "draft") {
           o = again;
