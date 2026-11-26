@@ -105,7 +105,9 @@ export function autoApprovable(item: QueueItem, check: CheckOutcome | undefined,
 }
 
 export const DEFAULT_CYCLE: CycleConfig = {
-  minHeat: 15,
+  // 10, not 15 (2026-11-26): the 10 AM run found too little to write. A story one outlet reported overnight is
+  // 12–16 hours old by morning and had cooled under 15, so the morning run saw only the few stories it hadn't done.
+  minHeat: 10,
   maxDrafts: 24,
   perDesk: 4,
   deskAttempts: 6,
