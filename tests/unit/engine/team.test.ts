@@ -13,7 +13,7 @@ import { ideaNotice } from "@/engine/notify/idea";
 import { engineEnv } from "@/engine/config";
 import { failureEmail, summaryEmail } from "@/engine/notify/digest";
 import { sesMailer, signV4 } from "@/engine/notify/ses";
-import { AUTO_EDITOR, autoApprovable, likedQuestions, publishApproved, runCycle, type CycleReport, type StoryDecision } from "@/engine/pipeline";
+import { AUTO_EDITOR, autoApprovable, heldLessons, likedQuestions, publishApproved, runCycle, type CycleReport, type StoryDecision } from "@/engine/pipeline";
 import { approve, newItem } from "@/engine/review";
 import { reviewToken, reviewUrl, verifyReviewToken } from "@/engine/notify/review-link";
 import { applyReviewAction, renderReviewPage, waiting } from "@/engine/notify/review-page";
@@ -548,6 +548,29 @@ describe("feeding the writers (zack, 2026-11-25: an easier way to feed the engin
     const msg = userMessage(story([signal({ title: "Raptors host the Celtics on Friday" })]), NOW, [], [], false, ["Will the newer one pass?"]);
     expect(msg).toContain("<liked>");
     expect(msg).toContain("Will the newer one pass?");
+  });
+
+  it("learns from what held recent drafts back and tells the writers (zack, 2026-11-26: train our engine)", async () => {
+    const store = new MemoryStore();
+    const mk = (id: string, en: string, flags: QueueItem["flags"], at = NOW) => newItem({ id, storyId: id, draft: goodDraft({ slug: `${id}-2026`, question: { en, fr: "Est-ce que ça marche?" } }), flags, provenance: [], priority: 50, drafter: "f", at });
+    const opening = { code: "enRuleOpening", severity: "review" as const, detail: "English rule should open with “Resolves YES if…”." };
+    await store.putItem(mk("a", "Will A pass?", [opening]));
+    await store.putItem(mk("b", "Will B pass?", [opening, { code: "manualResolver", severity: "review", detail: "Resolves by hand" }]));
+    await store.putItem(mk("old", "Will the old one pass?", [{ code: "long.en", severity: "review", detail: "Too long." }], new Date(NOW.getTime() - 5 * 86_400_000)));
+    await store.putItem(approve(mk("ok", "Will the good one pass?", [opening]), "zack", NOW, ["enRuleOpening"]));
+    const rejected = mk("r", "Will the dull one pass?", []);
+    await store.putItem({ ...rejected, status: "rejected", history: [...rejected.history, { at: NOW.toISOString(), actor: "zack", from: "pending", to: "rejected", note: "too niche" }] });
+    const lessons = heldLessons(await store.items(), NOW);
+    expect(lessons[0]).toBe("English rule should open with “Resolves YES if…”. (2 times)");
+    expect(lessons).toContainEqual(expect.stringContaining('The editor turned down "Will the dull one pass?": too niche'));
+    expect(lessons.join(" ")).not.toMatch(/Too long|Resolves by hand/);
+    const seen: (readonly string[] | undefined)[] = [];
+    const drafter: Drafter = { id: "w", draft: async (_s, ctx) => (seen.push(ctx.lessons), { status: "skip", reason: "x", drafter: "w" }) };
+    await runCycle({ ...base(store, drafter, feed(newsFor(["economy"]))), config: { thinBelow: 0, maxDrafts: 1 } });
+    expect(seen[0]).toEqual(lessons);
+    const msg = userMessage(story([signal({ title: "Raptors host the Celtics on Friday" })]), NOW, [], [], false, [], false, undefined, undefined, { lessons });
+    expect(msg).toContain("<lessons>");
+    expect(msg).toContain("too niche");
   });
 
   it("the review page has a box to suggest a question, and says plainly what happened", async () => {

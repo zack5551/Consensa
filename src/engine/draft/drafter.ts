@@ -19,6 +19,8 @@ export interface DraftContext {
   fast?: boolean;
   /** Questions a person approved recently (EN): the style the editor likes. Newest first. */
   liked?: readonly string[];
+  /** What held recent drafts back (flags, checker areas, editor notes), most common first. See `heldLessons`. */
+  lessons?: readonly string[];
   /** The story is an idea the editor typed on the review page: write it unless a hard rule says no. */
   idea?: boolean;
   /** A second try: the writer's first draft of this story and what the automatic checks rejected it for. */
