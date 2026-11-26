@@ -13,6 +13,11 @@ export const MAX_OPEN_MS = 400 * 24 * 60 * 60 * 1000;
 /** The result has to land soon after closing, or nobody remembers the question. */
 export const MAX_RESOLVE_GAP_MS = 45 * 24 * 60 * 60 * 1000;
 
+/** A whole-season sports question closes at least this long before the last regular-season game (LEX, 2026-11-26). */
+export const SEASON_CLOSE_GAP_MS = 7 * 24 * 60 * 60 * 1000;
+/** Words that make a sports question read as live or in-game, which LEX never allows. */
+const LIVE_WORDS = { en: /\b(tonight|live|in-game|right now)\b/i, fr: /\b(ce soir|en direct|en ce moment)\b/i };
+
 export const MAX_QUESTION_CHARS = { en: 120, fr: 150 } as const;
 
 const block = (code: string, detail: string): Flag => ({ code, severity: "block", detail });
@@ -29,11 +34,16 @@ export function validateDraft(draft: Draft, now: Date): Flag[] {
   if (closes >= resolves) flags.push(block("closesAfterResult", "Must close before the official source publishes the answer."));
   if (resolves - closes > MAX_RESOLVE_GAP_MS) flags.push(review("longResultGap", "The result comes more than 45 days after closing."));
 
-  // Sports are pre-game only: they need a start time, and calls close no later than it
+  // Sports: one game is pre-game only (calls close by the start). A whole-season question may be asked while the
+  // season is underway (LEX, 2026-11-26): startsAt is the last scheduled regular-season game, or the first playoff
+  // game for a playoff question, and calls close at least 7 days before it, never in the final week.
   if (draft.category === "sports") {
+    const seasonHint = "For a season already underway, ask about the whole season instead: set season to true, startsAt to the last scheduled regular-season game (or the first playoff game for a playoff question), and close calls at least 7 days before it.";
     if (!draft.startsAt) flags.push(block("sportsNoStart", "Sports questions need startsAt, the start of the game or event."));
-    else if (closes > Date.parse(draft.startsAt)) flags.push(block("sportsClosesAfterStart", "Calls must close at or before the start of the game or event (closesAt <= startsAt)."));
+    else if (draft.season && closes > Date.parse(draft.startsAt) - SEASON_CLOSE_GAP_MS) flags.push(block("seasonClosesLate", "A whole-season question closes at least 7 days before the last regular-season game (or before the playoffs start), never in the final week. startsAt is that game."));
+    else if (closes > Date.parse(draft.startsAt)) flags.push(block("sportsClosesAfterStart", `Calls must close at or before the start of the game or event (closesAt <= startsAt). ${seasonHint}`));
     else if (Date.parse(draft.startsAt) >= resolves) flags.push(block("sportsStartsAfterResult", "The official result must come after the start of the game or event."));
+    if (LIVE_WORDS.en.test(draft.question.en) || LIVE_WORDS.fr.test(draft.question.fr)) flags.push(block("sportsLive", "Sports questions are never live or in-game: no \"tonight\", \"live\" or « ce soir »."));
   }
 
   // Source: only official or primary sources settle a question
