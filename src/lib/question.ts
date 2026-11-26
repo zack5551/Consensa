@@ -23,6 +23,26 @@ export type League = (typeof leagues)[number];
 export const gameSchema = z.object({ league: z.enum(leagues), home: z.string().min(1), away: z.string().min(1), startsAt: z.iso.datetime() }).strict();
 export type Game = z.infer<typeof gameSchema>;
 
+/**
+ * What the question engine knows about the news behind a question (PULSE fills it; hand-written questions have none).
+ * It only orders and labels questions on the board: it never changes the question, the crowd or a score.
+ */
+export const spotlightSchema = z
+  .object({
+    /** 0–100: how big the story is (outlets covering it, official weight). Missing spotlight counts as 0. */
+    newsSize: z.number().int().min(0).max(100),
+    /** When the question went live on the site. Drives freshness and the trending window. */
+    publishedAt: z.iso.datetime(),
+    /** Several Canadian outlets on the same story within two hours: show "Breaking" until this time (about 6 hours). */
+    breakingUntil: z.iso.datetime().optional(),
+    /** Came mainly from search or social trends. Gets the spotlight for a few hours only, then has to earn it with calls. */
+    trending: z.literal(true).optional(),
+    /** Groups questions for one big date (the Oscars, the Grey Cup, a Bank of Canada decision day). `at` is the start. */
+    event: z.object({ id: z.string().regex(/^[a-z0-9-]+$/), name: bilingual, at: z.iso.datetime() }).strict().optional(),
+  })
+  .strict();
+export type Spotlight = z.infer<typeof spotlightSchema>;
+
 export const questionSchema = z.object({
   slug: z.string().regex(/^[a-z0-9-]+$/),
   category: z.enum(categories),
@@ -56,6 +76,7 @@ export const questionSchema = z.object({
    * and the share post. No shipped question has one yet.
    */
   askedBy: askedBySchema.optional(),
+  spotlight: spotlightSchema.optional(),
   /** A political question is never included in sponsor numbers. */
   political: z.boolean().optional(),
   events: z.array(z.object({ dayIndex: z.number().int().nonnegative(), label: bilingual })).default([]),

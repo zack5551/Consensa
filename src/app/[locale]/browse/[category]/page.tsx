@@ -12,6 +12,7 @@ import { boardStrings } from "@/components/board-strings";
 import { BoardView } from "@/components/board-view";
 import { ScreenView } from "@/components/screen-view";
 import { SportsNotice } from "@/components/sports-notice";
+import { recentCallCounts } from "@/lib/live";
 import { siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
 import { isLocale, locales, type Locale } from "@/i18n/config";
@@ -52,7 +53,8 @@ export default async function CategoryPage({ params }: { params: Params }) {
   if (!isLocale(raw) || !isCategory(category)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
-  const rows = (await siteQuestions()).filter((q) => q.category === category).map((q) => toBoardRow(q, siteNow()));
+  const recent = await recentCallCounts();
+  const rows = (await siteQuestions()).filter((q) => q.category === category).map((q) => toBoardRow(q, siteNow(), recent.get(q.slug) ?? 0));
   const open = rows.filter((r) => isOpen(r.state)).length;
   const calls = rows.reduce((n, r) => n + r.forecasters, 0);
 

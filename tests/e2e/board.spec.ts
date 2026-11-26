@@ -77,3 +77,30 @@ test("search with no match offers browsing by topic", async ({ page }) => {
   await page.getByRole("link", { name: "Browse by topic" }).click();
   await expect(page).toHaveURL(/\/en\/browse$/, { timeout: 15000 });
 });
+
+for (const [locale, breaking, trending, coming, gala] of [
+  ["en", "Breaking", "Trending", "Coming up", "Test Gala"],
+  ["fr", "Dernière heure", "Tendance", "À venir", "Gala d’essai"],
+] as const) {
+  test(`/${locale}/board tags breaking and trending questions and links an event page`, async ({ page }) => {
+    await page.goto(`/${locale}/board`);
+    const main = page.getByRole("main");
+    await expect(main.getByText(breaking, { exact: true }).locator("visible=true").first()).toBeVisible();
+    await expect(main.getByText(trending, { exact: true }).locator("visible=true").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: coming })).toBeVisible();
+    await page.getByRole("link", { name: gala }).click();
+    await expect(page).toHaveURL(new RegExp(`/${locale}/event/fixture-gala$`));
+    await expect(page.getByRole("heading", { level: 1, name: gala })).toBeVisible();
+    await expect(main.locator("a[href*='/q/fixture-']:visible")).toHaveCount(2);
+    // The page renders on demand, so its <title> can stream in just after the heading.
+    await expect(page).toHaveTitle(new RegExp(gala));
+    expect(await axe(page)).toEqual([]);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+}
+
+test("an unknown or finished event has no page", async ({ page }) => {
+  const res = await page.goto("/en/event/no-such-event");
+  expect(res?.status()).toBe(404);
+});

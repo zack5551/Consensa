@@ -113,5 +113,27 @@ export function fixtureQuestions(): z.input<typeof questionSchema>[] {
         resolvesAt: "2026-11-07T13:30:00Z",
       },
     },
+    // Two made-up questions for the heat tags and an event page (2026-11-25). At the e2e date (Nov 6, noon UTC) the
+    // first is "Breaking" and the second "Trending", and both belong to a made-up event that starts on Nov 8.
+    ...[
+      { slug: "fixture-breaking", en: "Test question: will the test story still lead the news?", fr: "Question d’essai : l’histoire d’essai fera-t-elle encore la une?", spotlight: { newsSize: 80, publishedAt: "2026-11-06T09:00:00Z", breakingUntil: "2026-11-06T15:00:00Z" } },
+      { slug: "fixture-trending", en: "Test question: will the test trend still be talked about?", fr: "Question d’essai : la tendance d’essai fera-t-elle encore jaser?", spotlight: { newsSize: 30, publishedAt: "2026-11-06T08:00:00Z", trending: true as const } },
+    ].map((f) => ({
+      slug: f.slug,
+      category: "culture" as const,
+      question: { en: f.en, fr: f.fr },
+      scored: true,
+      closesAt: "2026-11-20T04:59:00Z",
+      forecasters: 120,
+      history: series(30, [[0, 40], [29, 44]]),
+      provinces: { BC: 44, AB: 43, PR: 45, ON: 44, QC: 46, AT: 42 },
+      events: [],
+      spotlight: { ...f.spotlight, event: { id: "fixture-gala", name: { en: "Test Gala", fr: "Gala d’essai" }, at: "2026-11-08T01:00:00Z" } },
+      resolution: {
+        source: { name: { en: "Test source", fr: "Source d’essai" }, url: "https://gillerprize.ca/" },
+        rule: { en: "Test only. Resolves YES if the test source says yes.", fr: "Essai seulement. Résolue OUI si la source d’essai dit oui." },
+        resolvesAt: "2026-11-21T03:00:00Z",
+      },
+    })),
   ];
 }

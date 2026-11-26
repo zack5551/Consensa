@@ -1,3 +1,4 @@
+import { heatOf, spreadByHeat, TODAY_SPREAD } from "@/lib/heat";
 import { isOpen, outcomes, questionSchema, questionState, type Question } from "@/lib/question";
 import { z } from "zod";
 import { FIXED_TEST_NOW, siteNow } from "@/lib/clock";
@@ -334,7 +335,15 @@ export function getQuestion(slug: string): Question | undefined {
   return sampleQuestions.find((q) => q.slug === slug);
 }
 
-/** Today's five: the first five open questions in editorial order. */
-export function todaysFive(now: Date = siteNow(), list: readonly Question[] = sampleQuestions): Question[] {
-  return list.filter((q) => isOpen(questionState(q, now))).slice(0, 5);
+/**
+ * Today's five: the five hottest open questions (see `heatOf`), with at most two trending and two of one topic.
+ * Without any heat signal (no engine spotlight, no recent calls) it's the first five in editorial order.
+ */
+export function todaysFive(now: Date = siteNow(), list: readonly Question[] = sampleQuestions, recentCalls: ReadonlyMap<string, number> = new Map()): Question[] {
+  const open = list.filter((q) => isOpen(questionState(q, now)));
+  const ranked = open.map((q) => {
+    const h = heatOf(q, now, recentCalls.get(q.slug) ?? 0);
+    return { q, category: q.category, heat: h.score, trending: h.trending };
+  });
+  return spreadByHeat(ranked, TODAY_SPREAD).slice(0, 5).map((r) => r.q);
 }
