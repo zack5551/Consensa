@@ -79,6 +79,13 @@ export const AUTO_STRICT = 4;
  * trading words, a missing threshold, a poll, a long gap to the result) keeps the draft for a person. */
 const AUTO_OK_FLAGS = new Set(["manualResolver"]);
 /** Blocking problems a writer can fix in a second try: dates, sports timing, the source link, French spacing. */
+/**
+ * Review flags a writer can fix the same way (2026-11-26: the test run kept 7 drafts and only 2 went live). Each one
+ * stops auto-approval, yet each is wording only: a rule that doesn't open "Resolves YES if…", EN and FR carrying
+ * different numbers, a question over the length limit. The writer gets them back once, like the blocks below, so a
+ * good question isn't left waiting for a person over a phrasing slip. The approval rule itself doesn't change.
+ */
+const FIXABLE_REVIEW = new Set(["frRuleOpening", "enRuleOpening", "numbersDiffer.question", "numbersDiffer.rule", "long.en", "long.fr", "thresholdNotInRule"]);
 const FIXABLE = new Set(["closesTooSoon", "closesTooLate", "closesAfterResult", "sportsNoStart", "sportsClosesAfterStart", "sportsStartsAfterResult", "sourceNotOfficial", "sourceNotHttps", "frTypography", "resolverAfterResult", "resolverRange", "thresholdNotInRule"]);
 /**
  * Sports (zack, 2026-11-25: "yes auto approve"): a sports draft may go live by itself when its only extra flag is the
@@ -408,9 +415,10 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       // One repair try (zack, 2026-11-25: good questions were set aside over a date or a source). When the only
       // blocking problems are ones a writer can fix, it gets them back once and rewrites. Safety blocks never get one.
       const blocks = flags.filter((f) => f.severity === "block");
-      if (blocks.length > 0 && blocks.every((f) => FIXABLE.has(f.code)) && budget.left > 0) {
+      const fixable = [...blocks, ...flags.filter((f) => FIXABLE_REVIEW.has(f.code))];
+      if (fixable.length > 0 && blocks.every((f) => FIXABLE.has(f.code)) && budget.left > 0) {
         budget.left--;
-        const again = await drafter.draft(story, { ...ctx, repair: { question: o.draft.question.en, problems: blocks.map((f) => f.detail) } });
+        const again = await drafter.draft(story, { ...ctx, repair: { question: o.draft.question.en, problems: fixable.map((f) => f.detail) } });
         add(again.usage);
         if (again.status === "draft") {
           o = again;

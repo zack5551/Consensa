@@ -584,6 +584,20 @@ describe("one repair try (zack, 2026-11-25: good questions were set aside over a
     expect(seen.length).toBe(2);
   });
 
+  it("also hands back wording slips that would stop auto-approval (2026-11-26)", async () => {
+    const seen: (string[] | undefined)[] = [];
+    const fixed = uniqueDraft("wording", 2);
+    const sloppy = { ...uniqueDraft("wording", 1), resolution: { ...fixed.resolution, rule: { ...fixed.resolution.rule, en: `It counts as yes if ${fixed.resolution.rule.en}` } } };
+    const drafter: Drafter = {
+      id: "w",
+      draft: async (_s, ctx) => (seen.push(ctx.repair ? [...ctx.repair.problems] : undefined), { status: "draft", drafter: "w", draft: ctx.repair ? fixed : sloppy }),
+    };
+    const report = await runCycle({ ...base(new MemoryStore(), drafter, feed(newsFor(["culture"]))), config: { thinBelow: 0, maxDrafts: 2 } });
+    expect(seen[1]).toEqual(["English rule should open with “Resolves YES if…”."]);
+    const queued = report.decisions.find((d) => d.decision === "queued");
+    expect(queued && "flags" in queued ? queued.flags.map((f) => f.code) : []).not.toContain("enRuleOpening");
+  });
+
   it("never gives a safety block a second try", async () => {
     let calls = 0;
     const drafter: Drafter = { id: "w", draft: async (s) => (calls++, { status: "draft", drafter: "w", draft: { ...uniqueDraft(s.id, calls), slug: "dup-slug-2026" } }) };
