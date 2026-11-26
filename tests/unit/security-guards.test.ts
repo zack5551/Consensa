@@ -154,6 +154,8 @@ const allowedDomains = [
   "cbc.ca", "radio-canada.ca", "globalnews.ca", "theglobeandmail.com", "crea.ca", "academy.ca", "telefilm.ca", "numeris.ca",
   "junoawards.ca", "gillerprize.ca", "scotiabankgillerprize.ca", "polarismusicprize.ca", "nhl.com", "cfl.ca",
   "nasa.gov", "nobelprize.org", "imdb.com", "boxofficemojo.com",
+  // Resolution sources for zack's example questions (2026-11-26): charts, a streamer, leagues and the companies named
+  "billboard.com", "netflix.com", "thepwhl.com", "mlb.com", "hockeycanada.ca", "couche-tard.com", "stellantis.com",
   // Read by the engine on the server only; no user data is sent
   "trends.google.com",
   // A credit link on the methodology page (CC BY-SA 4.0 attribution for the IP2Proxy LITE database). The lookup itself
