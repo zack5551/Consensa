@@ -69,11 +69,19 @@ export const FAST_ASK =
 export const IDEA_ASK =
   "This story is an idea the editor typed in, not a news item. Write the best fair question you can on it: keep its subject, make it checkable with an official or reliable public source, and pick a sensible threshold and date. Every hard rule still applies; decline only if no version of it can pass them.";
 
+/** For breaking news: several Canadian outlets have it within hours. */
+export const BREAKING_ASK =
+  "This is breaking news: several Canadian outlets reported it in the last few hours. Ask what happens next that people can know soon (a decision, an announcement, a number), with a close within days, and stick to what the reports say.";
+
+/** For a story about one of the big dates the site groups questions under. */
+export const eventAsk = (name: string, at: string) =>
+  `This story is about ${name} (starting ${at.slice(0, 10)}). Write a question that the event itself settles, or that settles soon after it, and close it before the event starts.`;
+
 /** Asked on a two-category desk's tries, for the category that's thinner on the site right now. */
 export const categoryAsk = (category: string) =>
   `The site needs more ${category} questions right now. If this story can give a fair ${category} question, write that one (category "${category}"); if not, write the best question it can in your beat.`;
 
-export function userMessage(story: Story, now: Date, releases: readonly Release[], existing: readonly string[], fast = false, liked: readonly string[] = [], idea = false, repair?: { question: string; problems: readonly string[] }, category?: string): string {
+export function userMessage(story: Story, now: Date, releases: readonly Release[], existing: readonly string[], fast = false, liked: readonly string[] = [], idea = false, repair?: { question: string; problems: readonly string[] }, category?: string, extra: { breaking?: boolean; event?: { name: { en: string }; at: string } } = {}): string {
   const ottawa = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", dateStyle: "full", timeStyle: "short" }).format(now);
   const cal = releases.map((r) => `- ${r.at} · ${r.name.en}${r.refPeriod ? ` (reference period ${r.refPeriod})` : ""} · ${r.sourceUrl}`).join("\n");
   const signals = story.signals
@@ -95,5 +103,5 @@ ${existing.slice(0, 200).map((q) => `- ${fence(q)}`).join("\n") || "- none"}
 ${signals}
 </story>
 
-${liked.length ? `<liked>\nQuestions the editor approved recently. Match this style and level of interest; never repeat them:\n${liked.slice(0, 12).map((q) => `- ${fence(q)}`).join("\n")}\n</liked>\n\n` : ""}${idea ? `${IDEA_ASK}\n\n` : ""}${repair ? `<repair>\nYour first draft from this story was: ${fence(repair.question)}\nThe automatic checks rejected it for:\n${repair.problems.map((p) => `- ${p}`).join("\n")}\nWrite it again with these fixed (same subject unless it can't be fixed), or decline.\n</repair>\n\n` : ""}${category ? `${categoryAsk(category)}\n\n` : ""}${fast ? `${FAST_ASK}\n\n` : ""}Draft one question from this story, or decline.`;
+${liked.length ? `<liked>\nQuestions the editor approved recently. Match this style and level of interest; never repeat them:\n${liked.slice(0, 12).map((q) => `- ${fence(q)}`).join("\n")}\n</liked>\n\n` : ""}${idea ? `${IDEA_ASK}\n\n` : ""}${repair ? `<repair>\nYour first draft from this story was: ${fence(repair.question)}\nThe automatic checks rejected it for:\n${repair.problems.map((p) => `- ${p}`).join("\n")}\nWrite it again with these fixed (same subject unless it can't be fixed), or decline.\n</repair>\n\n` : ""}${extra.breaking ? `${BREAKING_ASK}\n\n` : ""}${extra.event ? `${eventAsk(extra.event.name.en, extra.event.at)}\n\n` : ""}${category ? `${categoryAsk(category)}\n\n` : ""}${fast ? `${FAST_ASK}\n\n` : ""}Draft one question from this story, or decline.`;
 }

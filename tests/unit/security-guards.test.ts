@@ -156,6 +156,8 @@ const allowedDomains = [
   "nasa.gov", "nobelprize.org", "imdb.com", "boxofficemojo.com",
   // Resolution sources for zack's example questions (2026-11-26): charts, a streamer, leagues and the companies named
   "billboard.com", "netflix.com", "thepwhl.com", "mlb.com", "hockeycanada.ca", "couche-tard.com", "stellantis.com",
+  // Big dates the events scout writes about (src/engine/sources/events.ts): the awards' own sites
+  "goldenglobes.com", "grammy.com", "oscars.org",
   // Read by the engine on the server only; no user data is sent
   "trends.google.com",
   // A credit link on the methodology page (CC BY-SA 4.0 attribution for the IP2Proxy LITE database). The lookup itself

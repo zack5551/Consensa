@@ -9,7 +9,7 @@
  * into the question page.
  */
 import { z } from "zod";
-import { categories, type QuestionOutcome } from "@/lib/question";
+import { categories, type QuestionOutcome, type Spotlight as SiteSpotlight } from "@/lib/question";
 
 export const bilingual = z.object({ en: z.string().min(1), fr: z.string().min(1) });
 export type Bilingual = z.infer<typeof bilingual>;
@@ -72,7 +72,27 @@ export interface Story {
   categoryHint: (typeof categories)[number] | null;
   /** The scout that found most of it, when its feeds are known. Routes a story with no clear category. */
   scout?: ScoutId;
+  /** Several Canadian outlets ran it within two hours, and recently (see `breakingOf` in `stories.ts`). */
+  breaking?: boolean;
+  /** Most of its weight comes from trending searches rather than newsrooms. */
+  trending?: boolean;
+  /** The big date it's about (see `sources/events.ts`). */
+  event?: EventRef;
 }
+
+/** A big date questions are grouped under on the board: the Oscars, a Bank of Canada decision day. */
+export interface EventRef {
+  id: string;
+  name: Bilingual;
+  /** When it starts (UTC). */
+  at: string;
+}
+
+/**
+ * What the board ranks and tags a question by (zack, 2026-11-25: breaking news, big events, trending without letting
+ * it hog the spotlight). The site's `spotlightSchema`, except that `publishedAt` is filled when it goes live.
+ */
+export type Spotlight = Omit<SiteSpotlight, "publishedAt"> & { publishedAt?: string };
 
 // ─── Resolvers ────────────────────────────────────────────────────────────────
 
@@ -189,6 +209,8 @@ export interface QueueItem {
   desk?: string;
   /** The checker's risk scores (see `check/checker.ts`). Missing when the draft was blocked before the check. */
   check?: CheckResult;
+  /** How the board should rank and tag it. Older items lack it. */
+  spotlight?: Spotlight;
 }
 
 // ─── Risk check ───────────────────────────────────────────────────────────────

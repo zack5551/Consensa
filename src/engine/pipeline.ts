@@ -33,8 +33,9 @@ import { isBlocked, screenDraft, screenStory } from "@/engine/safety/safety";
 import type { Release } from "@/engine/sources/calendar";
 import type { FeedResult } from "@/engine/sources/feed";
 import type { EngineStore } from "@/engine/store";
+import { BIG_EVENTS, eventFor, eventStories, type BigEvent } from "@/engine/sources/events";
 import { clusterSignals } from "@/engine/stories";
-import type { CheckResult, Draft, Flag, QueueItem, Resolver, Story } from "@/engine/types";
+import type { CheckResult, Draft, Flag, QueueItem, Resolver, Spotlight, Story } from "@/engine/types";
 import { validateDraft } from "@/engine/validate";
 
 export interface CycleConfig {
@@ -63,6 +64,11 @@ export interface CycleConfig {
   lanesPerDesk: number;
   /** A desk with fewer than this many open questions on the site in one of its categories gets an extra share. */
   thinBelow: number;
+  /**
+   * Most questions from trending searches queued per run (zack, 2026-11-25: trending is good, but it mustn't hog the
+   * spotlight). A trending story past the cap waits for a later run.
+   */
+  trendingPerRun: number;
 }
 
 /** The engine's name in a review history when it approves a draft by itself. */
@@ -110,9 +116,12 @@ export const DEFAULT_CYCLE: CycleConfig = {
   calendarPerDesk: 1,
   lanesPerDesk: 2,
   thinBelow: 3,
+  trendingPerRun: 2,
 };
 
 export interface CycleDeps {
+  /** Big dates the events scout writes about (see `sources/events.ts`). Defaults to the checked list. */
+  events?: readonly BigEvent[];
   store: EngineStore;
   drafter: Drafter;
   /** Returns this cycle's feed results. In production, `() => fetchFeeds(sources, fetch)`. */
@@ -202,11 +211,31 @@ export function pickStories(stories: readonly Story[], max: number, perCategory:
  * parallel and each works down its own list, so a quiet beat still gets its turn and a busy one can't take them all.
  */
 export function planDesks(news: readonly Story[], backfill: readonly Story[], desks: readonly Desk[] = DESKS, calendarPerDesk = DEFAULT_CYCLE.calendarPerDesk): Array<{ desk: Desk; stories: Story[] }> {
-  const byHeat = [...news].sort((a, b) => b.heat - a.heat);
+  // Breaking news first (written while it's still news), then the hottest.
+  const byHeat = [...news].sort((a, b) => Number(b.breaking ?? false) - Number(a.breaking ?? false) || b.heat - a.heat);
   return desks.map((desk) => ({
     desk,
     stories: [...byHeat.filter((s) => deskFor(s, desks).id === desk.id), ...backfill.filter((s) => deskFor(s, desks).id === desk.id).slice(0, calendarPerDesk)],
   }));
+}
+
+/** How big a breaking story stays in the board's eyes, at least. */
+const BREAKING_SIZE = 80;
+/** A big date's own story, at least. */
+const EVENT_SIZE = 60;
+/** A dated official release with no news behind it. */
+const CALENDAR_SIZE = 20;
+
+/** How the board should rank and tag a question from this story (publishedAt is filled when it goes live). */
+export function spotlightOf(story: Story, now: Date): Spotlight {
+  const calendar = story.signals.length > 0 && story.signals.every((s) => s.kind === "calendar");
+  const size = Math.max(story.heat, story.breaking ? BREAKING_SIZE : 0, story.event ? EVENT_SIZE : 0, calendar ? CALENDAR_SIZE : 0);
+  return {
+    newsSize: Math.round(Math.min(100, size)),
+    ...(story.breaking ? { breakingUntil: new Date(now.getTime() + 6 * 3_600_000).toISOString() } : {}),
+    ...(story.trending ? { trending: true as const } : {}),
+    ...(story.event ? { event: story.event } : {}),
+  };
 }
 
 async function undrafted(store: EngineStore, stories: readonly Story[]): Promise<Story[]> {
@@ -237,7 +266,17 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
 
   // 2. Cluster
   const recent = deps.only ? [] : await store.recentSignals(new Date(now.getTime() - cfg.lookbackHours * 3_600_000));
-  const stories = deps.only ? [...deps.only] : clusterSignals(recent, now);
+  const events = deps.events ?? BIG_EVENTS;
+  // News about a big date joins its group; the events scout adds a story a day for each date coming up.
+  const stories = deps.only
+    ? [...deps.only]
+    : [
+        ...clusterSignals(recent, now).map((s) => {
+          const e = eventFor(s, now, events);
+          return e ? { ...s, event: { id: e.id, name: e.name, at: e.at } } : s;
+        }),
+        ...eventStories(now, deps.desks ?? DESKS, events),
+      ];
   const hot = stories.filter((s) => s.heat >= cfg.minHeat);
 
   // 3. Screen, skipping stories already handled
@@ -288,6 +327,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   const slice = new Map(busy.map((p) => [p.desk.id, Math.floor((cfg.maxDrafts * shareOf(p.desk)) / Math.max(1, shares))]));
   const state = new Map(plan.map((p) => [p.desk.id, { next: 0, queued: 0, attempts: 0, inflight: 0 }]));
 
+  const trending = { queued: 0, inflight: 0 };
   /** Tries this run that asked for each category, so a two-category desk alternates instead of piling onto one. */
   const asked = new Map<Draft["category"], number>();
   const thinnest = (desk: Desk) =>
@@ -305,6 +345,9 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       if (st.queued + st.inflight >= cfg.perDesk * share || st.attempts >= Math.min(cap, cfg.deskAttempts * share) || budget.left <= 0) break;
       if (Date.now() - clockStart > cfg.deadlineMs) break;
       const story = stories[st.next++]!;
+      // Trending is capped per run, so it can't crowd out the news. The story isn't marked drafted: a later run can use it.
+      // Lanes write side by side, so tries still in flight count too (like the desk targets).
+      if (story.trending && trending.queued + trending.inflight >= cfg.trendingPerRun) continue;
       budget.left--;
       st.attempts++;
       // The 1st, 4th, 7th… try at each desk asks for a fast question (closing within 7 days), so about a third of every
@@ -314,7 +357,15 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       if (category) asked.set(category, (asked.get(category) ?? 0) + 1);
       st.inflight++;
       try {
-        if (await draftOne(desk, story, fast, category)) st.queued++;
+        if (story.trending) trending.inflight++;
+        try {
+          if (await draftOne(desk, story, fast, category)) {
+            st.queued++;
+            if (story.trending) trending.queued++;
+          }
+        } finally {
+          if (story.trending) trending.inflight--;
+        }
       } catch (err) {
         // A hiccup saving one story (Supabase busy, a network blip) costs that story only: the desk moves on, the other
         // desks never notice, and the story isn't marked drafted, so the next run tries it again.
@@ -327,7 +378,18 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
   /** Drafts, checks and saves one story. True when it joined the queue. */
   const draftOne = async (desk: Desk, story: Story, fast: boolean, category?: Draft["category"]): Promise<boolean> => {
     {
-      const ctx = { now, releases: deps.releases, existing: known, fast, liked, idea: isIdea(story), ...(category ? { category } : {}) };
+      const ctx = {
+        now,
+        releases: deps.releases,
+        existing: known,
+        // A breaking story asks for a question about what happens next, which is a fast one.
+        fast: fast || story.breaking === true,
+        liked,
+        idea: isIdea(story),
+        ...(category ? { category } : {}),
+        ...(story.breaking ? { breaking: true } : {}),
+        ...(story.event ? { event: story.event } : {}),
+      };
       let o = await drafter.draft(story, ctx);
       add(o.usage);
       const base = { storyId: story.id, headline: story.headline, heat: story.heat, desk: o.desk ?? desk.id };
@@ -392,7 +454,7 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
         ...(auto ? [`Auto-approved: every risk score under ${cfg.checkThreshold}, legal, gambling and sensitive at ${AUTO_STRICT} or less, and no flag that needs a person.`] : []),
       ].join(" ");
       const reviewed = auto ? approve(drafted, AUTO_EDITOR, now, flags.filter((f) => f.severity === "review").map((f) => f.code)) : drafted;
-      const item: QueueItem = { ...reviewed, why, desk: base.desk, ...(check?.ok ? { check: check.result } : {}) };
+      const item: QueueItem = { ...reviewed, why, desk: base.desk, spotlight: spotlightOf(story, now), ...(check?.ok ? { check: check.result } : {}) };
       await store.putItem(item);
       if (auto && deps.onApproved) await deps.onApproved(item).catch(() => undefined);
       decisions.push({ ...base, decision: item.status === "autoRejected" ? "autoRejected" : "queued", itemId: item.id, flags, why, ...(auto ? { autoApproved: true } : {}) });
