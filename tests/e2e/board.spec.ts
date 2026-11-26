@@ -104,3 +104,27 @@ test("an unknown or finished event has no page", async ({ page }) => {
   const res = await page.goto("/en/event/no-such-event");
   expect(res?.status()).toBe(404);
 });
+
+for (const [locale, names, empty] of [
+  ["en", { breaking: "Breaking", trending: "Trending", fresh: "New", sports: "Sports" }, "No breaking news right now"],
+  ["fr", { breaking: "Dernière heure", trending: "Tendance", fresh: "Nouvelles", sports: "Sports" }, "Aucune nouvelle de dernière heure pour l’instant"],
+] as const) {
+  test(`/${locale}/board tabs filter to breaking, trending and new questions`, async ({ page }) => {
+    await page.goto(`/${locale}/board`);
+    const rows = page.getByRole("main").locator("a[href*='/q/']:visible");
+    const filters = page.getByRole("group").first();
+    await filters.getByRole("button", { name: names.breaking, exact: true }).click();
+    await expect(page).toHaveURL(/show=breaking/);
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toHaveAttribute("href", /fixture-breaking$/);
+    await filters.getByRole("button", { name: names.trending, exact: true }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toHaveAttribute("href", /fixture-trending$/);
+    await filters.getByRole("button", { name: names.fresh, exact: true }).click();
+    await expect(rows).toHaveCount(2);
+    await filters.getByRole("button", { name: names.breaking, exact: true }).click();
+    await page.getByRole("button", { name: names.sports, exact: true }).click();
+    await expect(page.getByText(empty)).toBeVisible();
+    expect(await axe(page)).toEqual([]);
+  });
+}

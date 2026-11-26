@@ -170,7 +170,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
           />
         ) : (
           <EmptyState
-            title={t.board.emptyTitle}
+            title={query.filter === "trending" || query.filter === "breaking" || query.filter === "new" ? t.board.emptyFilter[query.filter] : t.board.emptyTitle}
             body={t.board.emptyBody}
             action={
               <button type="button" onClick={() => update({ filter: "all", topic: "all" })} className="rounded-control bg-ink px-4 py-2 text-body-sm font-bold text-paper hover:opacity-90">

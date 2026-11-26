@@ -1,12 +1,12 @@
 import { fill } from "@/lib/text";
-import { BOARD_SPREAD, heatOf, spreadByHeat } from "@/lib/heat";
+import { BOARD_SPREAD, heatOf, isNew, spreadByHeat } from "@/lib/heat";
 import { callsCloseAt, categories, crowdChange, crowdNow, isOpen, questionState, type Category, type Question, type QuestionState } from "@/lib/question";
 
 /**
  * The Board's filters and sorts, kept pure so the server renders the first view and the browser
  * re-filters instantly with the same rules. URL params use these exact values.
  */
-export const boardFilters = ["all", "open", "closingSoon", "results", "mine"] as const;
+export const boardFilters = ["all", "open", "trending", "breaking", "new", "closingSoon", "results", "mine"] as const;
 export type BoardFilter = (typeof boardFilters)[number];
 
 export const boardSorts = ["hot", "popular", "closing", "moved"] as const;
@@ -31,6 +31,8 @@ export type BoardRow = {
   heat: number;
   trending?: true;
   breaking?: true;
+  /** Went live in the last two days (see `isNew`). */
+  fresh?: true;
 };
 
 export function toBoardRow(q: Question, now: Date, recentCalls = 0): BoardRow {
@@ -50,6 +52,7 @@ export function toBoardRow(q: Question, now: Date, recentCalls = 0): BoardRow {
     heat: h.score,
     ...(h.trending ? { trending: true as const } : {}),
     ...(h.breaking ? { breaking: true as const } : {}),
+    ...(isNew(q, now) ? { fresh: true as const } : {}),
   };
 }
 
@@ -59,6 +62,12 @@ export function matchesFilter(row: BoardRow, filter: BoardFilter, called: Readon
       return true;
     case "open":
       return isOpen(row.state);
+    case "trending":
+      return isOpen(row.state) && row.trending === true;
+    case "breaking":
+      return isOpen(row.state) && row.breaking === true;
+    case "new":
+      return isOpen(row.state) && row.fresh === true;
     case "closingSoon":
       return row.state === "closingSoon";
     case "results":
