@@ -638,6 +638,9 @@ const fr = {
     emptyTitle: "Rien pour l’instant",
     emptyBody: "Essayez un autre filtre ou un autre sujet.",
     emptyAction: "Afficher toutes les questions",
+    showingOf: "{shown} questions affichées sur {n}",
+    showMore: "Afficher {n} autres questions",
+    showMoreOne: "Afficher 1 autre question",
   },
   record: {
     title: "Mon bilan",

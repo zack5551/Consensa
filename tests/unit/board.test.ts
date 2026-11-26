@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SAMPLE_NOW, sampleQuestions } from "@/content/sample-questions";
-import { applyBoardQuery, boardQueryString, changeLabel, changeText, parseBoardQuery, sortRows, toBoardRow, type BoardRow } from "@/lib/board";
+import { applyBoardQuery, BOARD_PAGE_SIZE, boardPage, boardQueryString, changeLabel, changeText, parseBoardQuery, sortRows, toBoardRow, type BoardRow } from "@/lib/board";
 import en from "@/i18n/dictionaries/en";
 import fr from "@/i18n/dictionaries/fr";
 
@@ -89,5 +89,31 @@ describe("7-day change text", () => {
     expect(changeLabel(-2, en.board)).toBe("Down 2 points over 7 days");
     expect(changeLabel(1, fr.board)).toBe("En hausse de 1 point sur 7 jours");
     expect(changeLabel(-2, fr.board)).toBe("En baisse de 2 points sur 7 jours");
+  });
+});
+
+describe("show more", () => {
+  const list = Array.from({ length: 45 }, (_, i) => i);
+  it("shows the first page and says how many the next click adds", () => {
+    const p = boardPage(list, BOARD_PAGE_SIZE);
+    expect(p.visible).toHaveLength(BOARD_PAGE_SIZE);
+    expect(p.hidden).toBe(45 - BOARD_PAGE_SIZE);
+    expect(p.next).toBe(BOARD_PAGE_SIZE);
+  });
+  it("the last click adds only what's left, then nothing is hidden", () => {
+    expect(boardPage(list, 40).next).toBe(5);
+    expect(boardPage(list, 60)).toMatchObject({ hidden: 0, next: 0 });
+    expect(boardPage(list, 60).visible).toHaveLength(45);
+  });
+  it("a short list is shown whole, and a limit below one page still shows a full page", () => {
+    expect(boardPage(list.slice(0, 7), BOARD_PAGE_SIZE)).toMatchObject({ hidden: 0, next: 0 });
+    expect(boardPage(list, 3).visible).toHaveLength(BOARD_PAGE_SIZE);
+  });
+  it("has EN and FR labels with the count placeholders", () => {
+    for (const t of [en, fr]) {
+      expect(t.board.showMore).toContain("{n}");
+      expect(t.board.showingOf).toContain("{shown}");
+      expect(t.board.showingOf).toContain("{n}");
+    }
   });
 });

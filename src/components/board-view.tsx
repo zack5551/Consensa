@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Sparkline } from "@/components/sparkline";
 import { StateBadge } from "@/components/state-badge";
@@ -9,7 +9,7 @@ import { YourCallBadge } from "@/components/your-call-badge";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
-import { applyBoardQuery, boardFilters, boardQueryString, boardSorts, changeLabel, changeText, defaultBoardQuery, parseBoardQuery, type BoardQuery, type BoardRow } from "@/lib/board";
+import { applyBoardQuery, BOARD_PAGE_SIZE, boardFilters, boardPage, boardQueryString, boardSorts, changeLabel, changeText, defaultBoardQuery, parseBoardQuery, type BoardQuery, type BoardRow } from "@/lib/board";
 import { readAllCalls, subscribeCalls } from "@/lib/calls-store";
 import { formatCount, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { categories, isOpen, type Category } from "@/lib/question";
@@ -57,16 +57,42 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
 
   const shown = useMemo(() => applyBoardQuery(rows, query, called), [rows, query, called]);
 
+  // Long lists show one page at a time. A new filter, topic or sort starts again at the first page.
+  const [limit, setLimit] = useState(BOARD_PAGE_SIZE);
+  const page = boardPage(shown, limit);
+  const listRef = useRef<HTMLDivElement>(null);
+  const focusRow = useRef<number | null>(null);
+
+  // After "Show more", move keyboard focus to the first new question so nobody lands back at the top.
+  useEffect(() => {
+    const i = focusRow.current;
+    if (i === null) return;
+    focusRow.current = null;
+    const links = listRef.current?.querySelectorAll<HTMLAnchorElement>(`[data-row="${i}"] a[href]`) ?? [];
+    Array.from(links).find((a) => a.offsetParent !== null)?.focus();
+  }, [limit]);
+
+  function showMore() {
+    focusRow.current = page.visible.length;
+    setLimit(page.visible.length + BOARD_PAGE_SIZE);
+  }
+
   function update(next: Partial<BoardQuery>) {
     const q = { ...query, ...next, ...(fixedTopic ? { topic: fixedTopic } : {}) };
     setQuery(q);
+    setLimit(BOARD_PAGE_SIZE);
     const qs = boardQueryString(fixedTopic ? { ...q, topic: "all" } : q);
     window.history.replaceState(null, "", `${window.location.pathname}${qs}`);
     track("board_filtered", { locale, filter: q.filter, topic: q.topic });
   }
 
   const pct = (v: number) => formatPercent(v, locale);
-  const count = shown.length === 1 ? t.browse.shownOne : fill(t.browse.shown, { n: formatCount(shown.length, locale) });
+  const count =
+    page.hidden > 0
+      ? fill(t.board.showingOf, { shown: formatCount(page.visible.length, locale), n: formatCount(shown.length, locale) })
+      : shown.length === 1
+        ? t.browse.shownOne
+        : fill(t.browse.shown, { n: formatCount(shown.length, locale) });
   const href = (slug: string) => `/${locale}/q/${slug}`;
 
   return (
@@ -154,7 +180,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
           />
         )
       ) : (
-        <>
+        <div ref={listRef} className="grid gap-6">
           {/* Desktop and tablet: a real table, scannable by column. */}
           <div className="hidden border-t-2 border-ink md:block">
             <table className="w-full border-collapse text-left">
@@ -169,8 +195,8 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {shown.map((r) => (
-                  <tr key={r.slug} className="group relative border-b border-line">
+                {page.visible.map((r, i) => (
+                  <tr key={r.slug} data-row={i} className="group relative border-b border-line">
                     <th scope="row" className="max-w-[28rem] py-3 pl-0 pr-4 text-left align-top font-normal">
                       <span className="mb-1 flex flex-wrap items-center gap-2">
                         <StateBadge state={r.state} label={t.states[r.state]} />
@@ -208,8 +234,8 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
 
           {/* Phones: compact rows, same order of information. */}
           <ul className="m-0 grid list-none border-t-2 border-ink p-0 md:hidden">
-            {shown.map((r) => (
-              <li key={r.slug} className="relative grid gap-2 border-b border-line py-4">
+            {page.visible.map((r, i) => (
+              <li key={r.slug} data-row={i} className="relative grid gap-2 border-b border-line py-4">
                 <span className="flex flex-wrap items-center gap-2">
                   <StateBadge state={r.state} label={t.states[r.state]} />
                   <span className="text-caption text-ink-2">{t.board.categories[r.category]}</span>
@@ -236,7 +262,20 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
               </li>
             ))}
           </ul>
-        </>
+
+          {page.hidden > 0 && (
+            <div className="grid justify-items-center gap-2">
+              <button
+                type="button"
+                onClick={showMore}
+                className="min-h-11 w-full rounded-control border border-ink px-5 py-2.5 text-body-sm font-bold text-ink transition-colors duration-[var(--cn-duration-fast)] hover:bg-ink hover:text-paper sm:w-auto sm:min-w-64"
+              >
+                {page.next === 1 ? t.board.showMoreOne : fill(t.board.showMore, { n: formatCount(page.next, locale) })}
+              </button>
+              <p className="m-0 text-caption text-ink-2 tabular">{count}</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
