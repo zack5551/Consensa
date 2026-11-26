@@ -152,6 +152,12 @@ export const draftSchema = z.object({
   closesAt: z.iso.datetime(),
   /** Start of the game or event. Required for sports (checked in `validate.ts`, so a miss is a block flag, not a crash). */
   startsAt: z.iso.datetime().optional(),
+  /**
+   * Sports only: a whole-season question (standings, playoffs, awards, a team's season total), which may be asked
+   * while the season is underway (LEX, 2026-11-26). startsAt is then the last scheduled regular-season game, or the
+   * first playoff game for a playoff question, and calls close at least 7 days before it.
+   */
+  season: z.boolean().optional(),
   resolution: z.object({
     source: z.object({ name: bilingual, url: z.url({ protocol: /^https$/ }) }),
     rule: bilingual,

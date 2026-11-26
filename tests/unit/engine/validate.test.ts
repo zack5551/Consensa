@@ -14,6 +14,19 @@ describe("validateDraft", () => {
     expect(codes(goodDraft({ closesAt: "2028-01-01T00:00:00Z" }))).toContain("block:closesTooLate");
   });
 
+  it("lets a whole-season sports question run while the season is underway, closing 7+ days before the last game (LEX, 2026-11-26)", () => {
+    const d = goodDraft({ category: "sports" });
+    const season = (closesAt: string, over: Partial<typeof d> = {}) =>
+      codes({ ...d, closesAt, startsAt: "2027-04-15T23:00:00Z", season: true, resolution: { ...d.resolution, resolvesAt: "2027-04-18T12:00:00Z" }, ...over });
+    expect(season("2027-04-08T23:00:00Z").filter((c) => c.startsWith("block:"))).toEqual([]);
+    expect(season("2027-04-10T23:00:00Z")).toContain("block:seasonClosesLate");
+    // A season question dated from opening day, as the writer did for Montréal vs Toronto: the hint says what to do.
+    const opener = validateDraft({ ...d, startsAt: "2026-10-07T23:00:00Z" }, NOW).find((f) => f.code === "sportsClosesAfterStart");
+    expect(opener?.detail).toContain("whole season");
+    expect(season("2027-04-08T23:00:00Z", { question: { en: "Will the Oilers win tonight?", fr: "Les Oilers gagneront-ils ce soir?" } })).toContain("block:sportsLive");
+    expect(codes(goodDraft({ question: { en: "Will a live album top the chart?", fr: "Un album en direct sera-t-il premier?" } }))).not.toContain("block:sportsLive");
+  });
+
   it("needs a start time for sports, and calls close no later than it", () => {
     const sports = (over: Partial<ReturnType<typeof goodDraft>>) => codes(goodDraft({ category: "sports", ...over }));
     expect(sports({})).toContain("block:sportsNoStart");

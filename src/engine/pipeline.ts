@@ -86,7 +86,7 @@ const AUTO_OK_FLAGS = new Set(["manualResolver"]);
  * good question isn't left waiting for a person over a phrasing slip. The approval rule itself doesn't change.
  */
 const FIXABLE_REVIEW = new Set(["frRuleOpening", "enRuleOpening", "numbersDiffer.question", "numbersDiffer.rule", "long.en", "long.fr", "thresholdNotInRule"]);
-const FIXABLE = new Set(["closesTooSoon", "closesTooLate", "closesAfterResult", "sportsNoStart", "sportsClosesAfterStart", "sportsStartsAfterResult", "sourceNotOfficial", "sourceNotHttps", "frTypography", "resolverAfterResult", "resolverRange", "thresholdNotInRule"]);
+const FIXABLE = new Set(["seasonClosesLate", "sportsLive", "closesTooSoon", "closesTooLate", "closesAfterResult", "sportsNoStart", "sportsClosesAfterStart", "sportsStartsAfterResult", "sourceNotOfficial", "sourceNotHttps", "frTypography", "resolverAfterResult", "resolverRange", "thresholdNotInRule"]);
 /**
  * Sports (zack, 2026-11-25: "yes auto approve"): a sports draft may go live by itself when its only extra flag is the
  * standing "sports" reminder and the checker rates gambling feel at 2 or less, stricter than other topics. LEX's
