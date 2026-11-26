@@ -1,5 +1,6 @@
 import { heatOf, spreadByHeat, TODAY_SPREAD } from "@/lib/heat";
 import { isOpen, outcomes, questionSchema, questionState, type Question } from "@/lib/question";
+import { sameSubject } from "@/lib/same-subject";
 import { z } from "zod";
 import { FIXED_TEST_NOW, siteNow } from "@/lib/clock";
 import liveQuestions from "./live-questions.json";
@@ -322,13 +323,19 @@ function withResult(q: Question): Question {
 }
 const samples: Question[] = raw.map((q) => withResult(questionSchema.parse(q)));
 /** Engine questions from raw rows: valid ones only, never one that reuses a slug in `taken`. */
-export function liveQuestionsFrom(rows: readonly unknown[], taken: ReadonlySet<string>): Question[] {
-  return rows.flatMap((q) => {
+export function liveQuestionsFrom(rows: readonly unknown[], taken: ReadonlySet<string>, shown: readonly Pick<Question, "question">[] = []): Question[] {
+  const kept: Question[] = [];
+  for (const q of rows) {
     const parsed = questionSchema.safeParse(q);
-    return parsed.success && !taken.has(parsed.data.slug) ? [withResult(parsed.data)] : [];
-  });
+    if (!parsed.success || taken.has(parsed.data.slug)) continue;
+    // A twin of a question already on the site (same subject, same month) stays off the board.
+    const en = parsed.data.question.en;
+    if ([...shown, ...kept].some((s) => sameSubject(en, s.question.en))) continue;
+    kept.push(withResult(parsed.data));
+  }
+  return kept;
 }
-const live: Question[] = liveQuestionsFrom(liveQuestions as unknown[], new Set(samples.map((s) => s.slug)));
+const live: Question[] = liveQuestionsFrom(liveQuestions as unknown[], new Set(samples.map((s) => s.slug)), samples);
 export const sampleQuestions: readonly Question[] = [...live, ...samples];
 
 export function getQuestion(slug: string): Question | undefined {
