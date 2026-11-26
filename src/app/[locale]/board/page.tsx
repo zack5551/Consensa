@@ -13,7 +13,9 @@ import { ScreenView } from "@/components/screen-view";
 import { Icon } from "@/components/shell/icons";
 import { siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
-import { withLiveCrowd } from "@/lib/live";
+import { recentCallCounts, withLiveCrowd } from "@/lib/live";
+import { upcomingEvents } from "@/lib/heat";
+import { EventStrip } from "@/components/event-strip";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { toBoardRow } from "@/lib/board";
@@ -33,7 +35,9 @@ export default async function BoardPage({ params }: { params: Promise<{ locale: 
   if (!isLocale(raw)) notFound();
   const locale: Locale = raw;
   const t = getDictionary(locale);
-  const rows = (await withLiveCrowd(await siteQuestions())).map((q) => toBoardRow(q, siteNow()));
+  const [questions, recent] = await Promise.all([siteQuestions().then(withLiveCrowd), recentCallCounts()]);
+  const rows = questions.map((q) => toBoardRow(q, siteNow(), recent.get(q.slug) ?? 0));
+  const events = upcomingEvents(questions, siteNow());
 
   return (
     <div className="grid gap-10">
@@ -53,6 +57,7 @@ export default async function BoardPage({ params }: { params: Promise<{ locale: 
           </Link>
         </div>
       </header>
+      <EventStrip events={events} locale={locale} t={t} now={siteNow()} />
       <BoardView rows={rows} locale={locale} t={boardStrings(t)} todayHref={`/${locale}/today`} />
       <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
     </div>

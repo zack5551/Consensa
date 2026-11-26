@@ -7,7 +7,7 @@ import fr from "@/i18n/dictionaries/fr";
 const rows = sampleQuestions.map((q) => toBoardRow(q, SAMPLE_NOW));
 
 function row(partial: Partial<BoardRow>): BoardRow {
-  return { slug: "x", title: { en: "x", fr: "x" }, category: "economy", state: "open", crowd: 50, change: 0, forecasters: 0, closesAt: "2026-12-01T00:00:00Z", scored: true, spark: [50, 50], ...partial };
+  return { slug: "x", title: { en: "x", fr: "x" }, category: "economy", state: "open", crowd: 50, change: 0, forecasters: 0, closesAt: "2026-12-01T00:00:00Z", scored: true, spark: [50, 50], heat: 0, ...partial };
 }
 
 describe("board rows", () => {
@@ -61,7 +61,7 @@ describe("sorts", () => {
 
 describe("URL state", () => {
   it("falls back to defaults for unknown values", () => {
-    expect(parseBoardQuery({ show: "everything", topic: "politics", sort: "random" })).toEqual({ filter: "open", topic: "all", sort: "popular" });
+    expect(parseBoardQuery({ show: "everything", topic: "politics", sort: "random" })).toEqual({ filter: "open", topic: "all", sort: "hot" });
   });
   it("round-trips and leaves defaults out of the URL", () => {
     const q = parseBoardQuery({ show: "results", topic: "housing", sort: "moved" });

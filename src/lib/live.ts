@@ -4,6 +4,7 @@ import { vpnSharePercent } from "@/lib/call-origin";
 import type { Province, Question } from "@/lib/question";
 import { applyLive, parseCrowdRows, regionCallCount, summarize } from "@/lib/live-crowd";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { RECENT_CALLS_HOURS } from "@/lib/heat";
 import { socialPollSchema, type SocialPoll } from "@/lib/social";
 import { socialVotingOn } from "@/lib/social-voting/env";
 import { pollFromRead, pollReadRow } from "@/lib/social-voting/poll-reads";
@@ -16,6 +17,25 @@ export async function withLiveCrowd<T extends Question>(qs: readonly T[]): Promi
   if (error || !Array.isArray(data)) return [...qs];
   const live = summarize(parseCrowdRows(data));
   return qs.map((q) => applyLive(q, live.get(q.slug)));
+}
+
+/**
+ * Calls made or changed per question in the last few hours: the "right now" part of the heat score. Reads only the
+ * question and the time (never who called), counts on the server, and is used for ordering only, never shown.
+ * Preview mode or an error gives an empty map, so lists fall back to the editors' order.
+ */
+export async function recentCallCounts(hours = RECENT_CALLS_HOURS, now: Date = new Date()): Promise<ReadonlyMap<string, number>> {
+  const admin = adminSupabase();
+  if (!admin) return new Map();
+  const since = new Date(now.getTime() - hours * 60 * 60 * 1000).toISOString();
+  const { data, error } = await admin.from("calls").select("slug").gte("updated_at", since).limit(20_000);
+  if (error || !Array.isArray(data)) return new Map();
+  const counts = new Map<string, number>();
+  for (const row of data as unknown[]) {
+    const slug = (row as { slug?: unknown }).slug;
+    if (typeof slug === "string") counts.set(slug, (counts.get(slug) ?? 0) + 1);
+  }
+  return counts;
 }
 
 export async function withLiveQuestion<T extends Question>(q: T | undefined): Promise<T | undefined> {

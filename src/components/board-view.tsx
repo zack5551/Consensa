@@ -200,6 +200,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
                     <th scope="row" className="max-w-[28rem] py-3 pl-0 pr-4 text-left align-top font-normal">
                       <span className="mb-1 flex flex-wrap items-center gap-2">
                         <StateBadge state={r.state} label={t.states[r.state]} />
+                        <HeatTags row={r} t={t.board} />
                         <span className="text-caption text-ink-2">{t.board.categories[r.category]}</span>
                         {!r.scored && <span className="rounded-full bg-side-b-soft px-2 py-0.5 text-caption text-side-b-text">{t.question.poll}</span>}
                         <YourCallBadge slug={r.slug} template={t.question.yourCall} format={locale} />
@@ -238,6 +239,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
               <li key={r.slug} data-row={i} className="relative grid gap-2 border-b border-line py-4">
                 <span className="flex flex-wrap items-center gap-2">
                   <StateBadge state={r.state} label={t.states[r.state]} />
+                  <HeatTags row={r} t={t.board} />
                   <span className="text-caption text-ink-2">{t.board.categories[r.category]}</span>
                   {!r.scored && <span className="rounded-full bg-side-b-soft px-2 py-0.5 text-caption text-side-b-text">{t.question.poll}</span>}
                 </span>
@@ -278,5 +280,21 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+/** "Breaking" (about six hours after a big story lands) and "Trending" (a few hours, or while calls pour in). Text carries the meaning. */
+export function HeatTags({ row, t }: { row: Pick<BoardRow, "breaking" | "trending" | "state">; t: Pick<Dictionary["board"], "breaking" | "trending"> }) {
+  if (!isOpen(row.state)) return null;
+  return (
+    <>
+      {row.breaking && (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-ink px-2 py-0.5 text-caption font-semibold text-paper">
+          <span className="size-1.5 rounded-full bg-canada" aria-hidden="true" />
+          {t.breaking}
+        </span>
+      )}
+      {row.trending && !row.breaking && <span className="rounded-full border border-line px-2 py-0.5 text-caption font-semibold text-ink">{t.trending}</span>}
+    </>
   );
 }

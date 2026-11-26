@@ -21,7 +21,8 @@ test("the live question opens its page, and FAQ answers expand", async ({ page }
   await page.goto("/fr");
   await page.getByText("Y a-t-il des prix à gagner?").click();
   await expect(page.getByText(/aucune valeur monétaire et ne s’échangent/)).toBeVisible();
-  await page.getByRole("heading", { level: 2, name: /Banque du Canada/ }).getByRole("link").click();
+  // The lead is the hottest open question (see src/lib/heat.ts), so the test doesn't name it.
+  await page.getByRole("main").getByRole("heading", { level: 2 }).getByRole("link").first().click();
   await expect(page).toHaveURL(/\/fr\/q\//);
 });
 

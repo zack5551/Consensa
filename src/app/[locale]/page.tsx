@@ -16,7 +16,7 @@ import { localeHref } from "@/components/shell/nav-items";
 import { sampleQuestions as sample, todaysFive } from "@/content/sample-questions";
 import { siteQuestions } from "@/lib/site-questions";
 import { siteNow } from "@/lib/clock";
-import { withLiveCrowd } from "@/lib/live";
+import { recentCallCounts, withLiveCrowd } from "@/lib/live";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { formatCount, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
@@ -47,7 +47,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
   const sampleQuestions = await withLiveCrowd(await siteQuestions());
   const open = sampleQuestions.filter((q) => isOpen(questionState(q, siteNow())));
-  const firstSlug = todaysFive(siteNow(), sampleQuestions)[0]?.slug;
+  const firstSlug = todaysFive(siteNow(), sampleQuestions, await recentCallCounts())[0]?.slug;
   const lead = sampleQuestions.find((q) => q.slug === firstSlug) ?? open[0] ?? sampleQuestions[0]!;
   const leadYes = crowdNow(lead);
   const trending = [...open].filter((q) => q.slug !== lead.slug).sort((a, b) => b.forecasters - a.forecasters).slice(0, 3);
