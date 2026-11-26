@@ -7,7 +7,7 @@ import fr from "@/i18n/dictionaries/fr";
 const rows = sampleQuestions.map((q) => toBoardRow(q, SAMPLE_NOW));
 
 function row(partial: Partial<BoardRow>): BoardRow {
-  return { slug: "x", title: { en: "x", fr: "x" }, category: "economy", state: "open", crowd: 50, change: 0, forecasters: 0, closesAt: "2026-12-01T00:00:00Z", scored: true, spark: [50, 50], heat: 0, ...partial };
+  return { slug: "x", title: { en: "x", fr: "x" }, category: "economy", state: "open", crowd: 50, change: 0, forecasters: 0, closesAt: "2026-12-01T00:00:00Z", scored: true, spark: [50, 50], heat: 0, day: 0, ...partial };
 }
 
 describe("board rows", () => {

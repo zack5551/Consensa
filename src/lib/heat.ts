@@ -33,6 +33,17 @@ export type Heat = {
 
 export type HeatInput = Pick<Question, "spotlight">;
 
+/** How long a question counts as "New" on the board after it goes live. */
+export const NEW_HOURS = 48;
+
+/** Went live within the last NEW_HOURS. Hand-written questions (no spotlight) never count as new. */
+export function isNew(q: HeatInput, now: Date): boolean {
+  const at = q.spotlight?.publishedAt;
+  if (at === undefined) return false;
+  const age = now.getTime() - Date.parse(at);
+  return age >= 0 && age < NEW_HOURS * HOUR;
+}
+
 /** True while the engine's "Breaking" window is open. */
 export function isBreaking(q: HeatInput, now: Date): boolean {
   const until = q.spotlight?.breakingUntil;

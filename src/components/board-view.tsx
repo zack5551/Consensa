@@ -9,7 +9,7 @@ import { YourCallBadge } from "@/components/your-call-badge";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 import { track } from "@/lib/analytics";
-import { applyBoardQuery, BOARD_PAGE_SIZE, boardFilters, boardPage, boardQueryString, boardSorts, changeLabel, changeText, defaultBoardQuery, parseBoardQuery, type BoardQuery, type BoardRow } from "@/lib/board";
+import { applyBoardQuery, BOARD_PAGE_SIZE, boardFilters, boardPage, dayText, boardQueryString, boardSorts, changeLabel, changeText, defaultBoardQuery, parseBoardQuery, type BoardQuery, type BoardRow } from "@/lib/board";
 import { readAllCalls, subscribeCalls } from "@/lib/calls-store";
 import { formatCount, formatPercent, formatShortDate, formatCallCount } from "@/lib/format";
 import { categories, isOpen, type Category } from "@/lib/question";
@@ -170,7 +170,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
           />
         ) : (
           <EmptyState
-            title={t.board.emptyTitle}
+            title={query.filter === "trending" || query.filter === "breaking" || query.filter === "new" ? t.board.emptyFilter[query.filter] : t.board.emptyTitle}
             body={t.board.emptyBody}
             action={
               <button type="button" onClick={() => update({ filter: "all", topic: "all" })} className="rounded-control bg-ink px-4 py-2 text-body-sm font-bold text-paper hover:opacity-90">
@@ -202,6 +202,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
                         <StateBadge state={r.state} label={t.states[r.state]} />
                         <HeatTags row={r} t={t.board} />
                         <span className="text-caption text-ink-2">{t.board.categories[r.category]}</span>
+                        <DayChange n={r.day} state={r.state} t={t.board} />
                         {!r.scored && <span className="rounded-full bg-side-b-soft px-2 py-0.5 text-caption text-side-b-text">{t.question.poll}</span>}
                         <YourCallBadge slug={r.slug} template={t.question.yourCall} format={locale} />
                       </span>
@@ -241,6 +242,7 @@ export function BoardView({ rows, locale, t, fixedTopic, todayHref }: Props) {
                   <StateBadge state={r.state} label={t.states[r.state]} />
                   <HeatTags row={r} t={t.board} />
                   <span className="text-caption text-ink-2">{t.board.categories[r.category]}</span>
+                  <DayChange n={r.day} state={r.state} t={t.board} />
                   {!r.scored && <span className="rounded-full bg-side-b-soft px-2 py-0.5 text-caption text-side-b-text">{t.question.poll}</span>}
                 </span>
                 <Link href={href(r.slug)} className="font-display text-body font-bold leading-snug text-balance text-ink after:absolute after:inset-0">
@@ -297,4 +299,11 @@ export function HeatTags({ row, t }: { row: Pick<BoardRow, "breaking" | "trendin
       {row.trending && !row.breaking && <span className="rounded-full border border-line px-2 py-0.5 text-caption font-semibold text-ink">{t.trending}</span>}
     </>
   );
+}
+
+/** "Up 7 pts since yesterday" on an open question that moved. Colour follows the side it moved toward; the words carry it. */
+export function DayChange({ n, state, t }: { n: number; state: BoardRow["state"]; t: Pick<Dictionary["board"], "dayUp" | "dayUpOne" | "dayDown" | "dayDownOne"> }) {
+  const text = isOpen(state) ? dayText(n, t) : null;
+  if (!text) return null;
+  return <span className={`text-caption font-semibold tabular ${n > 0 ? "text-side-a-text" : "text-side-b-text"}`}>{text}</span>;
 }

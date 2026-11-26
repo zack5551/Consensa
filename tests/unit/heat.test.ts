@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { todaysFive } from "@/content/sample-questions";
 import { fixtureQuestions } from "@/content/test-fixtures";
-import { sortRows, toBoardRow, type BoardRow } from "@/lib/board";
-import { BOARD_SPREAD, eventHub, eventIsUp, heatOf, isBreaking, isTrending, spreadByHeat, TODAY_SPREAD, TRENDING_CALLS, TRENDING_HOURS, upcomingEvents } from "@/lib/heat";
+import { boardQueryString, dayText, matchesFilter, topMovers, parseBoardQuery, sortRows, toBoardRow, type BoardRow } from "@/lib/board";
+import { BOARD_SPREAD, NEW_HOURS, isNew, eventHub, eventIsUp, heatOf, isBreaking, isTrending, spreadByHeat, TODAY_SPREAD, TRENDING_CALLS, TRENDING_HOURS, upcomingEvents } from "@/lib/heat";
 import { questionSchema, type Category, type Question, type Spotlight } from "@/lib/question";
 
 const NOW = new Date("2026-11-26T12:00:00Z");
@@ -84,7 +84,7 @@ describe("variety at the top", () => {
 });
 
 describe("board and Today's five", () => {
-  const base: BoardRow = { slug: "x", title: { en: "x", fr: "x" }, category: "economy", state: "open", crowd: 50, change: 0, forecasters: 0, closesAt: inHours(48), scored: true, spark: [50], heat: 0 };
+  const base: BoardRow = { slug: "x", title: { en: "x", fr: "x" }, category: "economy", state: "open", crowd: 50, change: 0, forecasters: 0, closesAt: inHours(48), scored: true, spark: [50], heat: 0, day: 0 };
   it("the hot sort puts heat first, ties by most called, and settled questions last", () => {
     const rows: BoardRow[] = [
       { ...base, slug: "settled", state: "resolved", heat: 0.9 },
@@ -129,5 +129,60 @@ describe("event pages", () => {
     expect(fx.some((f) => isBreaking(f, at))).toBe(true);
     expect(fx.some((f) => isTrending(f, at))).toBe(true);
     expect(upcomingEvents(fx, at).map((h) => h.event.id)).toEqual(["fixture-gala"]);
+  });
+});
+
+describe("board tabs: trending, breaking, new", () => {
+  const base: BoardRow = { slug: "x", title: { en: "x", fr: "x" }, category: "economy", state: "open", crowd: 50, change: 0, forecasters: 0, closesAt: inHours(48), scored: true, spark: [50], heat: 0, day: 0 };
+  const none = new Set<string>();
+  it("each tab keeps only open questions with that tag", () => {
+    const rows: BoardRow[] = [
+      { ...base, slug: "t", trending: true },
+      { ...base, slug: "b", breaking: true },
+      { ...base, slug: "n", fresh: true },
+      { ...base, slug: "old-b", breaking: true, state: "resolved" },
+      { ...base, slug: "plain" },
+    ];
+    const pick = (filter: "trending" | "breaking" | "new") => rows.filter((r) => matchesFilter(r, filter, none)).map((r) => r.slug);
+    expect(pick("trending")).toEqual(["t"]);
+    expect(pick("breaking")).toEqual(["b"]);
+    expect(pick("new")).toEqual(["n"]);
+  });
+  it("new means live in the last two days, and hand-written questions never count", () => {
+    expect(isNew(q({ newsSize: 10, publishedAt: hoursAgo(NEW_HOURS - 1) }), NOW)).toBe(true);
+    expect(isNew(q({ newsSize: 10, publishedAt: hoursAgo(NEW_HOURS + 1) }), NOW)).toBe(false);
+    expect(isNew(q(), NOW)).toBe(false);
+    expect(toBoardRow(q({ newsSize: 10, publishedAt: hoursAgo(2) }), NOW).fresh).toBe(true);
+  });
+  it("the URL keeps the tab", () => {
+    expect(parseBoardQuery({ show: "breaking" }).filter).toBe("breaking");
+    expect(boardQueryString({ filter: "new", topic: "all", sort: "hot" })).toBe("?show=new");
+  });
+});
+
+describe("since yesterday and top movers", () => {
+  const base: BoardRow = { slug: "x", title: { en: "x", fr: "x" }, category: "economy", state: "open", crowd: 50, change: 0, forecasters: 0, closesAt: inHours(48), scored: true, spark: [50], heat: 0, day: 0 };
+  it("says how far the crowd moved since yesterday, or nothing", async () => {
+    const { default: en } = await import("@/i18n/dictionaries/en");
+    const { default: fr } = await import("@/i18n/dictionaries/fr");
+    expect(dayText(7, en.board)).toBe("Up 7 pts since yesterday");
+    expect(dayText(-1, en.board)).toBe("Down 1 pt since yesterday");
+    expect(dayText(0, en.board)).toBeNull();
+    expect(dayText(7, fr.board)).toBe("En hausse de 7 points depuis hier");
+  });
+  it("board rows carry the one-day move", () => {
+    expect(toBoardRow(q(undefined, { history: [40, 47] }), NOW).day).toBe(7);
+  });
+  it("top movers: open questions that moved 3+ points, biggest first, at most three", () => {
+    const rows: BoardRow[] = [
+      { ...base, slug: "a", day: 4 },
+      { ...base, slug: "b", day: -9 },
+      { ...base, slug: "c", day: 2 },
+      { ...base, slug: "d", day: 12, state: "resolved" },
+      { ...base, slug: "e", day: 5 },
+      { ...base, slug: "f", day: 3 },
+    ];
+    expect(topMovers(rows).map((r) => r.slug)).toEqual(["b", "e", "a"]);
+    expect(topMovers([{ ...base, day: 2 }])).toEqual([]);
   });
 });

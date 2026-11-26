@@ -18,7 +18,8 @@ import { upcomingEvents } from "@/lib/heat";
 import { EventStrip } from "@/components/event-strip";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { toBoardRow } from "@/lib/board";
+import { toBoardRow, topMovers } from "@/lib/board";
+import { TopMovers } from "@/components/top-movers";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -58,6 +59,7 @@ export default async function BoardPage({ params }: { params: Promise<{ locale: 
         </div>
       </header>
       <EventStrip events={events} locale={locale} t={t} now={siteNow()} />
+      <TopMovers rows={topMovers(rows)} locale={locale} t={t.board} />
       <BoardView rows={rows} locale={locale} t={boardStrings(t)} todayHref={`/${locale}/today`} />
       <p className="m-0 text-caption text-ink-2">{t.legal.noValue}</p>
     </div>
