@@ -636,6 +636,9 @@ const en = {
     emptyTitle: "Nothing here right now",
     emptyBody: "Try another filter or topic.",
     emptyAction: "Show all questions",
+    showingOf: "Showing {shown} of {n} questions",
+    showMore: "Show {n} more questions",
+    showMoreOne: "Show 1 more question",
   },
   record: {
     title: "My record",

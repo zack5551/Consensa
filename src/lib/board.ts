@@ -110,6 +110,19 @@ export function applyBoardQuery(rows: readonly BoardRow[], q: BoardQuery, called
   );
 }
 
+/** How many rows the Board shows at first, and how many more each "Show more" adds. */
+export const BOARD_PAGE_SIZE = 20;
+
+/**
+ * One page of the filtered list: the rows to render now, how many are still hidden, and how many the next
+ * "Show more" reveals. Pure, so the server and the browser agree and it's unit-tested.
+ */
+export function boardPage<T>(rows: readonly T[], limit: number, pageSize = BOARD_PAGE_SIZE): { visible: T[]; hidden: number; next: number } {
+  const visible = rows.slice(0, Math.max(pageSize, limit));
+  const hidden = rows.length - visible.length;
+  return { visible, hidden, next: Math.min(hidden, pageSize) };
+}
+
 /** The Board's 7-day change strings: "1 pt" / "2 pts" in both languages, and "1 point" in the spoken label. */
 export type ChangeLabels = {
   change: string;

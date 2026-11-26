@@ -27,8 +27,29 @@ test("board filters update the list and the URL, and survive a reload", async ({
   await page.reload();
   await expect(page.getByRole("button", { name: "Housing" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Show all questions" }).click();
-  await expect(page.getByText(/questions shown/)).toBeVisible();
+  await expect(page.getByText(/^Showing 20 of \d+ questions$/).first()).toBeVisible();
 });
+
+for (const [locale, more, after] of [
+  ["en", /^Show \d+ more questions?$/, /^\d+ questions shown$/],
+  ["fr", /^Afficher \d+ autres? questions?$/, /^\d+ questions affichées$/],
+] as const) {
+  test(`/${locale}/board shows 20 questions, then the rest after "show more", with focus on the first new one`, async ({ page }) => {
+    await page.goto(`/${locale}/board`);
+    const list = page.locator("main").locator("tbody tr:visible, ul > li:visible").filter({ has: page.locator("a[href*='/q/']") });
+    await expect(list).toHaveCount(20);
+    const button = page.getByRole("button", { name: more });
+    await button.click();
+    await expect(button).toHaveCount(0);
+    expect(await list.count()).toBeGreaterThan(20);
+    await expect(page.getByText(after)).toBeVisible();
+    await expect(list.nth(20).locator("a[href*='/q/']")).toBeFocused();
+    // A new filter starts again at one page.
+    await page.getByRole("button", { name: locale === "en" ? "All" : "Toutes", exact: true }).click();
+    await expect(list).toHaveCount(20);
+    expect(await axe(page)).toEqual([]);
+  });
+}
 
 test("your calls is empty until you make one, then lists it", async ({ page }) => {
   await page.goto("/en/board?show=mine");
