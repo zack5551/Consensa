@@ -20,6 +20,162 @@ const NEW_CROWD = {
  * The game examples used by the tests live in ./test-fixtures.ts, built in only for the e2e run.
  */
 export const moreSampleQuestions = [
+  // Opened 2026-11-26 from zack's favourite example questions (the style bar PULSE writes to). Each one checked against
+  // the news on 2026-11-25: dates, names and the hook. The Fed question from the same list is already live (engine).
+  {
+    slug: "avengers-doomsday-opening-2026",
+    category: "culture",
+    question: {
+      en: "Will Avengers: Doomsday earn more than US$300 million worldwide in its opening weekend?",
+      fr: "Avengers\u00a0: Doomsday récoltera-t-il plus de 300\u00a0millions\u00a0$\u00a0US dans le monde à sa première fin de semaine?",
+    },
+    scored: true,
+    closesAt: "2026-12-16T05:00:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "Box Office Mojo", fr: "Box Office Mojo" }, url: "https://www.boxofficemojo.com/" },
+      rule: {
+        en: "Resolves YES if Box Office Mojo reports a worldwide opening of more than US$300 million for Avengers: Doomsday, counting every market from its first day in theatres through Sunday, Dec. 20, 2026 (it opens in North America on Dec. 18). Otherwise it resolves NO.",
+        fr: "Résolue OUI si Box Office Mojo indique des recettes mondiales d’ouverture de plus de 300\u00a0millions\u00a0$\u00a0US pour Avengers\u00a0: Doomsday, en comptant tous les marchés de sa première journée en salle jusqu’au dimanche 20 décembre 2026 (sortie en Amérique du Nord le 18 décembre). Sinon, elle est résolue NON.",
+      },
+      resolvesAt: "2026-12-22T17:00:00Z",
+    },
+  },
+  {
+    slug: "carly-rae-jepsen-canadian-hot-100-2026",
+    category: "culture",
+    question: {
+      en: "Will Carly Rae Jepsen’s “Run Away With Me” make the Billboard Canadian Hot 100 in December, after its GTA VI streaming surge?",
+      fr: "«\u00a0Run Away With Me\u00a0» de Carly Rae Jepsen entrera-t-elle au Canadian Hot 100 de Billboard en décembre, grâce à GTA VI?",
+    },
+    scored: true,
+    closesAt: "2026-11-30T05:00:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "Billboard Canadian Hot 100", fr: "Billboard Canadian Hot 100" }, url: "https://www.billboard.com/charts/canadian-hot-100/" },
+      rule: {
+        en: "Resolves YES if “Run Away With Me” by Carly Rae Jepsen appears on any Billboard Canadian Hot 100 chart published from Dec. 1 to Dec. 29, 2026. Otherwise it resolves NO.",
+        fr: "Résolue OUI si «\u00a0Run Away With Me\u00a0» de Carly Rae Jepsen figure sur un palmarès Billboard Canadian Hot 100 publié entre le 1er et le 29 décembre 2026. Sinon, elle est résolue NON.",
+      },
+      resolvesAt: "2026-12-30T17:00:00Z",
+    },
+  },
+  {
+    slug: "the-body-netflix-season-2",
+    category: "culture",
+    question: {
+      en: "Will Netflix renew The Body for a second season by March 31, 2027?",
+      fr: "Netflix renouvellera-t-elle The Body pour une deuxième saison d’ici le 31 mars 2027?",
+    },
+    scored: true,
+    closesAt: "2027-03-30T04:00:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "Netflix Tudum", fr: "Netflix Tudum" }, url: "https://www.netflix.com/tudum" },
+      rule: {
+        en: "Resolves YES if Netflix officially announces a second season of The Body by March 31, 2027 (ET), on Tudum or its official accounts. If it announces the series is cancelled or ending, or says nothing by then, it resolves NO.",
+        fr: "Résolue OUI si Netflix annonce officiellement une deuxième saison de The Body d’ici le 31 mars 2027 (HE), sur Tudum ou ses comptes officiels. Si elle annonce l’annulation ou la fin de la série, ou ne dit rien d’ici là, elle est résolue NON.",
+      },
+      resolvesAt: "2027-04-01T16:00:00Z",
+    },
+  },
+  {
+    slug: "victoire-home-opener-2026",
+    category: "sports",
+    question: {
+      en: "Will the Montréal Victoire win their home opener against the Hamilton Havoc on Dec. 5?",
+      fr: "La Victoire de Montréal battra-t-elle le Havoc de Hamilton à son premier match local, le 5 décembre?",
+    },
+    scored: true,
+    closesAt: "2026-12-06T00:00:00Z",
+    startsAt: "2026-12-06T00:00:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "PWHL", fr: "LPHF" }, url: "https://www.thepwhl.com/en/teams/montreal-victoire/schedule" },
+      rule: {
+        en: "Resolves YES if the Montréal Victoire beat the Hamilton Havoc at Place Bell on Dec. 5, 2026, including in overtime or a shootout, according to the official result on thepwhl.com. A loss resolves NO. If the game is postponed past Dec. 6, the question is cancelled and no call counts.",
+        fr: "Résolue OUI si la Victoire de Montréal bat le Havoc de Hamilton à la Place Bell le 5 décembre 2026, y compris en prolongation ou en tirs de barrage, selon le résultat officiel sur thepwhl.com. Une défaite donne NON. Si le match est reporté après le 6 décembre, la question est annulée et aucune prévision ne compte.",
+      },
+      resolvesAt: "2026-12-06T06:00:00Z",
+    },
+  },
+  {
+    slug: "mlb-labour-deal-dec-2026",
+    category: "sports",
+    question: {
+      en: "Will MLB and its players’ union agree to a new labour deal before the current one expires on Dec. 1?",
+      fr: "Le baseball majeur et ses joueurs s’entendront-ils sur une nouvelle convention collective avant le 1er décembre?",
+    },
+    scored: true,
+    closesAt: "2026-12-01T17:00:00Z",
+    startsAt: "2026-12-02T04:59:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "MLB.com", fr: "MLB.com" }, url: "https://www.mlb.com/news" },
+      rule: {
+        en: "Resolves YES if Major League Baseball or the MLB Players Association announces a tentative or final agreement on a new collective bargaining agreement before the current one expires at 11:59 p.m. ET on Dec. 1, 2026. If the deal expires with no agreement, it resolves NO.",
+        fr: "Résolue OUI si le baseball majeur ou l’association des joueurs (MLBPA) annonce une entente de principe ou finale sur une nouvelle convention collective avant l’échéance de l’actuelle, le 1er décembre 2026 à 23\u00a0h\u00a059 (HE). Si la convention arrive à échéance sans entente, elle est résolue NON.",
+      },
+      resolvesAt: "2026-12-02T17:00:00Z",
+    },
+  },
+  {
+    slug: "couche-tard-zabka-2026",
+    category: "economy",
+    question: {
+      en: "Will Couche-Tard complete its takeover of Poland’s Zabka by Dec. 31?",
+      fr: "Couche-Tard conclura-t-elle son acquisition de la chaîne polonaise Zabka d’ici le 31 décembre?",
+    },
+    scored: true,
+    closesAt: "2026-12-01T05:00:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "Alimentation Couche-Tard", fr: "Alimentation Couche-Tard" }, url: "https://corporate.couche-tard.com/" },
+      rule: {
+        en: "Resolves YES if Couche-Tard announces by Dec. 31, 2026 (ET) that its tender offer for Zabka Group has settled and it now holds more than half of Zabka’s voting rights. Otherwise it resolves NO. The offer’s acceptance period ends Dec. 2.",
+        fr: "Résolue OUI si Couche-Tard annonce d’ici le 31 décembre 2026 (HE) que son offre publique d’achat visant Zabka Group est réglée et qu’elle détient plus de la moitié des droits de vote de Zabka. Sinon, elle est résolue NON. La période d’acceptation de l’offre se termine le 2 décembre.",
+      },
+      resolvesAt: "2027-01-01T17:00:00Z",
+    },
+  },
+  {
+    slug: "stellantis-brampton-sale-2027",
+    category: "economy",
+    question: {
+      en: "Will the sale of Stellantis’s Brampton plant to Roshel be called off by Feb. 28, 2027?",
+      fr: "La vente de l’usine de Stellantis à Brampton à Roshel sera-t-elle annulée d’ici le 28 février 2027?",
+    },
+    scored: true,
+    closesAt: "2027-02-27T05:00:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "Stellantis Canada newsroom", fr: "Salle de presse de Stellantis Canada" }, url: "https://www.stellantis.com/en/news" },
+      rule: {
+        en: "Resolves YES if Stellantis or Roshel announces by Feb. 28, 2027 (ET) that the Nov. 9, 2026 sale of the Brampton Assembly Plant is cancelled or reversed, so the plant stays with Stellantis. Otherwise it resolves NO.",
+        fr: "Résolue OUI si Stellantis ou Roshel annonce d’ici le 28 février 2027 (HE) que la vente de l’usine d’assemblage de Brampton conclue le 9 novembre 2026 est annulée ou renversée, de sorte que l’usine reste à Stellantis. Sinon, elle est résolue NON.",
+      },
+      resolvesAt: "2027-03-01T17:00:00Z",
+    },
+  },
+  {
+    slug: "montreal-snow-10cm-dec9-2026",
+    category: "weather",
+    question: {
+      en: "Will Montréal get 10 cm of snow or more by Dec. 9, after the Mont-Tremblant World Cup races were cancelled for lack of snow?",
+      fr: "Montréal recevra-t-elle 10\u00a0cm de neige ou plus d’ici le 9 décembre, après l’annulation de la Coupe du monde à Tremblant faute de neige?",
+    },
+    scored: true,
+    closesAt: "2026-11-27T05:00:00Z",
+    ...NEW_CROWD,
+    resolution: {
+      source: { name: { en: "Environment and Climate Change Canada", fr: "Environnement et Changement climatique Canada" }, url: "https://climate.weather.gc.ca/" },
+      rule: {
+        en: "Resolves YES if daily snowfall at Montréal–Trudeau (YUL, climate ID 702S006) from Nov. 27 to Dec. 9, 2026 (ET) adds up to 10\u00a0cm or more in ECCC daily data. Otherwise it resolves NO.",
+        fr: "Résolue OUI si la neige tombée chaque jour à Montréal-Trudeau (YUL, identifiant climatologique 702S006) du 27 novembre au 9 décembre 2026 (HE) totalise au moins 10\u00a0cm selon les données quotidiennes d’ECCC. Sinon, elle est résolue NON.",
+      },
+      resolvesAt: "2026-12-11T17:00:00Z",
+    },
+  },
   // Opened 2026-11-23. A new question starts with no crowd yet: "<50" calls, the province tiles hidden, and an even
   // 50% until real calls replace it.
   {
