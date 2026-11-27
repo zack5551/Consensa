@@ -22,7 +22,7 @@ import type { Question } from "@/lib/question";
 import { duplicateFlag, findDuplicate, type Comparable } from "@/engine/dedup";
 import { AREA_NAMES, checkFlag, DEFAULT_THRESHOLD, describeCheck, type CheckOutcome, type Checker } from "@/engine/check/checker";
 import { calendarStories, deskFor, DESKS, type Desk } from "@/engine/draft/desks";
-import type { DraftUsage, Drafter } from "@/engine/draft/drafter";
+import { OUT_OF_CREDIT, type DraftUsage, type Drafter } from "@/engine/draft/drafter";
 import { explainItem } from "@/engine/explain";
 import { isIdea } from "@/engine/ideas";
 import { resolveDue, type ResolveStep } from "@/engine/resolve/due";
@@ -440,6 +440,8 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
       add(o.usage);
       const base = { storyId: story.id, headline: story.headline, heat: story.heat, desk: o.desk ?? desk.id };
       if (o.status === "error") {
+        // Out of credit (zack, 2026-11-27): stop every lane now instead of spending the run on refused calls.
+        if (o.reason === OUT_OF_CREDIT) budget.left = 0;
         // Not marked as drafted: the next cycle retries it.
         decisions.push({ ...base, decision: "error", reason: o.reason });
         return false;
@@ -459,6 +461,8 @@ export async function runCycle(deps: CycleDeps): Promise<CycleReport> {
         budget.left--;
         const again = await drafter.draft(story, { ...ctx, repair: { question: o.draft.question.en, problems: fixable.map((f) => f.detail) } });
         add(again.usage);
+        // A repair is a second paid call: record it so the daily cap and the monthly spend count it too.
+        if (again.status !== "error") await store.markDrafted(`${story.id}#repair`, again.status, now);
         if (again.status === "draft") {
           o = again;
           flags = [...screenDraft(o.draft), ...validateDraft(o.draft, now)];

@@ -13,6 +13,7 @@ import { ideaNotice } from "@/engine/notify/idea";
 import { engineEnv } from "@/engine/config";
 import { failureEmail, summaryEmail } from "@/engine/notify/digest";
 import { sesMailer, signV4 } from "@/engine/notify/ses";
+import { OUT_OF_CREDIT } from "@/engine/draft/drafter";
 import { AUTO_EDITOR, autoApprovable, heldLessons, likedQuestions, publishApproved, runCycle, type CycleReport, type StoryDecision } from "@/engine/pipeline";
 import { approve, newItem } from "@/engine/review";
 import { reviewToken, reviewUrl, verifyReviewToken } from "@/engine/notify/review-link";
@@ -615,10 +616,35 @@ describe("one repair try (zack, 2026-11-25: good questions were set aside over a
       id: "w",
       draft: async (_s, ctx) => (seen.push(ctx.repair ? [...ctx.repair.problems] : undefined), { status: "draft", drafter: "w", draft: ctx.repair ? fixed : sloppy }),
     };
-    const report = await runCycle({ ...base(new MemoryStore(), drafter, feed(newsFor(["culture"]))), config: { thinBelow: 0, maxDrafts: 2 } });
+    const store = new MemoryStore();
+    const report = await runCycle({ ...base(store, drafter, feed(newsFor(["culture"]))), config: { thinBelow: 0, maxDrafts: 2 } });
     expect(seen[1]).toEqual(["English rule should open with “Resolves YES if…”."]);
+    // The repair is a second paid call, so the spend caps count both (zack, 2026-11-27: never below US$10 of credit).
+    expect(await store.draftedSince(new Date(NOW.getTime() - 1000))).toBe(2);
     const queued = report.decisions.find((d) => d.decision === "queued");
     expect(queued && "flags" in queued ? queued.flags.map((f) => f.code) : []).not.toContain("enRuleOpening");
+  });
+
+  it("stops every lane the moment the Claude credit runs out (zack, 2026-11-27)", async () => {
+    let calls = 0;
+    let refused = false;
+    let startedAfterRefusal = 0;
+    const drafter: Drafter = {
+      id: "w",
+      draft: async () => {
+        calls++;
+        if (refused) startedAfterRefusal++;
+        await Promise.resolve();
+        refused = true;
+        return { status: "error", reason: OUT_OF_CREDIT, drafter: "w" };
+      },
+    };
+    const report = await runCycle({ ...base(new MemoryStore(), drafter, feed(newsFor(["economy", "culture", "weather", "sports"]))), config: { thinBelow: 0, maxDrafts: 24 } });
+    // Only the tries already in flight when the first refusal came back; nothing new starts after it.
+    expect(calls).toBeGreaterThan(0);
+    expect(startedAfterRefusal).toBe(0);
+    expect(calls).toBeLessThan(24);
+    expect(report.decisions.every((d) => d.decision !== "error" || d.reason === OUT_OF_CREDIT)).toBe(true);
   });
 
   it("never gives a safety block a second try", async () => {

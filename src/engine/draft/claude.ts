@@ -12,7 +12,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { categories } from "@/lib/question";
-import type { DraftContext, DraftOutcome, Drafter } from "@/engine/draft/drafter";
+import { OUT_OF_CREDIT, type DraftContext, type DraftOutcome, type Drafter } from "@/engine/draft/drafter";
 import { SYSTEM_PROMPT, userMessage } from "@/engine/draft/prompt";
 import { comparators, draftSchema, resolverSchema, type Resolver, type Story } from "@/engine/types";
 
@@ -129,6 +129,8 @@ export class ClaudeDrafter implements Drafter {
     } catch (err) {
       if (err instanceof Anthropic.RateLimitError) return { status: "error", reason: "rate limited", drafter: this.id };
       if (err instanceof Anthropic.AuthenticationError) return { status: "error", reason: "bad ANTHROPIC_API_KEY", drafter: this.id };
+      // The API refuses every call once the credit is used up (a 400 saying the credit balance is too low).
+      if (err instanceof Anthropic.APIError && /credit balance/i.test(err.message)) return { status: "error", reason: OUT_OF_CREDIT, drafter: this.id };
       if (err instanceof Anthropic.APIError) return { status: "error", reason: `API ${err.status}: ${err.message}`, drafter: this.id };
       return { status: "error", reason: err instanceof Error ? err.message : String(err), drafter: this.id };
     }

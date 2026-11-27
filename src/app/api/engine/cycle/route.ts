@@ -10,7 +10,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
-import { engineEnv, type EngineEnv } from "@/engine/config";
+import { engineEnv, spendCapUsd, type EngineEnv } from "@/engine/config";
 import { failureEmail } from "@/engine/notify/digest";
 import { reviewUrl } from "@/engine/notify/review-link";
 import { sesMailer, type Mailer } from "@/engine/notify/ses";
@@ -94,9 +94,9 @@ async function runCycleInner(env: EngineEnv, mailer: Mailer | null) {
     apiKey: env.ANTHROPIC_API_KEY,
     liveFeeds,
     maxDrafts: env.ENGINE_MAX_DRAFTS,
-    // zack (2026-11-25): keep this month near US$95. Both caps count writer calls already made.
+    // zack (2026-11-25): keep this month near US$95; 2026-11-27: never below US$10 of credit. Both caps count calls made.
     dailyDrafts: env.ENGINE_DAILY_DRAFTS,
-    monthlyBudgetUsd: env.ENGINE_MONTHLY_BUDGET_USD,
+    monthlyBudgetUsd: spendCapUsd(env),
     // New questions show on the site at once, with no rebuild (Vercel budget): refresh the cached list.
     onPublished: () => revalidateTag(LIVE_QUESTIONS_TAG),
     // Sample feeds are pinned to the sample clock so a dry run is reproducible.
