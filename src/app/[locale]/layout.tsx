@@ -17,7 +17,9 @@ import { inter, manrope } from "@/styles/fonts";
 import "@/styles/globals.css";
 
 
-export const dynamicParams = false;
+// No `dynamicParams = false` here: Next applies it to every page below this layout, so a question, event or embed
+// published after the build would 404 instead of rendering on first visit (zack's 404 on new questions, 2026-11-27).
+// Unknown locales never get here: the middleware sends them to /en or /fr first.
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
