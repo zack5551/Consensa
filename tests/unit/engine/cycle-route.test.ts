@@ -52,7 +52,7 @@ describe("cycle route health email", () => {
     await GET(request());
     expect(runFromEnv.mock.calls[0]![0]).toMatchObject({ checkThreshold: 7, mailer: expect.any(Function), autoApprove: true });
     // zack's caps (2026-11-25): 24 a run, 50 a day, US$95 a month.
-    expect(runFromEnv.mock.calls[0]![0]).toMatchObject({ maxDrafts: 24, dailyDrafts: 50, monthlyBudgetUsd: 95 });
+    expect(runFromEnv.mock.calls[0]![0]).toMatchObject({ maxDrafts: 24, dailyDrafts: 50, monthlyBudgetUsd: 90 });
     // Publishing refreshes the site's question list instead of rebuilding the site.
     runFromEnv.mock.calls[0]![0].onPublished(["a-new-question"]);
     expect(revalidateTag).toHaveBeenCalledWith("live-questions");

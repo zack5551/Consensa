@@ -45,6 +45,9 @@ export type DraftOutcome = (
   desk?: string;
 };
 
+/** The reason a writer call gives when the Claude account has no credit left. The run stops writing at once. */
+export const OUT_OF_CREDIT = "out of Claude API credit";
+
 export interface DraftUsage {
   inputTokens: number;
   outputTokens: number;

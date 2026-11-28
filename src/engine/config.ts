@@ -12,6 +12,9 @@
  * - ENGINE_MAX_DRAFTS: most writer calls per run across the five desks (default 24).
  * - ENGINE_MONTHLY_BUDGET_USD: stop drafting once this month's estimated Claude spend reaches this (default 95, zack
  *   2026-11-25, under the US$100 monthly credit). Estimated from writer calls (`notify/digest.ts` COST_PER_CALL).
+ * - ENGINE_API_CREDIT_USD + ENGINE_CREDIT_FLOOR_USD: the month's Claude API credit (default 100) and what must be
+ *   left of it (default 10, zack 2026-11-27: "auto lock and don't run below $10"). The engine stops writing once its
+ *   estimated spend reaches credit minus floor, whichever of that and the monthly budget is lower (see `spendCapUsd`).
  * - ENGINE_DAILY_DRAFTS: most writer calls per day (Toronto midnight to midnight), across every run (default 50).
  *   With two scheduled runs of up to 24 each this rarely binds; the monthly budget is the real cost cap.
  * - ENGINE_CHECK_THRESHOLD: the checker's flag line, 1–10 (default 7).
@@ -31,6 +34,8 @@ const envSchema = z.object({
   ENGINE_MAX_DRAFTS: z.coerce.number().int().min(0).max(50).default(24),
   ENGINE_DAILY_DRAFTS: z.coerce.number().int().min(0).max(500).default(50),
   ENGINE_MONTHLY_BUDGET_USD: z.coerce.number().min(0).max(10000).default(95),
+  ENGINE_API_CREDIT_USD: z.coerce.number().min(0).max(100000).default(100),
+  ENGINE_CREDIT_FLOOR_USD: z.coerce.number().min(0).max(100000).default(10),
   ENGINE_CHECK_THRESHOLD: z.coerce.number().int().min(1).max(10).default(7),
   ENGINE_AUTO_APPROVE: z.enum(["0", "1"]).default("1"),
   ENGINE_ALERT_EMAIL: z.email().optional(),
@@ -48,4 +53,13 @@ export function engineEnv(env: Record<string, string | undefined> = process.env)
   // Treat empty strings as unset, the way most hosts store a blank variable.
   const cleaned = Object.fromEntries(Object.entries(env).filter(([, v]) => v !== ""));
   return envSchema.parse(cleaned);
+}
+
+/**
+ * The most the engine may spend on Claude this month, in US$: the monthly budget, or the credit less the floor that
+ * must stay untouched, whichever is lower. With the defaults that is US$90, so about US$10 of the US$100 credit is
+ * always left. Never below 0.
+ */
+export function spendCapUsd(env: Pick<EngineEnv, "ENGINE_MONTHLY_BUDGET_USD" | "ENGINE_API_CREDIT_USD" | "ENGINE_CREDIT_FLOOR_USD">): number {
+  return Math.max(0, Math.min(env.ENGINE_MONTHLY_BUDGET_USD, env.ENGINE_API_CREDIT_USD - env.ENGINE_CREDIT_FLOOR_USD));
 }

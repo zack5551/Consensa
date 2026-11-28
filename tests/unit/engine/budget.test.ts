@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
 import { COST_PER_CALL } from "@/engine/notify/digest";
+import { engineEnv, spendCapUsd } from "@/engine/config";
 import { MockDrafter } from "@/engine/draft/mock";
 import type { Drafter } from "@/engine/draft/drafter";
 import { runCycle } from "@/engine/pipeline";
@@ -50,6 +53,14 @@ describe("cost caps (zack, 2026-11-25: about US$95 this month)", () => {
     expect(spent.report.decisions.filter((d) => d.decision === "queued")).toEqual([]);
     const nextMonth = new Date(Date.UTC(SAMPLE_NOW.getUTCFullYear(), SAMPLE_NOW.getUTCMonth() + 1, 1, 15));
     expect((await runFromEnv({ liveFeeds: false, maxDrafts: 20, monthlyBudgetUsd: 95, now: nextMonth, store })).draftAllowance).toBe(20);
+  });
+
+  it("keeps US$10 of the Claude credit untouched (zack, 2026-11-27: auto lock below $10)", () => {
+    const env = engineEnv({});
+    expect(spendCapUsd(env)).toBe(90);
+    expect(spendCapUsd({ ...env, ENGINE_MONTHLY_BUDGET_USD: 50 })).toBe(50);
+    expect(spendCapUsd({ ...env, ENGINE_API_CREDIT_USD: 8 })).toBe(0);
+    expect(Math.floor(spendCapUsd(env) / COST_PER_CALL)).toBe(1125);
   });
 
   it("never counts stories blocked before any writer saw them", async () => {

@@ -11,7 +11,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { engineEnv } from "@/engine/config";
+import { engineEnv, spendCapUsd } from "@/engine/config";
 import { verifyReviewToken } from "@/engine/notify/review-link";
 import { ideaNotice } from "@/engine/notify/idea";
 import { applyReviewAction, renderReviewPage } from "@/engine/notify/review-page";
@@ -98,7 +98,7 @@ async function writeIdea(s: NonNullable<ReturnType<typeof setup>>, idea: string,
     only: [story],
     maxDrafts: 1,
     dailyDrafts: env.ENGINE_DAILY_DRAFTS,
-    monthlyBudgetUsd: env.ENGINE_MONTHLY_BUDGET_USD,
+    monthlyBudgetUsd: spendCapUsd(env),
     onPublished: () => revalidateTag(LIVE_QUESTIONS_TAG),
     now,
     store,
