@@ -65,17 +65,27 @@ describe("the events scout", () => {
     expect(eventStories(new Date("2027-03-06T20:00:00Z"), DESKS, [oscars])[0]!.id).not.toBe(stories[0]!.id);
   });
 
+  it("writes World Juniors questions from Dec. 5 through the gold medal game, on the sports desk", () => {
+    const wj = BIG_EVENTS.find((e) => e.id === "world-juniors-2027")!;
+    expect(activeEvents(new Date("2026-12-01T12:00:00Z"), [wj])).toEqual([]);
+    expect(eventStories(new Date("2026-12-10T12:00:00Z"), DESKS, [wj])[0]!.categoryHint).toBe("sports");
+    expect(activeEvents(new Date("2027-01-03T12:00:00Z"), [wj])).toEqual([wj]);
+    expect(activeEvents(new Date("2027-01-07T12:00:00Z"), [wj])).toEqual([]);
+    expect(eventFor(story([signal({ title: "Canada names World Juniors roster" })]), new Date("2026-12-15T12:00:00Z"), [wj])?.id).toBe("world-juniors-2027");
+  });
+
   it("tags news that names an open event, and leaves the rest alone", () => {
     expect(eventFor(story([signal({ title: "Canadian film earns Oscar buzz" })]), inWindow, [oscars])?.id).toBe("oscars-2027");
     expect(eventFor(story([signal({ title: "Canadian film earns Oscar buzz" })]), early, [oscars])).toBeUndefined();
     expect(eventFor(story([signal({ title: "Snowfall warning for Quebec" })]), inWindow, [oscars])).toBeUndefined();
   });
 
-  it("lists only checked big dates, never junior or amateur sports (LEX)", () => {
+  it("lists only checked big dates, never junior or amateur sports except the World Juniors (LEX, 2026-11-28)", () => {
     for (const e of BIG_EVENTS) {
       expect(e.id).toMatch(/^[a-z0-9-]+$/);
       expect(e.url).toMatch(/^https:\/\//);
       expect(DESKS.some((d) => d.id === e.desk), e.id).toBe(true);
+      if (e.id === "world-juniors-2027") continue;
       expect(`${e.name.en} ${e.keywords.join(" ")}`.toLowerCase()).not.toMatch(/junior|amateur|university|ncaa/);
     }
   });

@@ -181,3 +181,39 @@ describe("sports explanations never name a winner or say what to call", () => {
     }
   });
 });
+
+describe("World Juniors (LEX's one junior exception, 2026-11-28)", () => {
+  const wj = (en: string, fr: string) => screenDraft(sportsDraft({ en, fr }));
+  const codes = (flags: ReturnType<typeof screenDraft>) => flags.map((f) => f.code);
+
+  it.each([
+    ["Will Team Canada win gold at the 2027 World Juniors?", "Équipe Canada remportera-t-elle l’or au Mondial junior 2027?"],
+    ["Will Canada beat Sweden in their Dec. 31 World Junior Championship game in Edmonton?", "Le Canada battra-t-il la Suède lors de son match du 31 décembre au Championnat mondial junior?"],
+    ["Will the United States win a medal at the IIHF World Junior Championship?", "Les États-Unis remporteront-ils une médaille au championnat du monde junior de l’IIHF?"],
+  ])("lets a team or tournament question through with no hold: %s", (en, fr) => {
+    const flags = wj(en, fr);
+    expect(isBlocked(flags)).toBe(false);
+    expect(codes(flags)).not.toContain("worldJuniorsName");
+    expect(codes(flags)).not.toContain("minors");
+  });
+
+  it("blocks any question about a player", () => {
+    expect(codes(wj("Will Canada's captain score at the World Juniors?", "Le capitaine du Canada marquera-t-il au Mondial junior?"))).toContain("worldJuniorsPlayer");
+    expect(codes(wj("Will a Canadian be the World Juniors' top prospect?", "Un Canadien sera-t-il le meilleur espoir du Mondial junior?"))).toContain("worldJuniorsPlayer");
+  });
+
+  it("holds a possible player's name for an editor", () => {
+    const flags = wj("Will Gavin McKenna lead Canada to gold at the World Juniors?", "Gavin McKenna mènera-t-il le Canada à l’or au Mondial junior?");
+    expect(flags.find((f) => f.code === "worldJuniorsName")?.severity).toBe("review");
+  });
+
+  it("blocks anything off the ice", () => {
+    expect(codes(wj("Will Hockey Canada name a new World Juniors coach?", "Hockey Canada nommera-t-il un entraîneur au Mondial junior?"))).toContain("worldJuniorsOffIce");
+  });
+
+  it("keeps every other junior, youth and school sport blocked", () => {
+    expect(codes(wj("Will the Oil Kings win the WHL title?", "Les Oil Kings gagneront-ils le titre de la WHL?"))).toContain("sportsAmateur");
+    expect(codes(wj("Will London win the Memorial Cup?", "London gagnera-t-il la coupe Memorial?"))).toContain("sportsAmateur");
+    expect(codes(wj("Will Canada win the World Juniors after its junior camp?", "Le Canada gagnera-t-il le Mondial junior?"))).toContain("sportsAmateur");
+  });
+});

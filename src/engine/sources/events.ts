@@ -5,7 +5,8 @@
  * Each event also catches the news about it: a story whose headlines name the event (World Juniors, Golden Globes)
  * is tagged with it, so news questions join the same group.
  *
- * No junior or amateur events (World Juniors included): LEX's sports rules rule them out.
+ * No junior or amateur events, with one exception LEX approved on 2026-11-28 at zack's request: the IIHF World Junior
+ * Championship, team and tournament questions only, never about a player (sports-questions-rules.md).
  *
  * Dates were checked on 2026-11-25 against the organiser or two outlets (sources in each entry). Add an event only
  * with a confirmed date. Reading these costs nothing; only the writer calls they lead to count against the caps.
@@ -41,6 +42,19 @@ export const BIG_EVENTS: readonly BigEvent[] = [
     url: "https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/",
     keywords: ["bank of canada", "banque du canada", "taux directeur", "policy rate", "rate decision"],
     leadDays: 10,
+  },
+  {
+    // IIHF World Junior Championship in Edmonton and Red Deer, Dec. 26, 2026 to Jan. 5, 2027 (Hockey Canada's schedule
+    // page, NHL.com and Wikipedia citing stats.iihf.com, checked 2026-11-28). The first game is the afternoon of Dec. 26
+    // Mountain time; the gold medal game is the evening of Jan. 5. LEX's limits: team and tournament only, no players.
+    id: "world-juniors-2027",
+    name: { en: "World Juniors (IIHF World Junior Championship)", fr: "Championnat mondial de hockey junior de l’IIHF" },
+    at: "2026-12-26T20:00:00Z",
+    endsAt: "2027-01-06T05:00:00Z",
+    desk: "sports",
+    url: "https://www.iihf.com/",
+    keywords: ["world junior", "world juniors", "mondial junior", "championnat mondial junior", "iihf u20"],
+    leadDays: 21,
   },
   {
     // Variety's 2026–27 awards calendar and CBS: Sunday, Jan. 10, 2027, 8 p.m. ET.
