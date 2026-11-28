@@ -152,7 +152,7 @@ const allowedDomains = [
   "statcan.gc.ca", "bankofcanada.ca", "banqueducanada.ca", "canada.ca", "gc.ca", "cmhc-schl.gc.ca", "elections.ca",
   // News outlets and cultural bodies cited as resolution sources
   "cbc.ca", "radio-canada.ca", "globalnews.ca", "theglobeandmail.com", "crea.ca", "academy.ca", "telefilm.ca", "numeris.ca",
-  "junoawards.ca", "gillerprize.ca", "scotiabankgillerprize.ca", "polarismusicprize.ca", "nhl.com", "cfl.ca",
+  "junoawards.ca", "gillerprize.ca", "scotiabankgillerprize.ca", "polarismusicprize.ca", "nhl.com", "iihf.com", "cfl.ca",
   "nasa.gov", "nobelprize.org", "imdb.com", "boxofficemojo.com",
   // Resolution sources for zack's example questions (2026-11-26): charts, a streamer, leagues and the companies named
   "billboard.com", "netflix.com", "thepwhl.com", "mlb.com", "hockeycanada.ca", "couche-tard.com", "stellantis.com",

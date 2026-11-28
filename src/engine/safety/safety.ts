@@ -78,9 +78,74 @@ export function draftText(draft: Draft): string[] {
   ];
 }
 
+/**
+ * The IIHF World Junior Championship, the one junior event LEX allows (2026-11-28, sports-questions-rules.md). Its
+ * name is lifted out before the word rules run, so "World Juniors" alone doesn't trip the junior ban, while the CHL or
+ * any other junior, youth or school sport still does.
+ */
+const WORLD_JUNIORS = [
+  /\biihf (world )?(u-?20|junior)( hockey)?( championships?)?\b/g,
+  /\bworld juniors?( hockey)?( championships?)?\b/g,
+  /\bworld junior (ice )?hockey championships?\b/g,
+  /\bchampionnats? (du monde|mondial) (de hockey )?juniors?( de hockey)?\b/g,
+  /\bmondial juniors?( de hockey)?\b/g,
+];
+
+/** True when the text is about the World Juniors. */
+export function isWorldJuniors(text: string): boolean {
+  const folded = foldForMatch(text);
+  return WORLD_JUNIORS.some((re) => new RegExp(re.source).test(folded));
+}
+
+function withoutWorldJuniors(text: string): string {
+  return WORLD_JUNIORS.reduce((t, re) => t.replace(re, " the tournament "), foldForMatch(text));
+}
+
+/** Anything about one player: LEX allows team and tournament questions only (many players are 17 or just 18). */
+const WJ_PLAYER =
+  /\b(goals?|points?|assists?|scor(e|es|er|ers|ing)|stats?|mvp|all-stars?|awards?|ice time|injur\w*|draft(ed)?|prospects?|captain|goalie|goaltender|player|forward|defenceman|defenseman|buts?|passes|marqueurs?|blessures?|repechage|espoirs?|capitaine|gardien|joueurs?|attaquant|defenseur)\b/;
+/** Off-ice matters, including the Hockey Canada cases: never a question. */
+const WJ_OFF_ICE =
+  /\b(hockey canada|assault|allegations?|trial|lawsuits?|scandals?|conduct|charges?|agression|proces|poursuites?|scandales?|inconduite|accusations?)\b/;
+/**
+ * Capitalised words a World Juniors question may use. Any other capitalised word after the first could be a player's
+ * name, so an editor checks it before it goes live.
+ */
+const WJ_ALLOWED_WORDS = new Set(
+  ("will team canada canadian canada's world junior juniors championship championships hockey iihf u20 gold silver bronze medal " +
+    "edmonton red deer alberta rogers place peavey mart centrium usa united states american finland sweden czechia czech " +
+    "slovakia switzerland germany latvia norway denmark kazakhstan austria russia group a b eastern et time yes no jan " +
+    "january dec december oui non équipe equipe mondial suède suede finlande tchéquie tchequie slovaquie suisse allemagne " +
+    "lettonie norvège norvege danemark autriche états-unis etats-unis américains americains canadien canadienne heure de " +
+    "l'est l’est championnat coupe médaille medaille or argent finale demi-finale quart résolue resolue resolves official officiel officiels iihf.com").split(" "),
+);
+
+function worldJuniorsFlags(draft: Draft): Flag[] {
+  const flags: Flag[] = [];
+  const texts = [draft.question.en, draft.question.fr, draft.resolution.rule.en, draft.resolution.rule.fr];
+  const folded = texts.map(foldForMatch).join("\n");
+  const player = WJ_PLAYER.exec(folded);
+  if (player) {
+    flags.push({ code: "worldJuniorsPlayer", severity: "block", detail: `World Juniors: team and tournament questions only, never about a player (LEX). Matched “${player[0]}”.` });
+  }
+  const offIce = WJ_OFF_ICE.exec(folded);
+  if (offIce) {
+    flags.push({ code: "worldJuniorsOffIce", severity: "block", detail: `World Juniors: nothing off the ice (LEX). Matched “${offIce[0]}”.` });
+  }
+  const names = [draft.question.en, draft.question.fr].flatMap((q) =>
+    (q.match(/[\p{Lu}][\p{L}’'.-]*/gu) ?? []).slice(1).filter((w) => !WJ_ALLOWED_WORDS.has(w.toLowerCase().replace(/^[ld][’']/, "").replace(/[’']s$/, "").replace(/[.?!]$/, ""))),
+  );
+  if (names.length > 0) {
+    flags.push({ code: "worldJuniorsName", severity: "review", detail: `World Juniors: never name a player; an editor checks “${names[0]}” isn't one (LEX).` });
+  }
+  return flags;
+}
+
 export function screenDraft(draft: Draft): Flag[] {
   const scopes: Scope[] = draft.category === "sports" ? ["all", "sports"] : ["all"];
-  const flags = draftText(draft).flatMap((t) => scan(t, undefined, scopes));
+  const worldJuniors = draftText(draft).some(isWorldJuniors);
+  const flags = draftText(draft).flatMap((t) => scan(worldJuniors ? withoutWorldJuniors(t) : t, undefined, scopes));
+  if (worldJuniors) flags.push(...worldJuniorsFlags(draft));
 
   if (draft.category === "sports") {
     flags.push({ code: "sports", severity: "review", detail: "Sports forecast: an editor checks it reads as fan opinion, not sportsbook information." });
